@@ -29,6 +29,7 @@ public class MistralChatModelFactory implements ChatModelFactory {
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .topP(customChatModel.getTopP())
             .returnThinking(ThinkingSupport.isEnabled())
+            .listeners(getListener())
             .build();
     }
 
@@ -41,6 +42,7 @@ public class MistralChatModelFactory implements ChatModelFactory {
             .topP(customChatModel.getTopP())
             .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
             .returnThinking(ThinkingSupport.isEnabled())
+            .listeners(getListener())
             .build();
     }
 

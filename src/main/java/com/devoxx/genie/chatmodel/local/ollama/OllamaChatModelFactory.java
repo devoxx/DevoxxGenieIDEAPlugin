@@ -51,7 +51,8 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
                 .modelName(customChatModel.getModelName())
                 .temperature(customChatModel.getTemperature())
                 .topP(customChatModel.getTopP())
-                .timeout(Duration.ofSeconds(customChatModel.getTimeout()));
+                .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
+                .listeners(getListener());
 
         applyThinkingSetting(builder);
 

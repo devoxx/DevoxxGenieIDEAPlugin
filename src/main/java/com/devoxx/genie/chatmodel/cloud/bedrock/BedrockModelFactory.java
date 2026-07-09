@@ -95,6 +95,7 @@ public class BedrockModelFactory implements ChatModelFactory {
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
+                .listeners(getListener())
                 .build();
     }
 
@@ -113,6 +114,7 @@ public class BedrockModelFactory implements ChatModelFactory {
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
+                .listeners(getListener())
                 .build();
     }
 
@@ -124,6 +126,7 @@ public class BedrockModelFactory implements ChatModelFactory {
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
+                .listeners(getListener())
                 .build();
     }
 
@@ -135,6 +138,7 @@ public class BedrockModelFactory implements ChatModelFactory {
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
+                .listeners(getListener())
                 .build();
     }
 
@@ -146,6 +150,7 @@ public class BedrockModelFactory implements ChatModelFactory {
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
+                .listeners(getListener())
                 .build();
     }
 
@@ -157,6 +162,7 @@ public class BedrockModelFactory implements ChatModelFactory {
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
+                .listeners(getListener())
                 .build();
     }
 
@@ -168,6 +174,7 @@ public class BedrockModelFactory implements ChatModelFactory {
                         .temperature(customChatModel.getTemperature())
                         .maxOutputTokens(customChatModel.getMaxTokens())
                         .build())
+                .listeners(getListener())
                 .build();
     }
 

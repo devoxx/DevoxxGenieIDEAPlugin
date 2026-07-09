@@ -48,10 +48,10 @@ public class AgentSettingsConfigurable implements Configurable {
             agentSettingsComponent.apply();
             messageBus.syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC).settingsChanged(true);
 
-            // Auto-open the Agent Logs panel when debug logging is enabled
+            // Auto-open the Activity Log panel when debug logging is enabled
             if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getAgentDebugLogsEnabled())) {
                 ToolWindow toolWindow = ToolWindowManager.getInstance(project)
-                        .getToolWindow("DevoxxGenieAgentLogs");
+                        .getToolWindow("DevoxxGenieActivityLogs");
                 if (toolWindow != null) {
                     toolWindow.show();
                 }
