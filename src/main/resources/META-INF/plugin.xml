@@ -68,6 +68,12 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.9.1</h2>
+        <UL>
+                    <LI>fix(debug): Raw Request/Response Logging now also captures traffic for <b>Ollama streaming</b>, <b>Mistral</b> and <b>Amazon Bedrock</b> — these providers previously showed no [RAW] entries in the Activity Log (#1202)</LI>
+                    <LI>feat(debug): the Debug settings page now also hosts the "Enable MCP Logging" and "Enable agent debug logs" toggles, so every debug log option lives in one place (#1202)</LI>
+                    <LI>fix(settings): enabling debug logging from the MCP or Agent Mode settings page now actually opens the Activity Log tool window instead of silently doing nothing (#1202)</LI>
+                </UL>
         <h2>v1.9.0</h2>
         <UL>
                     <LI>feat(debug): new opt-in Raw Request/Response viewer (Settings → DevoxxGenie → Debug) shows the full LLM request and response — messages, tool calls, token usage — in the Activity Log tool window, with a "Show Raw Only" filter, JSON view and copy-all for bug reports; secrets are redacted (#1197, #1198)</LI>

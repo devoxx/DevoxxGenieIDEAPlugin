@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.9.1 - 2026-07-09
+
+A follow-up to the v1.9.0 Raw Request/Response viewer: three providers never captured any raw traffic, and the debug log settings were scattered across three settings pages with two of them auto-opening a tool window that no longer exists.
+
+### Added
+- feat(debug): mirror the **MCP** and **agent** debug log checkboxes on the Debug settings page, starting to centralise every debug log toggle in one place. Alongside the existing Raw Request/Response Logging option, the page now also offers "Enable MCP Logging" (`mcpDebugLogsEnabled`) and "Enable agent debug logs" (`agentDebugLogsEnabled`), each describing what it logs and which Activity Log filter surfaces it. The original checkboxes on the MCP Settings and Agent Mode pages stay for now — both edit the same underlying state — and applying the Debug page auto-opens the Activity Log tool window when *any* of the three logging options is enabled, not just raw logging (#1202)
+
+### Fixed
+- fix(debug): attach the raw request/response listener to **Ollama streaming, Mistral and Bedrock** models — enabling "Raw Request/Response Logging" (#1197) produced no `[RAW]` entries in the Activity Log for these providers. The viewer captures traffic through a `RawTrafficListenerService` registered in `ChatModelFactory.getListener()`, but three factories never wired that listener into the models they built: Ollama's `createStreamingChatModel()` omitted `.listeners(...)` while its non-streaming variant had it, Mistral omitted it on both chat and streaming models, and Bedrock omitted it on every model variant. All builders now call `.listeners(getListener())` like every other provider factory, with regression tests asserting the listener is present on the built models when the setting is on (#1202)
+- fix(settings): auto-open the Activity Log tool window using its **correct id** — the MCP Settings and Agent Mode pages still referenced the stale ids `DevoxxGenieMCPLogs` and `DevoxxGenieAgentLogs` after enabling debug logging. Those tool windows no longer exist (the log panels were merged into the unified Activity Log, `DevoxxGenieActivityLogs`), so the auto-open silently did nothing. Both pages now point at the correct id, matching the Debug settings page (#1202)
+
+### Contributors
+- @stephanj
+
 ## v1.9.0 - 2026-07-09
 
 ### Added
