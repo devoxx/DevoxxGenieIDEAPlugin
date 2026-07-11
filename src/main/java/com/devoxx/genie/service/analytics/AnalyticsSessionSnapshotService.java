@@ -135,6 +135,21 @@ public final class AnalyticsSessionSnapshotService implements DevoxxGenieSetting
         emitIfEnabled(state.isTavilySearchEnabled(), FeatureId.WEB_SEARCH_TAVILY);
         emitIfEnabled(hasAnyCustomPrompt(state), FeatureId.CUSTOM_PROMPT);
 
+        // Additional enablement signals (task-241): reasoning output, debug logging, and
+        // adoption of newer/advanced capabilities. All read plain boolean toggles — no content.
+        emitIfEnabled(state.getShowThinkingEnabled(), FeatureId.THINKING);
+        emitIfEnabled(state.getMcpDebugLogsEnabled(), FeatureId.MCP_DEBUG_LOGS);
+        emitIfEnabled(state.getAgentDebugLogsEnabled(), FeatureId.AGENT_DEBUG_LOGS);
+        emitIfEnabled(state.getRawRequestResponseLoggingEnabled(), FeatureId.RAW_REQUEST_RESPONSE_LOGGING);
+        emitIfEnabled(state.getWebSearchAgentToolEnabled(), FeatureId.WEB_SEARCH_AGENT_TOOL);
+        emitIfEnabled(state.getRagQueryExpansionEnabled(), FeatureId.RAG_QUERY_EXPANSION);
+        emitIfEnabled(state.getParallelExploreEnabled(), FeatureId.PARALLEL_EXPLORE);
+        emitIfEnabled(state.getPsiToolsEnabled(), FeatureId.PSI_TOOLS);
+        emitIfEnabled(state.getSecurityScanEnabled(), FeatureId.SECURITY_SCAN);
+        emitIfEnabled(state.getSpecBrowserEnabled(), FeatureId.SPEC_BROWSER);
+        emitIfEnabled(state.getEventAutomationEnabled(), FeatureId.EVENT_AUTOMATION);
+        emitIfEnabled(hasInlineCompletion(state), FeatureId.INLINE_COMPLETION);
+
         sink.trackFeatureCounts(
                 Buckets.standard(mcpServerCount(state)),
                 Buckets.standard(customPromptCount(state)),
@@ -154,6 +169,12 @@ public final class AnalyticsSessionSnapshotService implements DevoxxGenieSetting
 
     private boolean hasAnyCustomPrompt(@NotNull DevoxxGenieStateService state) {
         return customPromptCount(state) > 0;
+    }
+
+    /** Inline completion is "enabled" once the user has picked a provider for it. */
+    private boolean hasInlineCompletion(@NotNull DevoxxGenieStateService state) {
+        String provider = state.getInlineCompletionProvider();
+        return provider != null && !provider.isBlank();
     }
 
     private int customPromptCount(@NotNull DevoxxGenieStateService state) {

@@ -47,7 +47,11 @@ public final class AnalyticsEventBuilder {
             "feature_id", Set.of(
                     "rag", "semantic_search", "web_search_google", "web_search_tavily",
                     "agent", "mcp", "streaming", "project_context_full",
-                    "project_context_selected", "devoxxgenie_md", "custom_prompt"),
+                    "project_context_selected", "devoxxgenie_md", "custom_prompt",
+                    "thinking", "mcp_debug_logs", "agent_debug_logs",
+                    "raw_request_response_logging", "web_search_agent_tool",
+                    "rag_query_expansion", "parallel_explore", "psi_tools",
+                    "security_scan", "spec_browser", "event_automation", "inline_completion"),
             "provider_type", Set.of("local", "cloud", "none"),
             "tool_call_count", Set.of("0", "1", "2-5", "6-10", "11+"),
             "mcp_server_count", Set.of("0", "1", "2-5", "6-10", "11+"),
