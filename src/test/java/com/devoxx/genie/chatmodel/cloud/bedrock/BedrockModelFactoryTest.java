@@ -10,6 +10,7 @@ import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
+import com.intellij.testFramework.common.ThreadLeakTracker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -33,6 +34,14 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
     @BeforeEach
     public void setUp() throws Exception {
         super.setUp();
+
+        // Building a BedrockRuntimeClient starts the AWS SDK's JVM-wide singleton
+        // "idle-connection-reaper" daemon thread, which deliberately outlives the individual
+        // clients created by the factory. Exempt it from the platform's thread-leak assertion.
+        // Registered on the application disposable (not the test root one) because the leak
+        // check runs after the test root disposable has already been disposed.
+        ThreadLeakTracker.longRunningThreadCreated(ApplicationManager.getApplication(), "idle-connection-reaper");
+
         // Mock SettingsState
         settingsStateMock = mock(DevoxxGenieStateService.class);
         when(settingsStateMock.getAwsAccessKeyId()).thenReturn(DUMMY_AWS_ACCESS_KEY);
