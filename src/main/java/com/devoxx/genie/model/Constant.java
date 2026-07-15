@@ -94,6 +94,19 @@ public class Constant {
     public static final int SUB_AGENT_MEMORY_SIZE = 10;
     public static final int TEST_EXECUTION_DEFAULT_TIMEOUT = 300;
 
+    // Command blacklist for the run_command agent tool (issue #1209).
+    // A matched command either forces the approval dialog (even when write
+    // approvals are auto-approved) or is blocked outright, depending on the action.
+    public static final String COMMAND_BLACKLIST_ACTION_ASK = "ASK_APPROVAL";
+    public static final String COMMAND_BLACKLIST_ACTION_BLOCK = "BLOCK";
+    public static final java.util.List<String> DEFAULT_COMMAND_BLACKLIST = java.util.List.of(
+            "git reset --hard",
+            "git clean -f",
+            "git push --force",
+            "git push -f",
+            "rm -rf"
+    );
+
     // Hide Search Button
     public static final Boolean ENABLE_WEB_SEARCH = false;
     public static final Integer MAX_SEARCH_RESULTS = 3;

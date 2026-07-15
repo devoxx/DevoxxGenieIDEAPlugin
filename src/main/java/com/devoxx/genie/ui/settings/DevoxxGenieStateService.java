@@ -375,6 +375,19 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private List<String> ragExcludedDirectories = new ArrayList<>();
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
+    /**
+     * Commands the run_command agent tool must never execute silently (issue #1209).
+     * Matched token-wise and case-insensitively against the command the agent wants to
+     * run; see {@code CommandBlacklist} for the exact semantics. What happens on a match
+     * is controlled by {@link #agentCommandBlacklistAction}.
+     */
+    private List<String> agentCommandBlacklist = new ArrayList<>(DEFAULT_COMMAND_BLACKLIST);
+    /**
+     * What to do when a run_command matches the blacklist: {@code ASK_APPROVAL} forces the
+     * approval dialog even when write approvals are disabled; {@code BLOCK} refuses the
+     * command outright and tells the LLM why.
+     */
+    private String agentCommandBlacklistAction = COMMAND_BLACKLIST_ACTION_ASK;
     private Boolean agentDebugLogsEnabled = false;
     /**
      * When enabled, the full request/response exchanged with the LLM provider (messages, tool

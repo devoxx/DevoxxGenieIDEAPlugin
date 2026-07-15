@@ -21,6 +21,8 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.components.JBTextArea;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,6 +41,15 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             new JBCheckBox("Auto-approve read-only tools (read_file, list_files, search_files, fetch_page)", stateService.getAgentAutoApproveReadOnly());
     private final JBCheckBox writeApprovalRequiredCheckbox =
             new JBCheckBox("Write tools always require approval (write_file, run_command)", Boolean.TRUE.equals(stateService.getAgentWriteApprovalRequired()));
+
+    // Command blacklist for run_command (issue #1209)
+    private static final String BLACKLIST_ACTION_ASK_LABEL = "Ask for approval";
+    private static final String BLACKLIST_ACTION_BLOCK_LABEL = "Block automatically";
+    private final JBTextArea commandBlacklistArea = new JBTextArea(
+            String.join("\n", stateService.getAgentCommandBlacklist() != null
+                    ? stateService.getAgentCommandBlacklist() : DEFAULT_COMMAND_BLACKLIST));
+    private final ComboBox<String> blacklistActionComboBox =
+            new ComboBox<>(new String[]{BLACKLIST_ACTION_ASK_LABEL, BLACKLIST_ACTION_BLOCK_LABEL});
     private final JBCheckBox enableDebugLogsCheckbox =
             new JBCheckBox("Enable agent debug logs", Boolean.TRUE.equals(stateService.getAgentDebugLogsEnabled()));
     private final JBCheckBox showToolActivityInChatCheckbox =
@@ -110,6 +121,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     public AgentSettingsComponent() {
         setupSubAgentComboBoxes();
+        blacklistActionComboBox.setSelectedIndex(
+                COMMAND_BLACKLIST_ACTION_BLOCK.equals(stateService.getAgentCommandBlacklistAction()) ? 1 : 0);
 
         JPanel contentPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -188,6 +201,23 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "When enabled, a confirmation dialog is shown before executing write tools. " +
                 "You can also disable this from the approval dialog itself via the \"Don't ask again\" checkbox.");
+
+        addFullWidthRow(contentPanel, gbc, new JBLabel("Command blacklist (one pattern per line):"));
+        commandBlacklistArea.setRows(6);
+        JBScrollPane blacklistScrollPane = new JBScrollPane(commandBlacklistArea);
+        blacklistScrollPane.setPreferredSize(new Dimension(400, 110));
+        addFullWidthRow(contentPanel, gbc, blacklistScrollPane);
+
+        JPanel blacklistActionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        blacklistActionRow.add(new JBLabel("When a command matches the blacklist:"));
+        blacklistActionRow.add(blacklistActionComboBox);
+        addFullWidthRow(contentPanel, gbc, blacklistActionRow);
+        addHelpText(contentPanel, gbc,
+                "Guards run_command against destructive commands like 'git reset --hard', even when " +
+                "write approvals are auto-approved. Matching is case-insensitive and token-based: a pattern " +
+                "matches anywhere in the command (including compound commands like 'cd x && git reset --hard'), " +
+                "flags may be reordered or combined ('-rf' also matches '-fr' and '-rfv'), and '*' acts as a " +
+                "wildcard. A match either forces the approval dialog or blocks the command outright.");
 
         // --- Test Execution ---
         addSection(contentPanel, gbc, "Test Execution");
@@ -892,6 +922,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || maxToolCallsSpinner.getNumber() != (state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS)
                 || autoApproveReadOnlyCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly())
                 || writeApprovalRequiredCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentWriteApprovalRequired())
+                || !Objects.equals(getBlacklistFromUi(), state.getAgentCommandBlacklist() != null ? state.getAgentCommandBlacklist() : Collections.emptyList())
+                || !Objects.equals(getSelectedBlacklistAction(), state.getAgentCommandBlacklistAction() != null ? state.getAgentCommandBlacklistAction() : COMMAND_BLACKLIST_ACTION_ASK)
                 || enableDebugLogsCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentDebugLogsEnabled())
                 || showToolActivityInChatCheckbox.isSelected() != Boolean.TRUE.equals(state.getShowToolActivityInChat())
                 || enableTestExecutionCheckbox.isSelected() != Boolean.TRUE.equals(state.getTestExecutionEnabled())
@@ -928,6 +960,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setAgentMaxToolCalls(maxToolCallsSpinner.getNumber());
         stateService.setAgentAutoApproveReadOnly(autoApproveReadOnlyCheckbox.isSelected());
         stateService.setAgentWriteApprovalRequired(writeApprovalRequiredCheckbox.isSelected());
+        stateService.setAgentCommandBlacklist(getBlacklistFromUi());
+        stateService.setAgentCommandBlacklistAction(getSelectedBlacklistAction());
         stateService.setAgentDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
         stateService.setShowToolActivityInChat(showToolActivityInChatCheckbox.isSelected());
         stateService.setTestExecutionEnabled(enableTestExecutionCheckbox.isSelected());
@@ -965,6 +999,10 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         maxToolCallsSpinner.setNumber(state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS);
         autoApproveReadOnlyCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly()));
         writeApprovalRequiredCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentWriteApprovalRequired()));
+        commandBlacklistArea.setText(String.join("\n", state.getAgentCommandBlacklist() != null
+                ? state.getAgentCommandBlacklist() : DEFAULT_COMMAND_BLACKLIST));
+        blacklistActionComboBox.setSelectedIndex(
+                COMMAND_BLACKLIST_ACTION_BLOCK.equals(state.getAgentCommandBlacklistAction()) ? 1 : 0);
         enableDebugLogsCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentDebugLogsEnabled()));
         showToolActivityInChatCheckbox.setSelected(Boolean.TRUE.equals(state.getShowToolActivityInChat()));
         enableTestExecutionCheckbox.setSelected(Boolean.TRUE.equals(state.getTestExecutionEnabled()));
@@ -1030,6 +1068,23 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     @Override
     public void addListeners() {
         // No dynamic listeners needed
+    }
+
+    private List<String> getBlacklistFromUi() {
+        List<String> patterns = new ArrayList<>();
+        for (String line : commandBlacklistArea.getText().split("\\R")) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty()) {
+                patterns.add(trimmed);
+            }
+        }
+        return patterns;
+    }
+
+    private String getSelectedBlacklistAction() {
+        return blacklistActionComboBox.getSelectedIndex() == 1
+                ? COMMAND_BLACKLIST_ACTION_BLOCK
+                : COMMAND_BLACKLIST_ACTION_ASK;
     }
 
     /**
