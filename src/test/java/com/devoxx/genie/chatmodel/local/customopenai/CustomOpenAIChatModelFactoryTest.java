@@ -295,6 +295,53 @@ class CustomOpenAIChatModelFactoryTest {
         }
     }
 
+    @Test
+    void getModelsWithModelNameOverrideSkipsEndpointProbe() {
+        // Issue #1210: when the user has explicitly set a model name via the override field,
+        // getModels() must NOT probe the /models endpoint. Probing an already-specified model
+        // wastes a network round-trip and, for endpoints whose base URL is the full chat path,
+        // produced a scary 401 on the nonsensical '.../chat/completions/models' URL.
+        when(mockState.getCustomOpenAIUrl())
+                .thenReturn("https://gateway.ai.cloudflare.com/v1/id/free-gateway/compat/chat/completions");
+        when(mockState.isCustomOpenAIModelNameEnabled()).thenReturn(true);
+        when(mockState.getCustomOpenAIModelName()).thenReturn("gpt-4o-mini");
+
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+
+            assertThat(factory.getModels())
+                    .extracting(LanguageModel::getModelName)
+                    .containsExactly("gpt-4o-mini");
+
+            // The endpoint is never probed when an explicit model name is configured.
+            util.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    void getModelsWithBlankModelNameOverrideStillProbesEndpoint() {
+        // The skip only applies when the override is enabled AND non-blank. A blank override
+        // must fall back to the normal /models probe so the picker can still be populated.
+        when(mockState.getCustomOpenAIUrl()).thenReturn("http://localhost:8080/v1/");
+        when(mockState.isCustomOpenAIModelNameEnabled()).thenReturn(true);
+        when(mockState.getCustomOpenAIModelName()).thenReturn("   ");
+
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)))
+                    .thenReturn(buildResponse("model-a"));
+
+            CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+
+            assertThat(factory.getModels())
+                    .extracting(LanguageModel::getModelName)
+                    .containsExactly("model-a");
+
+            util.verify(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)), times(1));
+        }
+    }
+
     private static ResponseDTO buildResponse(String... modelIds) {
         ResponseDTO dto = new ResponseDTO();
         dto.setData(java.util.Arrays.stream(modelIds).map(id -> {
