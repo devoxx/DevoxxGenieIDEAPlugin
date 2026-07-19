@@ -116,6 +116,14 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField nvidiaApiKeyField = new JPasswordField(stateService.getNvidiaKey());
     @Getter
+    private final JPasswordField cloudflareApiKeyField = new JPasswordField(stateService.getCloudflareKey());
+    @Getter
+    private final JTextField cloudflareAccountIdField = new JTextField(stateService.getCloudflareAccountId());
+    @Getter
+    private final JTextField cloudflareGatewayNameField = new JTextField(stateService.getCloudflareGatewayName());
+    @Getter
+    private final JTextField cloudflareModelNameField = new JTextField(stateService.getCloudflareModelName());
+    @Getter
     private final JPasswordField awsSecretKeyField = new JPasswordField(stateService.getAwsSecretKey());
     @Getter
     private final JPasswordField awsBearerTokenField = new JPasswordField(stateService.getAwsBearerToken());
@@ -175,6 +183,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox glmEnabledCheckBox = new JCheckBox("", stateService.isGlmEnabled());
     @Getter
     private final JCheckBox nvidiaEnabledCheckBox = new JCheckBox("", stateService.isNvidiaEnabled());
+    @Getter
+    private final JCheckBox cloudflareEnabledCheckBox = new JCheckBox("", stateService.isCloudflareEnabled());
+    @Getter
+    private final JCheckBox cloudflareModelNameEnabledCheckBox = new JCheckBox("", stateService.isCloudflareModelNameEnabled());
     @Getter
     private final JCheckBox enableAzureOpenAICheckBox = new JCheckBox("", stateService.getShowAzureOpenAIFields());
     @Getter
@@ -281,6 +293,14 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "NVIDIA API Key", nvidiaEnabledCheckBox,
                 createTextWithPasswordButton(nvidiaApiKeyField, "https://build.nvidia.com"));
         addHintText(panel, gbc, "Uses NVIDIA NIM OpenAI-compatible API (integrate.api.nvidia.com); get your key at build.nvidia.com");
+        addProviderSettingRow(panel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
+                createTextWithPasswordButton(cloudflareApiKeyField, "https://dash.cloudflare.com/profile/api-tokens"));
+        addHintText(panel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
+        addSettingRow(panel, gbc, "Cloudflare Account ID", cloudflareAccountIdField);
+        addSettingRow(panel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
+        addHintText(panel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
+        addProviderSettingRow(panel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
+        addHintText(panel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
 
         addAzureOpenAIPanel(panel, gbc);
         addAWSPanel(panel, gbc);
@@ -336,6 +356,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         kimiEnabledCheckBox.addItemListener(e -> updateUrlFieldState(kimiEnabledCheckBox, kimiApiKeyField));
         glmEnabledCheckBox.addItemListener(e -> updateUrlFieldState(glmEnabledCheckBox, glmApiKeyField));
         nvidiaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nvidiaEnabledCheckBox, nvidiaApiKeyField));
+        cloudflareEnabledCheckBox.addItemListener(e -> updateUrlFieldState(cloudflareEnabledCheckBox, cloudflareApiKeyField));
+        cloudflareModelNameEnabledCheckBox.addItemListener(e -> updateUrlFieldState(cloudflareModelNameEnabledCheckBox, cloudflareModelNameField));
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
 
         updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
