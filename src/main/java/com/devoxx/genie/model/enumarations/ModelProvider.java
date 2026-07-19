@@ -30,6 +30,7 @@ public enum ModelProvider {
     Kimi("Kimi", Type.CLOUD),
     GLM("GLM", Type.CLOUD),
     Nvidia("NVIDIA", Type.CLOUD),
+    Cloudflare("Cloudflare", Type.CLOUD),
 
     AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
     Bedrock("Bedrock", Type.OPTIONAL);

@@ -727,7 +727,7 @@
         <projectConfigurable id="com.devoxx.genie.agentsettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.agent.AgentSettingsConfigurable"
-                             displayName="Agent Mode (BETA)"/>
+                             displayName="Agent Mode"/>
 
         <projectConfigurable id="com.devoxx.genie.debugsettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -757,7 +757,7 @@
         <projectConfigurable id="com.devoxx.genie.specSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.spec.SpecSettingsConfigurable"
-                             displayName="Spec Driven Development (BETA)"/>
+                             displayName="Spec Driven Development"/>
 
         <projectConfigurable id="com.devoxx.genie.securityScan"
                              parentId="com.devoxx.genie.DevoxxGenie"
@@ -782,7 +782,7 @@
         <projectConfigurable id="com.devoxx.genie.eventAutomation"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.automation.EventAutomationSettingsConfigurable"
-                             displayName="Event Automations (BETA)"/>
+                             displayName="Event Automations"/>
 
         <projectConfigurable id="com.devoxx.genie.llmfeatures"
                              parentId="com.devoxx.genie.DevoxxGenie"
