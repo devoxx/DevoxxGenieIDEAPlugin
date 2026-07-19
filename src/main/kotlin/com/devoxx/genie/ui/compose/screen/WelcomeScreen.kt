@@ -40,6 +40,7 @@ import com.devoxx.genie.ui.compose.model.FeatureDoc
 import com.devoxx.genie.ui.compose.model.SkillUi
 import com.devoxx.genie.ui.compose.theme.*
 import com.devoxx.genie.ui.compose.util.fireTrackingPixel
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService
 import com.intellij.ide.BrowserUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -199,16 +200,21 @@ fun WelcomeScreen(
             Spacer(Modifier.height(20.dp))
         }
 
-        // Features section — collapsed by default. The feature chip grid is the
-        // single biggest vertical consumer and is reference material users learn
-        // once, so it's tucked behind a collapsible header to keep the welcome
-        // page short and the fresh/changing sections reachable.
-        var featuresExpanded by remember { mutableStateOf(false) }
+        // Features section — expanded by default so the chip grid is immediately
+        // discoverable, but kept collapsible so users who already know the
+        // features can shrink it and reach the fresh/changing sections faster.
+        // The choice is persisted, so a collapse survives restarts.
+        var featuresExpanded by remember {
+            mutableStateOf(DevoxxGenieStateService.getInstance().welcomeFeaturesExpanded != false)
+        }
         CollapsibleSectionHeader(
             title = "Explore Features",
             count = FEATURES.size,
             expanded = featuresExpanded,
-            onToggle = { featuresExpanded = !featuresExpanded },
+            onToggle = {
+                featuresExpanded = !featuresExpanded
+                DevoxxGenieStateService.getInstance().welcomeFeaturesExpanded = featuresExpanded
+            },
         )
         if (featuresExpanded) {
             Spacer(Modifier.height(8.dp))
