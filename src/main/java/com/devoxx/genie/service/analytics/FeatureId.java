@@ -29,7 +29,22 @@ public enum FeatureId {
     PROJECT_CONTEXT_FULL("project_context_full", true),
     PROJECT_CONTEXT_SELECTED("project_context_selected", true),
     DEVOXXGENIE_MD("devoxxgenie_md", true),
-    CUSTOM_PROMPT("custom_prompt", false);
+    CUSTOM_PROMPT("custom_prompt", false),
+
+    // Additional session-enablement signals (task-241). All enablement-only: they describe
+    // which optional capabilities a user has switched on, never any user content.
+    THINKING("thinking", false),
+    MCP_DEBUG_LOGS("mcp_debug_logs", false),
+    AGENT_DEBUG_LOGS("agent_debug_logs", false),
+    RAW_REQUEST_RESPONSE_LOGGING("raw_request_response_logging", false),
+    WEB_SEARCH_AGENT_TOOL("web_search_agent_tool", false),
+    RAG_QUERY_EXPANSION("rag_query_expansion", false),
+    PARALLEL_EXPLORE("parallel_explore", false),
+    PSI_TOOLS("psi_tools", false),
+    SECURITY_SCAN("security_scan", false),
+    SPEC_BROWSER("spec_browser", false),
+    EVENT_AUTOMATION("event_automation", false),
+    INLINE_COMPLETION("inline_completion", false);
 
     private final String wireValue;
     private final boolean usageOnly;

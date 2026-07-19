@@ -48,6 +48,22 @@ class AnalyticsSessionSnapshotServiceTest {
         state.setMcpSettings(new MCPSettings());
         state.setChatMemorySize(0);
 
+        // Neutralize the additional enablement toggles (task-241) so each test opts in
+        // explicitly. PSI tools and parallel explore default to true, so they must be
+        // cleared or they would fire in every snapshot.
+        state.setShowThinkingEnabled(false);
+        state.setMcpDebugLogsEnabled(false);
+        state.setAgentDebugLogsEnabled(false);
+        state.setRawRequestResponseLoggingEnabled(false);
+        state.setWebSearchAgentToolEnabled(false);
+        state.setRagQueryExpansionEnabled(false);
+        state.setParallelExploreEnabled(false);
+        state.setPsiToolsEnabled(false);
+        state.setSecurityScanEnabled(false);
+        state.setSpecBrowserEnabled(false);
+        state.setEventAutomationEnabled(false);
+        state.setInlineCompletionProvider("");
+
         analytics = new RecordingSink();
         snapshot = new AnalyticsSessionSnapshotService(analytics);
     }
@@ -159,6 +175,40 @@ class AnalyticsSessionSnapshotServiceTest {
         withState(snapshot::snapshotIfNeeded);
 
         assertThat(analytics.lastCountsEvent.chatMemoryBucket).isEqualTo("11-20");
+    }
+
+    @Test
+    void snapshotEmitsAdditionalEnablementSignals() {
+        // task-241: reasoning output, debug logging, and advanced-feature adoption.
+        state.setShowThinkingEnabled(true);
+        state.setMcpDebugLogsEnabled(true);
+        state.setAgentDebugLogsEnabled(true);
+        state.setRawRequestResponseLoggingEnabled(true);
+        state.setWebSearchAgentToolEnabled(true);
+        state.setRagQueryExpansionEnabled(true);
+        state.setParallelExploreEnabled(true);
+        state.setPsiToolsEnabled(true);
+        state.setSecurityScanEnabled(true);
+        state.setSpecBrowserEnabled(true);
+        state.setEventAutomationEnabled(true);
+        state.setInlineCompletionProvider("Ollama");
+
+        withState(snapshot::snapshotIfNeeded);
+
+        assertThat(analytics.enabledEvents).containsExactlyInAnyOrder(
+                FeatureId.THINKING, FeatureId.MCP_DEBUG_LOGS, FeatureId.AGENT_DEBUG_LOGS,
+                FeatureId.RAW_REQUEST_RESPONSE_LOGGING, FeatureId.WEB_SEARCH_AGENT_TOOL,
+                FeatureId.RAG_QUERY_EXPANSION, FeatureId.PARALLEL_EXPLORE, FeatureId.PSI_TOOLS,
+                FeatureId.SECURITY_SCAN, FeatureId.SPEC_BROWSER, FeatureId.EVENT_AUTOMATION,
+                FeatureId.INLINE_COMPLETION);
+    }
+
+    @Test
+    void inlineCompletionSignalRequiresProvider() {
+        // Blank provider → not enabled.
+        state.setInlineCompletionProvider("   ");
+        withState(snapshot::snapshotIfNeeded);
+        assertThat(analytics.enabledEvents).doesNotContain(FeatureId.INLINE_COMPLETION);
     }
 
     @Test
