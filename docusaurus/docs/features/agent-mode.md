@@ -60,7 +60,41 @@ Each built-in tool can be individually enabled or disabled in the **Built-in Too
 The `run_tests`, `parallel_explore`, and backlog tools have their own dedicated toggles in separate settings sections.
 
 :::tip Safety
-Write operations require user approval by default. You'll see a diff preview before any changes are applied to your project.
+Write operations require user approval by default. You'll see a diff preview before any changes are applied to your project. Terminal commands get an extra layer of protection through the [command blacklist](#command-blacklist).
+:::
+
+### Command Blacklist
+
+`run_command` is the most powerful tool the agent has, and the one most worth constraining. The **command blacklist** lets you list shell commands the agent must never run unsupervised — even when you've auto-approved everything else.
+
+![Command blacklist settings under the run_command tool](/img/agent-command-blacklist.png)
+
+The settings live directly under the `run_command` checkbox in **Built-in Tools**, alongside the shell environment configuration:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Command blacklist** | `git reset --hard`, `git clean -f`, `git push --force`, `git push -f`, `rm -rf` | One pattern per line. Leave empty to disable the check. |
+| **When a command matches the blacklist** | Ask for approval | `Ask for approval` forces the approval dialog; `Block` refuses the command outright. |
+
+**Ask for approval** opens the approval dialog and shows which pattern matched — this happens even if write approvals are disabled or you previously clicked "Don't ask again". A blacklist match always forces the dialog.
+
+**Block** means the command is never executed. The agent receives an error explaining that the command is blocked by user policy, and is instructed not to retry it or attempt variations of it.
+
+#### How matching works
+
+Matching is **token-based** (whitespace-split) and **case-insensitive**, and a pattern may match starting at any position in the command:
+
+| Behaviour | Pattern | Also matches |
+|-----------|---------|--------------|
+| Matches inside compound commands | `git reset --hard` | `cd modules/core && git reset --hard HEAD~3` |
+| Tolerates extra flags between pattern tokens | `git reset --hard` | `git reset -q --hard` |
+| Short-flag clusters are reordered/combined | `rm -rf` | `rm -fr`, `rm -rfv`, `rm -rvf` |
+| `*` acts as a wildcard within a token | `git push --force*` | `git push --force-with-lease` |
+
+Only flag-like tokens (starting with `-`) may be skipped between two matched pattern tokens, so unrelated commands don't trigger false positives — `rm build && grep -rf x` does **not** match `rm -rf`.
+
+:::note Guardrail, not a sandbox
+The blacklist protects against an agent that misunderstood your intent or took a destructive shortcut. It is not a security boundary against a model deliberately trying to evade it. Combine it with per-tool disabling, approval dialogs, and the agent log panel.
 :::
 
 ## Getting Started
@@ -245,6 +279,8 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 |---------|---------|-------------|
 | **Enable Agent Mode** | Disabled | Enables the agent with full tool access (read, write, and execute) |
 | **Built-in Tools** | All enabled | Per-tool checkboxes to enable/disable individual tools (read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page) |
+| **Command blacklist** | 5 destructive git/rm commands | Shell commands `run_command` may not run unsupervised — see [Command Blacklist](#command-blacklist) |
+| **When a command matches the blacklist** | Ask for approval | Force the approval dialog, or block the command outright |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
 
 ### PSI Tools Settings
@@ -410,6 +446,7 @@ Agent Mode powers the [Agent Loop](sdd-agent-loop.md), which lets you run multip
 - **Be specific in prompts**: Mentioning multiple distinct topics encourages parallel exploration
 - **Monitor tool call limits**: If sub-agents hit their limit, increase the max tool calls setting
 - **Check the Agent Log**: If results seem incomplete, the Agent Log shows exactly what was investigated
+- **Tune the command blacklist before auto-approving**: If you rely on auto-approval, add the destructive commands specific to your stack (`docker system prune`, `kubectl delete`, `terraform apply`, deployment scripts) to the [command blacklist](#command-blacklist) first
 
 ## Troubleshooting
 

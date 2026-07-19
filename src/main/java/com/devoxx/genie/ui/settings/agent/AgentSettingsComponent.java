@@ -202,23 +202,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 "When enabled, a confirmation dialog is shown before executing write tools. " +
                 "You can also disable this from the approval dialog itself via the \"Don't ask again\" checkbox.");
 
-        addFullWidthRow(contentPanel, gbc, new JBLabel("Command blacklist (one pattern per line):"));
-        commandBlacklistArea.setRows(6);
-        JBScrollPane blacklistScrollPane = new JBScrollPane(commandBlacklistArea);
-        blacklistScrollPane.setPreferredSize(new Dimension(400, 110));
-        addFullWidthRow(contentPanel, gbc, blacklistScrollPane);
-
-        JPanel blacklistActionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        blacklistActionRow.add(new JBLabel("When a command matches the blacklist:"));
-        blacklistActionRow.add(blacklistActionComboBox);
-        addFullWidthRow(contentPanel, gbc, blacklistActionRow);
-        addHelpText(contentPanel, gbc,
-                "Guards run_command against destructive commands like 'git reset --hard', even when " +
-                "write approvals are auto-approved. Matching is case-insensitive and token-based: a pattern " +
-                "matches anywhere in the command (including compound commands like 'cd x && git reset --hard'), " +
-                "flags may be reordered or combined ('-rf' also matches '-fr' and '-rfv'), and '*' acts as a " +
-                "wildcard. A match either forces the approval dialog or blocks the command outright.");
-
         // --- Test Execution ---
         addSection(contentPanel, gbc, "Test Execution");
 
@@ -810,6 +793,34 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 "The env file is sourced before each command, which is required for tools like sdkman, nvm, " +
                 "or rbenv that rely on shell initialization. Both settings only apply on Unix-like systems; " +
                 "leave blank to keep the current behaviour.");
+
+        addCommandBlacklistSubSection(panel, gbc);
+    }
+
+    private void addCommandBlacklistSubSection(JPanel panel, GridBagConstraints gbc) {
+        // Nested under run_command with the same 25px left-indent as the shell environment rows.
+        Insets savedInsets = gbc.insets;
+        gbc.insets = new Insets(2, 25, 2, 5);
+
+        addFullWidthRow(panel, gbc, new JBLabel("Command blacklist (one pattern per line):"));
+        commandBlacklistArea.setRows(6);
+        JBScrollPane blacklistScrollPane = new JBScrollPane(commandBlacklistArea);
+        blacklistScrollPane.setPreferredSize(new Dimension(400, 110));
+        addFullWidthRow(panel, gbc, blacklistScrollPane);
+
+        JPanel blacklistActionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        blacklistActionRow.add(new JBLabel("When a command matches the blacklist:"));
+        blacklistActionRow.add(blacklistActionComboBox);
+        addFullWidthRow(panel, gbc, blacklistActionRow);
+
+        gbc.insets = savedInsets;
+
+        addHelpText(panel, gbc,
+                "Guards run_command against destructive commands like 'git reset --hard', even when " +
+                "write approvals are auto-approved. Matching is case-insensitive and token-based: a pattern " +
+                "matches anywhere in the command (including compound commands like 'cd x && git reset --hard'), " +
+                "flags may be reordered or combined ('-rf' also matches '-fr' and '-rfv'), and '*' acts as a " +
+                "wildcard. A match either forces the approval dialog or blocks the command outright.");
     }
 
     private static boolean isAnyWebSearchKeyConfigured() {

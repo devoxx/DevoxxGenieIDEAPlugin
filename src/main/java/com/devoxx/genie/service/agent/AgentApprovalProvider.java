@@ -115,7 +115,7 @@ public class AgentApprovalProvider implements ToolProvider {
                         && COMMAND_BLACKLIST_ACTION_BLOCK.equals(state.getAgentCommandBlacklistAction())) {
                     log.info("Agent run_command blocked by blacklist pattern '{}': {}", blacklistedPattern, command);
                     return "Error: Command blocked by user policy — it matches the blacklisted pattern '"
-                            + blacklistedPattern + "' (Settings → Agent → Approval). Do not retry this "
+                            + blacklistedPattern + "' (Settings → Agent → Built-in Tools → run_command). Do not retry this "
                             + "command or variations of it; ask the user to run it manually if it is really needed.";
                 }
             }

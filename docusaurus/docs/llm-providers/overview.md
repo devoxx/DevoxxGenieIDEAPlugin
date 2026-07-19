@@ -53,6 +53,7 @@ Supported cloud providers:
 - [Kimi](cloud-models.md#kimi)
 - [GLM](cloud-models.md#glm) (Zhipu AI)
 - [OpenRouter](cloud-models.md#openrouter)
+- [Cloudflare AI Gateway](cloud-models.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
 - [Azure OpenAI](cloud-models.md#azure-openai)
 - [Amazon Bedrock](cloud-models.md#amazon-bedrock)
 

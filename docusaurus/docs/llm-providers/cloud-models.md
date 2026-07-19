@@ -2,7 +2,7 @@
 sidebar_position: 3
 title: Cloud LLM Providers
 description: Guide to all cloud-based LLM providers supported by DevoxxGenie, including setup instructions and configuration.
-keywords: [devoxxgenie, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloud llm]
+keywords: [devoxxgenie, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloudflare, ai gateway, cloud llm]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -27,8 +27,9 @@ For all cloud providers, available models are **automatically fetched** from the
 9. [Kimi](#kimi)
 10. [GLM](#glm)
 11. [OpenRouter](#openrouter)
-12. [Azure OpenAI](#azure-openai)
-13. [Amazon Bedrock](#amazon-bedrock)
+12. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
+13. [Azure OpenAI](#azure-openai)
+14. [Amazon Bedrock](#amazon-bedrock)
 
 ## OpenAI
 
@@ -333,6 +334,55 @@ Google provides the Gemini family of models through Google AI Studio.
 
 *Check [OpenRouter's pricing page](https://openrouter.ai/pricing) for current rates.*
 
+## Cloudflare AI Gateway
+
+[Cloudflare AI Gateway](https://www.cloudflare.com/products/ai-gateway/) is not a model provider itself — it sits **in front of** your existing providers (OpenAI, Anthropic, Google, Workers AI, and [dozens more](https://developers.cloudflare.com/ai-gateway/)) and gives you a single endpoint with caching, rate limiting, spend controls, and per-request analytics.
+
+DevoxxGenie talks to the gateway's OpenAI-compatible `/compat` endpoint, so every model you've wired up behind the gateway becomes available in the plugin.
+
+### Setup
+
+1. Create (or reuse) a gateway in the [Cloudflare AI Gateway dashboard](https://developers.cloudflare.com/ai-gateway/get-started/). A gateway named `default` is created automatically on first authenticated request.
+2. Store the provider API keys you want to use in the Cloudflare dashboard (**BYOK** — Bring Your Own Keys).
+3. Generate a Cloudflare API token at [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens).
+4. In DevoxxGenie settings, select "Cloudflare" as the provider.
+5. Enter your API Key, Account ID, and Gateway Name.
+6. Select your preferred model from the auto-populated list.
+
+### Configuration
+
+- **Cloudflare API Key**: Your Cloudflare API token, sent as `Authorization: Bearer`
+- **Cloudflare Account ID**: Your account identifier
+- **Cloudflare Gateway Name**: `default`, or the name of a gateway you created
+- **Model**: Select from the auto-populated list, or enable the model name override to type a model id directly
+- **Parameters**: Temperature, Top P, Maximum tokens
+
+The base URL is assembled for you from the account id and gateway name — you never type it:
+
+```
+https://gateway.ai.cloudflare.com/v1/<account-id>/<gateway>/compat
+```
+
+:::note Your provider keys stay in Cloudflare
+This provider uses Cloudflare's **single-token (BYOK)** model. You give DevoxxGenie only your Cloudflare API token; the downstream provider keys (OpenAI, Anthropic, ...) live in your Cloudflare dashboard, where the gateway injects them. You never paste an OpenAI or Anthropic key into DevoxxGenie for this provider.
+:::
+
+:::tip Model name override
+Model discovery uses a fast best-effort probe of the gateway's `/models` endpoint. If your gateway doesn't expose that endpoint, or you already know the exact model id you want, enable the **model name override** and type it in — this skips discovery entirely.
+:::
+
+### Advantages
+
+- **One key, every provider** — no per-provider setup inside the plugin
+- **Caching** of identical requests, so repeated prompts don't cost you twice
+- **Rate limiting and spend controls** you own, rather than the provider's
+- **Analytics and logs** for every request (latency, tokens, cost) in the Cloudflare dashboard
+- **Centralized key management** — provider keys live in Cloudflare, not scattered across tools
+
+:::note Context window and cost estimates
+Cloudflare's `/compat/models` endpoint doesn't report context length or pricing, so DevoxxGenie assumes a 128K context window and shows no cost estimate for gateway models. Use the Cloudflare dashboard for authoritative per-request cost data.
+:::
+
 ## Azure OpenAI
 
 [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/ai-services/openai-service) provides OpenAI models integrated with Microsoft Azure.
@@ -404,6 +454,7 @@ When selecting a cloud provider, consider:
 - **Budget-friendly**: Groq, Mistral Small, DeepSeek, Kimi, GLM Flash
 - **Enterprise**: Azure OpenAI, Amazon Bedrock
 - **European data residency**: Mistral
+- **Many providers behind one key, with caching and analytics**: Cloudflare AI Gateway
 
 ## Best Practices
 
