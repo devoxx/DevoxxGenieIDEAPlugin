@@ -239,7 +239,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithInfoButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
         addHintText(panel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
         addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
+        addHintText(panel, gbc, "Base URL only — do <b>not</b> include <code>/chat/completions</code>; DevoxxGenie appends the OpenAI paths itself. " +
+                "Example (Cloudflare AI Gateway): <code>https://gateway.ai.cloudflare.com/v1/&lt;account_id&gt;/&lt;gateway&gt;/compat</code>. " +
+                "Gateways that require authentication also need the API key below.");
         addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
+        addHintText(panel, gbc, "When enabled, this exact model name is used and the model dropdown is not auto-discovered from the endpoint's <code>/models</code> — set this if the endpoint has no <code>/models</code> or returns 401.");
         addProviderSettingRow(panel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
         addHintText(panel, gbc, "Use HTTP/2 when unchecked");

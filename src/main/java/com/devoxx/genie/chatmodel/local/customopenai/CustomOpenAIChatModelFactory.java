@@ -195,7 +195,10 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         }
         try {
             String modelsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "models";
-            ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class, MODELS_PROBE_CLIENT);
+            // Authenticated gateways (e.g. Cloudflare AI Gateway) reject the /models probe with 401
+            // unless it carries the same API key the chat requests use, so pass it along when enabled.
+            String bearerToken = state.isCustomOpenAIApiKeyEnabled() ? state.getCustomOpenAIApiKey() : null;
+            ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class, MODELS_PROBE_CLIENT, bearerToken);
             if (response == null || response.getData() == null) {
                 return Collections.emptyList();
             }
