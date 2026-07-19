@@ -30,7 +30,7 @@ public class LocalLLMProviderUtil {
         String baseUrl = ensureEndsWithSlash(Objects.requireNonNull(configValue));
         String url = endpoint == null || endpoint.isBlank() ? Objects.requireNonNull(configValue) : baseUrl + endpoint;
 
-        return fetchModels(url, responseType, HttpClientProvider.getClient());
+        return fetchModels(url, responseType, HttpClientProvider.getClient(), null);
     }
 
     /**
@@ -39,7 +39,7 @@ public class LocalLLMProviderUtil {
      * (e.g., LMStudio uses /v1/ for chat but /api/v1/models for rich metadata).
      */
     public static <T> T getModelsFromUrl(String fullUrl, Class<T> responseType) throws IOException {
-        return fetchModels(fullUrl, responseType, HttpClientProvider.getClient());
+        return fetchModels(fullUrl, responseType, HttpClientProvider.getClient(), null);
     }
 
     /**
@@ -49,13 +49,28 @@ public class LocalLLMProviderUtil {
      * so it never blocks the UI for a slow or unreachable endpoint).
      */
     public static <T> T getModelsFromUrl(String fullUrl, Class<T> responseType, OkHttpClient client) throws IOException {
-        return fetchModels(fullUrl, responseType, client);
+        return fetchModels(fullUrl, responseType, client, null);
     }
 
-    private static <T> T fetchModels(String url, Class<T> responseType, OkHttpClient client) throws IOException {
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+    /**
+     * Fetches models from a fully-qualified URL using a caller-supplied HTTP client and a bearer
+     * token. Authenticated OpenAI-compatible gateways (e.g. Cloudflare AI Gateway) reject the
+     * {@code /models} discovery call with 401 when no {@code Authorization} header is sent, so the
+     * probe must carry the same API key the chat requests use.
+     *
+     * @param bearerToken API key to send as {@code Authorization: Bearer ...}; when {@code null} or
+     *                    blank, no auth header is added (unauthenticated endpoint).
+     */
+    public static <T> T getModelsFromUrl(String fullUrl, Class<T> responseType, OkHttpClient client, String bearerToken) throws IOException {
+        return fetchModels(fullUrl, responseType, client, bearerToken);
+    }
+
+    private static <T> T fetchModels(String url, Class<T> responseType, OkHttpClient client, String bearerToken) throws IOException {
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            requestBuilder.header("Authorization", "Bearer " + bearerToken);
+        }
+        Request request = requestBuilder.build();
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {

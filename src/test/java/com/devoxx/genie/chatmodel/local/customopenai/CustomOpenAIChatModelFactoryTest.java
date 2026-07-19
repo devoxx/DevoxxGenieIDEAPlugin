@@ -24,6 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -198,7 +199,7 @@ class CustomOpenAIChatModelFactoryTest {
 
         try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
             util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
-                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)))
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)))
                     .thenReturn(response);
 
             CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
@@ -211,7 +212,7 @@ class CustomOpenAIChatModelFactoryTest {
 
             // The endpoint is probed exactly once despite two getModels() calls.
             util.verify(() -> LocalLLMProviderUtil.getModelsFromUrl(
-                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)), times(1));
+                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)), times(1));
         }
     }
 
@@ -221,7 +222,7 @@ class CustomOpenAIChatModelFactoryTest {
 
         try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
             util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
-                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)))
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)))
                     .thenReturn(buildResponse("model-a"));
 
             CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
@@ -232,7 +233,7 @@ class CustomOpenAIChatModelFactoryTest {
 
             // After reset the endpoint is probed again: two probes for two uncached calls.
             util.verify(() -> LocalLLMProviderUtil.getModelsFromUrl(
-                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)), times(2));
+                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)), times(2));
         }
     }
 
@@ -246,7 +247,7 @@ class CustomOpenAIChatModelFactoryTest {
 
         try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
             util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
-                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)))
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)))
                     .thenReturn(buildResponse("model-a"));
 
             CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
@@ -264,7 +265,7 @@ class CustomOpenAIChatModelFactoryTest {
 
             // Still a single network probe: the settings-derived fields are rebuilt, not re-fetched.
             util.verify(() -> LocalLLMProviderUtil.getModelsFromUrl(
-                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)), times(1));
+                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)), times(1));
         }
     }
 
@@ -277,7 +278,7 @@ class CustomOpenAIChatModelFactoryTest {
 
         try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
             util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
-                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class)))
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)))
                     .thenReturn(buildResponse("model-a"));
 
             CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
@@ -292,6 +293,79 @@ class CustomOpenAIChatModelFactoryTest {
                         assertThat(model.getInputCost()).isEqualTo(1.5);
                         assertThat(model.getOutputCost()).isEqualTo(2.5);
                     });
+        }
+    }
+
+    @Test
+    void getModelsWithModelNameOverrideSkipsEndpointProbe() {
+        // Issue #1210: when the user has explicitly set a model name via the override field,
+        // getModels() must NOT probe the /models endpoint. Probing an already-specified model
+        // wastes a network round-trip and, for endpoints whose base URL is the full chat path,
+        // produced a scary 401 on the nonsensical '.../chat/completions/models' URL.
+        when(mockState.getCustomOpenAIUrl())
+                .thenReturn("https://gateway.ai.cloudflare.com/v1/id/free-gateway/compat/chat/completions");
+        when(mockState.isCustomOpenAIModelNameEnabled()).thenReturn(true);
+        when(mockState.getCustomOpenAIModelName()).thenReturn("gpt-4o-mini");
+
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+
+            assertThat(factory.getModels())
+                    .extracting(LanguageModel::getModelName)
+                    .containsExactly("gpt-4o-mini");
+
+            // The endpoint is never probed when an explicit model name is configured.
+            util.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    void getModelsWithBlankModelNameOverrideStillProbesEndpoint() {
+        // The skip only applies when the override is enabled AND non-blank. A blank override
+        // must fall back to the normal /models probe so the picker can still be populated.
+        when(mockState.getCustomOpenAIUrl()).thenReturn("http://localhost:8080/v1/");
+        when(mockState.isCustomOpenAIModelNameEnabled()).thenReturn(true);
+        when(mockState.getCustomOpenAIModelName()).thenReturn("   ");
+
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)))
+                    .thenReturn(buildResponse("model-a"));
+
+            CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+
+            assertThat(factory.getModels())
+                    .extracting(LanguageModel::getModelName)
+                    .containsExactly("model-a");
+
+            util.verify(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class), any(OkHttpClient.class), nullable(String.class)), times(1));
+        }
+    }
+
+    @Test
+    void getModelsPassesApiKeyToProbeWhenAuthEnabled() {
+        // Issue #1210: authenticated gateways (e.g. Cloudflare AI Gateway) reject the /models probe
+        // with 401 unless it carries the API key. The probe must forward it as a bearer token.
+        when(mockState.getCustomOpenAIUrl()).thenReturn("http://localhost:8080/v1/");
+        when(mockState.isCustomOpenAIApiKeyEnabled()).thenReturn(true);
+        when(mockState.getCustomOpenAIApiKey()).thenReturn("secret-token");
+
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                            eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class),
+                            any(OkHttpClient.class), eq("secret-token")))
+                    .thenReturn(buildResponse("model-a"));
+
+            CustomOpenAIChatModelFactory factory = new CustomOpenAIChatModelFactory();
+
+            assertThat(factory.getModels())
+                    .extracting(LanguageModel::getModelName)
+                    .containsExactly("model-a");
+
+            util.verify(() -> LocalLLMProviderUtil.getModelsFromUrl(
+                    eq("http://localhost:8080/v1/models"), eq(ResponseDTO.class),
+                    any(OkHttpClient.class), eq("secret-token")), times(1));
         }
     }
 

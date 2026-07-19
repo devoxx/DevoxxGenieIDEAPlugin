@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -679,7 +680,7 @@ class StreamingResponseHandlerTest {
     @Test
     void onError_setsErrorTerminalStateWithUserFacingMessage() {
         promptErrorHandlerMock
-                .when(() -> PromptErrorHandler.userFacingMessage(any(Throwable.class)))
+                .when(() -> PromptErrorHandler.userFacingMessage(any(Throwable.class), nullable(String.class)))
                 .thenReturn("Provider exploded");
         StreamingResponseHandler handler = createHandler();
 

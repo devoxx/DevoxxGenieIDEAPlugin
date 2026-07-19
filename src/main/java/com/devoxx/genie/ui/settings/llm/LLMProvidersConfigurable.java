@@ -76,6 +76,10 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getKimiApiKeyField(), stateService.getKimiKey());
         isModified |= isFieldModified(llmSettingsComponent.getGlmApiKeyField(), stateService.getGlmKey());
         isModified |= isFieldModified(llmSettingsComponent.getNvidiaApiKeyField(), stateService.getNvidiaKey());
+        isModified |= isFieldModified(llmSettingsComponent.getCloudflareApiKeyField(), stateService.getCloudflareKey());
+        isModified |= isFieldModified(llmSettingsComponent.getCloudflareAccountIdField(), stateService.getCloudflareAccountId());
+        isModified |= isFieldModified(llmSettingsComponent.getCloudflareGatewayNameField(), stateService.getCloudflareGatewayName());
+        isModified |= isFieldModified(llmSettingsComponent.getCloudflareModelNameField(), stateService.getCloudflareModelName());
 
         isModified |= isFieldModified(llmSettingsComponent.getOllamaModelUrlField(), stateService.getOllamaModelUrl());
         isModified |= Boolean.TRUE.equals(stateService.getOllamaContextWindowOverrideEnabled())
@@ -139,6 +143,8 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isKimiEnabled() != llmSettingsComponent.getKimiEnabledCheckBox().isSelected();
         isModified |= stateService.isGlmEnabled() != llmSettingsComponent.getGlmEnabledCheckBox().isSelected();
         isModified |= stateService.isNvidiaEnabled() != llmSettingsComponent.getNvidiaEnabledCheckBox().isSelected();
+        isModified |= stateService.isCloudflareEnabled() != llmSettingsComponent.getCloudflareEnabledCheckBox().isSelected();
+        isModified |= stateService.isCloudflareModelNameEnabled() != llmSettingsComponent.getCloudflareModelNameEnabledCheckBox().isSelected();
         isModified |= stateService.getShowAzureOpenAIFields() != llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected();
 
         return isModified;
@@ -195,6 +201,10 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setKimiKey(new String(llmSettingsComponent.getKimiApiKeyField().getPassword()));
         settings.setGlmKey(new String(llmSettingsComponent.getGlmApiKeyField().getPassword()));
         settings.setNvidiaKey(new String(llmSettingsComponent.getNvidiaApiKeyField().getPassword()));
+        settings.setCloudflareKey(new String(llmSettingsComponent.getCloudflareApiKeyField().getPassword()));
+        settings.setCloudflareAccountId(llmSettingsComponent.getCloudflareAccountIdField().getText());
+        settings.setCloudflareGatewayName(llmSettingsComponent.getCloudflareGatewayNameField().getText());
+        settings.setCloudflareModelName(llmSettingsComponent.getCloudflareModelNameField().getText());
 
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
         settings.setAzureOpenAIEndpoint(llmSettingsComponent.getAzureOpenAIEndpointField().getText());
@@ -233,6 +243,8 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setKimiEnabled(llmSettingsComponent.getKimiEnabledCheckBox().isSelected());
         settings.setGlmEnabled(llmSettingsComponent.getGlmEnabledCheckBox().isSelected());
         settings.setNvidiaEnabled(llmSettingsComponent.getNvidiaEnabledCheckBox().isSelected());
+        settings.setCloudflareEnabled(llmSettingsComponent.getCloudflareEnabledCheckBox().isSelected());
+        settings.setCloudflareModelNameEnabled(llmSettingsComponent.getCloudflareModelNameEnabledCheckBox().isSelected());
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
@@ -267,6 +279,7 @@ public class LLMProvidersConfigurable implements Configurable {
         checkApiKeyProvider(problems, "GLM", llmSettingsComponent.getGlmEnabledCheckBox(), llmSettingsComponent.getGlmApiKeyField());
         checkApiKeyProvider(problems, "NVIDIA", llmSettingsComponent.getNvidiaEnabledCheckBox(), llmSettingsComponent.getNvidiaApiKeyField());
 
+        validateCloudflare(problems);
         validateAzureOpenAI(problems);
         validateAwsBedrock(problems);
 
@@ -281,6 +294,18 @@ public class LLMProvidersConfigurable implements Configurable {
                                             @NotNull JPasswordField keyField) {
         if (enabledCheckBox.isSelected() && new String(keyField.getPassword()).isBlank()) {
             problems.add(displayName + " is enabled but has no API key.");
+        }
+    }
+
+    private void validateCloudflare(List<String> problems) {
+        if (!llmSettingsComponent.getCloudflareEnabledCheckBox().isSelected()) {
+            return;
+        }
+        if (new String(llmSettingsComponent.getCloudflareApiKeyField().getPassword()).isBlank()) {
+            problems.add("Cloudflare is enabled but has no API key.");
+        }
+        if (llmSettingsComponent.getCloudflareAccountIdField().getText().isBlank()) {
+            problems.add("Cloudflare is enabled but has no Account ID.");
         }
     }
 
@@ -369,6 +394,7 @@ public class LLMProvidersConfigurable implements Configurable {
                 (!settings.getKimiKey().isBlank() && settings.isKimiEnabled()) ||
                 (!settings.getGlmKey().isBlank() && settings.isGlmEnabled()) ||
                 (!settings.getNvidiaKey().isBlank() && settings.isNvidiaEnabled()) ||
+                (!settings.getCloudflareKey().isBlank() && settings.isCloudflareEnabled()) ||
                 (!settings.getCustomOpenAIApiKey().isBlank() && settings.isCustomOpenAIApiKeyEnabled());
     }
 
@@ -423,6 +449,10 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getKimiApiKeyField().setText(settings.getKimiKey());
         llmSettingsComponent.getGlmApiKeyField().setText(settings.getGlmKey());
         llmSettingsComponent.getNvidiaApiKeyField().setText(settings.getNvidiaKey());
+        llmSettingsComponent.getCloudflareApiKeyField().setText(settings.getCloudflareKey());
+        llmSettingsComponent.getCloudflareAccountIdField().setText(settings.getCloudflareAccountId());
+        llmSettingsComponent.getCloudflareGatewayNameField().setText(settings.getCloudflareGatewayName());
+        llmSettingsComponent.getCloudflareModelNameField().setText(settings.getCloudflareModelName());
 
         llmSettingsComponent.getEnableAzureOpenAICheckBox().setSelected(settings.getShowAzureOpenAIFields());
         llmSettingsComponent.getAzureOpenAIEndpointField().setText(settings.getAzureOpenAIEndpoint());
@@ -464,6 +494,8 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getKimiEnabledCheckBox().setSelected(settings.isKimiEnabled());
         llmSettingsComponent.getGlmEnabledCheckBox().setSelected(settings.isGlmEnabled());
         llmSettingsComponent.getNvidiaEnabledCheckBox().setSelected(settings.isNvidiaEnabled());
+        llmSettingsComponent.getCloudflareEnabledCheckBox().setSelected(settings.isCloudflareEnabled());
+        llmSettingsComponent.getCloudflareModelNameEnabledCheckBox().setSelected(settings.isCloudflareModelNameEnabled());
         llmSettingsComponent.getEnableAzureOpenAICheckBox().setSelected(settings.getShowAzureOpenAIFields());
     }
 }

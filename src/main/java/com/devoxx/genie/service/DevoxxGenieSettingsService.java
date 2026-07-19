@@ -67,6 +67,18 @@ public interface DevoxxGenieSettingsService {
 
     String getCustomOpenAIApiKey();
 
+    String getCloudflareKey();
+
+    String getCloudflareAccountId();
+
+    String getCloudflareGatewayName();
+
+    String getCloudflareModelName();
+
+    boolean isCloudflareModelNameEnabled();
+
+    boolean isCloudflareEnabled();
+
     Boolean getIsWebSearchEnabled();
 
     String getGoogleSearchKey();
@@ -172,6 +184,18 @@ public interface DevoxxGenieSettingsService {
     void setNvidiaKey(String key);
 
     void setCustomOpenAIApiKey(String key);
+
+    void setCloudflareKey(String key);
+
+    void setCloudflareAccountId(String accountId);
+
+    void setCloudflareGatewayName(String gatewayName);
+
+    void setCloudflareModelName(String modelName);
+
+    void setCloudflareModelNameEnabled(boolean enabled);
+
+    void setCloudflareEnabled(boolean enabled);
 
     void setIsWebSearchEnabled(Boolean flag);
 

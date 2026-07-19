@@ -134,6 +134,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("customOpenAIApiKey")
     private String customOpenAIApiKey = "";
 
+    // Cloudflare AI Gateway fields
+    private String cloudflareAccountId = "";
+    private String cloudflareGatewayName = "default";
+    private String cloudflareModelName = "";
+    private boolean isCloudflareModelNameEnabled = false;
+    private boolean isCloudflareEnabled = false;
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("cloudflareKey")
+    private String cloudflareKey = "";
+
     // Local LLM Providers
     private boolean isOllamaEnabled = true;
     private boolean isLmStudioEnabled = true;
@@ -897,6 +906,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     @Transient @Override public @NotNull String getCustomOpenAIApiKey()       { return creds().getCredential(CredentialKey.CUSTOM_OPEN_AI_KEY); }
     @Transient @Override public void          setCustomOpenAIApiKey(String v) { creds().setCredential(CredentialKey.CUSTOM_OPEN_AI_KEY, v); }
+
+    @Transient @Override public @NotNull String getCloudflareKey()       { return creds().getCredential(CredentialKey.CLOUDFLARE_KEY); }
+    @Transient @Override public void          setCloudflareKey(String v) { creds().setCredential(CredentialKey.CLOUDFLARE_KEY, v); }
 
     @Transient @Override public @NotNull String getGoogleSearchKey()       { return creds().getCredential(CredentialKey.GOOGLE_SEARCH_KEY); }
     @Transient @Override public void          setGoogleSearchKey(String v) { creds().setCredential(CredentialKey.GOOGLE_SEARCH_KEY, v); }

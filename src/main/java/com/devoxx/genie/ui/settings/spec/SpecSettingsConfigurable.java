@@ -28,7 +28,7 @@ public class SpecSettingsConfigurable implements Configurable {
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "Spec Driven Development (BETA)";
+        return "Spec Driven Development";
     }
 
     @Nullable

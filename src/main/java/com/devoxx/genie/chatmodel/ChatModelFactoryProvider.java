@@ -3,6 +3,7 @@ package com.devoxx.genie.chatmodel;
 import com.devoxx.genie.chatmodel.cloud.anthropic.AnthropicChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.azureopenai.AzureOpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.bedrock.BedrockModelFactory;
+import com.devoxx.genie.chatmodel.cloud.cloudflare.CloudflareChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.deepinfra.DeepInfraChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.deepseek.DeepSeekChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.glm.GLMChatModelFactory;
@@ -64,6 +65,7 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.Anthropic, AnthropicChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.AzureOpenAI, AzureOpenAIChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Bedrock, BedrockModelFactory::new);
+        FACTORY_SUPPLIERS.put(ModelProvider.Cloudflare, CloudflareChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.CustomOpenAI, CustomOpenAIChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Exo, ExoChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.DeepInfra, DeepInfraChatModelFactory::new);

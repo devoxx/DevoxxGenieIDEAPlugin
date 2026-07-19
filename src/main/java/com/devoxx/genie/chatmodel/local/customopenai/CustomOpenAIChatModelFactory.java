@@ -136,6 +136,19 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
      */
     @Override
     public List<LanguageModel> getModels() {
+        // Issue #1210: when the user has explicitly named a model via the override field, there is
+        // nothing to discover — probing the server's /models endpoint is a wasted round-trip. It also
+        // produced a misleading 401 warning for endpoints whose base URL is the full chat-completions
+        // path (the probe then hits the nonsensical '.../chat/completions/models'). Honour the explicit
+        // choice and skip the probe entirely.
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        if (state.isCustomOpenAIModelNameEnabled()) {
+            String override = state.getCustomOpenAIModelName();
+            if (override != null && !override.isBlank()) {
+                return List.of(toLanguageModel(override.trim()));
+            }
+        }
+
         List<String> cached = cachedModelIds;
         if (cached == null) {
             cached = fetchModelIdsFromServer();
@@ -182,7 +195,10 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         }
         try {
             String modelsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "models";
-            ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class, MODELS_PROBE_CLIENT);
+            // Authenticated gateways (e.g. Cloudflare AI Gateway) reject the /models probe with 401
+            // unless it carries the same API key the chat requests use, so pass it along when enabled.
+            String bearerToken = state.isCustomOpenAIApiKeyEnabled() ? state.getCustomOpenAIApiKey() : null;
+            ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class, MODELS_PROBE_CLIENT, bearerToken);
             if (response == null || response.getData() == null) {
                 return Collections.emptyList();
             }
@@ -192,8 +208,10 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             // Degrade gracefully: a missing/empty/failing models endpoint must
-            // not break model loading for the Custom OpenAI provider.
-            LOG.warn("Could not fetch models from custom OpenAI endpoint '" + baseUrl + "': " + e.getMessage());
+            // not break model loading for the Custom OpenAI provider. Logged at DEBUG
+            // because it is an expected, non-fatal outcome (many OpenAI-compatible
+            // gateways have no /models endpoint) — the user can still type a model name.
+            LOG.debug("Could not fetch models from custom OpenAI endpoint '" + baseUrl + "': " + e.getMessage());
             return Collections.emptyList();
         }
     }
