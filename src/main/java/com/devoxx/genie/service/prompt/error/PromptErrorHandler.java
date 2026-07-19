@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 /**
  * Centralized error handler for all prompt-related errors.
  * Provides consistent logging, notification, and recovery strategies.
@@ -38,7 +40,7 @@ public class PromptErrorHandler {
         
         // Show notification if user-visible
         if (promptException.isUserVisible()) {
-            showNotification(project, promptException);
+            showNotification(project, promptException, modelNameOf(chatMessageContext));
         }
 
         // Durable in-chat record: mark the message with an ERROR terminal state so the
@@ -66,6 +68,20 @@ public class PromptErrorHandler {
      * full detail remains in idea.log.
      */
     public static @NotNull String userFacingMessage(@NotNull Throwable exception) {
+        return userFacingMessage(exception, null);
+    }
+
+    /**
+     * As {@link #userFacingMessage(Throwable)}, but first tries to translate a known provider error
+     * payload (e.g. Cloudflare AI Gateway's raw JSON) into short, actionable guidance that names the
+     * failing {@code modelName}. Translated messages are already concise and are returned verbatim
+     * (not truncated); anything unrecognised falls back to the truncated generic message.
+     */
+    public static @NotNull String userFacingMessage(@NotNull Throwable exception, @Nullable String modelName) {
+        Optional<String> friendly = ProviderErrorTranslator.translate(exception, modelName);
+        if (friendly.isPresent()) {
+            return friendly.get();
+        }
         String message = convertToPromptException(exception).getMessage();
         if (message == null || message.isBlank()) {
             message = exception.getClass().getSimpleName();
@@ -74,6 +90,14 @@ public class PromptErrorHandler {
             message = message.substring(0, MAX_INLINE_ERROR_LENGTH) + "…";
         }
         return message;
+    }
+
+    /** Model name from the chat context, when available, for a concrete provider-error message. */
+    private static @Nullable String modelNameOf(@Nullable ChatMessageContext chatMessageContext) {
+        if (chatMessageContext == null || chatMessageContext.getLanguageModel() == null) {
+            return null;
+        }
+        return chatMessageContext.getLanguageModel().getModelName();
     }
 
     /**
@@ -154,10 +178,10 @@ public class PromptErrorHandler {
     /**
      * Show notification to the user if needed
      */
-    private static void showNotification(Project project, PromptException exception) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            NotificationUtil.sendNotification(project, exception.getMessage());
-        });
+    private static void showNotification(Project project, PromptException exception, @Nullable String modelName) {
+        String text = userFacingMessage(exception, modelName);
+        ApplicationManager.getApplication().invokeLater(() ->
+                NotificationUtil.sendNotification(project, text));
     }
     
     /**
