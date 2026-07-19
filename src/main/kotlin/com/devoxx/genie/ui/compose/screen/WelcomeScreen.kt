@@ -45,6 +45,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.ResourceBundle
 
+/** Copy and target for the Devoxx Belgium banner; which one is shown depends on the date. */
+private data class RegistrationBanner(
+    val title: String,
+    val body: String,
+    val linkLabel: String,
+    val url: String,
+)
+
 @Composable
 fun WelcomeScreen(
     resourceBundle: ResourceBundle,
@@ -106,15 +114,32 @@ fun WelcomeScreen(
             style = typography.body1.copy(color = colors.textSecondary),
         )
 
-        // Devoxx Belgium CFP banner — auto-hides after the CFP closes
-        // (2026-07-17 23:59 CEST, i.e. Europe/Brussels summer time).
-        val cfpOpen = remember {
-            val deadline = java.time.ZonedDateTime.of(
-                2026, 7, 17, 23, 59, 0, 0, java.time.ZoneId.of("Europe/Brussels"),
-            ).toInstant()
-            java.time.Instant.now().isBefore(deadline)
+        // Devoxx Belgium registration banner. Two phases, flipping when registration
+        // actually opens (2026-08-17 09:00 CEST, i.e. Europe/Brussels summer time):
+        // before that it announces the date, after it links straight to the
+        // registration site. Auto-hides once the conference is over.
+        val registrationBanner = remember {
+            val brussels = java.time.ZoneId.of("Europe/Brussels")
+            val opensAt = java.time.ZonedDateTime.of(2026, 8, 17, 9, 0, 0, 0, brussels).toInstant()
+            val hideAfter = java.time.ZonedDateTime.of(2026, 10, 9, 23, 59, 0, 0, brussels).toInstant()
+            val now = java.time.Instant.now()
+            when {
+                now.isAfter(hideAfter) -> null
+                now.isBefore(opensAt) -> RegistrationBanner(
+                    title = "Devoxx Belgium registration opens on August 17th",
+                    body = "Mark your calendar and join us in Antwerp! More info at ",
+                    linkLabel = "devoxx.be/faq",
+                    url = "https://devoxx.be/faq",
+                )
+                else -> RegistrationBanner(
+                    title = "Registration Devoxx Belgium open!",
+                    body = "Secure your seat and join us in Antwerp! Register at ",
+                    linkLabel = "reg.devoxx.be",
+                    url = "https://reg.devoxx.be",
+                )
+            }
         }
-        if (cfpOpen) {
+        if (registrationBanner != null) {
             Spacer(Modifier.height(12.dp))
             val bannerShape = RoundedCornerShape(8.dp)
             Row(
@@ -123,7 +148,7 @@ fun WelcomeScreen(
                     .clip(bannerShape)
                     .background(DevoxxOrange.copy(alpha = 0.12f), bannerShape)
                     .border(1.dp, DevoxxOrange.copy(alpha = 0.45f), bannerShape)
-                    .clickable { BrowserUtil.browse("https://devoxx.be") }
+                    .clickable { BrowserUtil.browse(registrationBanner.url) }
                     .pointerHoverIcon(PointerIcon.Hand)
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -135,7 +160,7 @@ fun WelcomeScreen(
                 Spacer(Modifier.width(10.dp))
                 Column {
                     BasicText(
-                        text = "Devoxx Belgium CFP now open",
+                        text = registrationBanner.title,
                         style = typography.body2.copy(
                             fontWeight = FontWeight.Bold,
                             color = DevoxxOrange,
@@ -144,7 +169,7 @@ fun WelcomeScreen(
                     Spacer(Modifier.height(2.dp))
                     BasicText(
                         text = buildAnnotatedString {
-                            append("Share your agentic experience with the Devoxx community! More info at ")
+                            append(registrationBanner.body)
                             withStyle(
                                 SpanStyle(
                                     color = DevoxxOrange,
@@ -152,7 +177,7 @@ fun WelcomeScreen(
                                     textDecoration = TextDecoration.Underline,
                                 ),
                             ) {
-                                append("devoxx.be")
+                                append(registrationBanner.linkLabel)
                             }
                         },
                         style = typography.caption.copy(color = colors.textSecondary),
