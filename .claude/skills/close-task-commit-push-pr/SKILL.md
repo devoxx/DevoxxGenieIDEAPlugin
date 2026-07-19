@@ -49,7 +49,7 @@ Print a short commit plan (list of planned commits with the files in each) so th
 - Create one commit per logical group identified above. Stage only the files for that group using explicit file names (never `git add -A`; never stage `.env` or credential files).
 - Write a clean, descriptive commit message for each commit using conventional commits style.
 - End every commit message with:
-  `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>`
+  `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
 - Use a HEREDOC to pass the commit message for correct formatting.
 - **Include the closed task file** in the final commit.
 
