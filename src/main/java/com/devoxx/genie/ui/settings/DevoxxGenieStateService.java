@@ -341,7 +341,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     // Show/hide Add File button in footer
     private Boolean showAddFileButton = true;
-    
+
+    // Expanded/collapsed state of the "Explore Features" section on the welcome screen
+    private Boolean welcomeFeaturesExpanded = true;
+
     // MCP settings
     private MCPSettings mcpSettings = new MCPSettings();
     private Boolean mcpEnabled = false;
