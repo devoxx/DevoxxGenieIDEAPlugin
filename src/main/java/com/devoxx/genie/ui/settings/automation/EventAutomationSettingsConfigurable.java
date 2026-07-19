@@ -25,7 +25,7 @@ public class EventAutomationSettingsConfigurable implements Configurable {
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "Event Automations (BETA)";
+        return "Event Automations";
     }
 
     @Nullable
