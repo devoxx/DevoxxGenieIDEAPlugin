@@ -1,10 +1,12 @@
 package com.devoxx.genie.service.models;
 
+import com.devoxx.genie.chatmodel.cloud.cloudflare.CloudflareChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.models.ModelConfig;
 import com.devoxx.genie.model.models.ModelConfigEntry;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import lombok.extern.slf4j.Slf4j;
@@ -1251,6 +1253,7 @@ public final class LLMModelRegistryService {
         Map<String, LanguageModel> modelsCopy = new HashMap<>(models);
 
         getOpenRouterModels(modelsCopy);
+        getCloudflareModels(modelsCopy);
 
         return new ArrayList<>(modelsCopy.values());
     }
@@ -1262,6 +1265,17 @@ public final class LLMModelRegistryService {
         if (apiKey != null && !apiKey.isEmpty()) {
             openRouterChatModelFactory.getModels().forEach(model ->
                 modelsCopy.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model));
+        }
+    }
+
+    private static void getCloudflareModels(Map<String, LanguageModel> modelsCopy) {
+        // Add Cloudflare AI Gateway models when the API key and account id are configured.
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        String apiKey = state.getCloudflareKey();
+        String accountId = state.getCloudflareAccountId();
+        if (apiKey != null && !apiKey.isEmpty() && accountId != null && !accountId.isBlank()) {
+            new CloudflareChatModelFactory().getModels().forEach(model ->
+                modelsCopy.put(ModelProvider.Cloudflare.getName() + ":" + model.getModelName(), model));
         }
     }
 

@@ -36,6 +36,7 @@ public class LLMProviderService {
         providerKeyMap.put(GLM, () -> DevoxxGenieStateService.getInstance().getGlmKey());
         providerKeyMap.put(Nvidia, () -> DevoxxGenieStateService.getInstance().getNvidiaKey());
         providerKeyMap.put(AzureOpenAI, () -> DevoxxGenieStateService.getInstance().getAzureOpenAIKey());
+        providerKeyMap.put(Cloudflare, () -> DevoxxGenieStateService.getInstance().getCloudflareKey());
         providerKeyMap.put(Bedrock, () -> switch (Optional.ofNullable(DevoxxGenieStateService.getInstance().getAwsBedrockAuthMode())
                 .orElse(AwsBedrockAuthMode.defaultMode())) {
             case ACCESS_KEY -> DevoxxGenieStateService.getInstance().getAwsSecretKey();
@@ -103,6 +104,7 @@ public class LLMProviderService {
                 case Nvidia -> stateService.isNvidiaEnabled();
                 case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                 case Bedrock -> stateService.isAwsEnabled();
+                case Cloudflare -> stateService.isCloudflareEnabled();
                 default -> false;
             })
             .toList();
