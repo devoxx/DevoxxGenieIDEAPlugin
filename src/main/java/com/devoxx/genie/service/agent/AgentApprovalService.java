@@ -56,6 +56,20 @@ public class AgentApprovalService {
     public static boolean requestApproval(@Nullable Project project,
                                           @NotNull String toolName,
                                           @NotNull String arguments) {
+        return requestApproval(project, toolName, arguments, null);
+    }
+
+    /**
+     * Request user approval for an agent tool execution, optionally forced by a
+     * command-blacklist match (issue #1209). When {@code blacklistedPattern} is non-null
+     * the dialog is shown even if the user disabled write approvals.
+     *
+     * @param blacklistedPattern the blacklist pattern the command matched, or null
+     */
+    public static boolean requestApproval(@Nullable Project project,
+                                          @NotNull String toolName,
+                                          @NotNull String arguments,
+                                          @Nullable String blacklistedPattern) {
         // Auto-approve in headless mode (tests, CI/CD)
         if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
             return true;
@@ -63,8 +77,7 @@ public class AgentApprovalService {
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        // Auto-approve if user has opted out of write approval
-        if (!Boolean.TRUE.equals(stateService.getAgentWriteApprovalRequired())) {
+        if (!requiresDialog(stateService, blacklistedPattern)) {
             return true;
         }
 
@@ -73,10 +86,11 @@ public class AgentApprovalService {
         publishApprovalEvent(project, AgentType.APPROVAL_REQUESTED, toolName, arguments);
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            AgentApprovalDialog dialog = new AgentApprovalDialog(project, toolName, arguments);
+            AgentApprovalDialog dialog = new AgentApprovalDialog(project, toolName, arguments, blacklistedPattern);
             boolean approved = dialog.showAndGet();
 
-            // If approved with "don't ask again" checked, disable future approvals
+            // If approved with "don't ask again" checked, disable future approvals.
+            // Blacklisted commands keep forcing this dialog regardless of that setting.
             if (approved && dialog.isDontAskAgainSelected()) {
                 stateService.setAgentWriteApprovalRequired(false);
                 log.info("Agent write approval disabled by user via dialog checkbox");
@@ -97,6 +111,19 @@ public class AgentApprovalService {
             NotificationUtil.sendNotification(project, "Agent tool execution was cancelled due to timeout");
             return false;
         }
+    }
+
+    /**
+     * Decides whether the approval dialog must be shown for a write-tool execution.
+     * A command-blacklist match always forces the dialog (issue #1209) — the
+     * "auto-approve writes" opt-out must not bypass the blacklist gate.
+     */
+    static boolean requiresDialog(@NotNull DevoxxGenieStateService stateService,
+                                  @Nullable String blacklistedPattern) {
+        if (blacklistedPattern != null) {
+            return true;
+        }
+        return Boolean.TRUE.equals(stateService.getAgentWriteApprovalRequired());
     }
 
     /**
@@ -138,14 +165,17 @@ public class AgentApprovalService {
     private static class AgentApprovalDialog extends DialogWrapper {
         private final String toolName;
         private final String arguments;
+        private final String blacklistedPattern;
         private final JBCheckBox dontAskAgainCheckbox;
 
         protected AgentApprovalDialog(@Nullable Project project,
                                       @NotNull String toolName,
-                                      @NotNull String arguments) {
+                                      @NotNull String arguments,
+                                      @Nullable String blacklistedPattern) {
             super(project, false);
             this.toolName = toolName;
             this.arguments = arguments;
+            this.blacklistedPattern = blacklistedPattern;
             this.dontAskAgainCheckbox = new JBCheckBox("Don't ask again — auto-approve write actions");
             setTitle("Approve Agent Tool Execution");
             setOKButtonText("Approve");
@@ -154,7 +184,10 @@ public class AgentApprovalService {
         }
 
         public boolean isDontAskAgainSelected() {
-            return dontAskAgainCheckbox.isSelected();
+            // The checkbox is not shown for blacklisted commands: disabling write approval
+            // would not stop the blacklist from forcing this dialog, so offering it here
+            // would be misleading.
+            return blacklistedPattern == null && dontAskAgainCheckbox.isSelected();
         }
 
         @Override
@@ -172,6 +205,15 @@ public class AgentApprovalService {
                     "<html><b>The AI agent wants to execute the following tool:</b></html>");
             messageLabel.setBorder(JBUI.Borders.emptyLeft(8));
             headerPanel.add(messageLabel, BorderLayout.CENTER);
+
+            if (blacklistedPattern != null) {
+                JBLabel blacklistLabel = new JBLabel(
+                        "<html><b>This command matches the blacklist pattern \"" + blacklistedPattern +
+                        "\"</b> (Settings → Agent → Approval) and therefore always requires approval.</html>");
+                blacklistLabel.setForeground(JBColor.RED);
+                blacklistLabel.setBorder(JBUI.Borders.emptyTop(6));
+                headerPanel.add(blacklistLabel, BorderLayout.SOUTH);
+            }
             panel.add(headerPanel, BorderLayout.NORTH);
 
             // Tool info panel
@@ -213,7 +255,9 @@ public class AgentApprovalService {
             JPanel bottomPanel = new JPanel(new BorderLayout());
             bottomPanel.setBorder(JBUI.Borders.emptyTop(8));
 
-            bottomPanel.add(dontAskAgainCheckbox, BorderLayout.NORTH);
+            if (blacklistedPattern == null) {
+                bottomPanel.add(dontAskAgainCheckbox, BorderLayout.NORTH);
+            }
 
             JBLabel warningLabel = new JBLabel(
                     "<html><i>Warning: Only approve if you trust this tool execution. " +
