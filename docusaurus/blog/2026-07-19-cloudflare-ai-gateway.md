@@ -11,7 +11,7 @@ image: /img/cloudflare-chat.png
 
 # One Key, Every Provider: Cloudflare AI Gateway Comes to DevoxxGenie
 
-[Cloudflare AI Gateway](https://www.cloudflare.com/products/ai-gateway/) sits in front of your LLM providers and gives you one place to route, cache, rate-limit, and observe every request - across OpenAI, Anthropic, Google, Workers AI, and more. Starting with the next DevoxxGenie release, you can point the plugin straight at your gateway and use **any** model behind it, without leaving your IDE.
+[Cloudflare AI Gateway](https://www.cloudflare.com/products/ai-gateway/) sits in front of your LLM providers and gives you one place to route, cache, rate-limit, and observe every request - across OpenAI, Anthropic, Google, Workers AI, and more. Starting with DevoxxGenie v1.10.0, you can point the plugin straight at your gateway and use **any** model behind it, without leaving your IDE.
 
 No per-provider setup inside the plugin. One Cloudflare token, your account ID, a gateway name - and you're talking to whatever you've configured behind the gateway.
 

@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.10.0 - 2026-07-19
+
+Two headline features: a first-class **Cloudflare AI Gateway** provider, and a **command blacklist** that stops the agent silently running destructive shell commands when auto-approve is on.
+
+### Added
+- feat(cloudflare): add **Cloudflare AI Gateway** as a first-class cloud provider, targeting the OpenAI-compatible `/compat` endpoint. Previously the gateway could only be reached by hand-configuring the generic Custom OpenAI provider and assembling the URL yourself (the source of the #1210 confusion). Single-token BYOK auth (one Cloudflare API token as `Authorization: Bearer`; downstream provider keys stay in the Cloudflare dashboard), the base URL is assembled from Account ID + Gateway name so users never type raw URLs, and models are auto-discovered from `/compat/models` with a manual `provider/model` override that skips discovery. Note that `/compat/models` reports neither context length nor pricing, so the plugin assumes 128K and shows no cost estimate (#1211, #1217)
+- feat(cloudflare): translate opaque `AiGatewayError` responses into actionable guidance — Cloudflare's raw JSON (e.g. code 2005 for an unroutable model) is rewritten by a new `ProviderErrorTranslator` into a message naming the model, the code and what to do about it, wired through `PromptErrorHandler` so both the toast and the inline chat card benefit. Unrecognised errors pass through unchanged (#1211, #1217)
+- feat(agent): add a **`run_command` blacklist** with ask/block enforcement — destructive commands like `git reset --hard` could previously execute silently when write approvals were auto-approved, which cost the issue reporter an hour of uncommitted work. Every command is now matched against a configurable blacklist *before* the auto-approve short-circuit; on a match DevoxxGenie either forces the approval dialog (default — showing the matched pattern in red and hiding "Don't ask again", which wouldn't bypass the blacklist anyway) or blocks the command outright and tells the LLM not to retry variations. Matching is token-based and case-insensitive, so it catches compound commands (`cd x && git reset --hard`) and reordered/combined short flags (`rm -fr`, `-rfv`) and supports `*` wildcards, while avoiding substring false positives. Defaults: `git reset --hard`, `git clean -f`, `git push --force`, `git push -f`, `rm -rf` (#1209, #1218)
+- feat(analytics): track twelve additional opt-in enablement signals — thinking, MCP/agent/raw-request debug logging, web search agent tool, RAG query expansion, parallel explore, PSI tools, security scan, spec browser, event automation and inline completion. All are enablement-only booleans read from `DevoxxGenieStateService`; no user content is ever read, and each new id is added to the closed `feature_id` allowlist in `AnalyticsEventBuilder` so the privacy contract (and the consent notice it backs) stays accurate (#1204)
+- feat(welcome): replace the expired Devoxx Belgium CFP banner with a two-phase **registration banner** — before 17 Aug 09:00 CEST it announces the opening date and links to devoxx.be/faq; from then on it announces registration is open and links to reg.devoxx.be (#1219)
+
+### Fixed
+- fix(customopenai): send the API key on the `/models` probe and skip the probe entirely when a model name is explicitly set — authenticated OpenAI-compatible gateways returned 401 on the unauthenticated probe, and the resulting failure was logged at a noisy level for what is a harmless optional call (now DEBUG). Adds the `getModelsFromUrl(..., bearerToken)` overload the Cloudflare provider reuses, plus settings hints explaining when discovery is skipped (#1210, #1211)
+- fix(test): exempt the AWS SDK `idle-connection-reaper` thread from the platform thread-leak detector — `BedrockModelFactoryTest` builds real `BedrockRuntimeClient` instances, and the first one starts the SDK's JVM-wide singleton reaper daemon that by design outlives the clients, failing CI on `master` since 11 July. Registered via `ThreadLeakTracker.longRunningThreadCreated(...)` on the *application* disposable, because the leak check runs after the test-root disposable is already gone (#1207)
+
+### Changed
+- chore(ui): drop the `(BETA)` label from the **Agent Mode**, **Spec Driven Development** and **Event Automations** settings menu items (#1217)
+- refactor(settings): move the command blacklist editor out of the Approval section and into the `run_command` sub-section of Built-in Tools, so everything governing command execution lives in one place; the block message and approval dialog now point at the new path (#1220)
+
+### Documentation
+- docs: document the command blacklist (ask/block semantics, token matching rules, config table, safety cross-reference) in `features/agent-mode.md` and the Cloudflare AI Gateway provider (setup, BYOK model, assembled `/compat` URL, model override, context/pricing caveat) in `llm-providers/cloud-models.md`, with the provider added to every overview list and README (#1220)
+- docs(blog): announce the Cloudflare AI Gateway provider and the command blacklist, both with screenshots (#1217, #1220)
+
+### Dependencies
+- chore(deps): upgrade Kotlin 2.4.0 → 2.4.10, AWS SDK 2.47.0 → 2.48.1, Logback 1.5.37 → 1.5.38, JUnit 6.1.1 → 6.1.2 (#1206, #1212, #1213)
+- chore(deps): bump docs toolchain — `@docusaurus/*` → ^3.10.2, js-yaml 3.14.2 → 3.15.0, websocket-driver 0.7.4 → 0.7.5 (#1214, #1215, #1217)
+
+### Contributors
+- @stephanj
+
 ## v1.9.1 - 2026-07-09
 
 A follow-up to the v1.9.0 Raw Request/Response viewer: three providers never captured any raw traffic, and the debug log settings were scattered across three settings pages with two of them auto-opening a tool window that no longer exists.

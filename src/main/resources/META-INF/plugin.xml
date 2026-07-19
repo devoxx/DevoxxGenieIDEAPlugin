@@ -68,6 +68,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.10.0</h2>
+        <UL>
+                    <LI>feat(cloudflare): new <b>Cloudflare AI Gateway</b> provider — single-token BYOK auth, the gateway URL assembled from your Account ID and Gateway name, and model auto-discovery with a manual override; no more hand-configuring Custom OpenAI (#1211, #1217)</LI>
+                    <LI>feat(agent): new <b>command blacklist</b> for <code>run_command</code> — destructive commands like <code>git reset --hard</code> or <code>rm -rf</code> now force an approval dialog (or are blocked outright) even when write approvals are auto-approved (#1209, #1218)</LI>
+                    <LI>feat(cloudflare): opaque Cloudflare gateway errors are translated into actionable guidance naming the model, the error code and what to do, instead of a raw JSON blob (#1217)</LI>
+                    <LI>fix(customopenai): the <code>/models</code> probe now sends your API key and is skipped entirely when a model name is set, so authenticated OpenAI-compatible gateways no longer 401 (#1210)</LI>
+                    <LI>chore(ui): dropped the (BETA) label from Agent Mode, Spec Driven Development and Event Automations (#1217)</LI>
+                    <LI>chore(deps): upgrade Kotlin to 2.4.10, AWS SDK to 2.48.1, Logback to 1.5.38 and JUnit to 6.1.2 (#1206, #1212, #1213)</LI>
+                </UL>
         <h2>v1.9.1</h2>
         <UL>
                     <LI>fix(debug): Raw Request/Response Logging now also captures traffic for <b>Ollama streaming</b>, <b>Mistral</b> and <b>Amazon Bedrock</b> — these providers previously showed no [RAW] entries in the Activity Log (#1202)</LI>
