@@ -209,7 +209,7 @@ public class AgentApprovalService {
             if (blacklistedPattern != null) {
                 JBLabel blacklistLabel = new JBLabel(
                         "<html><b>This command matches the blacklist pattern \"" + blacklistedPattern +
-                        "\"</b> (Settings → Agent → Approval) and therefore always requires approval.</html>");
+                        "\"</b> (Settings → Agent → Built-in Tools → run_command) and therefore always requires approval.</html>");
                 blacklistLabel.setForeground(JBColor.RED);
                 blacklistLabel.setBorder(JBUI.Borders.emptyTop(6));
                 headerPanel.add(blacklistLabel, BorderLayout.SOUTH);
