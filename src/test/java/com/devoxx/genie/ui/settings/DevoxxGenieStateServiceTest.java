@@ -75,7 +75,7 @@ class DevoxxGenieStateServiceTest {
 
         @Test
         void shouldHaveCorrectDefaultBooleanSettings() {
-            assertThat(stateService.getUseFileInEditor()).isTrue();
+            assertThat(stateService.getUseFileInEditor()).isFalse();
             assertThat(stateService.getRagEnabled()).isFalse();
             assertThat(stateService.getRagActivated()).isFalse();
             assertThat(stateService.getWebSearchActivated()).isFalse();
