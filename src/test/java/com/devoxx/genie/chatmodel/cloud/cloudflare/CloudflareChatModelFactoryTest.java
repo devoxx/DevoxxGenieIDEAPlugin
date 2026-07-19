@@ -121,6 +121,17 @@ class CloudflareChatModelFactoryTest {
     }
 
     @Test
+    void createChatModelWithBlankAccountIdThrowsClearError() {
+        when(mockState.getCloudflareAccountId()).thenReturn("");
+        CustomChatModel model = new CustomChatModel();
+        model.setModelName("openai/gpt-4o-mini");
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> new CloudflareChatModelFactory().createChatModel(model))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("account id");
+    }
+
+    @Test
     void getModelsCachesIdsAndProbesOnlyOnce() {
         try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
             util.when(() -> LocalLLMProviderUtil.getModelsFromUrl(

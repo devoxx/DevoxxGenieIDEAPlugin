@@ -144,8 +144,13 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
 
     private static String baseUrl(@NotNull DevoxxGenieStateService state) {
         String base = CloudflareGatewayUrl.compatBaseUrl(state.getCloudflareAccountId(), state.getCloudflareGatewayName());
+        if (base == null) {
+            // Never let langchain4j silently fall back to its default OpenAI endpoint
+            // (api.openai.com), which would leak the Cloudflare API token to OpenAI.
+            throw new IllegalStateException("Cloudflare account id is not configured");
+        }
         // langchain4j appends /chat/completions; a trailing slash keeps the join clean.
-        return base == null ? null : base + "/";
+        return base + "/";
     }
 
     private static String apiKeyOrPlaceholder(@NotNull DevoxxGenieStateService state) {

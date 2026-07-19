@@ -1273,7 +1273,7 @@ public final class LLMModelRegistryService {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         String apiKey = state.getCloudflareKey();
         String accountId = state.getCloudflareAccountId();
-        if (apiKey != null && !apiKey.isEmpty() && accountId != null && !accountId.isBlank()) {
+        if (apiKey != null && !apiKey.isBlank() && accountId != null && !accountId.isBlank()) {
             new CloudflareChatModelFactory().getModels().forEach(model ->
                 modelsCopy.put(ModelProvider.Cloudflare.getName() + ":" + model.getModelName(), model));
         }
