@@ -78,6 +78,15 @@
   color: #fff;
 }
 
+.statsAsOf {
+  margin: 1.5rem 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.8;
+  color: #fff;
+}
+
 /* Video styles */
 .videoContainer {
   width: 100%;

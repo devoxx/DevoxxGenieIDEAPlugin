@@ -99,6 +99,7 @@ export default function Home() {
               <div className={styles.statLabel}>Open Source &amp; Free</div>
             </div>
           </div>
+          <p className={styles.statsAsOf}>As of July 2026</p>
         </div>
       </section>
       <main>
