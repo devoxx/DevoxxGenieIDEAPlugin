@@ -2,7 +2,9 @@
 # https://lychee.cli.rs/usage/config/
 
 # Skip fragment/anchor checking (Docusaurus generates dynamic IDs)
-include_fragments = false
+# lychee >= 0.18 expects a string enum here (none|anchor-only|text-only|full),
+# not a boolean — "none" disables fragment checking.
+include_fragments = "none"
 
 # Timeout and retry settings
 timeout = 20
