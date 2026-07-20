@@ -83,6 +83,24 @@ export default function Home() {
           DevoxxGenie Workshop
         </a>
       </div>
+      <section className={styles.statsBand}>
+        <div className="container">
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <div className={styles.statNumber}>104,000+</div>
+              <div className={styles.statLabel}>Active Users</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statNumber}>80,000</div>
+              <div className={styles.statLabel}>Plugin Downloads</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={styles.statNumber}>100%</div>
+              <div className={styles.statLabel}>Open Source &amp; Free</div>
+            </div>
+          </div>
+        </div>
+      </section>
       <main>
         <div className="container home-section">
           <div className="row">
@@ -390,7 +408,7 @@ milestone: v2.0
           <div className="row">
             <div className="col col--12 text--center">
               <h2>Start Using DevoxxGenie Today</h2>
-              <p>Join over 45,000 developers who are already using DevoxxGenie to improve their productivity.</p>
+              <p>Join over 104,000 developers who are already using DevoxxGenie to improve their productivity.</p>
               <p><em>100% free and open source with no hidden costs - just bring your own API keys (BYOK)!</em></p>
               <div className={styles.buttons} style={{marginTop: '20px'}}>
                 <Link

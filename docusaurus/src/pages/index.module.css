@@ -41,6 +41,43 @@
   justify-content: center;
 }
 
+/* Stats band */
+.statsBand {
+  background: var(--ifm-color-primary);
+  color: #fff;
+  padding: 2.5rem 1rem;
+}
+
+.statsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.statCard {
+  flex: 1 1 200px;
+  max-width: 280px;
+  text-align: center;
+  padding: 1rem 1.5rem;
+}
+
+.statNumber {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.statLabel {
+  margin-top: 0.4rem;
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.92;
+  color: #fff;
+}
+
 /* Video styles */
 .videoContainer {
   width: 100%;
