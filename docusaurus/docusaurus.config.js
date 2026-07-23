@@ -165,7 +165,7 @@ const config = {
       // SEO and Social cards
       image: 'img/devoxxgenie-social-card.jpg',
       metadata: [
-        {name: 'keywords', content: 'java, jetbrains plugin, intellij plugin, pycharm, webstorm, llm, code assistant, spec-driven development, sdd, backlog.md, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
+        {name: 'keywords', content: 'java, jetbrains plugin, intellij idea, pycharm, webstorm, phpstorm, rubymine, clion, goland, rider, datagrip, dataspell, rustrover, aqua, llm, code assistant, spec-driven development, sdd, backlog.md, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
         {name: 'description', content: 'DevoxxGenie is a free, open-source LLM Code Assistant plugin for JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, and more). Supports local models (Ollama, LMStudio) and cloud providers (OpenAI, Anthropic, Google). Features include MCP, RAG, web search, custom commands, and LLM-activated skills.'},
         {property: 'og:type', content: 'website'},
         {property: 'og:site_name', content: 'DevoxxGenie'},
