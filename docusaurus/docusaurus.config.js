@@ -9,10 +9,10 @@ import {themes as prismThemes} from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'DevoxxGenie',
-  tagline: 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA',
+  tagline: 'A fully Java-based LLM Code Assistant plugin for JetBrains IDEs',
   favicon: 'img/favicon.ico',
   customFields: {
-    description: 'Enhance your Java development with AI assistance. DevoxxGenie is a free, open-source plugin that brings local and cloud LLM capabilities directly to your IntelliJ IDEA environment using your own API keys (BYOK).',
+    description: 'Enhance your development with AI assistance. DevoxxGenie is a free, open-source plugin that brings local and cloud LLM capabilities directly to your JetBrains IDE (IntelliJ IDEA, PyCharm, WebStorm, and more) using your own API keys (BYOK).',
     noIndex: false  // Allows search engines to index your site
   },
 
@@ -165,8 +165,8 @@ const config = {
       // SEO and Social cards
       image: 'img/devoxxgenie-social-card.jpg',
       metadata: [
-        {name: 'keywords', content: 'java, intellij plugin, llm, code assistant, spec-driven development, sdd, backlog.md, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
-        {name: 'description', content: 'DevoxxGenie is a free, open-source LLM Code Assistant plugin for IntelliJ IDEA. Supports local models (Ollama, LMStudio) and cloud providers (OpenAI, Anthropic, Google). Features include MCP, RAG, web search, custom commands, and LLM-activated skills.'},
+        {name: 'keywords', content: 'java, jetbrains plugin, intellij plugin, pycharm, webstorm, llm, code assistant, spec-driven development, sdd, backlog.md, rag, ai coding, local llm, cloud llm, mcp, openai, anthropic, ollama'},
+        {name: 'description', content: 'DevoxxGenie is a free, open-source LLM Code Assistant plugin for JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, and more). Supports local models (Ollama, LMStudio) and cloud providers (OpenAI, Anthropic, Google). Features include MCP, RAG, web search, custom commands, and LLM-activated skills.'},
         {property: 'og:type', content: 'website'},
         {property: 'og:site_name', content: 'DevoxxGenie'},
         {name: 'twitter:card', content: 'summary_large_image'},
