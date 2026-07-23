@@ -45,6 +45,8 @@ exclude = [
   "https://intellij-support\\.jetbrains\\.com/.*",
   # Intel support blocks automated crawlers with 403
   "https://www\\.intel\\.com/.*",
+  # Cloudflare dashboard is behind auth + bot protection, intermittently 403s crawlers
+  "https://dash\\.cloudflare\\.com/.*",
   # Mistral console sends unauthenticated crawlers into an infinite auth redirect
   # loop (auth.mistral.ai <-> v2.auth.mistral.ai, new flow id each hop), so lychee
   # exhausts its redirect budget and reports the last hop as a 307.
