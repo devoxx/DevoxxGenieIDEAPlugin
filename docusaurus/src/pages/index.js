@@ -19,7 +19,7 @@ const softwareSchema = {
     'price': '0',
     'priceCurrency': 'USD'
   },
-  'description': 'A fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.',
+  'description': 'A fully Java-based LLM Code Assistant plugin for JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, and more), designed to integrate with both local and cloud-based LLM providers.',
   'screenshot': 'https://genie.devoxx.com/img/devoxxgenie-social-card.jpg',
   'softwareVersion': '0.9.13',
   'author': {
@@ -48,7 +48,7 @@ function HomepageHeader() {
         <source src={useBaseUrl('/img/DevoxxGenie.mp4')} type="video/mp4;codecs=avc1.42E01E" />
       </video>
       <div className={styles.heroOverlay}>
-        <h1 className="hero__title">DevoxxGenie — Free AI Code Assistant for IntelliJ IDEA</h1>
+        <h1 className="hero__title">DevoxxGenie — Free AI Code Assistant for JetBrains IDEs</h1>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
           <Link
@@ -67,7 +67,7 @@ export default function Home() {
 
   return (
     <Layout
-      title="Free AI Code Assistant Plugin for IntelliJ IDEA"
+      title="Free AI Code Assistant Plugin for JetBrains IDEs"
       description={siteConfig.customFields.description}>
       <Head>
         <script type="application/ld+json">{JSON.stringify(softwareSchema)}</script>
@@ -108,7 +108,7 @@ export default function Home() {
             <div className="col col--6">
               <h2>The Power of AI in Your IDE</h2>
               <p>
-                DevoxxGenie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with both local and cloud-based LLM providers.
+                DevoxxGenie is a fully Java-based LLM Code Assistant plugin for JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, and more), designed to integrate with both local and cloud-based LLM providers.
               </p>
               <p>
                 With DevoxxGenie, developers can leverage the power of artificial intelligence to improve code quality, solve problems faster, and learn new concepts, all within their familiar IDE environment.
@@ -134,7 +134,7 @@ export default function Home() {
                 >
                   <img
                     src="https://img.youtube.com/vi/t1MOHCfsdvk/maxresdefault.jpg"
-                    alt="DevoxxGenie AI Code Assistant demo video for IntelliJ IDEA"
+                    alt="DevoxxGenie AI Code Assistant demo video for JetBrains IDEs"
                     style={{width: '100%', display: 'block', borderRadius: '8px'}}
                   />
                   <div style={{
