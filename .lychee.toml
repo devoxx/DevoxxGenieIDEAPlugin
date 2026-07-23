@@ -45,6 +45,10 @@ exclude = [
   "https://intellij-support\\.jetbrains\\.com/.*",
   # Intel support blocks automated crawlers with 403
   "https://www\\.intel\\.com/.*",
+  # Mistral console sends unauthenticated crawlers into an infinite auth redirect
+  # loop (auth.mistral.ai <-> v2.auth.mistral.ai, new flow id each hop), so lychee
+  # exhausts its redirect budget and reports the last hop as a 307.
+  "https://console\\.mistral\\.ai/.*",
 ]
 
 # GitHub token is passed via GITHUB_TOKEN env var (set by lychee-action)
