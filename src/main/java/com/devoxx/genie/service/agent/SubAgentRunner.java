@@ -263,6 +263,7 @@ public class SubAgentRunner {
             case "LMStudio" -> config.setBaseUrl(settings.getLmstudioModelUrl());
             case "GPT4All" -> config.setBaseUrl(settings.getGpt4allModelUrl());
             case "Jan" -> config.setBaseUrl(settings.getJanModelUrl());
+            case "Nativ" -> config.setBaseUrl(settings.getNativModelUrl());
             case "LLaMA" -> config.setBaseUrl(settings.getLlamaCPPUrl());
             case "CustomOpenAI" -> config.setBaseUrl(settings.getCustomOpenAIUrl());
             default -> { /* Cloud providers don't need base URL */ }

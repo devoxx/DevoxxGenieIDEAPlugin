@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -92,6 +93,12 @@ public class LLMProvidersConfigurable implements Configurable {
         }
         isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), stateService.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
+        isModified |= isFieldModified(llmSettingsComponent.getNativModelUrlField(), stateService.getNativModelUrl());
+        isModified |= (stateService.getNativFallbackContextLength() != null) != llmSettingsComponent.getNativFallbackContextEnabledCheckBox().isSelected();
+        if (llmSettingsComponent.getNativFallbackContextEnabledCheckBox().isSelected()) {
+            Integer savedNativFallback = stateService.getNativFallbackContextLength();
+            isModified |= savedNativFallback == null || !savedNativFallback.equals(llmSettingsComponent.getNativFallbackContextField().getNumber());
+        }
 
         isModified |= stateService.isCustomOpenAIApiKeyEnabled() != llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), stateService.getCustomOpenAIUrl());
@@ -123,6 +130,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
         isModified |= stateService.isGpt4AllEnabled() != llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected();
         isModified |= stateService.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
+        isModified |= stateService.isNativEnabled() != llmSettingsComponent.getNativEnabledCheckBox().isSelected();
         isModified |= stateService.isLlamaCPPEnabled() != llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected();
         isModified |= stateService.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), stateService.getExoModelUrl());
@@ -176,6 +184,12 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
         settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
+        settings.setNativModelUrl(llmSettingsComponent.getNativModelUrlField().getText());
+        settings.setNativFallbackContextLength(
+                llmSettingsComponent.getNativFallbackContextEnabledCheckBox().isSelected()
+                        ? llmSettingsComponent.getNativFallbackContextField().getNumber()
+                        : null
+        );
 
         settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
         settings.setCustomOpenAIModelName(llmSettingsComponent.getCustomOpenAIModelNameField().getText());
@@ -226,6 +240,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
         settings.setGpt4AllEnabled(llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected());
         settings.setJanEnabled(llmSettingsComponent.getJanEnabledCheckBox().isSelected());
+        settings.setNativEnabled(llmSettingsComponent.getNativEnabledCheckBox().isSelected());
         settings.setLlamaCPPEnabled(llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected());
         settings.setExoEnabled(llmSettingsComponent.getExoEnabledCheckBox().isSelected());
         settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
@@ -426,6 +441,14 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
         llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
+        llmSettingsComponent.getNativModelUrlField().setText(settings.getNativModelUrl());
+        llmSettingsComponent.getNativFallbackContextEnabledCheckBox().setSelected(settings.getNativFallbackContextLength() != null);
+        llmSettingsComponent.getNativFallbackContextField().setNumber(
+                settings.getNativFallbackContextLength() != null
+                        ? settings.getNativFallbackContextLength()
+                        : NativChatModelFactory.DEFAULT_CONTEXT_LENGTH
+        );
+        llmSettingsComponent.getNativFallbackContextField().setEnabled(settings.getNativFallbackContextLength() != null);
 
         llmSettingsComponent.getCustomOpenAIUrlField().setText(settings.getCustomOpenAIUrl());
         llmSettingsComponent.getCustomOpenAIModelNameField().setText(settings.getCustomOpenAIModelName());
@@ -475,6 +498,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getLmStudioEnabledCheckBox().setSelected(settings.isLmStudioEnabled());
         llmSettingsComponent.getGpt4AllEnabledCheckBox().setSelected(settings.isGpt4AllEnabled());
         llmSettingsComponent.getJanEnabledCheckBox().setSelected(settings.isJanEnabled());
+        llmSettingsComponent.getNativEnabledCheckBox().setSelected(settings.isNativEnabled());
         llmSettingsComponent.getLlamaCPPEnabledCheckBox().setSelected(settings.isLlamaCPPEnabled());
         llmSettingsComponent.getExoEnabledCheckBox().setSelected(settings.isExoEnabled());
         llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());

@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
+import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -58,6 +59,20 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
     @Getter
     private final JTextField llamaCPPModelUrlField = new JTextField(stateService.getLlamaCPPUrl());
+    @Getter
+    private final JTextField nativModelUrlField = new JTextField(stateService.getNativModelUrl());
+    @Getter
+    private final JCheckBox nativFallbackContextEnabledCheckBox = new JCheckBox("", stateService.getNativFallbackContextLength() != null);
+    @Getter
+    private final JBIntSpinner nativFallbackContextField = new JBIntSpinner(
+            new UINumericRange(
+                    stateService.getNativFallbackContextLength() != null
+                            ? stateService.getNativFallbackContextLength()
+                            : NativChatModelFactory.DEFAULT_CONTEXT_LENGTH,
+                    1,
+                    2_000_000
+            )
+    );
     @Getter
     private final JTextField customOpenAIUrlField = new JTextField(stateService.getCustomOpenAIUrl());
     @Getter
@@ -148,6 +163,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox janEnabledCheckBox = new JCheckBox("", stateService.isJanEnabled());
     @Getter
     private final JCheckBox llamaCPPEnabledCheckBox = new JCheckBox("", stateService.isLlamaCPPEnabled());
+    @Getter
+    private final JCheckBox nativEnabledCheckBox = new JCheckBox("", stateService.isNativEnabled());
     @Getter
     private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
     @Getter
@@ -365,6 +382,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithDownloadButton(janModelUrlField, "https://jan.ai/download"));
         addProviderSettingRow(localPanel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
                 createTextWithDownloadButton(llamaCPPModelUrlField, "https://github.com/ggml-org/llama.cpp"));
+        addProviderSettingRow(localPanel, gbc, "Nativ URL", nativEnabledCheckBox,
+                createTextWithDownloadButton(nativModelUrlField, "https://blaizzy.github.io/nativ/"));
+        addHintText(localPanel, gbc, "Run MLX models locally on Apple Silicon. Nativ defaults to port 8080 — the same port as Llama.c++ — so change one of the two if you want both enabled.");
+        addProviderSettingRow(localPanel, gbc, "Nativ Fallback Context", nativFallbackContextEnabledCheckBox, nativFallbackContextField);
+        addHintText(localPanel, gbc, "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes " + NativChatModelFactory.DEFAULT_CONTEXT_LENGTH + " tokens unless you set it here.");
         addProviderSettingRow(localPanel, gbc, "Exo URL", exoEnabledCheckBox,
                 createTextWithInfoButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
         addHintText(localPanel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
@@ -468,6 +490,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         gpt4AllEnabledCheckBox.addItemListener(e -> updateUrlFieldState(gpt4AllEnabledCheckBox, gpt4AllModelUrlField));
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
         llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
+        nativEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nativEnabledCheckBox, nativModelUrlField));
+        nativFallbackContextEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nativFallbackContextEnabledCheckBox, nativFallbackContextField));
         exoEnabledCheckBox.addItemListener(e -> updateUrlFieldState(exoEnabledCheckBox, exoModelUrlField));
 
         customOpenAIUrlEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIUrlEnabledCheckBox, customOpenAIUrlField));
@@ -492,6 +516,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
 
         updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
+        updateUrlFieldState(nativFallbackContextEnabledCheckBox, nativFallbackContextField);
     }
 
     private void addAzureOpenAIPanel(JPanel panel, GridBagConstraints gbc) {

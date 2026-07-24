@@ -19,8 +19,9 @@ DevoxxGenie integrates with these local LLM providers:
 3. [GPT4All](#gpt4all)
 4. [Llama.cpp](#llamacpp)
 5. [Jan](#jan)
-6. [Exo](/docs/llm-providers/exo) (Distributed AI cluster)
-7. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
+6. [Nativ](#nativ) (MLX on Apple Silicon)
+7. [Exo](/docs/llm-providers/exo) (Distributed AI cluster)
+8. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
 
 ## Ollama
 
@@ -197,6 +198,41 @@ Jan provides a full chat interface and API:
 - User-friendly interface
 - Active development with frequent updates
 - Open-source community
+
+## Nativ
+
+[Nativ](https://blaizzy.github.io/nativ/) is an open-source (MIT) macOS app that runs MLX models locally on Apple
+Silicon. It is built on MLX-VLM and takes advantage of the unified memory architecture of M1 and newer chips.
+
+### Setup
+
+1. Download and install Nativ from [blaizzy.github.io/nativ](https://blaizzy.github.io/nativ/) (Apple Silicon only)
+2. Launch Nativ and download one or more models from its curated catalog
+3. In DevoxxGenie settings, open **LLM Providers → Local** and tick the **Nativ URL** checkbox
+4. Select "Nativ" as the provider in the DevoxxGenie panel — your downloaded MLX models appear in the model dropdown
+
+:::warning Port conflict with Llama.c++
+Nativ serves its API on `http://localhost:8080/v1/` by default, which is the **same port Llama.c++ uses**. That is why
+Nativ ships disabled in DevoxxGenie. If you want both providers enabled at once, change the port of one of them —
+Nativ's port is configurable on its Developer page, and DevoxxGenie's matching URL field lives in the same settings row.
+:::
+
+### Configuration
+
+- **Nativ URL**: base URL of Nativ's OpenAI-compatible server, `http://localhost:8080/v1/` by default
+- **Nativ Fallback Context**: Nativ's `/v1/models` endpoint does not report a context length, so DevoxxGenie assumes
+  8,000 tokens. Enable this setting and raise the value to match your model's real context window — otherwise long
+  prompts show a false "context exceeded" warning (the request is still sent either way).
+
+Models are listed by their Hugging Face repo id (for example `mlx-community/Qwen2.5-Coder-7B-Instruct-4bit`); the
+dropdown shows the short name without the organisation prefix.
+
+### Advantages of Nativ
+
+- Optimised for Apple Silicon via MLX and unified memory
+- Fully local — no account, subscription, or cloud round-trip
+- Open source under the MIT license
+- OpenAI-compatible API, so streaming and agent mode work as with any other local provider
 
 ## Custom OpenAI-compatible Providers
 
