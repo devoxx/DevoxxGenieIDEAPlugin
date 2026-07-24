@@ -170,6 +170,12 @@ class ComposeConversationViewController(
         viewModel.onActivityMessage(message)
     }
 
+    override fun onActivityMessage(message: ActivityMessage, expectedGeneration: Int) {
+        viewModel.onActivityMessage(message, expectedGeneration)
+    }
+
+    override fun currentActivityGeneration(): Int = viewModel.activityGeneration()
+
     override fun deactivateActivityHandlers() {
         viewModel.deactivateActivityHandlers()
     }

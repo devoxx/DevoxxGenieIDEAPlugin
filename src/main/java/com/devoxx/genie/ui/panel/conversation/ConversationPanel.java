@@ -170,7 +170,12 @@ public class ConversationPanel
             if (hash != null && !hash.equals(projectHash)) {
                 return;
             }
-            activityMessageDispatcher.dispatch(message, viewController::onActivityMessage);
+            int activityGeneration = viewController.currentActivityGeneration();
+            activityMessageDispatcher.dispatch(
+                    message,
+                    activityGeneration,
+                    viewController::currentActivityGeneration,
+                    activityMessage -> viewController.onActivityMessage(activityMessage, activityGeneration));
         });
     }
 

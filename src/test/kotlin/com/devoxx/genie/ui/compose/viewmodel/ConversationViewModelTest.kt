@@ -231,6 +231,20 @@ class ConversationViewModelTest {
     }
 
     @Test
+    fun `activity from a prior prompt generation is not attached to the next prompt`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("first").build())
+        val firstGeneration = viewModel.activityGeneration()
+
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-2").userPrompt("second").build())
+        viewModel.onActivityMessage(toolRequest("run_command", "{\"command\":\"date\"}"), firstGeneration)
+
+        val messages = (viewModel.state as ConversationState.Chat).messages
+        assertThat(messages.first { it.id == "msg-1" }.activityEntries).isEmpty()
+        assertThat(messages.first { it.id == "msg-2" }.activityEntries).isEmpty()
+    }
+
+    @Test
     fun `hide loading indicator also clears the streaming flag`() {
         val viewModel = ConversationViewModel()
         viewModel.addUserPromptMessage(

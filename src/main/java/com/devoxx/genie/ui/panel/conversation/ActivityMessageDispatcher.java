@@ -4,6 +4,7 @@ import com.devoxx.genie.model.activity.ActivityMessage;
 import com.intellij.openapi.application.ApplicationManager;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.IntSupplier;
 import java.util.function.Consumer;
 
 /**
@@ -23,5 +24,20 @@ final class ActivityMessageDispatcher {
 
     void dispatch(@NotNull ActivityMessage message, @NotNull Consumer<ActivityMessage> consumer) {
         uiQueue.accept(() -> consumer.accept(message));
+    }
+
+    /**
+     * Delivers an activity only while the prompt generation that produced it remains active.
+     * This prevents an event waiting on the EDT from being attached to a later prompt.
+     */
+    void dispatch(@NotNull ActivityMessage message,
+                  int expectedGeneration,
+                  @NotNull IntSupplier currentGeneration,
+                  @NotNull Consumer<ActivityMessage> consumer) {
+        uiQueue.accept(() -> {
+            if (expectedGeneration == currentGeneration.getAsInt()) {
+                consumer.accept(message);
+            }
+        });
     }
 }

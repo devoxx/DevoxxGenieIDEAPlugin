@@ -43,6 +43,8 @@ interface ConversationViewController {
     // ---- activity / loading ----
 
     fun onActivityMessage(message: ActivityMessage)
+    fun onActivityMessage(message: ActivityMessage, expectedGeneration: Int)
+    fun currentActivityGeneration(): Int
     fun deactivateActivityHandlers()
     fun hideLoadingIndicator(messageId: String)
     fun markMCPLogsAsCompleted(messageId: String)
