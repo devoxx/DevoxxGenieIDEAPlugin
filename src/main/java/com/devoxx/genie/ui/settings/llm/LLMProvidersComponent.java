@@ -376,23 +376,23 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         JPanel customOpenAIPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = createSectionConstraints();
 
-        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
+        addProviderSettingRow(customOpenAIPanel, gbc, "URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
         addHintText(customOpenAIPanel, gbc, "Base URL only — do <b>not</b> include <code>/chat/completions</code>; DevoxxGenie appends the OpenAI paths itself. " +
                 "Example (Cloudflare AI Gateway): <code>https://gateway.ai.cloudflare.com/v1/&lt;account_id&gt;/&lt;gateway&gt;/compat</code>. " +
                 "Gateways that require authentication also need the API key below.");
-        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
+        addProviderSettingRow(customOpenAIPanel, gbc, "Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
         addHintText(customOpenAIPanel, gbc, "When enabled, this exact model name is used and the model dropdown is not auto-discovered from the endpoint's <code>/models</code> — set this if the endpoint has no <code>/models</code> or returns 401.");
-        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
-        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
+        addProviderSettingRow(customOpenAIPanel, gbc, "API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
+        addProviderSettingRow(customOpenAIPanel, gbc, "HTTP 1.1", customOpenAIForceHttp11CheckBox);
         addHintText(customOpenAIPanel, gbc, "Use HTTP/2 when unchecked");
-        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI max_completion_tokens", customOpenAIUseMaxCompletionTokensCheckBox);
+        addProviderSettingRow(customOpenAIPanel, gbc, "max_completion_tokens", customOpenAIUseMaxCompletionTokensCheckBox);
         addHintText(customOpenAIPanel, gbc, "Send the output token limit as <code>max_completion_tokens</code> instead of <code>max_tokens</code>. " +
                 "Enable this for reasoning models (o1, o3, GPT-5) and gateways such as LiteLLM fronting them, which reject <code>max_tokens</code> with " +
                 "<i>\"Unsupported parameter: 'max_tokens' is not supported with this model\"</i>.");
-        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Context Window", customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField);
+        addProviderSettingRow(customOpenAIPanel, gbc, "Context Window", customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField);
         addHintText(customOpenAIPanel, gbc, "Token window used for the usage bar and token calculation. When unchecked, DevoxxGenie assumes " + CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW + " tokens. Set this to your internal model's real context size to avoid a false red 'context exceeded' warning (the request is sent either way).");
-        addSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Input Cost", customOpenAIInputCostField);
-        addSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Output Cost", customOpenAIOutputCostField);
+        addSettingRow(customOpenAIPanel, gbc, "Input Cost", customOpenAIInputCostField);
+        addSettingRow(customOpenAIPanel, gbc, "Output Cost", customOpenAIOutputCostField);
         addHintText(customOpenAIPanel, gbc, "Cost in US dollars per 1,000,000 tokens (e.g. 3 for $3/1M input, 15 for $15/1M output). Leave at 0 to hide the cost. When set, the estimated cost is shown in each AI response bubble.");
 
         return customOpenAIPanel;
