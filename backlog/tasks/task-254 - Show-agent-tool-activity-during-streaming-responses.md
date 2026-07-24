@@ -5,7 +5,7 @@ status: Done
 assignee:
   - Codex
 created_date: '2026-07-24 12:23'
-updated_date: '2026-07-24 12:43'
+updated_date: '2026-07-24 12:44'
 labels:
   - bug
   - agent
@@ -96,4 +96,7 @@ Investigation reproduced the issue: matching AGT tool request/result events appe
 - `./gradlew test --rerun-tasks --tests com.devoxx.genie.ui.panel.conversation.ActivityMessageDispatcherTest --tests com.devoxx.genie.ui.compose.viewmodel.ConversationViewModelTest` (40 passing tests).
 - `./gradlew buildPlugin`.
 - Independent code review completed with no remaining findings.
+
+## Pull Request
+- https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1235
 <!-- SECTION:FINAL_SUMMARY:END -->
