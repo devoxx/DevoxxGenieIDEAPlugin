@@ -7,6 +7,7 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import lombok.Getter;
@@ -217,106 +218,230 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
     @Override
     public JPanel createPanel() {
-        panel.setLayout(new GridBagLayout());
+        panel.setLayout(new BorderLayout());
+
+        // Everything is stacked in NORTH so the page is exactly as tall as its content: in CENTER
+        // the stack would be stretched to the dialog height, stranding the Plugin version footer
+        // at the bottom with a wide gap above it on the shorter tabs.
+        JPanel stack = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+
+        stack.add(createResponsePanel(), gbc);
+        gbc.gridy++;
+        stack.add(createProviderTabs(), gbc);
+        gbc.gridy++;
+        stack.add(createVersionPanel(), gbc);
+
+        panel.add(stack, BorderLayout.NORTH);
+
+        // Walks the whole tree, so every tab's fields are bounded regardless of which tab is
+        // selected: a JTabbedPane keeps all its pages as children, not just the visible one.
+        boundTextFieldWidths(panel);
+
+        return panel;
+    }
+
+    /**
+     * The provider settings outgrew a single scrolling column, so they are split across tabs (same
+     * {@link JBTabbedPane} treatment as the Appearance page). Tab order follows how a provider is
+     * usually chosen: local first, then the hosted ones, with the custom endpoint last.
+     */
+    private @NotNull JTabbedPane createProviderTabs() {
+        JTabbedPane tabbedPane = new SelectedTabSizedPane();
+        tabbedPane.addTab("Local", topAnchored(createLocalProvidersPanel()));
+        tabbedPane.addTab("Cloud", topAnchored(createCloudProvidersPanel()));
+        tabbedPane.addTab("Custom OpenAI", topAnchored(createCustomOpenAIPanel()));
+        // Preferred height changes with the selection, so the parent has to lay out again.
+        tabbedPane.addChangeListener(event -> {
+            tabbedPane.revalidate();
+            tabbedPane.repaint();
+        });
+        return tabbedPane;
+    }
+
+    /**
+     * A tabbed pane that is only as tall as the tab currently shown.
+     *
+     * <p>{@link JTabbedPane#getPreferredSize()} reserves room for the <em>tallest</em> page, so the
+     * short tabs (Local, Custom OpenAI) inherited the very long Cloud tab's height and rendered a
+     * large empty band under their last row. Swapping the tallest page's height for the selected
+     * one's keeps the surrounding layout — notably the Plugin version footer — tight against the
+     * content actually on screen.</p>
+     */
+    private static class SelectedTabSizedPane extends JBTabbedPane {
+
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension preferred = super.getPreferredSize();
+            Component selected = getSelectedComponent();
+            if (selected == null) {
+                return preferred;
+            }
+
+            int tallestPage = 0;
+            for (int i = 0; i < getTabCount(); i++) {
+                tallestPage = Math.max(tallestPage, getComponentAt(i).getPreferredSize().height);
+            }
+
+            // super's height is the tab strip plus the tallest page; keep the strip, swap the page.
+            preferred.height += selected.getPreferredSize().height - tallestPage;
+            return preferred;
+        }
+    }
+
+    /**
+     * Pins a tab's rows to the top of the tab.
+     *
+     * <p>{@link GridBagLayout} centers its grid vertically when no row claims the slack via
+     * {@code weighty}, so a tab shorter than the pane floated in the middle with a gap under the
+     * tab strip. {@code BorderLayout.NORTH} gives the content its preferred height instead.</p>
+     */
+    private static @NotNull JPanel topAnchored(@NotNull JPanel content) {
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.add(content, BorderLayout.NORTH);
+        return wrapper;
+    }
+
+    /**
+     * Response settings apply to every provider, so they stay above the tabs rather than being
+     * filed under one of them.
+     */
+    private @NotNull JPanel createResponsePanel() {
+        JPanel responsePanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+
+        addSection(responsePanel, gbc, "Large Language Model Response");
+        addSettingRow(responsePanel, gbc, "Enable Stream Mode", streamModeCheckBox);
+        addSettingRow(responsePanel, gbc, "Show Thinking", showThinkingCheckBox);
+        addHintText(responsePanel, gbc, "When enabled, reasoning models (Ollama, LMStudio, Jan, Llama.cpp, DeepSeek, Mistral, ...) show their thinking in a separate section before the final answer.");
+
+        return responsePanel;
+    }
+
+    private @NotNull JPanel createVersionPanel() {
+        JPanel versionPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+
+        addSection(versionPanel, gbc, "Plugin version");
+        addSettingRow(versionPanel, gbc, "v" + projectVersion.getText(), createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"));
+
+        return versionPanel;
+    }
+
+    /**
+     * Constraints for a tab's own {@link GridBagLayout}. Each tab lays out independently, so its
+     * rows start at {@code gridy = 0} instead of continuing the single running counter the whole
+     * page used to share.
+     */
+    private static @NotNull GridBagConstraints createSectionConstraints() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = JBUI.insets(5);
+        return gbc;
+    }
 
-        addSection(panel, gbc, "Large Language Model Response");
-        addSettingRow(panel, gbc, "Enable Stream Mode", streamModeCheckBox);
-        addSettingRow(panel, gbc, "Show Thinking", showThinkingCheckBox);
-        addHintText(panel, gbc, "When enabled, reasoning models (Ollama, LMStudio, Jan, Llama.cpp, DeepSeek, Mistral, ...) show their thinking in a separate section before the final answer.");
+    private @NotNull JPanel createLocalProvidersPanel() {
+        JPanel localPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
 
-        // Local LLM Providers section
-        addSection(panel, gbc, "Local LLM Providers");
-
-        addProviderSettingRow(panel, gbc, "Ollama URL", ollamaEnabledCheckBox,
+        addProviderSettingRow(localPanel, gbc, "Ollama URL", ollamaEnabledCheckBox,
                 createTextWithDownloadButton(ollamaModelUrlField, "https://ollama.com"));
-        addProviderSettingRow(panel, gbc, "Ollama Request Context Override", ollamaContextWindowOverrideCheckBox);
-        addHintText(panel, gbc, "When enabled, DevoxxGenie sends Ollama num_ctx from discovered model metadata; when disabled, Ollama keeps its own runtime default.");
-        addProviderSettingRow(panel, gbc, "LMStudio URL", lmStudioEnabledCheckBox,
+        addProviderSettingRow(localPanel, gbc, "Ollama Request Context Override", ollamaContextWindowOverrideCheckBox);
+        addHintText(localPanel, gbc, "When enabled, DevoxxGenie sends Ollama num_ctx from discovered model metadata; when disabled, Ollama keeps its own runtime default.");
+        addProviderSettingRow(localPanel, gbc, "LMStudio URL", lmStudioEnabledCheckBox,
                 createTextWithDownloadButton(lmStudioModelUrlField, "https://lmstudio.ai/"));
         // Add hint text for LMStudio URL
-        addHintText(panel, gbc, "Base URL for OpenAI-compatible chat; model metadata is always fetched from /api/v1/models");
-        addProviderSettingRow(panel, gbc, "LMStudio Fallback Context", lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
-        addHintText(panel, gbc, "Used only when LMStudio model metadata does not expose context length");
-        addProviderSettingRow(panel, gbc, "GPT4All URL", gpt4AllEnabledCheckBox,
+        addHintText(localPanel, gbc, "Base URL for OpenAI-compatible chat; model metadata is always fetched from /api/v1/models");
+        addProviderSettingRow(localPanel, gbc, "LMStudio Fallback Context", lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
+        addHintText(localPanel, gbc, "Used only when LMStudio model metadata does not expose context length");
+        addProviderSettingRow(localPanel, gbc, "GPT4All URL", gpt4AllEnabledCheckBox,
                 createTextWithDownloadButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
-        addProviderSettingRow(panel, gbc, "Jan URL", janEnabledCheckBox,
+        addProviderSettingRow(localPanel, gbc, "Jan URL", janEnabledCheckBox,
                 createTextWithDownloadButton(janModelUrlField, "https://jan.ai/download"));
-        addProviderSettingRow(panel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
+        addProviderSettingRow(localPanel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
                 createTextWithDownloadButton(llamaCPPModelUrlField, "https://github.com/ggml-org/llama.cpp"));
-        addProviderSettingRow(panel, gbc, "Exo URL", exoEnabledCheckBox,
+        addProviderSettingRow(localPanel, gbc, "Exo URL", exoEnabledCheckBox,
                 createTextWithInfoButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
-        addHintText(panel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
-        addProviderSettingRow(panel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
-        addHintText(panel, gbc, "Base URL only — do <b>not</b> include <code>/chat/completions</code>; DevoxxGenie appends the OpenAI paths itself. " +
+        addHintText(localPanel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
+
+        return localPanel;
+    }
+
+    private @NotNull JPanel createCustomOpenAIPanel() {
+        JPanel customOpenAIPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+
+        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI URL", customOpenAIUrlEnabledCheckBox, customOpenAIUrlField);
+        addHintText(customOpenAIPanel, gbc, "Base URL only — do <b>not</b> include <code>/chat/completions</code>; DevoxxGenie appends the OpenAI paths itself. " +
                 "Example (Cloudflare AI Gateway): <code>https://gateway.ai.cloudflare.com/v1/&lt;account_id&gt;/&lt;gateway&gt;/compat</code>. " +
                 "Gateways that require authentication also need the API key below.");
-        addProviderSettingRow(panel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
-        addHintText(panel, gbc, "When enabled, this exact model name is used and the model dropdown is not auto-discovered from the endpoint's <code>/models</code> — set this if the endpoint has no <code>/models</code> or returns 401.");
-        addProviderSettingRow(panel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
-        addProviderSettingRow(panel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
-        addHintText(panel, gbc, "Use HTTP/2 when unchecked");
-        addProviderSettingRow(panel, gbc, "Custom OpenAI max_completion_tokens", customOpenAIUseMaxCompletionTokensCheckBox);
-        addHintText(panel, gbc, "Send the output token limit as <code>max_completion_tokens</code> instead of <code>max_tokens</code>. " +
+        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Model", customOpenAIModelNameEnabledCheckBox, customOpenAIModelNameField);
+        addHintText(customOpenAIPanel, gbc, "When enabled, this exact model name is used and the model dropdown is not auto-discovered from the endpoint's <code>/models</code> — set this if the endpoint has no <code>/models</code> or returns 401.");
+        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
+        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
+        addHintText(customOpenAIPanel, gbc, "Use HTTP/2 when unchecked");
+        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI max_completion_tokens", customOpenAIUseMaxCompletionTokensCheckBox);
+        addHintText(customOpenAIPanel, gbc, "Send the output token limit as <code>max_completion_tokens</code> instead of <code>max_tokens</code>. " +
                 "Enable this for reasoning models (o1, o3, GPT-5) and gateways such as LiteLLM fronting them, which reject <code>max_tokens</code> with " +
                 "<i>\"Unsupported parameter: 'max_tokens' is not supported with this model\"</i>.");
-        addProviderSettingRow(panel, gbc, "Custom OpenAI Context Window", customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField);
-        addHintText(panel, gbc, "Token window used for the usage bar and token calculation. When unchecked, DevoxxGenie assumes " + CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW + " tokens. Set this to your internal model's real context size to avoid a false red 'context exceeded' warning (the request is sent either way).");
-        addSettingRow(panel, gbc, "Custom OpenAI Input Cost", customOpenAIInputCostField);
-        addSettingRow(panel, gbc, "Custom OpenAI Output Cost", customOpenAIOutputCostField);
-        addHintText(panel, gbc, "Cost in US dollars per 1,000,000 tokens (e.g. 3 for $3/1M input, 15 for $15/1M output). Leave at 0 to hide the cost. When set, the estimated cost is shown in each AI response bubble.");
-        // Cloud LLM Providers section
-        addSection(panel, gbc, "Cloud LLM Providers");
-        addProviderSettingRow(panel, gbc, "OpenAI API Key", openAIEnabledCheckBox,
+        addProviderSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Context Window", customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField);
+        addHintText(customOpenAIPanel, gbc, "Token window used for the usage bar and token calculation. When unchecked, DevoxxGenie assumes " + CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW + " tokens. Set this to your internal model's real context size to avoid a false red 'context exceeded' warning (the request is sent either way).");
+        addSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Input Cost", customOpenAIInputCostField);
+        addSettingRow(customOpenAIPanel, gbc, "Custom OpenAI Output Cost", customOpenAIOutputCostField);
+        addHintText(customOpenAIPanel, gbc, "Cost in US dollars per 1,000,000 tokens (e.g. 3 for $3/1M input, 15 for $15/1M output). Leave at 0 to hide the cost. When set, the estimated cost is shown in each AI response bubble.");
+
+        return customOpenAIPanel;
+    }
+
+    private @NotNull JPanel createCloudProvidersPanel() {
+        JPanel cloudPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+
+        addProviderSettingRow(cloudPanel, gbc, "OpenAI API Key", openAIEnabledCheckBox,
                 createTextWithPasswordButton(openAIKeyField, "https://platform.openai.com/api-keys"));
-        addProviderSettingRow(panel, gbc, "Mistral API Key", mistralEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Mistral API Key", mistralEnabledCheckBox,
                 createTextWithPasswordButton(mistralApiKeyField, "https://console.mistral.ai/api-keys"));
-        addProviderSettingRow(panel, gbc, "Anthropic API Key", anthropicEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Anthropic API Key", anthropicEnabledCheckBox,
                 createTextWithPasswordButton(anthropicApiKeyField, "https://console.anthropic.com/settings/keys"));
-        addProviderSettingRow(panel, gbc, "Groq API Key", groqEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Groq API Key", groqEnabledCheckBox,
                 createTextWithPasswordButton(groqApiKeyField, "https://console.groq.com/keys"));
-        addProviderSettingRow(panel, gbc, "DeepInfra API Key", deepInfraEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "DeepInfra API Key", deepInfraEnabledCheckBox,
                 createTextWithPasswordButton(deepInfraApiKeyField, "https://deepinfra.com/dash/api_keys"));
-        addProviderSettingRow(panel, gbc, "Google Gemini API Key", geminiEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Google Gemini API Key", geminiEnabledCheckBox,
                 createTextWithPasswordButton(geminiApiKeyField, "https://aistudio.google.com/app/apikey"));
-        addProviderSettingRow(panel, gbc, "Deep Seek API Key", deepSeekEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Deep Seek API Key", deepSeekEnabledCheckBox,
                 createTextWithPasswordButton(deepSeekApiKeyField, "https://platform.deepseek.com/api_keys"));
-        addProviderSettingRow(panel, gbc, "Open Router API Key", openRouterEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Open Router API Key", openRouterEnabledCheckBox,
                 createTextWithPasswordButton(openRouterApiKeyField, "https://openrouter.ai/settings/keys"));
-        addProviderSettingRow(panel, gbc, "Grok API Key", grokEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Grok API Key", grokEnabledCheckBox,
                 createTextWithPasswordButton(grokApiKeyField, "https://accounts.x.ai/sign-in"));
-        addProviderSettingRow(panel, gbc, "Kimi API Key", kimiEnabledCheckBox,
+        addProviderSettingRow(cloudPanel, gbc, "Kimi API Key", kimiEnabledCheckBox,
                 createTextWithPasswordButton(kimiApiKeyField, "https://platform.moonshot.ai/console/api-keys"));
-        addHintText(panel, gbc, "Uses Moonshot AI platform API; get your key at platform.moonshot.ai");
-        addProviderSettingRow(panel, gbc, "GLM API Key", glmEnabledCheckBox,
+        addHintText(cloudPanel, gbc, "Uses Moonshot AI platform API; get your key at platform.moonshot.ai");
+        addProviderSettingRow(cloudPanel, gbc, "GLM API Key", glmEnabledCheckBox,
                 createTextWithPasswordButton(glmApiKeyField, "https://z.ai/manage-apikey/apikey-list"));
-        addHintText(panel, gbc, "Uses Zhipu AI (Z.AI) platform API; get your key at z.ai");
-        addProviderSettingRow(panel, gbc, "NVIDIA API Key", nvidiaEnabledCheckBox,
+        addHintText(cloudPanel, gbc, "Uses Zhipu AI (Z.AI) platform API; get your key at z.ai");
+        addProviderSettingRow(cloudPanel, gbc, "NVIDIA API Key", nvidiaEnabledCheckBox,
                 createTextWithPasswordButton(nvidiaApiKeyField, "https://build.nvidia.com"));
-        addHintText(panel, gbc, "Uses NVIDIA NIM OpenAI-compatible API (integrate.api.nvidia.com); get your key at build.nvidia.com");
-        addProviderSettingRow(panel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
+        addHintText(cloudPanel, gbc, "Uses NVIDIA NIM OpenAI-compatible API (integrate.api.nvidia.com); get your key at build.nvidia.com");
+        addProviderSettingRow(cloudPanel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
                 createTextWithPasswordButton(cloudflareApiKeyField, "https://dash.cloudflare.com/profile/api-tokens"));
-        addHintText(panel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
-        addSettingRow(panel, gbc, "Cloudflare Account ID", cloudflareAccountIdField);
-        addSettingRow(panel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
-        addHintText(panel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
-        addProviderSettingRow(panel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
-        addHintText(panel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
+        addHintText(cloudPanel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
+        addSettingRow(cloudPanel, gbc, "Cloudflare Account ID", cloudflareAccountIdField);
+        addSettingRow(cloudPanel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
+        addHintText(cloudPanel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
+        addProviderSettingRow(cloudPanel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
+        addHintText(cloudPanel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
 
-        addAzureOpenAIPanel(panel, gbc);
-        addAWSPanel(panel, gbc);
+        addAzureOpenAIPanel(cloudPanel, gbc);
+        addAWSPanel(cloudPanel, gbc);
 
-        addSection(panel, gbc, "Plugin version");
-        addSettingRow(panel, gbc, "v" + projectVersion.getText(), createTextWithLinkButton(new JLabel("View on GitHub"), "https://github.com/devoxx/DevoxxGenieIDEAPlugin"));
-
-        boundTextFieldWidths(panel);
-
-        return panel;
+        return cloudPanel;
     }
 
     private void updateUrlFieldState(@NotNull JCheckBox checkbox,
