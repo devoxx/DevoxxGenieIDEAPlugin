@@ -458,6 +458,12 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 sb.append("--- Hit ").append(i + 1).append(" / ").append(hitCount).append(" ---\n");
                 sb.append("File:   ").append(h.getFilePath()).append("\n");
                 sb.append("Score:  ").append(formatScore(h.getScore())).append("\n");
+                if (h.getRerankerScore() != null) {
+                    sb.append("Reranker score:  ").append(formatScore(h.getRerankerScore())).append("\n");
+                }
+                if (h.getPreRerankRank() != null) {
+                    sb.append("Pre-rerank rank: ").append(h.getPreRerankRank()).append("\n");
+                }
                 sb.append("Chunk length: ").append(h.getChunkLength()).append(" chars\n");
                 sb.append("Preview:\n").append(h.getPreview() == null ? "" : h.getPreview()).append("\n\n");
             }
