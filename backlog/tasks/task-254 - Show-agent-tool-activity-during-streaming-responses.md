@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Codex
 created_date: '2026-07-24 12:23'
-updated_date: '2026-07-24 12:31'
+updated_date: '2026-07-24 12:39'
 labels:
   - bug
   - agent
@@ -14,6 +14,19 @@ labels:
 dependencies: []
 documentation:
   - docs/superpowers/specs/2026-07-24-streaming-agent-activity-design.md
+modified_files:
+  - >-
+    src/main/java/com/devoxx/genie/ui/panel/conversation/ActivityMessageDispatcher.java
+  - src/main/java/com/devoxx/genie/ui/panel/conversation/ConversationPanel.java
+  - src/main/kotlin/com/devoxx/genie/ui/compose/ConversationViewController.kt
+  - >-
+    src/main/kotlin/com/devoxx/genie/ui/compose/ComposeConversationViewController.kt
+  - >-
+    src/main/kotlin/com/devoxx/genie/ui/compose/viewmodel/ConversationViewModel.kt
+  - >-
+    src/test/java/com/devoxx/genie/ui/panel/conversation/ActivityMessageDispatcherTest.java
+  - >-
+    src/test/kotlin/com/devoxx/genie/ui/compose/viewmodel/ConversationViewModelTest.kt
 priority: high
 ordinal: 3000
 ---
@@ -27,9 +40,9 @@ Agent tool calls are recorded in DevoxxGenie Logs but their matching rows disapp
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Agent tool requests and results appear in the matching streaming conversation when chat tool activity is enabled
-- [ ] #2 Agent tool activity continues to appear for non-streaming conversations
-- [ ] #3 Raw request and response payloads remain excluded from the conversation output
-- [ ] #4 Automated regression coverage verifies the streaming activity lifecycle
+- [x] #2 Agent tool activity continues to appear for non-streaming conversations
+- [x] #3 Raw request and response payloads remain excluded from the conversation output
+- [x] #4 Automated regression coverage verifies the streaming activity lifecycle
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,6 +66,12 @@ A single focused change that serializes in-chat activity delivery with streaming
 - Modify: src/test/kotlin/com/devoxx/genie/ui/compose/viewmodel/ConversationViewModelTest.kt
 - Create: docs/superpowers/plans/2026-07-24-streaming-agent-activity.md
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented on `fix/task-254-show-agent-tool-activity-during-streaming` in commits `bf2af431` and `9fb4a83a`. Activity bus events now transition to the IntelliJ EDT before mutating Compose state and retain the active prompt generation; stale queued events are dropped after a prompt switch. Focused regression tests and `./gradlew buildPlugin` pass. Independent review identified the prompt-switch race; it was fixed with a queued interleaving test. In-IDE streaming verification remains pending.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
