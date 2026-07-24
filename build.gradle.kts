@@ -264,7 +264,7 @@ dependencies {
     
     val lg4j_version = "1.18.0"
     val lg4j_beta_version = "1.18.0-beta28"
-    val awsSdkVersion = "2.49.1"
+    val awsSdkVersion = "2.49.2"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.1"
     val dockerJavaVersion = "3.7.1"
@@ -283,7 +283,7 @@ dependencies {
     val nettyVersion = "4.2.16.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
-    val logbackVersion = "1.5.38"
+    val logbackVersion = "1.6.0"
     val gitignoreReaderVersion = "2.0.0"
     val junitJupiterVersion = "6.1.2"
     val junitPlatformVersion = "6.1.2"
