@@ -121,6 +121,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
+    private String nativModelUrl = NATIV_MODEL_URL;
+    // Nativ's /v1/models exposes no context length; null means "use NativChatModelFactory's default".
+    private Integer nativFallbackContextLength;
     private String exoModelUrl = EXO_MODEL_URL;
 
     // Local custom OpenAI-compliant LLM fields
@@ -149,6 +152,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isGpt4AllEnabled = true;
     private boolean isJanEnabled = true;
     private boolean isLlamaCPPEnabled = true;
+    /**
+     * Off by default: Nativ listens on port 8080, the same port llama.cpp uses, and llama.cpp is
+     * enabled out of the box. Auto-enabling both would make one provider silently list the other's
+     * models, so the user opts in explicitly.
+     */
+    private boolean isNativEnabled = false;
     private boolean isExoEnabled = false;
 
     // Local custom OpenAI-compliant LLM fields
@@ -814,6 +823,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             case "gpt4allModelUrl" -> getGpt4allModelUrl();
             case "lmStudioModelUrl" -> getLmstudioModelUrl();
             case "ollamaModelUrl" -> getOllamaModelUrl();
+            case "nativModelUrl" -> getNativModelUrl();
             case "exoModelUrl" -> getExoModelUrl();
             default -> null;
         };
