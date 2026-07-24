@@ -1,11 +1,11 @@
 ---
 id: TASK-254
 title: Show agent tool activity during streaming responses
-status: In Progress
+status: Done
 assignee:
   - Codex
 created_date: '2026-07-24 12:23'
-updated_date: '2026-07-24 12:39'
+updated_date: '2026-07-24 12:43'
 labels:
   - bug
   - agent
@@ -39,7 +39,7 @@ Agent tool calls are recorded in DevoxxGenie Logs but their matching rows disapp
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Agent tool requests and results appear in the matching streaming conversation when chat tool activity is enabled
+- [x] #1 Agent tool requests and results appear in the matching streaming conversation when chat tool activity is enabled
 - [x] #2 Agent tool activity continues to appear for non-streaming conversations
 - [x] #3 Raw request and response payloads remain excluded from the conversation output
 - [x] #4 Automated regression coverage verifies the streaming activity lifecycle
@@ -82,3 +82,18 @@ created: 2026-07-24 12:29
 Investigation reproduced the issue: matching AGT tool request/result events appear in DevoxxGenie Logs but not the conversation when streaming is enabled; disabling streaming renders them in chat.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+## Summary
+- Serialized in-chat activity delivery onto the IntelliJ EDT so streaming Compose updates cannot race background agent events.
+- Captured and validated the active prompt generation to discard stale queued activity rather than attach it to a later prompt.
+- Preserved RAW payload filtering and added dispatcher, streaming lifecycle, and prompt-switch regression coverage.
+
+## Validation
+- Manual in-IDE streaming verification confirmed agent activity now appears in the conversation (user confirmation).
+- `./gradlew test --rerun-tasks --tests com.devoxx.genie.ui.panel.conversation.ActivityMessageDispatcherTest --tests com.devoxx.genie.ui.compose.viewmodel.ConversationViewModelTest` (40 passing tests).
+- `./gradlew buildPlugin`.
+- Independent code review completed with no remaining findings.
+<!-- SECTION:FINAL_SUMMARY:END -->
