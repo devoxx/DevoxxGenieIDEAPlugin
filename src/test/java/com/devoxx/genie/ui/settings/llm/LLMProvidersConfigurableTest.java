@@ -112,6 +112,31 @@ class LLMProvidersConfigurableTest {
 
 
     @Test
+    void shouldApplyCustomOpenAIUseMaxCompletionTokensSetting() throws ConfigurationException {
+        // Issue #1225: the checkbox that switches the output cap to 'max_completion_tokens'
+        // must survive the isModified/apply round-trip, or reasoning models stay broken
+        // after the user ticks it.
+        LLMProvidersComponent component = getSettingsComponent();
+
+        component.getCustomOpenAIUseMaxCompletionTokensCheckBox().setSelected(true);
+
+        assertThat(configurable.isModified()).isTrue();
+
+        configurable.apply();
+
+        assertThat(stateService.isCustomOpenAIUseMaxCompletionTokens()).isTrue();
+    }
+
+    @Test
+    void shouldResetCustomOpenAIUseMaxCompletionTokensSetting() {
+        stateService.setCustomOpenAIUseMaxCompletionTokens(true);
+
+        configurable.reset();
+
+        assertThat(getSettingsComponent().getCustomOpenAIUseMaxCompletionTokensCheckBox().isSelected()).isTrue();
+    }
+
+    @Test
     void shouldApplyCustomOpenAIContextWindowSetting() throws ConfigurationException {
         LLMProvidersComponent component = getSettingsComponent();
 

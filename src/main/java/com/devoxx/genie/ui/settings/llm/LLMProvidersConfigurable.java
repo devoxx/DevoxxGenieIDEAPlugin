@@ -130,6 +130,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isCustomOpenAIUrlEnabled() != llmSettingsComponent.getCustomOpenAIUrlEnabledCheckBox().isSelected();
         isModified |= stateService.isCustomOpenAIModelNameEnabled() != llmSettingsComponent.getCustomOpenAIModelNameEnabledCheckBox().isSelected();
         isModified |= stateService.isCustomOpenAIForceHttp11() != llmSettingsComponent.getCustomOpenAIForceHttp11CheckBox().isSelected();
+        isModified |= stateService.isCustomOpenAIUseMaxCompletionTokens() != llmSettingsComponent.getCustomOpenAIUseMaxCompletionTokensCheckBox().isSelected();
 
         isModified |= stateService.isOpenAIEnabled() != llmSettingsComponent.getOpenAIEnabledCheckBox().isSelected();
         isModified |= stateService.isMistralEnabled() != llmSettingsComponent.getMistralEnabledCheckBox().isSelected();
@@ -181,6 +182,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setCustomOpenAIApiKey(new String(llmSettingsComponent.getCustomOpenAIApiKeyField().getPassword()));
         settings.setCustomOpenAIApiKeyEnabled(llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected());
         settings.setCustomOpenAIForceHttp11(llmSettingsComponent.getCustomOpenAIForceHttp11CheckBox().isSelected());
+        settings.setCustomOpenAIUseMaxCompletionTokens(llmSettingsComponent.getCustomOpenAIUseMaxCompletionTokensCheckBox().isSelected());
         settings.setCustomOpenAIContextWindow(
                 llmSettingsComponent.getCustomOpenAIContextWindowEnabledCheckBox().isSelected()
                         ? llmSettingsComponent.getCustomOpenAIContextWindowField().getNumber()
@@ -480,6 +482,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getCustomOpenAIUrlEnabledCheckBox().setSelected(settings.isCustomOpenAIUrlEnabled());
         llmSettingsComponent.getCustomOpenAIModelNameEnabledCheckBox().setSelected(settings.isCustomOpenAIModelNameEnabled());
         llmSettingsComponent.getCustomOpenAIForceHttp11CheckBox().setSelected(settings.isCustomOpenAIForceHttp11());
+        llmSettingsComponent.getCustomOpenAIUseMaxCompletionTokensCheckBox().setSelected(settings.isCustomOpenAIUseMaxCompletionTokens());
 
 
         llmSettingsComponent.getOpenAIEnabledCheckBox().setSelected(settings.isOpenAIEnabled());
