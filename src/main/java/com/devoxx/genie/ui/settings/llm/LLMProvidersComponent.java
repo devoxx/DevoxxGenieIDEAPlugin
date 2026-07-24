@@ -160,6 +160,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox enableCustomOpenAIApiKeyCheckBox = new JCheckBox("", stateService.isCustomOpenAIApiKeyEnabled());
     @Getter
+    private final JCheckBox customOpenAIUseMaxCompletionTokensCheckBox = new JCheckBox("", stateService.isCustomOpenAIUseMaxCompletionTokens());
+    @Getter
     private final JCheckBox openAIEnabledCheckBox = new JCheckBox("", stateService.isOpenAIEnabled());
     @Getter
     private final JCheckBox mistralEnabledCheckBox = new JCheckBox("", stateService.isMistralEnabled());
@@ -259,6 +261,10 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(panel, gbc, "Custom OpenAI API Key", enableCustomOpenAIApiKeyCheckBox, customOpenAIApiKeyField);
         addProviderSettingRow(panel, gbc, "Custom OpenAI HTTP 1.1", customOpenAIForceHttp11CheckBox);
         addHintText(panel, gbc, "Use HTTP/2 when unchecked");
+        addProviderSettingRow(panel, gbc, "Custom OpenAI max_completion_tokens", customOpenAIUseMaxCompletionTokensCheckBox);
+        addHintText(panel, gbc, "Send the output token limit as <code>max_completion_tokens</code> instead of <code>max_tokens</code>. " +
+                "Enable this for reasoning models (o1, o3, GPT-5) and gateways such as LiteLLM fronting them, which reject <code>max_tokens</code> with " +
+                "<i>\"Unsupported parameter: 'max_tokens' is not supported with this model\"</i>.");
         addProviderSettingRow(panel, gbc, "Custom OpenAI Context Window", customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField);
         addHintText(panel, gbc, "Token window used for the usage bar and token calculation. When unchecked, DevoxxGenie assumes " + CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW + " tokens. Set this to your internal model's real context size to avoid a false red 'context exceeded' warning (the request is sent either way).");
         addSettingRow(panel, gbc, "Custom OpenAI Input Cost", customOpenAIInputCostField);

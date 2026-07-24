@@ -58,19 +58,40 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
     @Override
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
         DevoxxGenieStateService stateInstance = DevoxxGenieStateService.getInstance();
-        return OpenAiChatModel.builder()
+        OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .baseUrl(stateInstance.getCustomOpenAIUrl())
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
                 .modelName(resolveModelName(customChatModel))
                 .maxRetries(customChatModel.getMaxRetries())
                 .temperature(customChatModel.getTemperature())
-                .maxTokens(customChatModel.getMaxTokens())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .topP(customChatModel.getTopP())
                 .returnThinking(ThinkingSupport.isEnabled())
                 .listeners(getListener())
-                .httpClientBuilder(getHttpClientBuilder())
-                .build();
+                .httpClientBuilder(getHttpClientBuilder());
+
+        applyOutputTokenLimit(builder, customChatModel);
+
+        return builder.build();
+    }
+
+    /**
+     * Send the output-token cap under the field name the endpoint accepts.
+     *
+     * <p>Issue #1225: reasoning-family models (o1/o3/GPT-5) reject the legacy {@code max_tokens}
+     * with {@code 400 unsupported_parameter} and require {@code max_completion_tokens}. The two are
+     * mutually exclusive on the wire — sending both makes such a model fail on the legacy one — so
+     * exactly one is set, chosen by the "Custom OpenAI max_completion_tokens" setting. The model
+     * name is deliberately not sniffed: gateways such as LiteLLM expose arbitrary aliases
+     * ({@code gpt-chat-latest} in the report) that no naming pattern can reliably classify.</p>
+     */
+    private static void applyOutputTokenLimit(OpenAiChatModel.@NotNull OpenAiChatModelBuilder builder,
+                                              @NotNull CustomChatModel customChatModel) {
+        if (DevoxxGenieStateService.getInstance().isCustomOpenAIUseMaxCompletionTokens()) {
+            builder.maxCompletionTokens(customChatModel.getMaxTokens());
+        } else {
+            builder.maxTokens(customChatModel.getMaxTokens());
+        }
     }
 
     @Override

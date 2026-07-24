@@ -156,6 +156,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isCustomOpenAIForceHttp11 = false;
     private boolean isCustomOpenAIModelNameEnabled = false;
     private boolean isCustomOpenAIApiKeyEnabled = false;
+    /**
+     * Issue #1225: reasoning-family models (o1/o3/GPT-5, and gateways fronting them such as
+     * LiteLLM) reject the legacy {@code max_tokens} field with a 400 and demand
+     * {@code max_completion_tokens} instead. When enabled, the output-token cap is sent under
+     * the new name. Off by default so existing endpoints keep their current wire format.
+     */
+    private boolean isCustomOpenAIUseMaxCompletionTokens = false;
 
     // Remote LLM Providers
     private boolean isOpenAIEnabled = false;
