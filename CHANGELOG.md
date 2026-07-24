@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.10.1 - 2026-07-24
+
+A local-provider and settings-usability release: **Nativ** joins the local providers, the LLM Providers settings page is split into tabs, and reasoning-model requests through Custom OpenAI gateways no longer fail on an unsupported token field.
+
+### Added
+- feat(llm): add **Nativ** as a local LLM provider — an MIT-licensed macOS app running MLX models on Apple Silicon behind an OpenAI-compatible server, wired into the model dropdown, agent/sub-agent provider selection and the settings UI. Nativ's `GET /v1/models` returns the bare OpenAI shape (ids are Hugging Face repo ids) with **no context-length field**, so the provider ships dedicated DTOs, strips the org prefix for display (`mlx-community/Qwen2.5-Coder-7B-Instruct-4bit` → `Qwen2.5-Coder-7B-Instruct-4bit`) and adds a configurable "Nativ Fallback Context" setting (default 8K) mirroring the existing LMStudio fallback. **Disabled by default on purpose:** Nativ listens on port `8080`, the same port Llama.c++ uses and Llama.c++ is enabled out of the box, so auto-enabling both would make one provider silently list the other's models — the settings hint, README and docs all call this out (#1234)
+- feat(welcome): the **Explore Features** section on the welcome screen now renders expanded by default, so the feature chip grid is immediately discoverable instead of hidden behind a click. It stays collapsible and the choice is persisted via a new application-level `welcomeFeaturesExpanded` setting, so a collapse survives an IDE restart rather than resetting on every recomposition; existing settings files without the key deserialize as expanded (#1222)
+
+### Fixed
+- fix(customopenai): send **`max_completion_tokens`** instead of `max_tokens` for reasoning models — reasoning-family models (o1/o3/GPT-5) and gateways fronting them reject the legacy field outright (`Unsupported parameter: 'max_tokens' is not supported with this model`), which broke `gpt-chat-latest` on a LiteLLM endpoint while `gpt-4o` and `gpt-4.1` on the same endpoint kept working. `CustomOpenAIChatModelFactory.createChatModel()` called `.maxTokens(...)` unconditionally; a new **Custom OpenAI max_completion_tokens** setting (off by default) switches the builder over, and exactly one of the two fields is ever sent since the mere presence of the legacy field is what the model rejects. The model name is deliberately *not* sniffed — gateways expose arbitrary aliases that no naming pattern can classify — so this is an explicit setting rather than a heuristic. Streaming mode was never affected (it sets no token cap at all) (#1225, #1231)
+
+### Changed
+- refactor(ui): split the **LLM Providers** settings page into **Local / Cloud / Custom OpenAI** tabs, so the ever-growing provider list is navigable instead of one long scroll. Originally PR #1232, which was opened against `fix/issue-1225` rather than `master` and stranded on a dead branch after that base was squash-merged; re-landed as an identical cherry-pick (#1232, #1233)
+- feat(settings): default **"include current open file"** to `false` — new installs no longer add the file open in the editor to the prompt context automatically. Existing users keep their persisted preference (#1221)
+- ci: exclude the Cloudflare dashboard and Mistral console from the lychee link check (both reject automated requests), and fix `.lychee.toml` `include_fragments` for lychee 0.24.2 (#1227)
+
+### Documentation
+- docs: broaden the landing page and README from "IntelliJ IDEA" to all JetBrains IDEs, including the SEO keyword list, since the plugin runs on the whole IDE family (#1229)
+- docs: promote the usage stats on the landing page and README to 107,000+ active users and 80k downloads, dated "As of July 2026" (#1226)
+
+### Dependencies
+- chore(deps): upgrade Langchain4J 1.17.2 → 1.18.0 (beta modules 1.17.2-beta27 → 1.18.0-beta28), AWS SDK 2.48.1 → 2.49.2, Logback 1.5.38 → 1.6.0 and sqlite-jdbc 3.53.2.0 → 3.53.2.1 (#1228, #1230)
+
+### Contributors
+- @stephanj
+
 ## v1.10.0 - 2026-07-19
 
 Two headline features: a first-class **Cloudflare AI Gateway** provider, and a **command blacklist** that stops the agent silently running destructive shell commands when auto-approve is on.

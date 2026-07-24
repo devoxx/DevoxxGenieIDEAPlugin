@@ -68,6 +68,15 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.10.1</h2>
+        <UL>
+                    <LI>feat(llm): new <b>Nativ</b> local provider — run MLX models on Apple Silicon behind Nativ's OpenAI-compatible server, with a configurable fallback context window. Disabled by default because Nativ shares port 8080 with Llama.c++ (#1234)</LI>
+                    <LI>fix(customopenai): new <b>max_completion_tokens</b> setting for reasoning models (o1/o3/GPT-5) and gateways fronting them, which reject the legacy <code>max_tokens</code> field with an "Unsupported parameter" error (#1225)</LI>
+                    <LI>refactor(ui): the LLM Providers settings page is now split into <b>Local</b>, <b>Cloud</b> and <b>Custom OpenAI</b> tabs instead of one long scroll (#1233)</LI>
+                    <LI>feat(welcome): the "Explore Features" section on the welcome screen is now expanded by default, and your collapse/expand choice survives an IDE restart (#1222)</LI>
+                    <LI>feat(settings): new installs no longer add the currently open editor file to the prompt context by default; existing preferences are untouched (#1221)</LI>
+                    <LI>chore(deps): upgrade Langchain4J to 1.18.0, AWS SDK to 2.49.2, Logback to 1.6.0 and sqlite-jdbc to 3.53.2.1 (#1228, #1230)</LI>
+                </UL>
         <h2>v1.10.0</h2>
         <UL>
                     <LI>feat(cloudflare): new <b>Cloudflare AI Gateway</b> provider — single-token BYOK auth, the gateway URL assembled from your Account ID and Gateway name, and model auto-discovery with a manual override; no more hand-configuring Custom OpenAI (#1211, #1217)</LI>
