@@ -197,6 +197,40 @@ class ConversationViewModelTest {
     }
 
     @Test
+    fun `streamed response update preserves an open agent tool entry`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("what time is it?").build())
+
+        viewModel.onActivityMessage(toolRequest("run_command", """{"command":"date"}"""))
+        viewModel.updateAiMessageContent(
+            ChatMessageContext.builder()
+                .id("msg-1")
+                .aiMessage(AiMessage.from("The current time is 14:21."))
+                .build()
+        )
+        viewModel.onActivityMessage(toolResponse("run_command", "Fri Jul 24 14:21:00 CEST 2026"))
+
+        val entry = activeMessageEntries(viewModel).single()
+        assertThat(entry.status).isEqualTo(ActivityStatus.SUCCESS)
+        assertThat(entry.result).isEqualTo("Fri Jul 24 14:21:00 CEST 2026")
+    }
+
+    @Test
+    fun `raw activity messages remain excluded from the conversation timeline`() {
+        val viewModel = ConversationViewModel(showToolActivityInChat = { true })
+        viewModel.addUserPromptMessage(ChatMessageContext.builder().id("msg-1").userPrompt("hi").build())
+
+        viewModel.onActivityMessage(
+            ActivityMessage.builder()
+                .source(ActivitySource.RAW)
+                .content("{\"authorization\":\"secret\"}")
+                .build()
+        )
+
+        assertThat(activeMessageEntries(viewModel)).isEmpty()
+    }
+
+    @Test
     fun `hide loading indicator also clears the streaming flag`() {
         val viewModel = ConversationViewModel()
         viewModel.addUserPromptMessage(
