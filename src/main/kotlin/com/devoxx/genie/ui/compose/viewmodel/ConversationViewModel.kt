@@ -256,8 +256,15 @@ class ConversationViewModel(
         }
     }
 
+    fun activityGeneration(): Int = activityGeneration.get()
+
     fun onActivityMessage(message: ActivityMessage) {
+        onActivityMessage(message, activityGeneration())
+    }
+
+    fun onActivityMessage(message: ActivityMessage, expectedGeneration: Int) {
         if (activityDeactivated.get()) return
+        if (expectedGeneration != activityGeneration()) return
 
         // Raw request/response captures carry the full LLM payload JSON as content — they
         // belong to the Activity Log tool window only, never to the in-chat timeline.

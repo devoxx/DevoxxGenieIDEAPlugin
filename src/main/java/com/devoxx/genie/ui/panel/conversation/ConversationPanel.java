@@ -48,6 +48,7 @@ public class ConversationPanel
     private final MessageBusConnection messageBusConnection;
     private final ChatService chatService;
     private final JComponent displayComponent;
+    private final ActivityMessageDispatcher activityMessageDispatcher = new ActivityMessageDispatcher();
 
     public final ConversationViewController viewController;
 
@@ -169,7 +170,12 @@ public class ConversationPanel
             if (hash != null && !hash.equals(projectHash)) {
                 return;
             }
-            viewController.onActivityMessage(message);
+            int activityGeneration = viewController.currentActivityGeneration();
+            activityMessageDispatcher.dispatch(
+                    message,
+                    activityGeneration,
+                    viewController::currentActivityGeneration,
+                    activityMessage -> viewController.onActivityMessage(activityMessage, activityGeneration));
         });
     }
 
