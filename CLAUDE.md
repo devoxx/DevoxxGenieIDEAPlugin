@@ -133,7 +133,7 @@ The plugin processes user prompts through a layered architecture:
 
 **Cloud Providers**: anthropic, azureopenai, bedrock, deepinfra, deepseek, glm, google, grok, groq, kimi, mistral, openai, openrouter
 
-**Local Providers**: ollama, gpt4all, lmstudio, llamacpp, jan, customopenai
+**Local Providers**: ollama, gpt4all, lmstudio, llamacpp, jan, nativ, customopenai
 
 **Adding New Providers**:
 
