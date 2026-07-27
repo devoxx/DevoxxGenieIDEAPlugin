@@ -264,7 +264,7 @@ dependencies {
     
     val lg4j_version = "1.18.0"
     val lg4j_beta_version = "1.18.0-beta28"
-    val awsSdkVersion = "2.49.2"
+    val awsSdkVersion = "2.49.3"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.1"
     val dockerJavaVersion = "3.7.1"
