@@ -65,7 +65,7 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
                 .maxRetries(customChatModel.getMaxRetries())
                 .temperature(customChatModel.getTemperature())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
-                .topP(customChatModel.getTopP())
+                .topP(resolveTopP(customChatModel))
                 .returnThinking(ThinkingSupport.isEnabled())
                 .listeners(getListener())
                 .httpClientBuilder(getHttpClientBuilder());
@@ -73,6 +73,23 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
         applyOutputTokenLimit(builder, customChatModel);
 
         return builder.build();
+    }
+
+    /**
+     * Resolve the {@code top_p} value to send, or {@code null} to leave the field out of the request.
+     *
+     * <p>Issue #1240: some endpoints reject {@code top_p} with
+     * {@code 400 "Unsupported parameter: 'top_p' is not supported with this model."} — the same class
+     * of failure as {@code max_tokens} in issue #1225. A {@code null} makes the OpenAI client omit the
+     * field entirely, which is what such a model needs: it is the parameter's presence, not its value,
+     * that is rejected. As with the output-token cap, the model name is deliberately not sniffed —
+     * gateways such as LiteLLM expose arbitrary aliases no naming pattern can classify — so the user
+     * opts out via the "Custom OpenAI omit top_p" setting.</p>
+     */
+    private static Double resolveTopP(@NotNull CustomChatModel customChatModel) {
+        return DevoxxGenieStateService.getInstance().isCustomOpenAIOmitTopP()
+                ? null
+                : customChatModel.getTopP();
     }
 
     /**
@@ -102,7 +119,7 @@ public class CustomOpenAIChatModelFactory implements ChatModelFactory {
                 .apiKey(stateInstance.isCustomOpenAIApiKeyEnabled() ? stateInstance.getCustomOpenAIApiKey() : "na")
                 .modelName(resolveModelName(customChatModel))
                 .temperature(customChatModel.getTemperature())
-                .topP(customChatModel.getTopP())
+                .topP(resolveTopP(customChatModel))
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
                 .returnThinking(ThinkingSupport.isEnabled())
                 .listeners(getListener())

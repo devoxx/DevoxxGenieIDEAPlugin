@@ -137,6 +137,31 @@ class LLMProvidersConfigurableTest {
     }
 
     @Test
+    void shouldApplyCustomOpenAIOmitTopPSetting() throws ConfigurationException {
+        // Issue #1240: the checkbox that drops 'top_p' from the request must survive the
+        // isModified/apply round-trip, or endpoints rejecting the parameter stay broken
+        // after the user ticks it.
+        LLMProvidersComponent component = getSettingsComponent();
+
+        component.getCustomOpenAIOmitTopPCheckBox().setSelected(true);
+
+        assertThat(configurable.isModified()).isTrue();
+
+        configurable.apply();
+
+        assertThat(stateService.isCustomOpenAIOmitTopP()).isTrue();
+    }
+
+    @Test
+    void shouldResetCustomOpenAIOmitTopPSetting() {
+        stateService.setCustomOpenAIOmitTopP(true);
+
+        configurable.reset();
+
+        assertThat(getSettingsComponent().getCustomOpenAIOmitTopPCheckBox().isSelected()).isTrue();
+    }
+
+    @Test
     void shouldApplyCustomOpenAIContextWindowSetting() throws ConfigurationException {
         LLMProvidersComponent component = getSettingsComponent();
 
