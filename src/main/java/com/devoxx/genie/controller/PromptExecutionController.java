@@ -4,12 +4,15 @@ import com.devoxx.genie.controller.listener.PromptExecutionListener;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.PromptExecutionService;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
+import com.devoxx.genie.service.prompt.steering.SteeringMessageQueue;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -39,13 +42,17 @@ public class PromptExecutionController implements PromptExecutionListener {
     }
 
     public boolean handlePromptSubmission(ChatMessageContext currentChatMessageContext) {
-        this.currentChatMessageContext = currentChatMessageContext;
-
         if (isPromptRunning) {
+            // Issue #1241: while an agent task is running, a non-blank submission
+            // steers the running task instead of stopping it.
+            if (steerRunningPrompt(currentChatMessageContext)) {
+                return true;
+            }
             stopPromptExecution();
             return true;
         }
 
+        this.currentChatMessageContext = currentChatMessageContext;
         startPromptExecution();
         
         // Check if this is the first prompt in the conversation - if so, clear the welcome content first
@@ -104,6 +111,32 @@ public class PromptExecutionController implements PromptExecutionListener {
                 });
     }
 
+    /**
+     * Issue #1241: queue a mid-task steering message for the running execution.
+     * Public raw-text entry point: the Enter key submits via the message-bus route,
+     * which only carries the prompt text. Returns false when steering is not possible
+     * (not running, blank text, no running context, or no active steering consumer) —
+     * the caller then falls back to its previous behavior (stop or queue).
+     */
+    public boolean steerRunningPrompt(String text) {
+        if (!isPromptRunning || text == null || text.isBlank() || currentChatMessageContext == null) {
+            return false;
+        }
+        String memoryKey = currentChatMessageContext.getMemoryKey();
+        if (!SteeringMessageQueue.getInstance().isActive(memoryKey)) {
+            return false;
+        }
+        String trimmed = text.trim();
+        SteeringMessageQueue.getInstance().offer(memoryKey, trimmed);
+        promptOutputPanel.getConversationPanel().addSteeringMessage(trimmed);
+        promptInputArea.clear();
+        return true;
+    }
+
+    private boolean steerRunningPrompt(ChatMessageContext steeringContext) {
+        return steeringContext != null && steerRunningPrompt(steeringContext.getUserPrompt());
+    }
+
     @Override
     public void stopPromptExecution() {
         // Stop execution for this tab only if we have a context with tabId
@@ -111,6 +144,11 @@ public class PromptExecutionController implements PromptExecutionListener {
             promptExecutionService.stopExecution(project, currentChatMessageContext.getTabId());
         } else {
             promptExecutionService.stopExecution(project);
+        }
+        // Issue #1241: the user aborted the run — unconsumed steering messages
+        // are corrections to work that no longer continues, so discard them.
+        if (currentChatMessageContext != null) {
+            SteeringMessageQueue.getInstance().drainAndDeactivate(currentChatMessageContext.getMemoryKey());
         }
         endPromptExecution();
     }
@@ -127,6 +165,24 @@ public class PromptExecutionController implements PromptExecutionListener {
     @Override
     public void endPromptExecution() {
         isPromptRunning = false;
+        resubmitUnconsumedSteeringMessages();
         actionButtonsPanel.enableButtons();
+    }
+
+    /**
+     * Issue #1241: steering messages the agent loop never consumed (the run
+     * finished first) must not be silently lost — resubmit them as a new prompt.
+     */
+    private void resubmitUnconsumedSteeringMessages() {
+        if (currentChatMessageContext == null) {
+            return;
+        }
+        List<String> leftovers = SteeringMessageQueue.getInstance()
+                .drainAndDeactivate(currentChatMessageContext.getMemoryKey());
+        if (leftovers.isEmpty()) {
+            return;
+        }
+        project.getMessageBus().syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
+                .onPromptSubmitted(project, String.join("\n\n", leftovers), currentChatMessageContext.getTabId());
     }
 }

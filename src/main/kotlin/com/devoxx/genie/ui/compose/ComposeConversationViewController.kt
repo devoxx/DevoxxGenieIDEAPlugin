@@ -154,6 +154,10 @@ class ComposeConversationViewController(
         viewModel.addUserPromptMessage(chatMessageContext)
     }
 
+    override fun addSteeringMessage(text: String) {
+        viewModel.addSteeringMessage(text)
+    }
+
     override fun updateAiMessageContent(chatMessageContext: ChatMessageContext) {
         viewModel.updateAiMessageContent(chatMessageContext)
     }

@@ -278,6 +278,15 @@ public class ConversationPanel
     }
     
     /**
+     * Add a steering message bubble (issue #1241): a user message sent while an agent
+     * task is running. Unlike {@link #addUserPromptMessage} this must not redirect the
+     * in-flight streaming target or reset the activity handlers.
+     */
+    public void addSteeringMessage(@NotNull String text) {
+        viewController.addSteeringMessage(text);
+    }
+
+    /**
      * Updates a message that was previously added as a user prompt with the full AI response.
      */
     public void updateUserPromptWithResponse(@NotNull ChatMessageContext chatMessageContext) {

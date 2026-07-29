@@ -188,6 +188,26 @@ class ConversationViewModel(
         activeMessageId = context.id
     }
 
+    /**
+     * Appends a user bubble for a steering message sent while an agent task is
+     * running (issue #1241). Deliberately does NOT touch [activeMessageId], the
+     * activity handlers, or the loading indicator: the in-flight message keeps
+     * streaming above this bubble.
+     */
+    fun addSteeringMessage(text: String) {
+        val currentState = state
+        if (currentState !is ConversationState.Chat) {
+            return
+        }
+        val steeringBubble = MessageUiModel(
+            id = java.util.UUID.randomUUID().toString(),
+            userPrompt = text,
+            isLoadingIndicatorVisible = false,
+            isStreaming = false,
+        )
+        state = currentState.copy(messages = currentState.messages + steeringBubble)
+    }
+
     fun updateAiMessageContent(context: ChatMessageContext) {
         val aiText = context.aiMessage?.text() ?: return
         updateMessage(context.id) { msg ->

@@ -320,7 +320,10 @@ public class ActionButtonsPanel extends JPanel
      * Submit the user prompt.
      */
     private void onSubmitPrompt(ActionEvent actionEvent) {
-        if (controller.isPromptRunning()) {
+        if (controller.isPromptRunning() && promptInputArea.getText().isBlank()) {
+            // Issue #1241: submit with empty input while running still means "stop".
+            // A non-blank submit falls through: the execution controller steers the
+            // running agent task, or stops when steering is not available.
             controller.stopPromptExecution();
             return;
         }
@@ -376,7 +379,8 @@ public class ActionButtonsPanel extends JPanel
     }
 
     public void disableButtons() {
-        promptInputArea.setEnabled(false);
+        // Issue #1241: the prompt input stays enabled while a task runs so the user
+        // can type mid-task steering messages for the running agent loop.
     }
 
     public void disableSubmitBtn() {
@@ -451,6 +455,11 @@ public class ActionButtonsPanel extends JPanel
         }
         ApplicationManager.getApplication().invokeLater(() -> {
             if (controller.isPromptRunning()) {
+                // Issue #1241: steer the running agent task when possible — the
+                // message is injected into the agent loop's next round trip.
+                if (controller.steerRunningPrompt(prompt)) {
+                    return;
+                }
                 // Don't stop the current execution — queue this prompt so the
                 // current response finishes streaming to the user.
                 pendingSpecPrompt = prompt;

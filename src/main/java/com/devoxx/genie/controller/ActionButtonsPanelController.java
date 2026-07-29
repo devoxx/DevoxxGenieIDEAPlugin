@@ -68,6 +68,15 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
         return promptExecutionController.isPromptRunning();
     }
 
+    /**
+     * Issue #1241: try to steer the running agent task with a mid-task user message.
+     * Returns false when steering is not possible; the caller falls back to its
+     * previous while-running behavior.
+     */
+    public boolean steerRunningPrompt(String text) {
+        return promptExecutionController.steerRunningPrompt(text);
+    }
+
     public boolean handlePromptSubmission(String actionCommand,
                                           boolean isProjectContextAdded,
                                           String projectContext) {
