@@ -79,6 +79,10 @@ public class PromptExecutionController implements PromptExecutionListener {
                         // Show the resolved prompt (e.g. expanded custom skill), not the raw /command
                         promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
                     }
+                    // Issue #1241 follow-up: clear on send, not on completion. The prompt now
+                    // has its own bubble, and the input stays usable while the task runs (Queue
+                    // and Steer) — leaving the text behind invites sending the same prompt twice.
+                    promptInputArea.clear();
                     executePromptWithContext();
                 },
                 () -> {
@@ -110,7 +114,8 @@ public class PromptExecutionController implements PromptExecutionListener {
                         return; // Stale callback from a previous execution; ignore
                     }
                     endPromptExecution();
-                    promptInputArea.clear();
+                    // Do NOT clear here: the input was already cleared on send, so anything
+                    // present now is a message the user is typing while the task runs.
                     promptInputArea.requestInputFocus();
                 });
     }

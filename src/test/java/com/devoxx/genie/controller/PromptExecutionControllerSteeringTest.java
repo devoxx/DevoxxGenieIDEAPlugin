@@ -133,6 +133,8 @@ class PromptExecutionControllerSteeringTest {
     @Test
     void submitWhileRunning_showsQueuedBubbleAndClearsInput() {
         startRunningPrompt();
+        // Ignore the initial submission's own clear — assert on the queueing one
+        Mockito.clearInvocations(promptInputArea);
 
         controller.handlePromptSubmission(steeringContext("and what is todays time?"));
 
@@ -268,6 +270,8 @@ class PromptExecutionControllerSteeringTest {
         // The Enter key submits via the message-bus route, which carries only the raw
         // prompt text — steering must work without a ChatMessageContext.
         startRunningPrompt();
+        // Ignore the initial submission's own clear — assert on the steering one
+        Mockito.clearInvocations(promptInputArea);
 
         boolean steered = controller.steerRunningPrompt("use snake_case for the API json");
 
@@ -290,6 +294,30 @@ class PromptExecutionControllerSteeringTest {
     @Test
     void steerRunningPromptWithRawText_returnsFalseWhenNotRunning() {
         assertThat(controller.steerRunningPrompt("some text")).isFalse();
+    }
+
+    @Test
+    void initialSubmission_clearsInputImmediately() {
+        // Follow-up on #1241: the initial prompt used to stay in the input box until
+        // the run finished, so a distracted user could send it a second time. Queue
+        // and Steer already clear on send — the initial submission must too.
+        startRunningPrompt();
+
+        verify(promptInputArea).clear();
+    }
+
+    @Test
+    void runEnd_doesNotClearTextTypedWhileRunning() {
+        // The input is cleared on send, so clearing again on completion would wipe
+        // the next message the user is typing while the task is still running.
+        startRunningPrompt();
+        ArgumentCaptor<Runnable> completion = ArgumentCaptor.forClass(Runnable.class);
+        verify(promptExecutionService).executePrompt(any(), eq(promptOutputPanel), completion.capture());
+        Mockito.clearInvocations(promptInputArea);
+
+        completion.getValue().run();
+
+        verify(promptInputArea, never()).clear();
     }
 
     @Test
