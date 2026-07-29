@@ -87,11 +87,11 @@ export default function Home() {
         <div className="container">
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
-              <div className={styles.statNumber}>107,000+</div>
+              <div className={styles.statNumber}>112,000+</div>
               <div className={styles.statLabel}>Active Users</div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statNumber}>80,000</div>
+              <div className={styles.statNumber}>82,800</div>
               <div className={styles.statLabel}>Plugin Downloads</div>
             </div>
             <div className={styles.statCard}>
