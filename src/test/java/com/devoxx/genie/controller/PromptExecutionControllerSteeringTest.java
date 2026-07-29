@@ -182,6 +182,24 @@ class PromptExecutionControllerSteeringTest {
     }
 
     @Test
+    void runEndWithQueuedPrompt_enablesButtonsBeforeResubmitting() {
+        // Glow regression: enableButtons() schedules stopGlowing on the EDT. If the
+        // queued prompt is resubmitted FIRST, its startGlowing lands before the old
+        // run's stopGlowing — which then kills the new run's glow. enableButtons must
+        // therefore be invoked before the resubmission is published.
+        startRunningPrompt();
+        ArgumentCaptor<Runnable> completion = ArgumentCaptor.forClass(Runnable.class);
+        verify(promptExecutionService).executePrompt(any(), eq(promptOutputPanel), completion.capture());
+        controller.queueRunningPrompt("next question");
+
+        completion.getValue().run();
+
+        org.mockito.InOrder inOrder = Mockito.inOrder(actionButtonsPanel, promptSubmissionListener);
+        inOrder.verify(actionButtonsPanel).enableButtons();
+        inOrder.verify(promptSubmissionListener).onPromptSubmitted(project, "next question", TAB_ID);
+    }
+
+    @Test
     void explicitSteering_stillInjectsIntoRunningLoop() {
         // Steering remains available as an explicit action (dedicated button)
         startRunningPrompt();

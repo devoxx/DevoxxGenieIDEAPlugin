@@ -188,8 +188,12 @@ public class PromptExecutionController implements PromptExecutionListener {
     @Override
     public void endPromptExecution() {
         isPromptRunning = false;
-        resubmitUnconsumedSteeringMessages();
+        // enableButtons() BEFORE resubmitting: it schedules stopGlowing (and button
+        // resets) on the EDT. If the queued/leftover prompt were published first, the
+        // new run's synchronous startGlowing would land before the old run's pending
+        // stopGlowing — which would then kill the fresh glow (and reset the stop icon).
         actionButtonsPanel.enableButtons();
+        resubmitUnconsumedSteeringMessages();
     }
 
     /**
