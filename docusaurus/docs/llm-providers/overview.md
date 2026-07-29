@@ -29,6 +29,7 @@ Supported local providers:
 - [GPT4All](local-models.md#gpt4all)
 - [Llama.cpp](local-models.md#llamacpp)
 - [Jan](local-models.md#jan)
+- [Nativ](local-models.md#nativ) (MLX on Apple Silicon)
 - [Exo](exo.md) (Distributed AI cluster)
 - [Custom OpenAI-compatible](local-models.md#custom-openai-compatible-providers)
 
@@ -74,6 +75,7 @@ You can select and configure LLM providers in two ways:
 | GPT4All | High | Low | Free | Basic | No |
 | Llama.cpp | High | High | Free | Varies by hardware | Some models |
 | Jan | High | Low | Free | Basic | No |
+| Nativ | High | Low | Free | Optimized for Apple Silicon | Some models |
 | **Cloud Providers** |
 | OpenAI | Low | Low | Pay-per-token | Excellent | GPT-4V+ |
 | Anthropic | Low | Low | Pay-per-token | Excellent | Claude 3+ |

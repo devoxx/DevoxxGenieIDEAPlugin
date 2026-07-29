@@ -35,7 +35,7 @@ import Head from '@docusaurus/Head';
           "name": "Which LLMs does DevoxxGenie support?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "DevoxxGenie supports a wide range of LLMs. Cloud providers include OpenAI (GPT-4o, o3, o4-mini), Anthropic (Claude 3.5/4), Google (Gemini 1.5/2.x), Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek (R1, Coder), Kimi (Moonshot AI), GLM (Zhipu AI), OpenRouter, Azure OpenAI, and Amazon Bedrock. Local providers include Ollama, LM Studio, GPT4All, Llama.cpp, and Jan. It also supports any OpenAI-compatible custom endpoint."
+            "text": "DevoxxGenie supports a wide range of LLMs. Cloud providers include OpenAI (GPT-4o, o3, o4-mini), Anthropic (Claude 3.5/4), Google (Gemini 1.5/2.x), Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek (R1, Coder), Kimi (Moonshot AI), GLM (Zhipu AI), OpenRouter, Azure OpenAI, and Amazon Bedrock. Local providers include Ollama, LM Studio, GPT4All, Llama.cpp, Jan, and Nativ (MLX on Apple Silicon). It also supports any OpenAI-compatible custom endpoint."
           }
         },
         {
@@ -140,7 +140,7 @@ Yes — if you use a local model provider like **Ollama**. Once you've downloade
 
 **Cloud providers**: OpenAI (GPT-4o, o3, o4-mini), Anthropic (Claude 3.5/4), Google (Gemini 1.5/2.x), Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek (R1, Coder), Kimi (Moonshot AI), GLM (Zhipu AI), OpenRouter, Azure OpenAI, Amazon Bedrock
 
-**Local providers**: Ollama, LM Studio, GPT4All, Llama.cpp, Jan, any OpenAI-compatible endpoint
+**Local providers**: Ollama, LM Studio, GPT4All, Llama.cpp, Jan, Nativ (MLX on Apple Silicon), any OpenAI-compatible endpoint
 
 ### How do I use Ollama with DevoxxGenie?
 

@@ -21,7 +21,7 @@ With DevoxxGenie, developers can leverage the power of artificial intelligence t
 
 DevoxxGenie provides a rich set of features to enhance your development workflow:
 
-- **[Multiple LLM Providers](../llm-providers/overview.md)**: Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, Kimi, GLM, and more.
+- **[Multiple LLM Providers](../llm-providers/overview.md)**: Connect to local LLMs like Ollama, LMStudio, Nativ, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Google, Grok, Mistral, Groq, Kimi, GLM, and more.
 - **[MCP Support](../features/mcp_expanded.md)**: Model Context Protocol servers for agent-like capabilities, with a built-in Marketplace for discovering and installing servers.
 - **[Agent Mode](../features/agent-mode.md)** *(v0.9.4+)*: Enable agent mode for autonomous codebase exploration using read-only tools. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider.
 - **[Spec Driven Development](../features/spec-driven-development.md)** *(v0.9.7+)*: Define tasks in Backlog.md, browse them in the Spec Browser with Task List and Kanban Board views, then let the Agent implement them autonomously.
