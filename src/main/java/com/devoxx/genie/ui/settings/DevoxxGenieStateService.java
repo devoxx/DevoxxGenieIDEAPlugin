@@ -172,6 +172,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      * the new name. Off by default so existing endpoints keep their current wire format.
      */
     private boolean isCustomOpenAIUseMaxCompletionTokens = false;
+    /**
+     * Issue #1240: some OpenAI-compatible endpoints reject {@code top_p} outright with
+     * {@code 400 "Unsupported parameter: 'top_p' is not supported with this model."}. When enabled,
+     * {@code top_p} is left out of the request entirely. Off by default so endpoints that accept it
+     * keep honouring the configured value.
+     */
+    private boolean isCustomOpenAIOmitTopP = false;
 
     // Remote LLM Providers
     private boolean isOpenAIEnabled = false;

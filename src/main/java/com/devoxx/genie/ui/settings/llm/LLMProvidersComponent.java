@@ -180,6 +180,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox customOpenAIUseMaxCompletionTokensCheckBox = new JCheckBox("", stateService.isCustomOpenAIUseMaxCompletionTokens());
     @Getter
+    private final JCheckBox customOpenAIOmitTopPCheckBox = new JCheckBox("", stateService.isCustomOpenAIOmitTopP());
+    @Getter
     private final JCheckBox openAIEnabledCheckBox = new JCheckBox("", stateService.isOpenAIEnabled());
     @Getter
     private final JCheckBox mistralEnabledCheckBox = new JCheckBox("", stateService.isMistralEnabled());
@@ -411,6 +413,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addHintText(customOpenAIPanel, gbc, "Send the output token limit as <code>max_completion_tokens</code> instead of <code>max_tokens</code>. " +
                 "Enable this for reasoning models (o1, o3, GPT-5) and gateways such as LiteLLM fronting them, which reject <code>max_tokens</code> with " +
                 "<i>\"Unsupported parameter: 'max_tokens' is not supported with this model\"</i>.");
+        addProviderSettingRow(customOpenAIPanel, gbc, "Omit top_p", customOpenAIOmitTopPCheckBox);
+        addHintText(customOpenAIPanel, gbc, "Leave <code>top_p</code> out of the request entirely. " +
+                "Enable this for models and gateways that reject it with " +
+                "<i>\"Unsupported parameter: 'top_p' is not supported with this model\"</i>. " +
+                "The Top-P value in LLM Settings is then ignored for this provider; temperature is still sent.");
         addProviderSettingRow(customOpenAIPanel, gbc, "Context Window", customOpenAIContextWindowEnabledCheckBox, customOpenAIContextWindowField);
         addHintText(customOpenAIPanel, gbc, "Token window used for the usage bar and token calculation. When unchecked, DevoxxGenie assumes " + CustomOpenAIContextWindow.DEFAULT_CONTEXT_WINDOW + " tokens. Set this to your internal model's real context size to avoid a false red 'context exceeded' warning (the request is sent either way).");
         addSettingRow(customOpenAIPanel, gbc, "Input Cost", customOpenAIInputCostField);
