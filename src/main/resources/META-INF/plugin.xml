@@ -68,6 +68,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.11.0</h2>
+        <UL>
+                    <LI>feat(prompt): the prompt input stays enabled while a task runs — <b>queue</b> follow-up messages to be answered one by one after the current run, or <b>steer</b> the running agent loop by injecting a correction into its next round trip (#1241)</LI>
+                    <LI>feat(prompt): while a run is active the submit button becomes <b>Stop</b>, with Queue and Steer buttons alongside it; steered messages split the streamed output in place, and Stop discards anything still pending (#1241)</LI>
+                    <LI>fix(agent): agent tool activity is visible again during <b>streaming</b> responses — updates are now delivered on the EDT, and stale activity from a previous prompt is discarded (#1235)</LI>
+                    <LI>fix(custom-openai): new <b>Omit top_p</b> setting for OpenAI-compatible gateways (e.g. LiteLLM) that reject <code>top_p</code> with an "Unsupported parameter" error (#1240)</LI>
+                    <LI>chore(deps): upgrade AWS SDK to 2.49.5 and Logback to 1.6.1 (#1242)</LI>
+                </UL>
         <h2>v1.10.1</h2>
         <UL>
                     <LI>feat(llm): new <b>Nativ</b> local provider — run MLX models on Apple Silicon behind Nativ's OpenAI-compatible server, with a configurable fallback context window. Disabled by default because Nativ shares port 8080 with Llama.c++ (#1234)</LI>

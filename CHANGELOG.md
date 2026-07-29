@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.11.0 - 2026-07-29
+
+The headline is **mid-task interaction**: the prompt input no longer locks up while a task runs — you can queue follow-up messages or steer the running agent loop. Streamed agent tool activity is visible again, and Custom OpenAI gateways that reject `top_p` are unblocked.
+
+### Added
+- feat(prompt): **queue and steer prompts while a task is running** — the prompt input stays enabled during a run. New messages are **queued** by default (FIFO, one per run, each executed as its own prompt with its own answer once the current run finishes), while **steering** is an explicit action that injects your message into the running agent loop's next round trip through a langchain4j `chatRequestTransformer`. Injection always happens *after* completed tool results so no dangling `tool_use` block is ever left behind, the steered message is persisted in chat memory, and it's framed so the model applies the correction while still completing the original request. While a run is active the submit button becomes **Stop** and **Queue** (clock icon; Enter does the same) and **Steer** (paper plane) buttons appear with explanatory tooltips. Steered messages render via freeze-and-split — streamed content freezes in place, your bubble follows, and output continues in a new area below; queued bubbles appear immediately and are swapped for the real prompt bubble when their turn starts; pressing Stop discards pending messages and their bubbles. New `service/prompt/steering/` package (`SteeringMessageQueue`, `SteeringMessageInjector`, `PendingPromptQueue`) wired into both the streaming and non-streaming execution paths, with 60+ new tests including round-trip injection verified against real langchain4j 1.18.0 (#1241, #1245, task-255)
+
+### Fixed
+- fix(agent): **show agent tool activity during streaming** — activity updates were being delivered off the EDT, so tool calls made during a streamed response never surfaced in the UI. Updates are now dispatched on the IntelliJ EDT, and queued activity belonging to an earlier prompt generation is dropped rather than rendered against the wrong response. Adds streaming, RAW-filtering and prompt-switch regression coverage (#1235)
+- fix(custom-openai): **add a setting to omit `top_p` from requests** — some OpenAI-compatible endpoints and gateways (e.g. LiteLLM) reject `top_p` outright with `400 "Unsupported parameter: 'top_p' is not supported with this model."`, breaking every prompt against that endpoint — the same class of failure as `max_tokens` in #1225. A new **"Omit top_p"** checkbox under Settings → LLM Providers → Custom OpenAI leaves the parameter out of the request entirely on both the blocking and streaming paths (it's the parameter's *presence*, not its value, that servers reject); temperature keeps travelling. Off by default, and the model name is deliberately not sniffed since gateways expose arbitrary aliases no naming pattern can classify (#1240, #1244)
+
+### Changed
+- ci: stop link-checking Docusaurus images against the live site — lychee ran with `--base-url https://genie.devoxx.com`, so `/img/Foo.png` was fetched over HTTP against the deployed site. Because the link check and the docs deploy fire on the same push, every PR that added an image failed with false 404s until the deploy landed. No coverage is lost: the Docusaurus build already hard-errors on a markdown image with no matching file under `static/`, and that runs on every PR. Also adds `.lychee.toml` and the workflow itself to the `paths:` filter so changes to the link checker's own config re-run it (#1248)
+
+### Documentation
+- docs: new blog post announcing first-class **Nativ** support (the MIT-licensed local MLX inference engine for Apple Silicon shipped in v1.10.1), with screenshots of agent mode running against a Nativ-served Qwen3.6-27B on an M4 Max, plus setup notes, the port-8080 conflict with Llama.c++ and the Nativ Fallback Context setting. Landing-page and README stats refreshed to 112,000+ active users / 82,800 downloads (#1246)
+- docs: mention **Nativ** in every docs page that enumerates the local providers — LLM providers overview and comparison table, local quick-start, introduction feature bullet, FAQ (visible list and JSON-LD answer), homepage feature card and site keyword meta (#1247)
+
+### Dependencies
+- chore(deps): upgrade AWS SDK 2.49.2 → 2.49.5 and Logback 1.6.0 → 1.6.1 (#1242)
+- chore(deps): bump docs toolchain — body-parser 1.20.5 → 1.20.6 (security), shell-quote 1.8.4 → 1.10.0, fast-uri 3.1.2 → 3.1.4, webpack-dev-server 5.2.5 → 5.2.6 (#1236, #1237, #1239, #1243)
+
+### Contributors
+- @stephanj
+
 ## v1.10.1 - 2026-07-24
 
 A local-provider and settings-usability release: **Nativ** joins the local providers, the LLM Providers settings page is split into tabs, and reasoning-model requests through Custom OpenAI gateways no longer fail on an unsupported token field.
