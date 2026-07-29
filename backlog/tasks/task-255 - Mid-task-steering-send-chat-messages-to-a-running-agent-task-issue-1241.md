@@ -4,6 +4,7 @@ title: 'Mid-task steering: send chat messages to a running agent task (issue #12
 status: In Progress
 assignee: []
 created_date: '2026-07-29 08:48'
+updated_date: '2026-07-29 09:07'
 labels: []
 dependencies: []
 references:
@@ -19,11 +20,25 @@ Users currently cannot interact with the LLM while an agent task is running — 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A steering message submitted while an agent task is running is delivered to the LLM in the next agent-loop round trip (both streaming and non-streaming paths)
-- [ ] #2 The injected message never produces an invalid message sequence (no dangling tool_use / provider 400s); it lands after completed tool results
-- [ ] #3 Steering messages are persisted in chat memory so later turns and saved conversations include them
-- [ ] #4 Submitting while a task runs no longer cancels the run when the input contains text; stopping the task remains possible
+- [x] #1 A steering message submitted while an agent task is running is delivered to the LLM in the next agent-loop round trip (both streaming and non-streaming paths)
+- [x] #2 The injected message never produces an invalid message sequence (no dangling tool_use / provider 400s); it lands after completed tool results
+- [x] #3 Steering messages are persisted in chat memory so later turns and saved conversations include them
+- [x] #4 Submitting while a task runs no longer cancels the run when the input contains text; stopping the task remains possible
 - [ ] #5 A user bubble for the steering message appears in the conversation UI without disrupting the in-flight streaming response
-- [ ] #6 Queued messages that were never consumed (task finished first) are not silently lost
-- [ ] #7 Unit tests cover queue behavior, round-trip injection, and ordering safety
+- [x] #6 Queued messages that were never consumed (task finished first) are not silently lost
+- [x] #7 Unit tests cover queue behavior, round-trip injection, and ordering safety
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Prototype implemented on branch feature/issue-1241-mid-task-steering (commit c2cb4262), TDD, 26 new tests + full suite green.
+
+Mechanism: SteeringMessageQueue (per-memory-key FIFO, null-safe, active-flag lifecycle) + SteeringMessageInjector wired as AiServices.chatRequestTransformer in StreamingPromptStrategy.buildAssistant and NonStreamingPromptExecutionService (only when a tool provider exists). langchain4j 1.18.0 applies the transformer on every round trip — verified by MidTaskSteeringRoundTripTest against the real dependency for both paths: injected UserMessage lands at request tail after tool results, exactly once, and persists in chat memory.
+
+Entry points: submit button (non-blank falls through to steering; blank = stop) and Enter key. NOTE the Enter key submits via AppTopics.PROMPT_SUBMISSION_TOPIC → ActionButtonsPanel.onPromptSubmitted, which previously swallowed the text into the spec-runner one-slot queue while running — fixed by trying controller.steerRunningPrompt(text) first (found by user manual testing, then covered by steerRunningPromptWithRawText tests).
+
+Leftover policy: run ends naturally → unconsumed messages resubmitted as a new prompt via PROMPT_SUBMISSION_TOPIC; user stops → discarded.
+
+AC #5 (user bubble without disrupting stream): implemented via ConversationViewModel.addSteeringMessage (does not touch activeMessageId/activity handlers); needs manual IDE validation before checking. Known prototype limitation: after steering, the AI's continued output streams in the ORIGINAL bubble above the steering bubble — the issue's ideal is freezing the old area and opening a new AI area below (candidate follow-up).
+<!-- SECTION:NOTES:END -->
