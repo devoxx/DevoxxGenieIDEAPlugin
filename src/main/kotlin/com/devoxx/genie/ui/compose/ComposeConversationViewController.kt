@@ -158,6 +158,10 @@ class ComposeConversationViewController(
         viewModel.addSteeringMessage(text)
     }
 
+    override fun addQueuedPromptMessage(text: String) {
+        viewModel.addQueuedPromptMessage(text)
+    }
+
     override fun removeSteeringMessage(text: String) {
         viewModel.removeSteeringMessage(text)
     }

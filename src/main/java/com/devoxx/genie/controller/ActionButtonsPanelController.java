@@ -77,6 +77,14 @@ public class ActionButtonsPanelController implements PromptExecutionListener {
         return promptExecutionController.steerRunningPrompt(text);
     }
 
+    /**
+     * Issue #1241 (default while running): queue an independent prompt to run
+     * after the current task completes. Returns false when queueing is not possible.
+     */
+    public boolean queueRunningPrompt(String text) {
+        return promptExecutionController.queueRunningPrompt(text);
+    }
+
     public boolean handlePromptSubmission(String actionCommand,
                                           boolean isProjectContextAdded,
                                           String projectContext) {

@@ -249,10 +249,30 @@ class ConversationViewModel(
     }
 
     /**
-     * Removes the last steering bubble with the given text (issue #1241). Used when a
-     * leftover steering message — one the agent loop never consumed because the run
-     * ended first — is resubmitted as a new prompt: the new prompt renders its own
-     * user bubble, so the stale steering bubble must go or the question shows twice.
+     * Appends a bubble for a QUEUED prompt (issue #1241, queue mode — the default):
+     * an independent next question submitted while a task runs. Unlike
+     * [addSteeringMessage] this does NOT split the active message — the running
+     * answer keeps streaming in its own bubble above the queued question. The bubble
+     * is removed via [removeSteeringMessage] when the prompt is resubmitted for real.
+     */
+    fun addQueuedPromptMessage(text: String) {
+        val currentState = state
+        if (currentState !is ConversationState.Chat) {
+            return
+        }
+        val queuedBubble = MessageUiModel(
+            id = "queued-${java.util.UUID.randomUUID()}",
+            userPrompt = text,
+            isSteeringOnly = true,
+        )
+        state = currentState.copy(messages = currentState.messages + queuedBubble)
+    }
+
+    /**
+     * Removes the last steering/queued bubble with the given text (issue #1241).
+     * Used when a leftover steering message or a queued prompt is resubmitted as a
+     * new prompt: the new prompt renders its own user bubble, so the stale bubble
+     * must go or the question shows twice.
      */
     fun removeSteeringMessage(text: String) {
         val currentState = state

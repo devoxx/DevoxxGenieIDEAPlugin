@@ -56,6 +56,8 @@ public class ActionButtonsPanel extends JPanel
 
     private AddFilesToContextButton addFileBtn;
     private JButton submitBtn;
+    private JButton queueBtn;
+    private JButton steerBtn;
     private JButton addProjectBtn;
     private JButton calcTokenCostBtn;
 
@@ -138,6 +140,23 @@ public class ActionButtonsPanel extends JPanel
 
     private void createButtons() {
         submitBtn = createActionButton(SubmitIcon, SUBMIT_PROMPT_TOOLTIP, this::onSubmitPrompt);
+        // Issue #1241: while a task runs, two extra buttons appear — Queue (default,
+        // also Enter) runs the message as the next prompt after the current task;
+        // Steer injects it into the running task's next loop iteration.
+        queueBtn = createActionButton("Queue", ClockIcon,
+                "<html><b>Queue as next prompt</b><br>"
+                + "Runs as a separate prompt after the current task finishes — "
+                + "each queued prompt gets its own answer, in order.<br>"
+                + "Pressing Enter while a task runs does the same.</html>",
+                this::onQueuePrompt);
+        steerBtn = createActionButton("Steer", SubmitIcon,
+                "<html><b>Steer the running task</b><br>"
+                + "Sends this message into the current task right away (next agent step) — "
+                + "use it to correct course mid-task, e.g. \"use snake_case\".<br>"
+                + "The model continues the original request with your input applied.</html>",
+                this::onSteerPrompt);
+        queueBtn.setVisible(false);
+        steerBtn.setVisible(false);
         addFileBtn = new AddFilesToContextButton(project, this::addFileToConversationContext, this::showFilePickerPopup);
         addProjectBtn = createActionButton(AddProjectIcon, ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT, this::handleProjectContext);
         calcTokenCostBtn = createActionButton(CalculateIcon, CALCULATE_TOKEN_COST_TOOLTIP, e -> controller.calculateTokensAndCost());
@@ -172,6 +191,8 @@ public class ActionButtonsPanel extends JPanel
         // Main buttons using FlowLayout so hidden buttons leave no gaps
         JPanel mainButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         mainButtons.add(submitBtn);
+        mainButtons.add(queueBtn);
+        mainButtons.add(steerBtn);
         mainButtons.add(calcTokenCostBtn);
         mainButtons.add(addProjectBtn);
         mainButtons.add(addFileBtn);
@@ -320,10 +341,9 @@ public class ActionButtonsPanel extends JPanel
      * Submit the user prompt.
      */
     private void onSubmitPrompt(ActionEvent actionEvent) {
-        if (controller.isPromptRunning() && promptInputArea.getText().isBlank()) {
-            // Issue #1241: submit with empty input while running still means "stop".
-            // A non-blank submit falls through: the execution controller steers the
-            // running agent task, or stops when steering is not available.
+        if (controller.isPromptRunning()) {
+            // Issue #1241: while running the submit button shows the stop icon and
+            // always stops. Queue and Steer are the dedicated buttons next to it.
             controller.stopPromptExecution();
             return;
         }
@@ -337,9 +357,28 @@ public class ActionButtonsPanel extends JPanel
         }
     }
 
+    /** Issue #1241: queue the typed message as the next prompt (default while running). */
+    private void onQueuePrompt(ActionEvent actionEvent) {
+        controller.queueRunningPrompt(promptInputArea.getText());
+    }
+
+    /**
+     * Issue #1241: inject the typed message into the running task's next loop
+     * iteration. Falls back to queueing when steering is unavailable (no tool loop).
+     */
+    private void onSteerPrompt(ActionEvent actionEvent) {
+        String text = promptInputArea.getText();
+        if (!controller.steerRunningPrompt(text)) {
+            controller.queueRunningPrompt(text);
+        }
+    }
+
     public void enableButtons() {
         ApplicationManager.getApplication().invokeLater(() -> {
             submitBtn.setIcon(SubmitIcon);
+            submitBtn.setToolTipText(SUBMIT_PROMPT_TOOLTIP);
+            queueBtn.setVisible(false);
+            steerBtn.setVisible(false);
             promptInputArea.setEnabled(true);
             // Stop the submit glow (and its Swing timer) on every execution-end path:
             // enableButtons() is reached on completion, error and user stop via
@@ -386,7 +425,10 @@ public class ActionButtonsPanel extends JPanel
     public void disableSubmitBtn() {
         ApplicationManager.getApplication().invokeLater(() -> {
             submitBtn.setIcon(StopIcon);
-            submitBtn.setToolTipText(PROMPT_IS_RUNNING_PLEASE_BE_PATIENT);
+            submitBtn.setToolTipText("Stop the running task");
+            // Issue #1241: while running, offer Queue (default) and Steer actions
+            queueBtn.setVisible(true);
+            steerBtn.setVisible(true);
         });
     }
 
@@ -455,9 +497,11 @@ public class ActionButtonsPanel extends JPanel
         }
         ApplicationManager.getApplication().invokeLater(() -> {
             if (controller.isPromptRunning()) {
-                // Issue #1241: steer the running agent task when possible — the
-                // message is injected into the agent loop's next round trip.
-                if (controller.steerRunningPrompt(prompt)) {
+                // Issue #1241: Enter while a task runs QUEUES the message as the next
+                // prompt (the default). Spec-runner prompts keep their dedicated
+                // one-slot queue with its runner-active check.
+                SpecTaskRunnerService runner = SpecTaskRunnerService.getInstance(project);
+                if (!runner.isRunning() && controller.queueRunningPrompt(prompt)) {
                     return;
                 }
                 // Don't stop the current execution — queue this prompt so the

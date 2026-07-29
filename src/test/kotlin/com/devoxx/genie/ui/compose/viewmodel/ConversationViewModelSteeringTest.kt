@@ -163,6 +163,37 @@ class ConversationViewModelSteeringTest {
     }
 
     @Test
+    fun `queued prompt appends a trailing bubble without splitting the active message`() {
+        // Queue mode: the message is an independent next prompt — the running answer
+        // must keep streaming in its own bubble ABOVE the queued question, no split.
+        startStreamingMessage()
+        streamContent("msg-1", "Answer in progress.")
+
+        viewModel.addQueuedPromptMessage("next question")
+
+        val messages = messages()
+        assertThat(messages).hasSize(2)
+        assertThat(messages[0].id).isEqualTo("msg-1")
+        assertThat(messages[0].isSteeringFrozen).isFalse()
+        assertThat(messages[1].userPrompt).isEqualTo("next question")
+        assertThat(messages[1].isSteeringOnly).isTrue()
+
+        // Streaming continues in the original bubble, above the queued question
+        streamContent("msg-1", "Answer in progress. And done.")
+        assertThat(messages()[0].aiResponseMarkdown).isEqualTo("Answer in progress. And done.")
+    }
+
+    @Test
+    fun `queued prompt bubble is removable when it gets resubmitted`() {
+        startStreamingMessage()
+        viewModel.addQueuedPromptMessage("next question")
+
+        viewModel.removeSteeringMessage("next question")
+
+        assertThat(messages().none { it.isSteeringOnly }).isTrue()
+    }
+
+    @Test
     fun `removing an unconsumed steering bubble removes only that bubble`() {
         // A leftover steering message (run ended before the loop consumed it) is
         // resubmitted as a new prompt — its old bubble must go or the question shows twice.

@@ -4,6 +4,7 @@ import com.devoxx.genie.controller.listener.PromptExecutionListener;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.PromptExecutionService;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
+import com.devoxx.genie.service.prompt.steering.PendingPromptQueue;
 import com.devoxx.genie.service.prompt.steering.SteeringMessageQueue;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -43,9 +44,12 @@ public class PromptExecutionController implements PromptExecutionListener {
 
     public boolean handlePromptSubmission(ChatMessageContext currentChatMessageContext) {
         if (isPromptRunning) {
-            // Issue #1241: while an agent task is running, a non-blank submission
-            // steers the running task instead of stopping it.
-            if (steerRunningPrompt(currentChatMessageContext)) {
+            // Issue #1241: while a task is running, a non-blank submission is QUEUED
+            // as an independent prompt (the default) and executed after the current
+            // run completes. Mid-loop steering is a separate, explicit action via
+            // steerRunningPrompt. A blank submission still stops the run.
+            String text = currentChatMessageContext != null ? currentChatMessageContext.getUserPrompt() : null;
+            if (queueRunningPrompt(text)) {
                 return true;
             }
             stopPromptExecution();
@@ -133,8 +137,21 @@ public class PromptExecutionController implements PromptExecutionListener {
         return true;
     }
 
-    private boolean steerRunningPrompt(ChatMessageContext steeringContext) {
-        return steeringContext != null && steerRunningPrompt(steeringContext.getUserPrompt());
+    /**
+     * Issue #1241 (queue mode — the default): queue an independent prompt submitted
+     * while a task is running. It gets a user bubble immediately and is executed as
+     * its own prompt after the current run completes — never injected mid-loop.
+     * Returns false when queueing is not possible (not running, blank, no context).
+     */
+    public boolean queueRunningPrompt(String text) {
+        if (!isPromptRunning || text == null || text.isBlank() || currentChatMessageContext == null) {
+            return false;
+        }
+        String trimmed = text.trim();
+        PendingPromptQueue.getInstance().offer(currentChatMessageContext.getMemoryKey(), trimmed);
+        promptOutputPanel.getConversationPanel().addQueuedPromptMessage(trimmed);
+        promptInputArea.clear();
+        return true;
     }
 
     @Override
@@ -146,9 +163,15 @@ public class PromptExecutionController implements PromptExecutionListener {
             promptExecutionService.stopExecution(project);
         }
         // Issue #1241: the user aborted the run — unconsumed steering messages
-        // are corrections to work that no longer continues, so discard them.
+        // are corrections to work that no longer continues, and queued prompts
+        // should not start either. Discard both; queued bubbles are removed so
+        // the conversation doesn't show questions that will never be answered.
         if (currentChatMessageContext != null) {
-            SteeringMessageQueue.getInstance().drainAndDeactivate(currentChatMessageContext.getMemoryKey());
+            String memoryKey = currentChatMessageContext.getMemoryKey();
+            SteeringMessageQueue.getInstance().drainAndDeactivate(memoryKey);
+            for (String queued : PendingPromptQueue.getInstance().drain(memoryKey)) {
+                promptOutputPanel.getConversationPanel().removeSteeringMessage(queued);
+            }
         }
         endPromptExecution();
     }
@@ -170,24 +193,33 @@ public class PromptExecutionController implements PromptExecutionListener {
     }
 
     /**
-     * Issue #1241: steering messages the agent loop never consumed (the run
-     * finished first) must not be silently lost — resubmit them as a new prompt.
+     * Issue #1241: when a run ends, (1) steering messages the agent loop never
+     * consumed must not be silently lost — resubmit them as a new prompt; else
+     * (2) start the next QUEUED prompt, one per run, so queued questions execute
+     * sequentially, each as its own prompt with its own answer.
      */
     private void resubmitUnconsumedSteeringMessages() {
         if (currentChatMessageContext == null) {
             return;
         }
-        List<String> leftovers = SteeringMessageQueue.getInstance()
-                .drainAndDeactivate(currentChatMessageContext.getMemoryKey());
-        if (leftovers.isEmpty()) {
-            return;
+        String memoryKey = currentChatMessageContext.getMemoryKey();
+        List<String> leftovers = SteeringMessageQueue.getInstance().drainAndDeactivate(memoryKey);
+        String nextPrompt;
+        if (!leftovers.isEmpty()) {
+            nextPrompt = String.join("\n\n", leftovers);
+        } else {
+            nextPrompt = PendingPromptQueue.getInstance().pollNext(memoryKey);
+            if (nextPrompt == null) {
+                return;
+            }
+            leftovers = List.of(nextPrompt);
         }
         // The resubmitted prompt renders its own user bubble — drop the stale
-        // steering bubbles or the same question shows twice in the conversation.
+        // steering/queued bubbles or the same question shows twice.
         for (String leftover : leftovers) {
             promptOutputPanel.getConversationPanel().removeSteeringMessage(leftover);
         }
         project.getMessageBus().syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
-                .onPromptSubmitted(project, String.join("\n\n", leftovers), currentChatMessageContext.getTabId());
+                .onPromptSubmitted(project, nextPrompt, currentChatMessageContext.getTabId());
     }
 }

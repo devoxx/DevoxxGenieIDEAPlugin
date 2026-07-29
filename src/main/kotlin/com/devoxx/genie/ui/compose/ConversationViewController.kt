@@ -43,8 +43,14 @@ interface ConversationViewController {
     fun addSteeringMessage(text: String)
 
     /**
-     * Removes the last steering bubble with the given text — used when a leftover
-     * steering message is resubmitted as a regular prompt after the run ended.
+     * Adds a bubble for a queued prompt — an independent next question submitted
+     * while a task runs, executed after the current run completes (issue #1241).
+     */
+    fun addQueuedPromptMessage(text: String)
+
+    /**
+     * Removes the last steering/queued bubble with the given text — used when a
+     * leftover steering message or queued prompt is resubmitted as a regular prompt.
      */
     fun removeSteeringMessage(text: String)
 

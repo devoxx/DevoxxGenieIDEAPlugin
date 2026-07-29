@@ -3,6 +3,7 @@ package com.devoxx.genie.controller;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.prompt.PromptExecutionService;
 import com.devoxx.genie.service.prompt.command.PromptCommandProcessor;
+import com.devoxx.genie.service.prompt.steering.PendingPromptQueue;
 import com.devoxx.genie.service.prompt.steering.SteeringMessageQueue;
 import com.devoxx.genie.ui.component.input.PromptInputArea;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
@@ -85,6 +86,7 @@ class PromptExecutionControllerSteeringTest {
     @AfterEach
     void tearDown() {
         SteeringMessageQueue.getInstance().drainAndDeactivate(MEMORY_KEY);
+        PendingPromptQueue.getInstance().drain(MEMORY_KEY);
         executionServiceMockedStatic.close();
         commandProcessorMockedStatic.close();
     }
@@ -113,39 +115,82 @@ class PromptExecutionControllerSteeringTest {
     }
 
     @Test
-    void submitWhileRunningWithActiveSteering_queuesMessageInsteadOfStopping() {
+    void submitWhileRunning_queuesAsIndependentPromptByDefault() {
+        // Default while running is QUEUE, not steer: the message is an independent
+        // next prompt, executed after the current run — never injected mid-loop.
         startRunningPrompt();
 
-        boolean result = controller.handlePromptSubmission(steeringContext("use snake_case for the API json"));
+        boolean result = controller.handlePromptSubmission(steeringContext("and what is todays time?"));
 
         assertThat(result).isTrue();
         assertThat(controller.isPromptRunning()).isTrue();
         verify(promptExecutionService, never()).stopExecution(any());
         verify(promptExecutionService, never()).stopExecution(any(), any());
-        assertThat(SteeringMessageQueue.getInstance().drain(MEMORY_KEY))
-                .containsExactly("use snake_case for the API json");
+        assertThat(PendingPromptQueue.getInstance().pollNext(MEMORY_KEY)).isEqualTo("and what is todays time?");
+        assertThat(SteeringMessageQueue.getInstance().hasPending(MEMORY_KEY)).isFalse();
     }
 
     @Test
-    void submitWhileRunningWithActiveSteering_showsUserBubbleAndClearsInput() {
+    void submitWhileRunning_showsQueuedBubbleAndClearsInput() {
         startRunningPrompt();
 
-        controller.handlePromptSubmission(steeringContext("use snake_case for the API json"));
+        controller.handlePromptSubmission(steeringContext("and what is todays time?"));
 
-        verify(conversationPanel).addSteeringMessage("use snake_case for the API json");
+        verify(conversationPanel).addQueuedPromptMessage("and what is todays time?");
         verify(promptInputArea).clear();
     }
 
     @Test
-    void submitWhileRunningWithoutActiveSteering_stopsAsBefore() {
+    void queuedPrompt_isResubmittedWithBubbleRemovedWhenRunEnds() {
         startRunningPrompt();
-        SteeringMessageQueue.getInstance().deactivate(MEMORY_KEY);
+        ArgumentCaptor<Runnable> completion = ArgumentCaptor.forClass(Runnable.class);
+        verify(promptExecutionService).executePrompt(any(), eq(promptOutputPanel), completion.capture());
+        controller.queueRunningPrompt("and what is todays time?");
 
-        boolean result = controller.handlePromptSubmission(steeringContext("some text"));
+        completion.getValue().run();
 
-        assertThat(result).isTrue();
-        assertThat(controller.isPromptRunning()).isFalse();
-        verify(promptExecutionService).stopExecution(project, TAB_ID);
+        verify(conversationPanel).removeSteeringMessage("and what is todays time?");
+        verify(promptSubmissionListener).onPromptSubmitted(project, "and what is todays time?", TAB_ID);
+    }
+
+    @Test
+    void multipleQueuedPrompts_runOneAtATime() {
+        startRunningPrompt();
+        ArgumentCaptor<Runnable> completion = ArgumentCaptor.forClass(Runnable.class);
+        verify(promptExecutionService).executePrompt(any(), eq(promptOutputPanel), completion.capture());
+        controller.queueRunningPrompt("first question");
+        controller.queueRunningPrompt("second question");
+
+        completion.getValue().run();
+
+        // Only the first queued prompt starts; the second waits for the next run end
+        verify(promptSubmissionListener).onPromptSubmitted(project, "first question", TAB_ID);
+        verify(promptSubmissionListener, never()).onPromptSubmitted(project, "second question", TAB_ID);
+        assertThat(PendingPromptQueue.getInstance().pollNext(MEMORY_KEY)).isEqualTo("second question");
+    }
+
+    @Test
+    void stop_discardsQueuedPromptsAndRemovesTheirBubbles() {
+        startRunningPrompt();
+        controller.queueRunningPrompt("never runs");
+
+        controller.stopPromptExecution();
+
+        verify(promptSubmissionListener, never()).onPromptSubmitted(any(), any(), any());
+        verify(conversationPanel).removeSteeringMessage("never runs");
+        assertThat(PendingPromptQueue.getInstance().hasPending(MEMORY_KEY)).isFalse();
+    }
+
+    @Test
+    void explicitSteering_stillInjectsIntoRunningLoop() {
+        // Steering remains available as an explicit action (dedicated button)
+        startRunningPrompt();
+
+        boolean steered = controller.steerRunningPrompt("use snake_case");
+
+        assertThat(steered).isTrue();
+        assertThat(SteeringMessageQueue.getInstance().drain(MEMORY_KEY)).containsExactly("use snake_case");
+        verify(conversationPanel).addSteeringMessage("use snake_case");
     }
 
     @Test

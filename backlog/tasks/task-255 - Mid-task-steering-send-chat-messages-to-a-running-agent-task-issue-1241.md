@@ -4,7 +4,7 @@ title: 'Mid-task steering: send chat messages to a running agent task (issue #12
 status: In Progress
 assignee: []
 created_date: '2026-07-29 08:48'
-updated_date: '2026-07-29 09:31'
+updated_date: '2026-07-29 09:47'
 labels: []
 dependencies: []
 references:
@@ -43,4 +43,6 @@ Leftover policy: run ends naturally → unconsumed messages resubmitted as a new
 AC #5 (user bubble without disrupting stream): implemented via ConversationViewModel.addSteeringMessage (does not touch activeMessageId/activity handlers); needs manual IDE validation before checking. Known prototype limitation: after steering, the AI's continued output streams in the ORIGINAL bubble above the steering bubble — the issue's ideal is freezing the old area and opening a new AI area below (candidate follow-up).
 
 UI sequence fix (commit 54f91940): replaced trailing-bubble rendering with freeze-and-split in ConversationViewModel.addSteeringMessage — frozen copy (new id, resolved activity rows, isSteeringFrozen) stays in place, steering user bubble (isSteeringOnly) follows, active message moves to the end as continuation (same id, keeps activeMessageId/streaming target, unresolved activity rows). Because StreamingResponseHandler re-posts the FULL accumulated text every flush, the continuation subtracts a stored aiContentOffset/thinkingContentOffset (invariant: offset + shown length == full text length; leading newlines at the cut are consumed into the offset). MessagePair.shouldHideAiBubble hides empty header-only AI frames for split messages (frozen or offset>0) unless loading or a non-COMPLETED terminal state must render. Covered by ConversationViewModelSteeringTest (6) + MessagePairVisibilityTest (7); full suite green. AC #5 ready for manual re-validation.
+
+Fix round 3 (manual testing feedback): (1) Models pivoted to the steering question and never answered the original request — the injected message arrived right after tool results, before the model wrote its answer. SteeringMessageInjector now prepends STEERING_CONTEXT_NOTE instructing the model to complete the original request (including its final answer) and additionally address the new input. Note: the framed text (note + raw text) is what lands in chat memory. (2) Leftover steering messages resubmitted at run end rendered the question twice (stale steering bubble + new prompt bubble) — PromptExecutionController now calls ConversationPanel.removeSteeringMessage(text) per leftover before publishing the resubmission; ConversationViewModel.removeSteeringMessage removes the last matching isSteeringOnly bubble. 47 steering-related tests green, full suite green.
 <!-- SECTION:NOTES:END -->
