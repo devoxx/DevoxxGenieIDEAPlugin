@@ -62,7 +62,7 @@ const FeatureList = [
     link: '/docs/llm-providers/overview',
     description: (
       <>
-        Connect to local LLMs like Ollama, LMStudio, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Mistral, Groq, Kimi, GLM, Gemini, and more.
+        Connect to local LLMs like Ollama, LMStudio, Nativ, and GPT4All, as well as cloud-based providers like OpenAI, Anthropic, Mistral, Groq, Kimi, GLM, Gemini, and more.
       </>
     ),
   },
