@@ -29,7 +29,13 @@ exclude = [
   # Docusaurus internal .md links — resolved incorrectly by lychee against --base.
   # These relative links are validated by Docusaurus build, not lychee.
   "https://genie\\.devoxx\\.com/.*\\.md",
-  # Static images served by Docusaurus — not present on the live site at these paths.
+  # Static images served by Docusaurus. Markdown references them as /img/... (the
+  # /static/ prefix is stripped at build time), so lychee resolves them against
+  # --base-url and fetches them from the live site — which 404s for any image added
+  # before the deploy lands, failing every PR that introduces one. Nothing is lost by
+  # skipping them: the Docusaurus build itself hard-errors on a markdown image that
+  # has no matching file under static/, so it already covers the real failure case.
+  "https://genie\\.devoxx\\.com/img/.*",
   "https://genie\\.devoxx\\.com/static/img/.*",
   # New doc pages added in this PR — will exist on the live site after next deploy.
   # TODO(post-deploy): remove these two lines once the renamed/new pages are live.

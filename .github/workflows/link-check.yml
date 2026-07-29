@@ -3,10 +3,10 @@ name: Check Documentation Links
 on:
   push:
     branches: [master, main]
-    paths: ['docusaurus/**']
+    paths: ['docusaurus/**', '.lychee.toml', '.github/workflows/link-check.yml']
   pull_request:
     branches: [master, main]
-    paths: ['docusaurus/**']
+    paths: ['docusaurus/**', '.lychee.toml', '.github/workflows/link-check.yml']
   schedule:
     - cron: '0 3 * * 0'   # Weekly Sunday 03:00 UTC
   workflow_dispatch:
