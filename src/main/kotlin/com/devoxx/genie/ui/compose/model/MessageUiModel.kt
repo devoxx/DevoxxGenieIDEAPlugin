@@ -106,4 +106,23 @@ data class MessageUiModel(
     val loopLimitMaxCalls: Int = 0,
     /** True once the user clicked Retry on this message's error card (one-shot guard). */
     val retryAttempted: Boolean = false,
+    /**
+     * Issue #1241: a steering message sent while an agent task was running — renders
+     * as a user bubble only, with no AI response area of its own.
+     */
+    val isSteeringOnly: Boolean = false,
+    /**
+     * Issue #1241: a frozen snapshot of the in-flight message, created when a steering
+     * message split it. Frozen copies with no answer text hide their AI bubble.
+     */
+    val isSteeringFrozen: Boolean = false,
+    /**
+     * Issue #1241: number of leading characters of the (cumulative) streamed answer
+     * already shown in frozen copies above this message. The streaming handler
+     * re-posts the full accumulated text on every flush; the continuation area after
+     * a steering bubble renders only the part beyond this offset.
+     */
+    val aiContentOffset: Int = 0,
+    /** Same as [aiContentOffset], for the extracted thinking text. */
+    val thinkingContentOffset: Int = 0,
 )

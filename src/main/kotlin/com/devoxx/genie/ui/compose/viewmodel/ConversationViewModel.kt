@@ -188,6 +188,106 @@ class ConversationViewModel(
         activeMessageId = context.id
     }
 
+    /**
+     * Inserts a steering message (issue #1241): freezes the already-streamed content
+     * of the active message in place, adds the user bubble after it, and moves the
+     * active message to the end as an (initially empty) continuation area. Subsequent
+     * streamed content — which the handler re-posts as the FULL accumulated text —
+     * renders only beyond [MessageUiModel.aiContentOffset], so AI output visually
+     * continues below the steering bubble. Deliberately does NOT touch
+     * [activeMessageId] or the activity generation: streaming and activity events
+     * keep targeting the continuation (same message id).
+     */
+    fun addSteeringMessage(text: String) {
+        val currentState = state
+        if (currentState !is ConversationState.Chat) {
+            return
+        }
+        val steeringBubble = MessageUiModel(
+            id = "steering-${java.util.UUID.randomUUID()}",
+            userPrompt = text,
+            isSteeringOnly = true,
+        )
+
+        val activeIndex = currentState.messages.indexOfFirst { it.id == activeMessageId }
+        if (activeIndex < 0) {
+            state = currentState.copy(messages = currentState.messages + steeringBubble)
+            return
+        }
+
+        val active = currentState.messages[activeIndex]
+        // Unresolved rows (running tools, pending approvals) must follow the
+        // continuation so their paired response events can still resolve them.
+        val (unresolvedEntries, resolvedEntries) = active.activityEntries.partition {
+            it.status == ActivityStatus.RUNNING || it.status == ActivityStatus.PENDING_APPROVAL
+        }
+        val frozen = active.copy(
+            id = "${active.id}-frozen-${java.util.UUID.randomUUID()}",
+            activityEntries = resolvedEntries,
+            isStreaming = false,
+            isLoadingIndicatorVisible = false,
+            isSteeringFrozen = true,
+        )
+        val continuation = active.copy(
+            userPrompt = "",
+            aiResponseMarkdown = "",
+            thinkingMarkdown = "",
+            intermediateTexts = emptyList(),
+            fileReferences = emptyList(),
+            activityEntries = unresolvedEntries,
+            aiContentOffset = active.aiContentOffset + active.aiResponseMarkdown.length,
+            thinkingContentOffset = active.thinkingContentOffset + active.thinkingMarkdown.length,
+        )
+
+        state = currentState.copy(
+            messages = currentState.messages.toMutableList().apply {
+                set(activeIndex, frozen)
+                add(steeringBubble)
+                add(continuation)
+            }
+        )
+    }
+
+    /**
+     * Appends a bubble for a QUEUED prompt (issue #1241, queue mode — the default):
+     * an independent next question submitted while a task runs. Unlike
+     * [addSteeringMessage] this does NOT split the active message — the running
+     * answer keeps streaming in its own bubble above the queued question. The bubble
+     * is removed via [removeSteeringMessage] when the prompt is resubmitted for real.
+     */
+    fun addQueuedPromptMessage(text: String) {
+        val currentState = state
+        if (currentState !is ConversationState.Chat) {
+            return
+        }
+        val queuedBubble = MessageUiModel(
+            id = "queued-${java.util.UUID.randomUUID()}",
+            userPrompt = text,
+            isSteeringOnly = true,
+        )
+        state = currentState.copy(messages = currentState.messages + queuedBubble)
+    }
+
+    /**
+     * Removes the last steering/queued bubble with the given text (issue #1241).
+     * Used when a leftover steering message or a queued prompt is resubmitted as a
+     * new prompt: the new prompt renders its own user bubble, so the stale bubble
+     * must go or the question shows twice.
+     */
+    fun removeSteeringMessage(text: String) {
+        val currentState = state
+        if (currentState !is ConversationState.Chat) {
+            return
+        }
+        val index = currentState.messages.indexOfLast { it.isSteeringOnly && it.userPrompt == text }
+        if (index < 0) {
+            return
+        }
+        state = currentState.copy(
+            messages = currentState.messages.toMutableList().apply { removeAt(index) }
+        )
+    }
+
     fun updateAiMessageContent(context: ChatMessageContext) {
         val aiText = context.aiMessage?.text() ?: return
         updateMessage(context.id) { msg ->
@@ -198,9 +298,21 @@ class ConversationViewModel(
             if (msg.terminalState == TerminalState.STOPPED || msg.terminalState == TerminalState.ERROR) {
                 return@updateMessage msg
             }
+            // Issue #1241: after a steering split, the frozen prefix is already shown
+            // above the steering bubble — render only the remainder here. Leading
+            // newlines at the cut are consumed into the offset so the invariant
+            // offset + shown.length == fullText.length holds for the next split.
+            val fullAnswer = ThinkingResponseFormatter.extractAnswer(aiText)
+            val answerRemainder = fullAnswer.drop(msg.aiContentOffset)
+            val answer = if (msg.aiContentOffset > 0) answerRemainder.trimStart('\n') else answerRemainder
+            val fullThinking = ThinkingResponseFormatter.extractThinking(aiText)
+            val thinkingRemainder = fullThinking.drop(msg.thinkingContentOffset)
+            val thinking = if (msg.thinkingContentOffset > 0) thinkingRemainder.trimStart('\n') else thinkingRemainder
             msg.copy(
-                aiResponseMarkdown = ThinkingResponseFormatter.extractAnswer(aiText),
-                thinkingMarkdown = ThinkingResponseFormatter.extractThinking(aiText),
+                aiResponseMarkdown = answer,
+                thinkingMarkdown = thinking,
+                aiContentOffset = msg.aiContentOffset + (answerRemainder.length - answer.length),
+                thinkingContentOffset = msg.thinkingContentOffset + (thinkingRemainder.length - thinking.length),
                 executionTimeMs = context.executionTimeMs,
                 tokenUsage = buildTokenUsage(context) ?: msg.tokenUsage,
                 modelName = formatModelDisplayName(context.languageModel).ifEmpty { msg.modelName },

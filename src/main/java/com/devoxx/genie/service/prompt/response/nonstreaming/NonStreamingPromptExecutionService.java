@@ -8,6 +8,8 @@ import com.devoxx.genie.service.agent.AgentToolProviderFactory;
 import com.devoxx.genie.service.agent.ToolErrorRecovery;
 import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
+import com.devoxx.genie.service.prompt.steering.SteeringMessageInjector;
+import com.devoxx.genie.service.prompt.steering.SteeringMessageQueue;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.ModelException;
@@ -241,6 +243,12 @@ public class NonStreamingPromptExecutionService {
                 // which silently overrides user-configured tool-call limits above 100.
                 assistantBuilder.maxToolCallingRoundTrips(tracker.getMaxToolCallingRoundTrips());
             }
+            // Issue #1241: allow mid-task steering — user messages typed while the
+            // agent loop runs are injected into the next round-trip request.
+            String memoryKey = chatMessageContext.getMemoryKey();
+            SteeringMessageQueue steeringQueue = SteeringMessageQueue.getInstance();
+            assistantBuilder.chatRequestTransformer(new SteeringMessageInjector(steeringQueue, memoryKey, chatMemory));
+            steeringQueue.activate(memoryKey);
             assistant = assistantBuilder.build();
 
             AiMessage queryResponse = assistant.chat(cleanText);

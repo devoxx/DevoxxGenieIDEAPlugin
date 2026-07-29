@@ -34,6 +34,26 @@ interface ConversationViewController {
 
     fun addChatMessage(chatMessageContext: ChatMessageContext)
     fun addUserPromptMessage(chatMessageContext: ChatMessageContext)
+
+    /**
+     * Adds a user bubble for a steering message sent while an agent task is
+     * running (issue #1241). Unlike [addUserPromptMessage] this must not redirect
+     * the in-flight streaming target or reset the activity handlers.
+     */
+    fun addSteeringMessage(text: String)
+
+    /**
+     * Adds a bubble for a queued prompt — an independent next question submitted
+     * while a task runs, executed after the current run completes (issue #1241).
+     */
+    fun addQueuedPromptMessage(text: String)
+
+    /**
+     * Removes the last steering/queued bubble with the given text — used when a
+     * leftover steering message or queued prompt is resubmitted as a regular prompt.
+     */
+    fun removeSteeringMessage(text: String)
+
     fun updateAiMessageContent(chatMessageContext: ChatMessageContext)
     fun addFileReferences(chatMessageContext: ChatMessageContext, files: List<VirtualFile>)
 

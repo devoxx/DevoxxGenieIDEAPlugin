@@ -8,6 +8,8 @@ import com.devoxx.genie.service.agent.AgentToolProviderFactory;
 import com.devoxx.genie.service.agent.ToolErrorRecovery;
 import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
+import com.devoxx.genie.service.prompt.steering.SteeringMessageInjector;
+import com.devoxx.genie.service.prompt.steering.SteeringMessageQueue;
 import com.devoxx.genie.service.prompt.error.ModelException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.result.PromptResult;
@@ -244,6 +246,12 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                 // which silently overrides user-configured tool-call limits above 100.
                 builder.maxToolCallingRoundTrips(tracker.getMaxToolCallingRoundTrips());
             }
+            // Issue #1241: allow mid-task steering — user messages typed while the
+            // agent loop runs are injected into the next round-trip request.
+            String memoryKey = context.getMemoryKey();
+            SteeringMessageQueue steeringQueue = SteeringMessageQueue.getInstance();
+            builder.chatRequestTransformer(new SteeringMessageInjector(steeringQueue, memoryKey, chatMemory));
+            steeringQueue.activate(memoryKey);
         }
 
         return builder.build();

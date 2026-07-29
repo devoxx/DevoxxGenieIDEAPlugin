@@ -278,6 +278,32 @@ public class ConversationPanel
     }
     
     /**
+     * Add a steering message bubble (issue #1241): a user message sent while an agent
+     * task is running. Unlike {@link #addUserPromptMessage} this must not redirect the
+     * in-flight streaming target or reset the activity handlers.
+     */
+    public void addSteeringMessage(@NotNull String text) {
+        viewController.addSteeringMessage(text);
+    }
+
+    /**
+     * Adds a bubble for a queued prompt (issue #1241): an independent next question
+     * submitted while a task runs, executed after the current run completes.
+     */
+    public void addQueuedPromptMessage(@NotNull String text) {
+        viewController.addQueuedPromptMessage(text);
+    }
+
+    /**
+     * Removes the last steering/queued bubble with the given text (issue #1241) —
+     * used when a leftover steering message or queued prompt is resubmitted as a
+     * regular prompt after run end.
+     */
+    public void removeSteeringMessage(@NotNull String text) {
+        viewController.removeSteeringMessage(text);
+    }
+
+    /**
      * Updates a message that was previously added as a user prompt with the full AI response.
      */
     public void updateUserPromptWithResponse(@NotNull ChatMessageContext chatMessageContext) {

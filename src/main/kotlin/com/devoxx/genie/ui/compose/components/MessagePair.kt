@@ -6,6 +6,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.devoxx.genie.ui.compose.model.MessageUiModel
+import com.devoxx.genie.ui.compose.model.TerminalState
+
+/**
+ * Issue #1241: messages created by a steering split (frozen copies and continuation
+ * areas) hide their AI bubble while there is nothing to show — an empty header-only
+ * frame would visually break the question/answer sequence. Loading and terminal
+ * states still render; regular messages are unaffected.
+ */
+internal fun shouldHideAiBubble(message: MessageUiModel): Boolean {
+    val partOfSteeringSplit = message.isSteeringFrozen || message.aiContentOffset > 0
+    return partOfSteeringSplit &&
+        message.aiResponseMarkdown.isBlank() &&
+        message.terminalState == TerminalState.COMPLETED &&
+        !message.isLoadingIndicatorVisible
+}
 
 @Composable
 fun MessagePair(
@@ -24,6 +39,12 @@ fun MessagePair(
         // User prompt bubble
         UserBubble(promptText = message.userPrompt)
 
+        // A steering message (issue #1241) is a user bubble only — the AI output
+        // continues in the dedicated continuation message that follows it.
+        if (message.isSteeringOnly) {
+            return
+        }
+
         // Activity section (MCP/Agent logs)
         if (message.activityEntries.isNotEmpty()) {
             ActivitySection(
@@ -41,13 +62,15 @@ fun MessagePair(
         }
 
         // AI response bubble
-        AiBubble(
-            message = message,
-            onRetryClick = onRetryClick,
-            onOpenAgentSettings = onOpenAgentSettings,
-            cachedHeight = cachedAiBubbleHeight,
-            onMeasured = onAiBubbleMeasured,
-        )
+        if (!shouldHideAiBubble(message)) {
+            AiBubble(
+                message = message,
+                onRetryClick = onRetryClick,
+                onOpenAgentSettings = onOpenAgentSettings,
+                cachedHeight = cachedAiBubbleHeight,
+                onMeasured = onAiBubbleMeasured,
+            )
+        }
 
         // File references
         if (message.fileReferences.isNotEmpty()) {
