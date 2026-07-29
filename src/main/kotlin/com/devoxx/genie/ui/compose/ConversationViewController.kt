@@ -42,6 +42,12 @@ interface ConversationViewController {
      */
     fun addSteeringMessage(text: String)
 
+    /**
+     * Removes the last steering bubble with the given text — used when a leftover
+     * steering message is resubmitted as a regular prompt after the run ended.
+     */
+    fun removeSteeringMessage(text: String)
+
     fun updateAiMessageContent(chatMessageContext: ChatMessageContext)
     fun addFileReferences(chatMessageContext: ChatMessageContext, files: List<VirtualFile>)
 

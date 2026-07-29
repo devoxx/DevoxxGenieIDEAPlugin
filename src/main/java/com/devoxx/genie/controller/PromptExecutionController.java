@@ -182,6 +182,11 @@ public class PromptExecutionController implements PromptExecutionListener {
         if (leftovers.isEmpty()) {
             return;
         }
+        // The resubmitted prompt renders its own user bubble — drop the stale
+        // steering bubbles or the same question shows twice in the conversation.
+        for (String leftover : leftovers) {
+            promptOutputPanel.getConversationPanel().removeSteeringMessage(leftover);
+        }
         project.getMessageBus().syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
                 .onPromptSubmitted(project, String.join("\n\n", leftovers), currentChatMessageContext.getTabId());
     }

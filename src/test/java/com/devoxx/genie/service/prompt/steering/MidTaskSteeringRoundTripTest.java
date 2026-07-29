@@ -139,7 +139,7 @@ class MidTaskSteeringRoundTripTest {
         List<ChatMessage> second = requests.get(1);
         assertThat(countSteeringMessages(second)).isEqualTo(1);
         assertThat(second.get(second.size() - 1)).isInstanceOf(UserMessage.class);
-        assertThat(((UserMessage) second.get(second.size() - 1)).singleText()).isEqualTo(STEERING_TEXT);
+        assertThat(((UserMessage) second.get(second.size() - 1)).singleText()).contains(STEERING_TEXT);
         assertThat(second.get(second.size() - 2)).isInstanceOf(ToolExecutionResultMessage.class);
 
         // Round trip 3: still exactly once (from memory, not re-injected)
@@ -147,13 +147,14 @@ class MidTaskSteeringRoundTripTest {
 
         // Persisted in chat memory for later turns
         assertThat(memory.messages().stream()
-                .filter(m -> m instanceof UserMessage u && STEERING_TEXT.equals(u.singleText())))
+                .filter(m -> m instanceof UserMessage u && u.singleText().contains(STEERING_TEXT)))
                 .hasSize(1);
     }
 
     private static long countSteeringMessages(List<ChatMessage> messages) {
+        // The injector frames the steering text with a context note — match on containment.
         return messages.stream()
-                .filter(m -> m instanceof UserMessage u && STEERING_TEXT.equals(u.singleText()))
+                .filter(m -> m instanceof UserMessage u && u.singleText().contains(STEERING_TEXT))
                 .count();
     }
 

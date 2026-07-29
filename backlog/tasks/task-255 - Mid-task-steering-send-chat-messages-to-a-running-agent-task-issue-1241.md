@@ -4,7 +4,7 @@ title: 'Mid-task steering: send chat messages to a running agent task (issue #12
 status: In Progress
 assignee: []
 created_date: '2026-07-29 08:48'
-updated_date: '2026-07-29 09:07'
+updated_date: '2026-07-29 09:31'
 labels: []
 dependencies: []
 references:
@@ -41,4 +41,6 @@ Entry points: submit button (non-blank falls through to steering; blank = stop) 
 Leftover policy: run ends naturally → unconsumed messages resubmitted as a new prompt via PROMPT_SUBMISSION_TOPIC; user stops → discarded.
 
 AC #5 (user bubble without disrupting stream): implemented via ConversationViewModel.addSteeringMessage (does not touch activeMessageId/activity handlers); needs manual IDE validation before checking. Known prototype limitation: after steering, the AI's continued output streams in the ORIGINAL bubble above the steering bubble — the issue's ideal is freezing the old area and opening a new AI area below (candidate follow-up).
+
+UI sequence fix (commit 54f91940): replaced trailing-bubble rendering with freeze-and-split in ConversationViewModel.addSteeringMessage — frozen copy (new id, resolved activity rows, isSteeringFrozen) stays in place, steering user bubble (isSteeringOnly) follows, active message moves to the end as continuation (same id, keeps activeMessageId/streaming target, unresolved activity rows). Because StreamingResponseHandler re-posts the FULL accumulated text every flush, the continuation subtracts a stored aiContentOffset/thinkingContentOffset (invariant: offset + shown length == full text length; leading newlines at the cut are consumed into the offset). MessagePair.shouldHideAiBubble hides empty header-only AI frames for split messages (frozen or offset>0) unless loading or a non-COMPLETED terminal state must render. Covered by ConversationViewModelSteeringTest (6) + MessagePairVisibilityTest (7); full suite green. AC #5 ready for manual re-validation.
 <!-- SECTION:NOTES:END -->

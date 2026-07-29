@@ -162,6 +162,44 @@ class ConversationViewModelSteeringTest {
         assertThat(messages[1].isSteeringOnly).isTrue()
     }
 
+    @Test
+    fun `removing an unconsumed steering bubble removes only that bubble`() {
+        // A leftover steering message (run ended before the loop consumed it) is
+        // resubmitted as a new prompt — its old bubble must go or the question shows twice.
+        startStreamingMessage()
+        streamContent("msg-1", "Answer to the first question.")
+        viewModel.addSteeringMessage("late question")
+
+        viewModel.removeSteeringMessage("late question")
+
+        val messages = messages()
+        assertThat(messages).hasSize(2)
+        assertThat(messages.none { it.isSteeringOnly }).isTrue()
+        assertThat(messages[0].aiResponseMarkdown).isEqualTo("Answer to the first question.")
+        assertThat(messages[1].id).isEqualTo("msg-1")
+    }
+
+    @Test
+    fun `removeSteeringMessage removes only the last matching bubble`() {
+        startStreamingMessage()
+        viewModel.addSteeringMessage("same text")
+        viewModel.addSteeringMessage("same text")
+
+        viewModel.removeSteeringMessage("same text")
+
+        assertThat(messages().count { it.isSteeringOnly }).isEqualTo(1)
+    }
+
+    @Test
+    fun `removeSteeringMessage with unknown text is a no-op`() {
+        startStreamingMessage()
+        viewModel.addSteeringMessage("kept")
+
+        viewModel.removeSteeringMessage("never sent")
+
+        assertThat(messages().count { it.isSteeringOnly }).isEqualTo(1)
+    }
+
     private fun agentMessage(
         type: AgentType,
         customize: (ActivityMessage.ActivityMessageBuilder) -> ActivityMessage.ActivityMessageBuilder = { it },

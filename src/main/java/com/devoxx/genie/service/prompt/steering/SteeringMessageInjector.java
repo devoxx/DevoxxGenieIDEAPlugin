@@ -22,6 +22,17 @@ import java.util.function.BiFunction;
 @Slf4j
 public class SteeringMessageInjector implements BiFunction<ChatRequest, Object, ChatRequest> {
 
+    /**
+     * Framing prepended to injected steering text. Without it, models see the new
+     * message before they have produced their answer to the current request and
+     * simply pivot — the original question never gets answered.
+     */
+    public static final String STEERING_CONTEXT_NOTE =
+            "[The user sent the message below while you were still working on their previous request. "
+            + "Do not drop that request: complete it (including its final answer), and also address this "
+            + "new input — apply it as a course correction if it changes the current work, or answer it "
+            + "additionally if it is a separate question.]";
+
     private final SteeringMessageQueue queue;
     private final String memoryKey;
     private final ChatMemory chatMemory;
@@ -41,7 +52,8 @@ public class SteeringMessageInjector implements BiFunction<ChatRequest, Object, 
 
         // Join into a single UserMessage: consecutive same-role messages are
         // rejected or merged inconsistently across providers.
-        UserMessage steeringMessage = UserMessage.from(String.join("\n\n", pending));
+        UserMessage steeringMessage = UserMessage.from(
+                STEERING_CONTEXT_NOTE + "\n\n" + String.join("\n\n", pending));
         log.info("Injecting {} steering message(s) into running agent loop for key {}", pending.size(), memoryKey);
 
         List<ChatMessage> messages = new ArrayList<>(request.messages());

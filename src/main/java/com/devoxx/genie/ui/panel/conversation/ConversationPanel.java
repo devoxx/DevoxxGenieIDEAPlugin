@@ -287,6 +287,14 @@ public class ConversationPanel
     }
 
     /**
+     * Removes the last steering bubble with the given text (issue #1241) — used when
+     * a leftover steering message is resubmitted as a regular prompt after run end.
+     */
+    public void removeSteeringMessage(@NotNull String text) {
+        viewController.removeSteeringMessage(text);
+    }
+
+    /**
      * Updates a message that was previously added as a user prompt with the full AI response.
      */
     public void updateUserPromptWithResponse(@NotNull ChatMessageContext chatMessageContext) {

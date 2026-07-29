@@ -248,6 +248,26 @@ class ConversationViewModel(
         )
     }
 
+    /**
+     * Removes the last steering bubble with the given text (issue #1241). Used when a
+     * leftover steering message — one the agent loop never consumed because the run
+     * ended first — is resubmitted as a new prompt: the new prompt renders its own
+     * user bubble, so the stale steering bubble must go or the question shows twice.
+     */
+    fun removeSteeringMessage(text: String) {
+        val currentState = state
+        if (currentState !is ConversationState.Chat) {
+            return
+        }
+        val index = currentState.messages.indexOfLast { it.isSteeringOnly && it.userPrompt == text }
+        if (index < 0) {
+            return
+        }
+        state = currentState.copy(
+            messages = currentState.messages.toMutableList().apply { removeAt(index) }
+        )
+    }
+
     fun updateAiMessageContent(context: ChatMessageContext) {
         val aiText = context.aiMessage?.text() ?: return
         updateMessage(context.id) { msg ->

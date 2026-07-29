@@ -55,7 +55,21 @@ class SteeringMessageInjectorTest {
         assertThat(result.messages()).hasSize(4);
         ChatMessage last = result.messages().get(result.messages().size() - 1);
         assertThat(last).isInstanceOf(UserMessage.class);
-        assertThat(((UserMessage) last).singleText()).isEqualTo("use snake_case for the API json");
+        assertThat(((UserMessage) last).singleText()).contains("use snake_case for the API json");
+    }
+
+    @Test
+    void pendingMessage_isFramedSoTheModelDoesNotDropTheOriginalRequest() {
+        // Without framing, models see the new question before they have answered the
+        // current one and simply pivot — the original request never gets answered.
+        queue.offer(MEMORY_KEY, "use snake_case for the API json");
+
+        ChatRequest result = injector.apply(requestWithToolResultTail(), MEMORY_KEY);
+
+        UserMessage last = (UserMessage) result.messages().get(result.messages().size() - 1);
+        assertThat(last.singleText())
+                .startsWith(SteeringMessageInjector.STEERING_CONTEXT_NOTE)
+                .endsWith("use snake_case for the API json");
     }
 
     @Test
@@ -67,7 +81,7 @@ class SteeringMessageInjectorTest {
         assertThat(memory.messages()).hasSize(1);
         assertThat(memory.messages().get(0)).isInstanceOf(UserMessage.class);
         assertThat(((UserMessage) memory.messages().get(0)).singleText())
-                .isEqualTo("use snake_case for the API json");
+                .contains("use snake_case for the API json");
     }
 
     @Test

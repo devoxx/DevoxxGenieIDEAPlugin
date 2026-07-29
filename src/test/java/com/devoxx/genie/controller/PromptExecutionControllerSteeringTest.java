@@ -175,6 +175,20 @@ class PromptExecutionControllerSteeringTest {
     }
 
     @Test
+    void resubmittedLeftovers_removeTheirSteeringBubbles() {
+        // The resubmitted prompt renders its own user bubble — the stale steering
+        // bubble must be removed or the question appears twice in the conversation.
+        startRunningPrompt();
+        ArgumentCaptor<Runnable> completion = ArgumentCaptor.forClass(Runnable.class);
+        verify(promptExecutionService).executePrompt(any(), eq(promptOutputPanel), completion.capture());
+        controller.handlePromptSubmission(steeringContext("late correction"));
+
+        completion.getValue().run();
+
+        verify(conversationPanel).removeSteeringMessage("late correction");
+    }
+
+    @Test
     void unconsumedSteeringMessages_areDiscardedWhenUserStopsTheRun() {
         startRunningPrompt();
         controller.handlePromptSubmission(steeringContext("correction"));

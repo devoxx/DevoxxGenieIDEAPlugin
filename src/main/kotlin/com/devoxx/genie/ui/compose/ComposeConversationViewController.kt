@@ -158,6 +158,10 @@ class ComposeConversationViewController(
         viewModel.addSteeringMessage(text)
     }
 
+    override fun removeSteeringMessage(text: String) {
+        viewModel.removeSteeringMessage(text)
+    }
+
     override fun updateAiMessageContent(chatMessageContext: ChatMessageContext) {
         viewModel.updateAiMessageContent(chatMessageContext)
     }
