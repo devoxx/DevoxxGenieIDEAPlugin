@@ -4,7 +4,7 @@ title: 'Mid-task steering: send chat messages to a running agent task (issue #12
 status: In Progress
 assignee: []
 created_date: '2026-07-29 08:48'
-updated_date: '2026-07-29 10:30'
+updated_date: '2026-07-29 10:47'
 labels: []
 dependencies: []
 references:
@@ -47,4 +47,6 @@ UI sequence fix (commit 54f91940): replaced trailing-bubble rendering with freez
 Fix round 3 (manual testing feedback): (1) Models pivoted to the steering question and never answered the original request — the injected message arrived right after tool results, before the model wrote its answer. SteeringMessageInjector now prepends STEERING_CONTEXT_NOTE instructing the model to complete the original request (including its final answer) and additionally address the new input. Note: the framed text (note + raw text) is what lands in chat memory. (2) Leftover steering messages resubmitted at run end rendered the question twice (stale steering bubble + new prompt bubble) — PromptExecutionController now calls ConversationPanel.removeSteeringMessage(text) per leftover before publishing the resubmission; ConversationViewModel.removeSteeringMessage removes the last matching isSteeringOnly bubble. 47 steering-related tests green, full suite green.
 
 Round 4 (commit 9bc323c0) — queue-by-default per user decision: extra prompts typed during a run are usually independent NEXT questions, not corrections, so injecting them made models conflate requests. New PendingPromptQueue (per memory key): submissions while running are queued and executed sequentially after the current run, one per run, via the PROMPT_SUBMISSION_TOPIC resubmit path (queued bubble added immediately, swapped for the real prompt bubble on its turn; stop discards queue + bubbles). Steering is now explicit-only: while running the submit button becomes Stop and two labeled buttons appear — Queue (ClockIcon, default, Enter equivalent) and Steer (SubmitIcon paper plane, mid-loop injection, falls back to queue when no tool loop). Rich HTML tooltips on both. Enter route preserves spec-runner one-slot queue when SpecTaskRunnerService is running. This effectively also implements TASK-189's core (prompt queue). 58 steering/queue tests + full suite green (2m56s rerun).
+
+Round 5 (commit 0f603132): glow regression — endPromptExecution resubmitted the queued prompt before enableButtons(), so the new run's synchronous startGlowing landed on the EDT before the old run's pending stopGlowing (scheduled inside enableButtons' invokeLater), which killed the fresh glow for every queued follow-up run. Fixed by calling enableButtons() before resubmitUnconsumedSteeringMessages(); InOrder regression test added (enableButtons before the prompt-submission publish). Full suite green.
 <!-- SECTION:NOTES:END -->
