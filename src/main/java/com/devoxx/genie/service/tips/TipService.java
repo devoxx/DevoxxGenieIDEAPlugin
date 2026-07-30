@@ -52,6 +52,11 @@ public final class TipService {
             new Tip("Exclude Javadoc or extra folders when building Full Project Context in Settings.", 1),
             new Tip("In Agent Mode, parallel sub-agents can explore several areas at once.", 1),
             new Tip("Customize the system prompt in Settings → System Prompt.", 1),
+            new Tip("Keep typing while a task runs — Enter queues your message as the next prompt.", 2),
+            new Tip("Hit Steer to correct a running agent mid-task, e.g. \"use snake_case instead\".", 2),
+            new Tip("While a task runs, submit becomes Stop and the Queue and Steer buttons appear.", 1),
+            new Tip("Queue up follow-up prompts during a long run — each one gets its own answer, in order.", 1),
+            new Tip("Stopping a run discards anything you queued — Steer sends it to the agent right away.", 1),
             new Tip("DevoxxGenie is open source — star it on GitHub and join us at Devoxx!", 1));
 
     private static final String TIPS_JSON_URL = "https://genie.devoxx.com/api/tips.json";

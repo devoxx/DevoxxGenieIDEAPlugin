@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-07-02",
+  "lastUpdated": "2026-07-30",
   "tips": [
     { "text": "Type @ to add a file to the context.", "weight": 2 },
     { "text": "Generate a DEVOXXGENIE.md with /init for project-aware answers.", "weight": 3 },
@@ -34,6 +34,11 @@
     { "text": "With Agent debug logs enabled, click the [Agent] tag in a message to see its input/output log details.", "weight": 1 },
     { "text": "Fix SpotBugs findings with AI — the SpotBugs DevoxxGenie plugin: https://github.com/stephanj/spotbugs-devoxxgenie-plugin", "weight": 1 },
     { "text": "Resolve SonarLint issues with AI — the SonarLint DevoxxGenie plugin: https://github.com/stephanj/sonarlint-devoxxgenie-intellij", "weight": 1 },
-    { "text": "Enable Thinking in Settings to show model reasoning separately when supported.", "weight": 1 }
+    { "text": "Enable Thinking in Settings to show model reasoning separately when supported.", "weight": 1 },
+    { "text": "Keep typing while a task runs — Enter queues your message as the next prompt.", "weight": 2 },
+    { "text": "Hit Steer to correct a running agent mid-task, e.g. \"use snake_case instead\".", "weight": 2 },
+    { "text": "While a task runs, submit becomes Stop and the Queue and Steer buttons appear.", "weight": 1 },
+    { "text": "Queue up follow-up prompts during a long run — each one gets its own answer, in order.", "weight": 1 },
+    { "text": "Stopping a run discards anything you queued — Steer sends it to the agent right away.", "weight": 1 }
   ]
 }
