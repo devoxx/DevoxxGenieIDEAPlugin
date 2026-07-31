@@ -8,10 +8,11 @@ on:
     paths:
       - 'docusaurus/**'
   # The landing-page stats band reads live active-user / download figures from
-  # devoxx.com at build time (docusaurus/src/plugins/genie-stats), so a rebuild
-  # is what refreshes them. Weekly, Monday 05:00 UTC.
+  # devoxx.com and the GitHub star count from api.github.com at build time
+  # (docusaurus/src/plugins/genie-stats), so a rebuild is what refreshes them.
+  # Daily, 05:00 UTC.
   schedule:
-    - cron: '0 5 * * 1'
+    - cron: '0 5 * * *'
   workflow_dispatch:
 
 jobs:
@@ -37,6 +38,10 @@ jobs:
 
       - name: Build website
         run: npm run build
+        env:
+          # genie-stats fetches the repo's star count; unauthenticated
+          # api.github.com rate limits are per-IP and Actions runners share IPs.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3

@@ -110,6 +110,18 @@ export default function Home() {
               <div className={styles.statLabel}>Plugin Downloads</div>
             </div>
             <div className={styles.statCard}>
+              <div className={styles.statNumber}>{withThousandsSeparators(genieStats.githubStars)}</div>
+              <div className={styles.statLabel}>
+                <a
+                  href="https://github.com/devoxx/DevoxxGenieIDEAPlugin"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.statLabelLink}>
+                  GitHub Stars
+                </a>
+              </div>
+            </div>
+            <div className={styles.statCard}>
               <div className={styles.statNumber}>100%</div>
               <div className={styles.statLabel}>Open Source &amp; Free</div>
             </div>

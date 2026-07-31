@@ -78,6 +78,18 @@
   color: #fff;
 }
 
+/* The stars label links to the repo; keep it looking like its siblings so the
+   band stays uniform, with only hover revealing it is clickable. */
+.statLabelLink {
+  color: #fff;
+  text-decoration: none;
+}
+
+.statLabelLink:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
 .statsAsOf {
   margin: 1.5rem 0 0;
   text-align: center;
