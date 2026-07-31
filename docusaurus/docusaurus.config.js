@@ -52,6 +52,9 @@ const config = {
   clientModules: ['./src/clientModules/algoliaResultLinks.js'],
 
   plugins: [
+    // Fetches live DevoxxGenie active-user / download figures from
+    // devoxx.com at build time for the landing-page stats band.
+    './src/plugins/genie-stats',
     // Algolia Experiences documentation search.
     // Injects the Algolia Experiences library which renders into the
     // #autocomplete container provided by src/theme/SearchBar.
