@@ -7,6 +7,12 @@ on:
       - main
     paths:
       - 'docusaurus/**'
+  # The landing-page stats band reads live active-user / download figures from
+  # devoxx.com at build time (docusaurus/src/plugins/genie-stats), so a rebuild
+  # is what refreshes them. Weekly, Monday 05:00 UTC.
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
 
 jobs:
   build:

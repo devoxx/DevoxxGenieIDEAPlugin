@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import {usePluginData} from '@docusaurus/useGlobalData';
 import Layout from '@theme/Layout';
 import Head from '@docusaurus/Head';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
@@ -62,8 +63,22 @@ function HomepageHeader() {
   );
 }
 
+// Deliberately not toLocaleString(): that is locale-dependent, and a server/client
+// disagreement here would be a hydration mismatch on the very first thing above the fold.
+function withThousandsSeparators(value) {
+  return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Active users comes from a GA4 rolling window, so the exact figure is noise —
+// round down to a round thousand and let the "+" carry the remainder.
+function formatActiveUsers(value) {
+  return `${withThousandsSeparators(Math.floor(value / 1000) * 1000)}+`;
+}
+
 export default function Home() {
   const {siteConfig} = useDocusaurusContext();
+  // Fetched from devoxx.com at build time — see src/plugins/genie-stats.
+  const genieStats = usePluginData('genie-stats');
 
   return (
     <Layout
@@ -87,11 +102,11 @@ export default function Home() {
         <div className="container">
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
-              <div className={styles.statNumber}>112,000+</div>
+              <div className={styles.statNumber}>{formatActiveUsers(genieStats.activeUsers)}</div>
               <div className={styles.statLabel}>Active Users</div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statNumber}>82,800</div>
+              <div className={styles.statNumber}>{withThousandsSeparators(genieStats.downloads)}</div>
               <div className={styles.statLabel}>Plugin Downloads</div>
             </div>
             <div className={styles.statCard}>
@@ -99,7 +114,7 @@ export default function Home() {
               <div className={styles.statLabel}>Open Source &amp; Free</div>
             </div>
           </div>
-          <p className={styles.statsAsOf}>As of July 2026</p>
+          <p className={styles.statsAsOf}>As of {genieStats.asOf}</p>
         </div>
       </section>
       <main>
