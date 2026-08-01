@@ -115,6 +115,50 @@ class CloudflareChatModelFactoryTest {
     }
 
     @Test
+    void getModelsWithBareWorkersAiOverrideShowsThePrefixedIdThatIsSent() {
+        // Issue #1254: '@cf/...' pasted from the Cloudflare dashboard is not routable on /compat
+        // ('@cf' is parsed as the provider -> 400 code 2008 "Invalid provider").
+        when(mockState.isCloudflareModelNameEnabled()).thenReturn(true);
+        when(mockState.getCloudflareModelName()).thenReturn("@cf/openai/gpt-oss-20b");
+        try (MockedStatic<LocalLLMProviderUtil> util = Mockito.mockStatic(LocalLLMProviderUtil.class)) {
+            assertThat(new CloudflareChatModelFactory().getModels())
+                    .extracting(LanguageModel::getModelName)
+                    .containsExactly("workers-ai/@cf/openai/gpt-oss-20b");
+            util.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    void createChatModelPrefixesBareWorkersAiModelIds() {
+        CustomChatModel model = new CustomChatModel();
+        model.setModelName("@cf/openai/gpt-oss-20b");
+        model.setTemperature(0.7);
+        model.setTopP(0.9);
+        model.setMaxTokens(256);
+        model.setMaxRetries(3);
+        model.setTimeout(30);
+
+        ChatModel result = new CloudflareChatModelFactory().createChatModel(model);
+
+        assertThat(result.defaultRequestParameters().modelName())
+                .isEqualTo("workers-ai/@cf/openai/gpt-oss-20b");
+    }
+
+    @Test
+    void createStreamingChatModelPrefixesBareWorkersAiModelIds() {
+        CustomChatModel model = new CustomChatModel();
+        model.setModelName("@cf/zai-org/glm-4.7-flash");
+        model.setTemperature(0.7);
+        model.setTopP(0.9);
+        model.setTimeout(30);
+
+        StreamingChatModel result = new CloudflareChatModelFactory().createStreamingChatModel(model);
+
+        assertThat(result.defaultRequestParameters().modelName())
+                .isEqualTo("workers-ai/@cf/zai-org/glm-4.7-flash");
+    }
+
+    @Test
     void getModelsWithBlankAccountIdReturnsEmpty() {
         when(mockState.getCloudflareAccountId()).thenReturn("");
         assertThat(new CloudflareChatModelFactory().getModels()).isEmpty();

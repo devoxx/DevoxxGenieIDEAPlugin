@@ -371,6 +371,18 @@ This provider uses Cloudflare's **single-token (BYOK)** model. You give DevoxxGe
 Model discovery uses a fast best-effort probe of the gateway's `/models` endpoint. If your gateway doesn't expose that endpoint, or you already know the exact model id you want, enable the **model name override** and type it in — this skips discovery entirely.
 :::
 
+### Model naming
+
+The `/compat` endpoint addresses models as `provider/model` — the provider prefix tells the gateway where to route the request:
+
+```
+openai/gpt-4o
+anthropic/claude-4-5-sonnet
+workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast
+```
+
+A bare model id (e.g. `kimi-k2.6`) cannot be routed and fails with `400 AiGatewayError` code 2005/2008. **Workers AI** ids copied from the Cloudflare dashboard start with `@cf/` — DevoxxGenie adds the missing `workers-ai/` prefix for those automatically, so `@cf/openai/gpt-oss-20b` is sent as `workers-ai/@cf/openai/gpt-oss-20b`. For every other provider, include the prefix yourself when using the model name override.
+
 ### Advantages
 
 - **One key, every provider** — no per-provider setup inside the plugin

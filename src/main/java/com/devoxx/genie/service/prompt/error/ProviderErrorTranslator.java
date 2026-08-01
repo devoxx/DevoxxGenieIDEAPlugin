@@ -74,10 +74,35 @@ public final class ProviderErrorTranslator {
         } else if (detail != null && !detail.isBlank()) {
             sb.append(" (").append(detail).append(')');
         }
-        sb.append(". This usually means the model isn't available on your gateway, or its provider isn't configured. ");
-        sb.append("Pick a model from the dropdown (auto-discovered from your gateway), ");
-        sb.append("or add that provider's API key in your Cloudflare AI Gateway dashboard.");
+        sb.append(". ").append(guidanceFor(code, modelName));
         return Optional.of(sb.toString());
+    }
+
+    /**
+     * Issue #1254: pick guidance matching the failure. The gateway's {@code /compat} endpoint
+     * addresses models as {@code provider/model}, and the two reported failure shapes are both
+     * naming problems: code 2008 ("Invalid provider") when the prefix — or, via Custom OpenAI,
+     * a URL path segment — isn't a provider Cloudflare knows, and an unroutable model (2005)
+     * when the id carries no provider prefix at all.
+     */
+    private static @NotNull String guidanceFor(@Nullable String code, @Nullable String modelName) {
+        if ("2008".equals(code)) {
+            return "Cloudflare didn't recognise the provider it was asked to route to. "
+                    + "Gateway models must be addressed as 'provider/model', e.g. 'openai/gpt-4o' — "
+                    + "Workers AI models need the 'workers-ai/' prefix, e.g. 'workers-ai/@cf/openai/gpt-oss-20b'. "
+                    + "If you configured the gateway through the Custom OpenAI provider instead, the base URL must "
+                    + "end with '/compat' (https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY/compat), "
+                    + "otherwise Cloudflare reads the next URL segment as a provider name.";
+        }
+        if (modelName != null && !modelName.isBlank() && !modelName.contains("/")) {
+            return "The model id has no provider prefix: gateway models must be addressed as 'provider/model', "
+                    + "e.g. 'openai/gpt-4o' or 'workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast'. "
+                    + "Pick a model from the dropdown (auto-discovered from your gateway), "
+                    + "or prefix the model id with the provider configured in your Cloudflare AI Gateway dashboard.";
+        }
+        return "This usually means the model isn't available on your gateway, or its provider isn't configured. "
+                + "Pick a model from the dropdown (auto-discovered from your gateway), "
+                + "or add that provider's API key in your Cloudflare AI Gateway dashboard.";
     }
 
     /**

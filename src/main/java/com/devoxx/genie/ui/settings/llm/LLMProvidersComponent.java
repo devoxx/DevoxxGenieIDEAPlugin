@@ -465,6 +465,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addSettingRow(cloudPanel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
         addHintText(cloudPanel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
         addProviderSettingRow(cloudPanel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
+        addHintText(cloudPanel, gbc, "Model ids use <code>provider/model</code> form, e.g. <code>openai/gpt-4o</code>. " +
+                "Workers AI ids (<code>@cf/...</code>) get the <code>workers-ai/</code> prefix added automatically.");
         addHintText(cloudPanel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
 
         addAzureOpenAIPanel(cloudPanel, gbc);

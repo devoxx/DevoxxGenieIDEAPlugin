@@ -53,6 +53,60 @@ class ProviderErrorTranslatorTest {
                 .satisfies(m -> assertThat(m).contains("the selected model").doesNotContain("model ''"));
     }
 
+    /** The body from issue #1254: '@cf' (or a stray URL segment) parsed as an unknown provider. */
+    private static final String CLOUDFLARE_2008_BODY =
+            "{\"success\":false,\"result\":[],\"messages\":[],\"error\":[{\"code\":2008,"
+            + "\"message\":\"Invalid provider\"}],\"name\":\"AiGatewayError\","
+            + "\"httpCode\":400,\"internalCode\":2008,\"message\":\"Invalid provider\","
+            + "\"description\":\"Invalid provider\"}";
+
+    @Test
+    void explainsProviderModelNamingForInvalidProviderErrors() {
+        // Issue #1254: a bare Workers AI id makes /compat parse '@cf' as the provider -> code 2008.
+        Throwable error = new RuntimeException("Provider unavailable: " + CLOUDFLARE_2008_BODY);
+
+        Optional<String> result = ProviderErrorTranslator.translate(error, "@cf/openai/gpt-oss-20b");
+
+        assertThat(result).isPresent();
+        assertThat(result.get())
+                .contains("2008")
+                .contains("Invalid provider")
+                .contains("provider/model")
+                .contains("workers-ai/@cf/openai/gpt-oss-20b")
+                .contains("/compat")
+                .doesNotContain("{").doesNotContain("httpCode");
+    }
+
+    @Test
+    void explainsMissingProviderPrefixForUnroutableBareModelIds() {
+        // Issue #1254: 'kimi-k2.6' carries no provider prefix, so the gateway cannot route it.
+        Throwable error = new RuntimeException("status code: 400; body: " + CLOUDFLARE_2005_BODY);
+
+        Optional<String> result = ProviderErrorTranslator.translate(error, "kimi-k2.6");
+
+        assertThat(result).isPresent();
+        assertThat(result.get())
+                .contains("kimi-k2.6")
+                .contains("no provider prefix")
+                .contains("provider/model")
+                .contains("dropdown")
+                .doesNotContain("{").doesNotContain("httpCode");
+    }
+
+    @Test
+    void keepsGenericGuidanceForPrefixedModelsOnOtherErrorCodes() {
+        // A correctly-prefixed model failing with 2005 is a gateway-side problem (provider key
+        // missing, model unavailable) — the pre-#1254 guidance remains the right one.
+        Throwable error = new RuntimeException(CLOUDFLARE_2005_BODY);
+
+        assertThat(ProviderErrorTranslator.translate(error, "openai/gpt-4o"))
+                .get()
+                .satisfies(m -> assertThat(m)
+                        .contains("dropdown")
+                        .contains("Cloudflare AI Gateway dashboard")
+                        .doesNotContain("no provider prefix"));
+    }
+
     @Test
     void returnsEmptyForNonCloudflareErrors() {
         assertThat(ProviderErrorTranslator.translate(
