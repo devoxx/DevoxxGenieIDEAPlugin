@@ -94,6 +94,39 @@ class ProviderErrorTranslatorTest {
     }
 
     @Test
+    void suggestsWorkersAiPrefixForBareCfIdsFailingWith2005() {
+        // Issue #1254: the reporter's exact models, failing with "Failed to get response from
+        // provider" — the fix is the 'workers-ai/' prefix, and the message must say so.
+        for (String model : new String[]{"@cf/openai/gpt-oss-20b", "@cf/zai-org/glm-4.7-flash"}) {
+            Throwable error = new RuntimeException("Provider unavailable: " + CLOUDFLARE_2005_BODY);
+
+            Optional<String> result = ProviderErrorTranslator.translate(error, model);
+
+            assertThat(result).isPresent();
+            assertThat(result.get())
+                    .contains("2005")
+                    .contains("workers-ai/" + model)
+                    .doesNotContain("{").doesNotContain("httpCode");
+        }
+    }
+
+    @Test
+    void explainsWorkersAiPermissionsWhenAPrefixedWorkersAiModelFailsWith2005() {
+        // Correctly-prefixed Workers AI model still failing 2005: the request routed, so the
+        // remaining causes are gateway-side — token permission or model availability.
+        Throwable error = new RuntimeException("status code: 400; body: " + CLOUDFLARE_2005_BODY);
+
+        Optional<String> result =
+                ProviderErrorTranslator.translate(error, "workers-ai/@cf/openai/gpt-oss-20b");
+
+        assertThat(result).isPresent();
+        assertThat(result.get())
+                .contains("Workers AI")
+                .contains("permission")
+                .doesNotContain("{").doesNotContain("httpCode");
+    }
+
+    @Test
     void keepsGenericGuidanceForPrefixedModelsOnOtherErrorCodes() {
         // A correctly-prefixed model failing with 2005 is a gateway-side problem (provider key
         // missing, model unavailable) — the pre-#1254 guidance remains the right one.

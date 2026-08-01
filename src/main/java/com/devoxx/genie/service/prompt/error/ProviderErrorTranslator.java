@@ -80,10 +80,12 @@ public final class ProviderErrorTranslator {
 
     /**
      * Issue #1254: pick guidance matching the failure. The gateway's {@code /compat} endpoint
-     * addresses models as {@code provider/model}, and the two reported failure shapes are both
-     * naming problems: code 2008 ("Invalid provider") when the prefix — or, via Custom OpenAI,
-     * a URL path segment — isn't a provider Cloudflare knows, and an unroutable model (2005)
-     * when the id carries no provider prefix at all.
+     * addresses models as {@code provider/model}, and the reported failure shapes are naming or
+     * routing problems: code 2008 ("Invalid provider") when the prefix — or, via Custom OpenAI,
+     * a URL path segment — isn't a provider Cloudflare knows; code 2005 ("Failed to get response
+     * from provider") when the id carries no usable provider prefix (bare {@code kimi-k2.6} or a
+     * bare Workers AI {@code @cf/...} id) or when the routed provider call itself fails
+     * (e.g. a Cloudflare token without Workers AI permission).
      */
     private static @NotNull String guidanceFor(@Nullable String code, @Nullable String modelName) {
         if ("2008".equals(code)) {
@@ -94,11 +96,24 @@ public final class ProviderErrorTranslator {
                     + "end with '/compat' (https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY/compat), "
                     + "otherwise Cloudflare reads the next URL segment as a provider name.";
         }
+        if (modelName != null && modelName.startsWith("@cf/")) {
+            return "'" + modelName + "' is a bare Workers AI id: the gateway addresses models as "
+                    + "'provider/model', so it must be sent as 'workers-ai/" + modelName + "'. "
+                    + "The Cloudflare provider adds this prefix automatically — if you configured the gateway "
+                    + "through the Custom OpenAI provider, add the 'workers-ai/' prefix to the model name yourself.";
+        }
         if (modelName != null && !modelName.isBlank() && !modelName.contains("/")) {
             return "The model id has no provider prefix: gateway models must be addressed as 'provider/model', "
                     + "e.g. 'openai/gpt-4o' or 'workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast'. "
                     + "Pick a model from the dropdown (auto-discovered from your gateway), "
                     + "or prefix the model id with the provider configured in your Cloudflare AI Gateway dashboard.";
+        }
+        if ("2005".equals(code) && modelName != null && modelName.startsWith("workers-ai/")) {
+            return "The gateway routed to Workers AI but the provider call failed. "
+                    + "Check that the model id exists on Workers AI (e.g. 'workers-ai/@cf/openai/gpt-oss-20b') and "
+                    + "that your Cloudflare API token includes Workers AI permission (or a Workers AI key is stored "
+                    + "in your gateway's BYOK settings) — a token scoped to AI Gateway alone cannot run Workers AI models. "
+                    + "The gateway's request logs in the Cloudflare dashboard show the upstream provider response.";
         }
         return "This usually means the model isn't available on your gateway, or its provider isn't configured. "
                 + "Pick a model from the dropdown (auto-discovered from your gateway), "
