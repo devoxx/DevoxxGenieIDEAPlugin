@@ -82,11 +82,12 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
     public List<LanguageModel> getModels() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
 
-        // Honour an explicit model name: skip discovery entirely.
+        // Honour an explicit model name: skip discovery entirely. Normalised so the dropdown
+        // shows the id that is actually sent (issue #1254: '@cf/...' needs 'workers-ai/').
         if (state.isCloudflareModelNameEnabled()) {
             String override = state.getCloudflareModelName();
             if (override != null && !override.isBlank()) {
-                return List.of(toLanguageModel(override.trim()));
+                return List.of(toLanguageModel(CloudflareModelName.normalize(override)));
             }
         }
 
@@ -163,10 +164,12 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
         if (state.isCloudflareModelNameEnabled()) {
             String override = state.getCloudflareModelName();
             if (override != null && !override.isBlank()) {
-                return override.trim();
+                return CloudflareModelName.normalize(override);
             }
         }
         String selected = customChatModel.getModelName();
-        return (selected != null && !selected.isBlank()) ? selected : "default";
+        // Issue #1254: normalise here too, so a bare '@cf/...' id — however it was selected or
+        // persisted — always leaves as the routable 'workers-ai/@cf/...' form.
+        return (selected != null && !selected.isBlank()) ? CloudflareModelName.normalize(selected) : "default";
     }
 }

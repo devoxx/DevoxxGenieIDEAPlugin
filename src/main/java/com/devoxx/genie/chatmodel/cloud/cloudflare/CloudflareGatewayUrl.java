@@ -11,11 +11,30 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class CloudflareGatewayUrl {
 
-    private static final String ROOT = "https://gateway.ai.cloudflare.com/v1/";
+    private static final String DEFAULT_ROOT = "https://gateway.ai.cloudflare.com/v1/";
     /** Cloudflare auto-creates a gateway named "default" on first authenticated request. */
     public static final String DEFAULT_GATEWAY = "default";
 
+    /**
+     * The gateway root. Only tests change it, so wire-level tests can point the whole factory
+     * (URL assembly included) at a local mock server instead of the real Cloudflare host.
+     */
+    private static volatile String root = DEFAULT_ROOT;
+
     private CloudflareGatewayUrl() {
+    }
+
+    /**
+     * @param testRoot the root to assemble URLs against (a trailing slash is added when missing),
+     *                 or {@code null} to restore the real Cloudflare gateway root
+     */
+    @org.jetbrains.annotations.TestOnly
+    static void setRootForTests(@Nullable String testRoot) {
+        if (testRoot == null) {
+            root = DEFAULT_ROOT;
+        } else {
+            root = testRoot.endsWith("/") ? testRoot : testRoot + "/";
+        }
     }
 
     /**
@@ -32,7 +51,7 @@ public final class CloudflareGatewayUrl {
         if (gateway.isEmpty()) {
             gateway = DEFAULT_GATEWAY;
         }
-        return ROOT + account + "/" + gateway + "/compat";
+        return root + account + "/" + gateway + "/compat";
     }
 
     private static String stripSlashes(String value) {
