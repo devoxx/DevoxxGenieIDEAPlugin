@@ -129,7 +129,9 @@ class CloudflareChatModelFactoryTest {
     }
 
     @Test
-    void createChatModelPrefixesBareWorkersAiModelIds() {
+    void createChatModelSendsBareWorkersAiIdOnTheWorkersAiEndpoint() {
+        // Issue #1256: Workers AI models go to the gateway's workers-ai/v1 endpoint, which
+        // addresses models by their bare '@cf/...' id (no 'workers-ai/' compat prefix).
         CustomChatModel model = new CustomChatModel();
         model.setModelName("@cf/openai/gpt-oss-20b");
         model.setTemperature(0.7);
@@ -141,13 +143,13 @@ class CloudflareChatModelFactoryTest {
         ChatModel result = new CloudflareChatModelFactory().createChatModel(model);
 
         assertThat(result.defaultRequestParameters().modelName())
-                .isEqualTo("workers-ai/@cf/openai/gpt-oss-20b");
+                .isEqualTo("@cf/openai/gpt-oss-20b");
     }
 
     @Test
-    void createStreamingChatModelPrefixesBareWorkersAiModelIds() {
+    void createStreamingChatModelSendsBareWorkersAiIdOnTheWorkersAiEndpoint() {
         CustomChatModel model = new CustomChatModel();
-        model.setModelName("@cf/zai-org/glm-4.7-flash");
+        model.setModelName("workers-ai/@cf/zai-org/glm-4.7-flash");
         model.setTemperature(0.7);
         model.setTopP(0.9);
         model.setTimeout(30);
@@ -155,7 +157,7 @@ class CloudflareChatModelFactoryTest {
         StreamingChatModel result = new CloudflareChatModelFactory().createStreamingChatModel(model);
 
         assertThat(result.defaultRequestParameters().modelName())
-                .isEqualTo("workers-ai/@cf/zai-org/glm-4.7-flash");
+                .isEqualTo("@cf/zai-org/glm-4.7-flash");
     }
 
     @Test

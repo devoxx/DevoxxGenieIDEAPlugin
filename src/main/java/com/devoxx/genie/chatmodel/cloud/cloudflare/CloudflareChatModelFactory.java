@@ -16,6 +16,7 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -25,6 +26,10 @@ import java.util.stream.Collectors;
 /**
  * Cloudflare AI Gateway provider. Talks to the OpenAI-compatible {@code /compat} endpoint of a
  * user-specified account + gateway, authenticating with a single Cloudflare API token (BYOK).
+ * Workers AI models ({@code @cf/...}) are the exception: they are routed to the gateway's
+ * {@code workers-ai/v1} provider path — Workers AI's own OpenAI-compatibility layer — because the
+ * gateway-level {@code /compat} endpoint cannot express tool-calling round trips against the
+ * Workers AI native schema (issue #1256).
  *
  * <p>Follows the Custom OpenAI patterns: a fast-fail best-effort {@code /models} probe, a model-name
  * override that skips the probe, and caching of model ids only (never built {@link LanguageModel}s).</p>
@@ -49,10 +54,11 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
     @Override
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        String modelName = resolveModelName(customChatModel);
         return OpenAiChatModel.builder()
-                .baseUrl(baseUrl(state))
+                .baseUrl(baseUrl(state, modelName))
                 .apiKey(apiKeyOrPlaceholder(state))
-                .modelName(resolveModelName(customChatModel))
+                .modelName(wireModelName(modelName))
                 .maxRetries(customChatModel.getMaxRetries())
                 .temperature(customChatModel.getTemperature())
                 .maxTokens(customChatModel.getMaxTokens())
@@ -66,10 +72,11 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
     @Override
     public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        String modelName = resolveModelName(customChatModel);
         return OpenAiStreamingChatModel.builder()
-                .baseUrl(baseUrl(state))
+                .baseUrl(baseUrl(state, modelName))
                 .apiKey(apiKeyOrPlaceholder(state))
-                .modelName(resolveModelName(customChatModel))
+                .modelName(wireModelName(modelName))
                 .temperature(customChatModel.getTemperature())
                 .topP(customChatModel.getTopP())
                 .timeout(Duration.ofSeconds(customChatModel.getTimeout()))
@@ -83,7 +90,8 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
 
         // Honour an explicit model name: skip discovery entirely. Normalised so the dropdown
-        // shows the id that is actually sent (issue #1254: '@cf/...' needs 'workers-ai/').
+        // shows the gateway-canonical id (issue #1254: '@cf/...' gets the 'workers-ai/' provider
+        // prefix); the wire form per endpoint is derived from it in wireModelName().
         if (state.isCloudflareModelNameEnabled()) {
             String override = state.getCloudflareModelName();
             if (override != null && !override.isBlank()) {
@@ -143,8 +151,13 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
                 .build();
     }
 
-    private static String baseUrl(@NotNull DevoxxGenieStateService state) {
-        String base = CloudflareGatewayUrl.compatBaseUrl(state.getCloudflareAccountId(), state.getCloudflareGatewayName());
+    private static String baseUrl(@NotNull DevoxxGenieStateService state, @Nullable String modelName) {
+        // Issue #1256: Workers AI models go through the gateway's workers-ai/v1 provider path
+        // (Workers AI's own OpenAI-compatibility layer, which handles tool-calling round trips);
+        // everything else stays on the gateway-level /compat endpoint.
+        String base = CloudflareModelName.isWorkersAi(modelName)
+                ? CloudflareGatewayUrl.workersAiBaseUrl(state.getCloudflareAccountId(), state.getCloudflareGatewayName())
+                : CloudflareGatewayUrl.compatBaseUrl(state.getCloudflareAccountId(), state.getCloudflareGatewayName());
         if (base == null) {
             // Never let langchain4j silently fall back to its default OpenAI endpoint
             // (api.openai.com), which would leak the Cloudflare API token to OpenAI.
@@ -152,6 +165,16 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
         }
         // langchain4j appends /chat/completions; a trailing slash keeps the join clean.
         return base + "/";
+    }
+
+    /**
+     * The model id as sent on the wire: the workers-ai/v1 endpoint addresses models by their bare
+     * {@code @cf/...} id, while /compat needs the {@code provider/model} form.
+     */
+    private static String wireModelName(@NotNull String modelName) {
+        return CloudflareModelName.isWorkersAi(modelName)
+                ? CloudflareModelName.stripWorkersAiPrefix(modelName)
+                : modelName;
     }
 
     private static String apiKeyOrPlaceholder(@NotNull DevoxxGenieStateService state) {

@@ -40,4 +40,36 @@ public final class CloudflareModelName {
         }
         return trimmed;
     }
+
+    /**
+     * @param modelId the model id as configured or selected; may be {@code null}
+     * @return {@code true} when the id targets Workers AI — either the bare dashboard form
+     *         ({@code @cf/...}) or the compat provider form ({@code workers-ai/...})
+     */
+    public static boolean isWorkersAi(@Nullable String modelId) {
+        if (modelId == null) {
+            return false;
+        }
+        String trimmed = modelId.trim();
+        return trimmed.startsWith(WORKERS_AI_NAMESPACE) || trimmed.startsWith(WORKERS_AI_PROVIDER_PREFIX);
+    }
+
+    /**
+     * Issue #1256: the gateway's {@code .../workers-ai/v1} endpoint addresses models by their bare
+     * {@code @cf/...} id — the {@code workers-ai/} provider prefix is only meaningful on the
+     * gateway-level {@code /compat} endpoint.
+     *
+     * @param modelId the model id as configured or selected; may be {@code null}
+     * @return the id trimmed, with a leading {@code workers-ai/} prefix removed; {@code null} stays
+     *         {@code null}
+     */
+    public static @Nullable String stripWorkersAiPrefix(@Nullable String modelId) {
+        if (modelId == null) {
+            return null;
+        }
+        String trimmed = modelId.trim();
+        return trimmed.startsWith(WORKERS_AI_PROVIDER_PREFIX)
+                ? trimmed.substring(WORKERS_AI_PROVIDER_PREFIX.length())
+                : trimmed;
+    }
 }

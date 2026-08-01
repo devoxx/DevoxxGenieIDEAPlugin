@@ -53,4 +53,28 @@ class CloudflareModelNameTest {
     void passesNullThrough() {
         assertThat(CloudflareModelName.normalize(null)).isNull();
     }
+
+    // Issue #1256: Workers AI models are detected so the factory can route them to the gateway's
+    // workers-ai/v1 endpoint, which addresses models by their bare '@cf/...' id.
+
+    @Test
+    void detectsWorkersAiIdsInBothBareAndPrefixedForm() {
+        assertThat(CloudflareModelName.isWorkersAi("@cf/zai-org/glm-4.7-flash")).isTrue();
+        assertThat(CloudflareModelName.isWorkersAi("workers-ai/@cf/openai/gpt-oss-20b")).isTrue();
+        assertThat(CloudflareModelName.isWorkersAi("  @cf/openai/gpt-oss-20b ")).isTrue();
+        assertThat(CloudflareModelName.isWorkersAi("openai/gpt-4o")).isFalse();
+        assertThat(CloudflareModelName.isWorkersAi("kimi-k2.6")).isFalse();
+        assertThat(CloudflareModelName.isWorkersAi(null)).isFalse();
+    }
+
+    @Test
+    void stripsTheCompatProviderPrefixForTheWorkersAiEndpoint() {
+        assertThat(CloudflareModelName.stripWorkersAiPrefix("workers-ai/@cf/openai/gpt-oss-20b"))
+                .isEqualTo("@cf/openai/gpt-oss-20b");
+        assertThat(CloudflareModelName.stripWorkersAiPrefix("@cf/zai-org/glm-4.7-flash"))
+                .isEqualTo("@cf/zai-org/glm-4.7-flash");
+        assertThat(CloudflareModelName.stripWorkersAiPrefix(" workers-ai/@cf/openai/gpt-oss-20b "))
+                .isEqualTo("@cf/openai/gpt-oss-20b");
+        assertThat(CloudflareModelName.stripWorkersAiPrefix(null)).isNull();
+    }
 }
