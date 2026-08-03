@@ -7,8 +7,9 @@ on:
       - main
     paths:
       - 'docusaurus/**'
-  # The landing-page stats band reads live active-user / download figures from
-  # devoxx.com and the GitHub star count from api.github.com at build time
+  # The landing-page stats band reads the download count from
+  # plugins.jetbrains.com, active users from devoxx.com and the GitHub star
+  # count from api.github.com at build time
   # (docusaurus/src/plugins/genie-stats), so a rebuild is what refreshes them.
   # Daily, 05:00 UTC.
   schedule:
