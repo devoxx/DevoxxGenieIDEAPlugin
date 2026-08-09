@@ -20,7 +20,7 @@ public final class CloudflareModelName {
     private static final String WORKERS_AI_NAMESPACE = "@cf/";
 
     /** The compat-endpoint provider prefix that routes to Workers AI. */
-    private static final String WORKERS_AI_PROVIDER_PREFIX = "workers-ai/";
+    public static final String WORKERS_AI_PROVIDER_PREFIX = "workers-ai/";
 
     private CloudflareModelName() {
     }

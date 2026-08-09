@@ -50,6 +50,7 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return OpenAiChatModel.builder()
+                .httpClientBuilder(CloudflareCompatHttpClient.builder())
                 .baseUrl(baseUrl(state))
                 .apiKey(apiKeyOrPlaceholder(state))
                 .modelName(resolveModelName(customChatModel))
@@ -67,6 +68,7 @@ public class CloudflareChatModelFactory implements ChatModelFactory {
     public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return OpenAiStreamingChatModel.builder()
+                .httpClientBuilder(CloudflareCompatHttpClient.builder())
                 .baseUrl(baseUrl(state))
                 .apiKey(apiKeyOrPlaceholder(state))
                 .modelName(resolveModelName(customChatModel))

@@ -47,7 +47,9 @@ public final class ProviderErrorTranslator {
     }
 
     private static @NotNull Optional<String> translateCloudflare(@NotNull String message, @Nullable String modelName) {
-        if (!message.contains("AiGatewayError")) {
+        // 'AiGatewayError' is the gateway's own routing failure (issue #1254); 'AiError' comes from
+        // the model behind it rejecting the request (issue #1256). Both reach the chat as raw JSON.
+        if (!message.contains("AiGatewayError") && !message.contains("AiError")) {
             return Optional.empty();
         }
 
@@ -59,7 +61,7 @@ public final class ProviderErrorTranslator {
                 code = body.get("internalCode").getAsString();
             }
             if (body.has("message") && !body.get("message").isJsonNull()) {
-                detail = body.get("message").getAsString();
+                detail = shorten(body.get("message").getAsString());
             }
         }
 
@@ -88,6 +90,15 @@ public final class ProviderErrorTranslator {
      * (e.g. a Cloudflare token without Workers AI permission).
      */
     private static @NotNull String guidanceFor(@Nullable String code, @Nullable String modelName) {
+        if ("5006".equals(code)) {
+            return "The model behind the gateway rejected the request: its schema wants every message "
+                    + "to carry a plain string 'content'. This shows up in Agent mode, where the tool "
+                    + "call and its result are sent back to the model in the next round trip. "
+                    + "DevoxxGenie already reshapes those messages for Workers AI — if the error "
+                    + "persists, the gateway's own conversion is at fault: try another Workers AI model "
+                    + "with function calling (e.g. 'workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast') "
+                    + "or turn Agent mode off for this model.";
+        }
         if ("2008".equals(code)) {
             return "Cloudflare didn't recognise the provider it was asked to route to. "
                     + "Gateway models must be addressed as 'provider/model', e.g. 'openai/gpt-4o' — "
@@ -118,6 +129,25 @@ public final class ProviderErrorTranslator {
         return "This usually means the model isn't available on your gateway, or its provider isn't configured. "
                 + "Pick a model from the dropdown (auto-discovered from your gateway), "
                 + "or add that provider's API key in your Cloudflare AI Gateway dashboard.";
+    }
+
+    /**
+     * Keep the headline of a provider message and drop the rest. Cloudflare's {@code AiError}
+     * messages append the full JSON-schema validation dump ("Error: oneOf at '/' not met, 0 matches:
+     * Type mismatch of '/messages/0/content' ..." — one line per message in the conversation), which
+     * is noise to a user and would swamp the guidance that follows.
+     */
+    private static @NotNull String shorten(@NotNull String detail) {
+        // Strip the envelope name first — otherwise "AiError:" is itself mistaken for the dump marker.
+        String headline = detail.replace("AiError:", "").trim();
+        int schemaDump = headline.indexOf("Error:");
+        if (schemaDump > 0) {
+            headline = headline.substring(0, schemaDump).trim();
+        }
+        while (headline.endsWith(":") || headline.endsWith(",") || headline.endsWith(".")) {
+            headline = headline.substring(0, headline.length() - 1).trim();
+        }
+        return headline.isBlank() ? detail : headline;
     }
 
     /**
