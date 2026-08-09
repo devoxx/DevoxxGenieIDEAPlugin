@@ -68,6 +68,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.12.0</h2>
+        <UL>
+                    <LI>feat(personas): new <b>Personas</b> dropdown in the tool window — named system prompts that <i>replace</i> the system prompt for a conversation. Ships with Developer (the default, unchanged), Reviewer, Architect and Test Engineer, and you can add your own in Settings (#1260)</LI>
+                    <LI>feat(personas): the persona selection is per tab, and a persona change applies to new conversations — an ongoing conversation keeps the persona it started with (#1260)</LI>
+                    <LI>fix(cloudflare): <b>agent mode works again on Workers AI models</b> — tool-call round trips were rejected with <code>required properties at '/messages/N' are 'role,content'</code> because the assistant message carried no <code>content</code> field (#1256)</LI>
+                    <LI>fix(cloudflare): bare <code>@cf/...</code> model ids copied from the Cloudflare dashboard are now routed correctly, and "Invalid provider" / unroutable-model errors explain the required <code>provider/model</code> format instead of dumping raw JSON (#1254)</LI>
+                    <LI>chore(deps): upgrade Langchain4J to 1.18.1, AWS SDK to 2.50.3 and jsoup to 1.23.1 (#1257)</LI>
+                </UL>
         <h2>v1.11.0</h2>
         <UL>
                     <LI>feat(prompt): the prompt input stays enabled while a task runs — <b>queue</b> follow-up messages to be answered one by one after the current run, or <b>steer</b> the running agent loop by injecting a correction into its next round trip (#1241)</LI>
