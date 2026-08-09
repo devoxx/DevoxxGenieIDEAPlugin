@@ -58,7 +58,7 @@ public final class CloudflareCompatRequestNormalizer {
         }
 
         JsonElement messages = root.get("messages");
-        if (messages == null || !messages.isJsonArray()) {
+        if (messages == null || !messages.isJsonArray() || !isWorkersAi(root)) {
             return body;
         }
 
@@ -69,6 +69,18 @@ public final class CloudflareCompatRequestNormalizer {
             }
         }
         return changed ? GSON.toJson(root) : body;
+    }
+
+    /**
+     * The strict message schema belongs to Workers AI. The same gateway also fronts OpenAI,
+     * Anthropic and friends, whose own translations are happy with what langchain4j sends — those
+     * requests are handed on byte for byte rather than risk breaking a working round trip.
+     */
+    private static boolean isWorkersAi(JsonObject root) {
+        JsonElement model = root.get("model");
+        return model != null
+                && model.isJsonPrimitive()
+                && model.getAsString().startsWith(CloudflareModelName.WORKERS_AI_PROVIDER_PREFIX);
     }
 
     private static boolean normalizeMessage(JsonObject message) {

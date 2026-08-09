@@ -13,7 +13,10 @@ import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import okhttp3.mockwebserver.MockResponse;
@@ -30,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +66,15 @@ class CloudflareAgentToolWireTest {
               ],
               "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
             }
+            """;
+
+    private static final String CHAT_COMPLETION_STREAM_RESPONSE = """
+            data: {"id":"chatcmpl-2","object":"chat.completion.chunk","model":"workers-ai/@cf/openai/gpt-oss-20b","choices":[{"index":0,"delta":{"role":"assistant","content":"done"}}]}
+
+            data: {"id":"chatcmpl-2","object":"chat.completion.chunk","model":"workers-ai/@cf/openai/gpt-oss-20b","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+            data: [DONE]
+
             """;
 
     private MockWebServer server;
@@ -155,6 +168,42 @@ class CloudflareAgentToolWireTest {
         JsonObject toolResult = body.getAsJsonArray("messages").get(3).getAsJsonObject();
         assertThat(toolResult.get("role").getAsString()).isEqualTo("tool");
         assertThat(toolResult.get("tool_call_id").getAsString()).isEqualTo("call_1");
+    }
+
+    @Test
+    void streamedToolRoundTripIsNormalizedToo() throws InterruptedException {
+        // Agent mode normally streams, so the SSE path needs the same reshaping as the sync one.
+        server.enqueue(new MockResponse()
+                .setBody(CHAT_COMPLETION_STREAM_RESPONSE)
+                .setHeader("Content-Type", "text/event-stream"));
+
+        StreamingChatModel model =
+                new CloudflareChatModelFactory().createStreamingChatModel(customChatModel());
+        CountDownLatch done = new CountDownLatch(1);
+        model.chat(searchFilesRoundTrip(), new StreamingChatResponseHandler() {
+            @Override
+            public void onPartialResponse(String partialResponse) {
+                // This test is about the request, not the response.
+            }
+
+            @Override
+            public void onCompleteResponse(ChatResponse completeResponse) {
+                done.countDown();
+            }
+
+            @Override
+            public void onError(Throwable error) {
+                done.countDown();
+            }
+        });
+        done.await(10, TimeUnit.SECONDS);
+
+        RecordedRequest request = server.takeRequest(10, TimeUnit.SECONDS);
+        assertThat(request).as("no request reached the mock gateway").isNotNull();
+
+        JsonObject assistant = bodyOf(request).getAsJsonArray("messages").get(2).getAsJsonObject();
+        assertThat(assistant.getAsJsonArray("tool_calls")).hasSize(1);
+        assertThat(assistant.get("content").getAsString()).isEmpty();
     }
 
     /** The exact agent turn from the report: 'find null warns' answered with a search_files call. */
