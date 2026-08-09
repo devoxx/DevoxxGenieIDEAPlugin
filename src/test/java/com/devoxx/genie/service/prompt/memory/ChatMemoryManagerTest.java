@@ -168,6 +168,58 @@ class ChatMemoryManagerTest {
         }
     }
 
+    // --- Personas ------------------------------------------------------
+
+    @Test
+    void buildAugmentedSystemPrompt_usesActivePersonaPromptAsBase() {
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMock = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<MCPService> mcpServiceMock = Mockito.mockStatic(MCPService.class)) {
+            DevoxxGenieStateService stateService = mock(DevoxxGenieStateService.class);
+            stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            mcpServiceMock.when(MCPService::isMCPEnabled).thenReturn(false);
+
+            when(stateService.getSystemPrompt()).thenReturn("Base system prompt");
+            when(stateService.getActivePersona("tab-key"))
+                    .thenReturn(new com.devoxx.genie.model.Persona("Reviewer", "You are a meticulous code reviewer."));
+            when(stateService.getAgentModeEnabled()).thenReturn(false);
+            when(stateService.getTestExecutionEnabled()).thenReturn(false);
+            when(stateService.getUseDevoxxGenieMdInPrompt()).thenReturn(false);
+            when(stateService.getUseClaudeOrAgentsMdInPrompt()).thenReturn(false);
+            when(mockProject.getBasePath()).thenReturn("/tmp/no-such-project");
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(mockProject, "tab-key");
+
+            assertTrue(prompt.contains("You are a meticulous code reviewer."),
+                    "expected persona prompt as base: " + prompt);
+            assertFalse(prompt.contains("Base system prompt"),
+                    "persona prompt must replace the default system prompt: " + prompt);
+        }
+    }
+
+    @Test
+    void buildAugmentedSystemPrompt_fallsBackToSystemPromptWhenNoActivePersona() {
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMock = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<MCPService> mcpServiceMock = Mockito.mockStatic(MCPService.class)) {
+            DevoxxGenieStateService stateService = mock(DevoxxGenieStateService.class);
+            stateServiceMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            mcpServiceMock.when(MCPService::isMCPEnabled).thenReturn(false);
+
+            when(stateService.getSystemPrompt()).thenReturn("Base system prompt");
+            // Personas disabled or none matching: getActivePersona returns null
+            when(stateService.getActivePersona("tab-key")).thenReturn(null);
+            when(stateService.getAgentModeEnabled()).thenReturn(false);
+            when(stateService.getTestExecutionEnabled()).thenReturn(false);
+            when(stateService.getUseDevoxxGenieMdInPrompt()).thenReturn(false);
+            when(stateService.getUseClaudeOrAgentsMdInPrompt()).thenReturn(false);
+            when(mockProject.getBasePath()).thenReturn("/tmp/no-such-project");
+
+            String prompt = ChatMemoryManager.buildAugmentedSystemPrompt(mockProject, "tab-key");
+
+            assertTrue(prompt.contains("Base system prompt"),
+                    "expected fallback to configured system prompt: " + prompt);
+        }
+    }
+
     // --- Skills fragment (issue #1040) --------------------------------
 
     @Test

@@ -1,22 +1,38 @@
 package com.devoxx.genie.ui.settings.prompt;
 
+import com.devoxx.genie.model.Persona;
 import com.devoxx.genie.service.analyzer.DevoxxGenieGenerator;
+import com.devoxx.genie.ui.dialog.PersonaDialog;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionButton;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.PlusIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
+import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.TrashIcon;
 
 public class PromptSettingsComponent extends AbstractSettingsComponent {
 
@@ -65,11 +81,32 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
     @Getter
     private final JButton createDevoxxGenieMdButton = new JButton("Create DEVOXXGENIE.md");
 
+    // --- Personas ---
+    private static final int PERSONA_NAME_COLUMN = 0;
+    private static final int PERSONA_PROMPT_COLUMN = 1;
+
+    @Getter
+    private final JCheckBox showPersonasCheckbox = new JCheckBox("Show personas", Boolean.TRUE.equals(stateService.getShowPersonas()));
+
+    private final DefaultTableModel personasTableModel = new DefaultTableModel(new String[]{"Persona", "System Prompt"}, 0);
+
+    private final JBTable personasTable = new JBTable(personasTableModel) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    @Getter
+    private final ComboBox<String> defaultPersonaComboBox = new ComboBox<>();
+
     private final Project project;
 
     public PromptSettingsComponent(Project project) {
         this.project = project;
         createDevoxxGenieMdButton.addActionListener(e -> createDevoxxGenieMdFile());
+        setupPersonasTable();
+        setPersonas(stateService.getPersonas(), stateService.getDefaultPersonaName());
         addListeners();
     }
 
@@ -93,6 +130,33 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
         // --- System Prompt ---
         addSection(contentPanel, gbc, "System Prompt");
         addPromptArea(contentPanel, gbc, systemPromptField);
+
+        // --- Personas ---
+        addSection(contentPanel, gbc, "Personas");
+
+        addFullWidthRow(contentPanel, gbc, showPersonasCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, a persona dropdown appears in the tool window. The selected persona's " +
+                "system prompt replaces the system prompt above. A persona change applies to new " +
+                "conversations; ongoing conversations keep the persona they started with.");
+
+        JPanel personaButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        personaButtonPanel.add(createActionButton("Add", PlusIcon, "Add persona", e -> addPersona()));
+        personaButtonPanel.add(createActionButton("Edit", AllIcons.Actions.Edit, "Edit the selected persona (or double-click it)", e -> editPersona()));
+        personaButtonPanel.add(createActionButton("Remove", TrashIcon, "Remove persona", e -> removePersona()));
+        personaButtonPanel.add(createActionButton("Restore", RefreshIcon, "Restore default personas", e -> restoreDefaultPersonas()));
+        addFullWidthRow(contentPanel, gbc, personaButtonPanel);
+
+        JBScrollPane personasScrollPane = new JBScrollPane(personasTable);
+        personasScrollPane.setPreferredSize(new Dimension(-1, 150));
+        addFullWidthRow(contentPanel, gbc, personasScrollPane);
+
+        JPanel defaultPersonaPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        defaultPersonaPanel.add(new JLabel("Default persona:"));
+        defaultPersonaPanel.add(defaultPersonaComboBox);
+        addFullWidthRow(contentPanel, gbc, defaultPersonaPanel);
+        addHelpText(contentPanel, gbc,
+                "The default persona is pre-selected in the dropdown when the tool window opens.");
 
         // --- DEVOXXGENIE.md Generation ---
         addSection(contentPanel, gbc, "DEVOXXGENIE.md Generation");
@@ -169,6 +233,113 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
 
         panel.add(contentPanel, BorderLayout.NORTH);
         return panel;
+    }
+
+    // --- Personas support ---
+
+    private void setupPersonasTable() {
+        personasTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        personasTable.setStriped(true);
+        personasTable.getColumnModel().getColumn(PERSONA_NAME_COLUMN).setPreferredWidth(120);
+        personasTable.getColumnModel().getColumn(PERSONA_PROMPT_COLUMN).setPreferredWidth(480);
+
+        personasTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    editPersona();
+                }
+            }
+        });
+    }
+
+    /**
+     * @return the personas as shown in the table.
+     */
+    public List<Persona> getPersonas() {
+        List<Persona> result = new ArrayList<>();
+        for (int i = 0; i < personasTableModel.getRowCount(); i++) {
+            String name = (String) personasTableModel.getValueAt(i, PERSONA_NAME_COLUMN);
+            String prompt = (String) personasTableModel.getValueAt(i, PERSONA_PROMPT_COLUMN);
+            result.add(new Persona(name, prompt));
+        }
+        return result;
+    }
+
+    /**
+     * @return the default persona name selected in the combo, or {@code null} when the table is empty.
+     */
+    public @Nullable String getDefaultPersonaName() {
+        return (String) defaultPersonaComboBox.getSelectedItem();
+    }
+
+    public void setPersonas(@NotNull List<Persona> personas, @Nullable String defaultPersonaName) {
+        personasTableModel.setRowCount(0);
+        for (Persona persona : personas) {
+            personasTableModel.addRow(new Object[]{persona.getName(), persona.getPrompt()});
+        }
+        refreshDefaultPersonaComboBox(defaultPersonaName);
+    }
+
+    /**
+     * Rebuilds the default-persona combo from the current table rows, keeping
+     * {@code preferredSelection} (or the previous selection) when still present.
+     */
+    private void refreshDefaultPersonaComboBox(@Nullable String preferredSelection) {
+        String selection = preferredSelection != null
+                ? preferredSelection
+                : (String) defaultPersonaComboBox.getSelectedItem();
+        defaultPersonaComboBox.removeAllItems();
+        for (int i = 0; i < personasTableModel.getRowCount(); i++) {
+            defaultPersonaComboBox.addItem((String) personasTableModel.getValueAt(i, PERSONA_NAME_COLUMN));
+        }
+        if (selection != null) {
+            defaultPersonaComboBox.setSelectedItem(selection);
+        }
+        if (defaultPersonaComboBox.getSelectedIndex() == -1 && defaultPersonaComboBox.getItemCount() > 0) {
+            defaultPersonaComboBox.setSelectedIndex(0);
+        }
+    }
+
+    private void addPersona() {
+        PersonaDialog dialog = new PersonaDialog(project);
+        if (dialog.showAndGet()) {
+            personasTableModel.addRow(new Object[]{dialog.getPersonaName(), dialog.getPrompt()});
+            int newRowIndex = personasTableModel.getRowCount() - 1;
+            personasTable.setRowSelectionInterval(newRowIndex, newRowIndex);
+            personasTable.scrollRectToVisible(personasTable.getCellRect(newRowIndex, 0, true));
+            refreshDefaultPersonaComboBox(null);
+        }
+    }
+
+    private void editPersona() {
+        int selectedRow = personasTable.getSelectedRow();
+        if (selectedRow == -1) {
+            return;
+        }
+
+        String name = (String) personasTableModel.getValueAt(selectedRow, PERSONA_NAME_COLUMN);
+        String prompt = (String) personasTableModel.getValueAt(selectedRow, PERSONA_PROMPT_COLUMN);
+
+        PersonaDialog dialog = new PersonaDialog(project, name, prompt);
+        if (dialog.showAndGet()) {
+            boolean wasDefault = name != null && name.equals(defaultPersonaComboBox.getSelectedItem());
+            personasTableModel.setValueAt(dialog.getPersonaName(), selectedRow, PERSONA_NAME_COLUMN);
+            personasTableModel.setValueAt(dialog.getPrompt(), selectedRow, PERSONA_PROMPT_COLUMN);
+            refreshDefaultPersonaComboBox(wasDefault ? dialog.getPersonaName() : null);
+        }
+    }
+
+    private void removePersona() {
+        int selectedRow = personasTable.getSelectedRow();
+        if (selectedRow != -1) {
+            personasTableModel.removeRow(selectedRow);
+            refreshDefaultPersonaComboBox(null);
+        }
+    }
+
+    private void restoreDefaultPersonas() {
+        setPersonas(stateService.getDefaultPersonas(), com.devoxx.genie.model.Constant.DEFAULT_PERSONA_NAME);
     }
 
     private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-07-30",
+  "lastUpdated": "2026-08-09",
   "tips": [
     { "text": "Type @ to add a file to the context.", "weight": 2 },
     { "text": "Generate a DEVOXXGENIE.md with /init for project-aware answers.", "weight": 3 },
@@ -29,7 +29,8 @@
     { "text": "Your conversations are saved — reopen or remove past chats from history.", "weight": 1 },
     { "text": "Exclude Javadoc or extra folders when building Full Project Context in Settings.", "weight": 1 },
     { "text": "In Agent Mode, parallel sub-agents can explore several areas at once.", "weight": 1 },
-    { "text": "Customize the system prompt in Settings → System Prompt.", "weight": 1 },
+    { "text": "Customize the system prompt in Settings → System Prompt & Personas.", "weight": 1 },
+    { "text": "Set up personas in Settings → System Prompt & Personas, then switch role from the dropdown.", "weight": 2 },
     { "text": "DevoxxGenie is open source — star it on GitHub and join us at Devoxx!", "weight": 1 },
     { "text": "With Agent debug logs enabled, click the [Agent] tag in a message to see its input/output log details.", "weight": 1 },
     { "text": "Fix SpotBugs findings with AI — the SpotBugs DevoxxGenie plugin: https://github.com/stephanj/spotbugs-devoxxgenie-plugin", "weight": 1 },

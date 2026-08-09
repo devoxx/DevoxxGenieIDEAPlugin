@@ -733,7 +733,7 @@
         <projectConfigurable id="com.devoxx.genie.PromptSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.prompt.PromptSettingsConfigurable"
-                             displayName="System Prompt"/>
+                             displayName="System Prompt &amp; Personas"/>
 
         <projectConfigurable id="com.devoxx.genie.CommandsSettings"
                              parentId="com.devoxx.genie.DevoxxGenie"

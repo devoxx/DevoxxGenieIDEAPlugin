@@ -205,6 +205,7 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
 
         MessageBusUtil.connect(project, connection -> {
             MessageBusUtil.subscribe(connection, AppTopics.LLM_SETTINGS_CHANGED_TOPIC, llmProviderPanel);
+            MessageBusUtil.subscribe(connection, AppTopics.PERSONAS_CHANGED_TOPIC, llmProviderPanel);
             MessageBusUtil.subscribe(connection, AppTopics.CUSTOM_PROMPT_CHANGED_TOPIC, promptOutputPanel);
 
             MessageBusUtil.subscribe(connection, AppTopics.SETTINGS_CHANGED_TOPIC, submitPanel.getActionButtonsPanel());
