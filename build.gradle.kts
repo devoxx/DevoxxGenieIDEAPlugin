@@ -262,15 +262,15 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.18.0"
-    val lg4j_beta_version = "1.18.0-beta28"
-    val awsSdkVersion = "2.49.5"
+    val lg4j_version = "1.18.1"
+    val lg4j_beta_version = "1.18.1-beta28"
+    val awsSdkVersion = "2.50.3"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.1"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
     val commonmarkVersion = "0.29.0"
-    val jsoupVersion = "1.22.2"
+    val jsoupVersion = "1.23.1"
     // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
     // Its CMP-1.9.2-compiled code runs on the platform's CMP 1.10.0 runtime via Compose's
