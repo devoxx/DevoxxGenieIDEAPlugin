@@ -33,7 +33,7 @@ public class PromptSettingsConfigurable implements Configurable {
     @Nls
     @Override
     public String getDisplayName() {
-        return "Prompts";
+        return "System Prompt & Personas";
     }
 
     @Override

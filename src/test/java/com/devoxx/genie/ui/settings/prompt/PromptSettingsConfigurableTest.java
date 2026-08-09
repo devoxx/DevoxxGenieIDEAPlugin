@@ -80,7 +80,7 @@ class PromptSettingsConfigurableTest {
 
     @Test
     void shouldHaveCorrectDisplayName() {
-        assertThat(configurable.getDisplayName()).isEqualTo("Prompts");
+        assertThat(configurable.getDisplayName()).isEqualTo("System Prompt & Personas");
     }
 
     // Note: createComponent() is not tested here because it calls createPanel()

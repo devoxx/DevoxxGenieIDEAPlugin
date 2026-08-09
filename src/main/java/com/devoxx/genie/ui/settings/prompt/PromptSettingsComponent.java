@@ -5,6 +5,7 @@ import com.devoxx.genie.service.analyzer.DevoxxGenieGenerator;
 import com.devoxx.genie.ui.dialog.PersonaDialog;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -141,6 +142,7 @@ public class PromptSettingsComponent extends AbstractSettingsComponent {
 
         JPanel personaButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         personaButtonPanel.add(createActionButton("Add", PlusIcon, "Add persona", e -> addPersona()));
+        personaButtonPanel.add(createActionButton("Edit", AllIcons.Actions.Edit, "Edit the selected persona (or double-click it)", e -> editPersona()));
         personaButtonPanel.add(createActionButton("Remove", TrashIcon, "Remove persona", e -> removePersona()));
         personaButtonPanel.add(createActionButton("Restore", RefreshIcon, "Restore default personas", e -> restoreDefaultPersonas()));
         addFullWidthRow(contentPanel, gbc, personaButtonPanel);
