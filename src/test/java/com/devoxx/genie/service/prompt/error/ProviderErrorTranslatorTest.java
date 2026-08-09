@@ -140,6 +140,58 @@ class ProviderErrorTranslatorTest {
                         .doesNotContain("no provider prefix"));
     }
 
+    /**
+     * The body from issue #1256, verbatim (abridged in the middle only where the same
+     * "Type mismatch" line repeats per message): agent mode replaying a tool call to
+     * {@code workers-ai/@cf/openai/gpt-oss-20b}. Note {@code "name":"AiError"} — a different
+     * envelope from the {@code AiGatewayError} of #1254, which is why it used to slip through
+     * untranslated and dump this whole blob into the chat.
+     */
+    private static final String CLOUDFLARE_5006_BAD_INPUT_BODY =
+            "{\"name\":\"AiError\",\"internalCode\":5006,\"httpCode\":400,"
+            + "\"message\":\"AiError: Bad input: Error: oneOf at '/' not met, 0 matches: "
+            + "required properties at '/' are 'prompt', "
+            + "Type mismatch of '/messages/0/content', 'array' not in 'string', "
+            + "Type mismatch of '/messages/1/content', 'array' not in 'string', "
+            + "required properties at '/messages/11' are 'role,content', "
+            + "oneOf at '/' not met, 0 matches, required properties at '/' are 'input', "
+            + "required properties at '/' are 'requests' (56c5fa5f-0ff6-4968-9800-04cd0445838a)\","
+            + "\"description\":\"Error: oneOf at '/' not met, 0 matches\","
+            + "\"requestId\":\"56c5fa5f-0ff6-4968-9800-04cd0445838a\"}";
+
+    @Test
+    void translatesWorkersAiBadInputSchemaErrorIntoAgentModeGuidance() {
+        // Issue #1256: the raw schema dump reached the chat because the envelope says 'AiError'.
+        Throwable error = new RuntimeException("Provider unavailable: " + CLOUDFLARE_5006_BAD_INPUT_BODY);
+
+        Optional<String> result =
+                ProviderErrorTranslator.translate(error, "workers-ai/@cf/openai/gpt-oss-20b");
+
+        assertThat(result).isPresent();
+        assertThat(result.get())
+                .contains("5006")
+                .contains("Bad input")
+                .contains("workers-ai/@cf/openai/gpt-oss-20b")
+                .contains("tool")
+                .contains("Agent mode")
+                // None of the raw payload — neither JSON nor the schema dump — may leak.
+                .doesNotContain("{")
+                .doesNotContain("httpCode")
+                .doesNotContain("oneOf")
+                .doesNotContain("Type mismatch");
+    }
+
+    @Test
+    void findsWorkersAiBadInputBodyDeepInTheCauseChain() {
+        // The plugin wraps it twice: ExecutionException -> CompletionException -> ModelException.
+        Throwable root = new RuntimeException("status code: 400; body: " + CLOUDFLARE_5006_BAD_INPUT_BODY);
+        Throwable wrapped = new IllegalStateException("Error occurred while processing chat message", root);
+
+        assertThat(ProviderErrorTranslator.translate(wrapped, "workers-ai/@cf/openai/gpt-oss-20b"))
+                .get()
+                .satisfies(m -> assertThat(m).contains("5006").doesNotContain("Type mismatch"));
+    }
+
     @Test
     void returnsEmptyForNonCloudflareErrors() {
         assertThat(ProviderErrorTranslator.translate(
