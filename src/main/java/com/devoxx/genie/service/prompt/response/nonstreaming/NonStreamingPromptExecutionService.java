@@ -208,7 +208,7 @@ public class NonStreamingPromptExecutionService {
                 return executeDirectChat(chatModel, chatMemory, chatMessageContext.getUserMessage());
             }
 
-            Assistant assistant = buildAssistant(chatModel, chatMemory, project);
+            Assistant assistant = buildAssistant(chatModel, chatMemory, project, chatMessageContext.getMemoryKey());
 
             // Try agent mode first, then fall back to MCP-only. Thread the per-prompt MCP
             // counter so MCP-inside-agent invocations are counted (task-209 AC #24).
@@ -233,7 +233,7 @@ public class NonStreamingPromptExecutionService {
             var assistantBuilder = AiServices.builder(Assistant.class)
                     .chatModel(chatModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
-                    .systemMessageProvider(memoryId -> buildToolSystemPrompt(project))
+                    .systemMessageProvider(memoryId -> buildToolSystemPrompt(project, chatMessageContext.getMemoryKey()))
                     .toolProvider(toolProvider);
             // Issue #1193: turn hallucinated-tool-name / bad-arguments throws into
             // error tool-results so chat memory never ends up with a dangling tool_use.
@@ -289,17 +289,18 @@ public class NonStreamingPromptExecutionService {
         return response;
     }
 
-    private static @NotNull String buildToolSystemPrompt(@NotNull Project project) {
-        return ChatMemoryManager.buildAugmentedSystemPrompt(project);
+    private static @NotNull String buildToolSystemPrompt(@NotNull Project project, String memoryKey) {
+        return ChatMemoryManager.buildAugmentedSystemPrompt(project, memoryKey);
     }
 
     private static Assistant buildAssistant(ChatModel chatModel,
                                            ChatMemory chatMemory,
-                                           @NotNull Project project) {
+                                           @NotNull Project project,
+                                           String memoryKey) {
         return AiServices.builder(Assistant.class)
                 .chatModel(chatModel)
                 .chatMemoryProvider(memoryId -> chatMemory)
-                .systemMessageProvider(memoryId -> ChatMemoryManager.buildAugmentedSystemPrompt(project))
+                .systemMessageProvider(memoryId -> ChatMemoryManager.buildAugmentedSystemPrompt(project, memoryKey))
                 .build();
     }
 

@@ -65,6 +65,16 @@ class DevoxxGenieStateServiceTest {
         }
 
         @Test
+        void shouldHaveCorrectDefaultPersonaSettings() {
+            assertThat(stateService.getShowPersonas()).isFalse();
+            assertThat(stateService.getDefaultPersonaName()).isEqualTo(DEFAULT_PERSONA_NAME);
+            assertThat(stateService.getPersonas())
+                    .extracting(com.devoxx.genie.model.Persona::getName)
+                    .containsExactly("Developer", "Reviewer", "Architect", "Test Engineer");
+            assertThat(stateService.getPersonaByName("developer").getPrompt()).isEqualTo(SYSTEM_PROMPT);
+        }
+
+        @Test
         void shouldHaveCorrectDefaultLocalUrls() {
             assertThat(stateService.getOllamaModelUrl()).isEqualTo(OLLAMA_MODEL_URL);
             assertThat(stateService.getLmstudioModelUrl()).isEqualTo(LMSTUDIO_MODEL_URL);
@@ -827,6 +837,56 @@ class DevoxxGenieStateServiceTest {
             stateService.setOpenTabIds(PROJECT_HASH, List.of());
 
             assertThat(stateService.getOpenTabIds(PROJECT_HASH)).isEmpty();
+        }
+    }
+
+    @Nested
+    class PersonaSelection {
+
+        private static final String TAB_KEY = "project-hash-tab-1";
+
+        @Test
+        void selectedPersonaName_shouldFallBackToDefaultWhenNoRuntimeSelection() {
+            assertThat(stateService.getSelectedPersonaName(TAB_KEY)).isEqualTo(DEFAULT_PERSONA_NAME);
+            assertThat(stateService.getSelectedPersonaName(null)).isEqualTo(DEFAULT_PERSONA_NAME);
+        }
+
+        @Test
+        void selectedPersonaName_shouldReturnRuntimeSelectionPerTab() {
+            stateService.setSelectedPersonaName(TAB_KEY, "Reviewer");
+
+            assertThat(stateService.getSelectedPersonaName(TAB_KEY)).isEqualTo("Reviewer");
+            // Other tabs are unaffected and still fall back to the default
+            assertThat(stateService.getSelectedPersonaName("other-tab")).isEqualTo(DEFAULT_PERSONA_NAME);
+        }
+
+        @Test
+        void activePersona_shouldBeNullWhenFeatureDisabled() {
+            stateService.setShowPersonas(false);
+            stateService.setSelectedPersonaName(TAB_KEY, "Reviewer");
+
+            assertThat(stateService.getActivePersona(TAB_KEY)).isNull();
+        }
+
+        @Test
+        void activePersona_shouldResolveSelectedPersonaWhenFeatureEnabled() {
+            stateService.setShowPersonas(true);
+            stateService.setSelectedPersonaName(TAB_KEY, "Reviewer");
+
+            com.devoxx.genie.model.Persona active = stateService.getActivePersona(TAB_KEY);
+            assertThat(active).isNotNull();
+            assertThat(active.getName()).isEqualTo("Reviewer");
+            assertThat(active.getPrompt()).isEqualTo(REVIEWER_PERSONA_PROMPT);
+        }
+
+        @Test
+        void activePersona_shouldFallBackToDefaultPersonaForUnknownSelection() {
+            stateService.setShowPersonas(true);
+            stateService.setSelectedPersonaName(TAB_KEY, "No Such Persona");
+
+            com.devoxx.genie.model.Persona active = stateService.getActivePersona(TAB_KEY);
+            assertThat(active).isNotNull();
+            assertThat(active.getName()).isEqualTo(DEFAULT_PERSONA_NAME);
         }
     }
 }

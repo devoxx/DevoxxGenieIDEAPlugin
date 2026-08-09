@@ -61,4 +61,7 @@ public class AppTopics {
     public static final Topic<RAGLoggingMessage> RAG_LOG_MSG =
             Topic.create("ragLoggingMessage", RAGLoggingMessage.class);
 
+    public static final Topic<PersonaChangeListener> PERSONAS_CHANGED_TOPIC =
+            Topic.create("personasChanged", PersonaChangeListener.class);
+
 }

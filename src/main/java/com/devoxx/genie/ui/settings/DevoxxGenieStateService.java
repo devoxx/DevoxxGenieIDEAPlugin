@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.Persona;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -86,6 +87,21 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Entries here are pruned from any saved commands list on loadState so that
     // existing users don't continue to see them on the welcome page.
     private static final Set<String> REMOVED_DEFAULT_COMMANDS = Set.of("tdg");
+
+    // Personas: named system prompts selectable in the tool window (see Prompts settings).
+    @Getter(AccessLevel.NONE)
+    private List<Persona> personas = new ArrayList<>();
+    private Boolean showPersonas = false;
+    private String defaultPersonaName = DEFAULT_PERSONA_NAME;
+
+    /**
+     * Runtime-only persona selection per tab key (projectHash-tabId). Deliberately not
+     * persisted: after an IDE restart every tab starts on the default persona again.
+     */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    @Transient
+    private final transient Map<String, String> runtimeSelectedPersonas = new java.util.concurrent.ConcurrentHashMap<>();
 
     private final List<Command> defaultPrompts = Arrays.asList(
             new Command(TEST_COMMAND, TEST_PROMPT),
@@ -713,6 +729,81 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         } else {
             return DEFAULT_PROVIDER;
         }
+    }
+
+    /**
+     * Returns the configured personas, seeding the built-in defaults when the list is empty
+     * (fresh install or upgrade). Overrides the Lombok getter so XML serialization and all
+     * callers see a non-empty list.
+     */
+    public List<Persona> getPersonas() {
+        if (personas == null || personas.isEmpty()) {
+            personas = new ArrayList<>(getDefaultPersonas());
+        }
+        return personas;
+    }
+
+    /**
+     * The built-in persona set, returned as a fresh mutable list so the settings UI's
+     * "Restore" action cannot alias state.
+     */
+    public List<Persona> getDefaultPersonas() {
+        return new ArrayList<>(List.of(
+                new Persona(DEFAULT_PERSONA_NAME, SYSTEM_PROMPT),
+                new Persona("Reviewer", REVIEWER_PERSONA_PROMPT),
+                new Persona("Architect", ARCHITECT_PERSONA_PROMPT),
+                new Persona("Test Engineer", TEST_ENGINEER_PERSONA_PROMPT)
+        ));
+    }
+
+    public @Nullable Persona getPersonaByName(@Nullable String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        return getPersonas().stream()
+                .filter(p -> name.equalsIgnoreCase(p.getName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * The persona name currently selected for a tab. Falls back to the configured default
+     * persona when the tab has no runtime selection (e.g. right after startup).
+     */
+    public @NotNull String getSelectedPersonaName(@Nullable String stateKey) {
+        if (stateKey != null) {
+            String selected = runtimeSelectedPersonas.get(stateKey);
+            if (selected != null) {
+                return selected;
+            }
+        }
+        return defaultPersonaName != null && !defaultPersonaName.isBlank()
+                ? defaultPersonaName
+                : DEFAULT_PERSONA_NAME;
+    }
+
+    public void setSelectedPersonaName(@NotNull String stateKey, @Nullable String personaName) {
+        if (personaName == null || personaName.isBlank()) {
+            runtimeSelectedPersonas.remove(stateKey);
+        } else {
+            runtimeSelectedPersonas.put(stateKey, personaName);
+        }
+    }
+
+    /**
+     * Resolves the persona whose prompt should be used as the base system prompt for a tab.
+     * Returns {@code null} when the personas feature is disabled or no persona matches, in
+     * which case callers fall back to {@link #getSystemPrompt()}.
+     */
+    public @Nullable Persona getActivePersona(@Nullable String stateKey) {
+        if (!Boolean.TRUE.equals(showPersonas)) {
+            return null;
+        }
+        Persona persona = getPersonaByName(getSelectedPersonaName(stateKey));
+        if (persona == null) {
+            persona = getPersonaByName(defaultPersonaName);
+        }
+        return persona;
     }
 
     /**

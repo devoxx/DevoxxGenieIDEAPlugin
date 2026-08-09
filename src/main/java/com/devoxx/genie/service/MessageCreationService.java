@@ -154,7 +154,14 @@ public class MessageCreationService {
 
         // Add system prompt for OpenAI o1 models
         if (ChatMessageContextUtil.isOpenAIo1Model(chatMessageContext.getLanguageModel())) {
-            String systemPrompt = DevoxxGenieStateService.getInstance().getSystemPrompt();
+            DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+            String systemPrompt = state.getSystemPrompt();
+            // Honor the active persona (if the personas feature is enabled) like the
+            // regular system-message path in ChatMemoryManager does.
+            com.devoxx.genie.model.Persona persona = state.getActivePersona(chatMessageContext.getMemoryKey());
+            if (persona != null && persona.getPrompt() != null && !persona.getPrompt().isBlank()) {
+                systemPrompt = persona.getPrompt();
+            }
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
         }
 

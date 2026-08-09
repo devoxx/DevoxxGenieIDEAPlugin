@@ -8,10 +8,12 @@ import com.devoxx.genie.chatmodel.local.exo.ExoChatModelFactory;
 import com.devoxx.genie.util.LanguageModelSelectionUtil;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.Persona;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.models.ModelConfigService;
 import com.devoxx.genie.ui.listener.LLMSettingsChangeListener;
+import com.devoxx.genie.ui.listener.PersonaChangeListener;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.renderer.ModelProviderRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -45,7 +47,7 @@ import static com.devoxx.genie.ui.component.button.ButtonFactory.createActionBut
 import static com.devoxx.genie.ui.util.DevoxxGenieIconsUtil.RefreshIcon;
 
 @Slf4j
-public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSettingsChangeListener {
+public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSettingsChangeListener, PersonaChangeListener {
 
     private final transient Project project;
     // Composite key for per-tab provider/model persistence (projectHash or projectHash-tabId)
@@ -60,6 +62,11 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             model -> model.getDisplayName() != null ? model.getDisplayName() : model.getModelName(),
             model -> (model.getDisplayName() == null ? "" : model.getDisplayName()) + " "
                     + (model.getModelName() == null ? "" : model.getModelName()));
+
+    @Getter
+    private final ComboBox<Persona> personaComboBox = new ComboBox<>();
+    private final JPanel personaPanel = new JPanel(new BorderLayout());
+    private boolean isUpdatingPersonas = false;
 
     private JButton refreshButton;
 
@@ -121,9 +128,20 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         modelPanel.add(modelNameComboBox, BorderLayout.CENTER);
         toolPanel.add(modelPanel);
 
+        // Persona dropdown — only visible when "Show personas" is enabled in Prompts settings
+        personaComboBox.setFont(DevoxxGenieFontsUtil.getDropdownFont());
+        personaPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+        personaPanel.add(personaComboBox, BorderLayout.CENTER);
+        toolPanel.add(personaPanel);
+        populatePersonaComboBox();
+        personaComboBox.addActionListener(this::handlePersonaSelectionChange);
+
         Dimension comboBoxSize = new Dimension(Integer.MAX_VALUE, modelProviderComboBox.getPreferredSize().height);
         modelProviderComboBox.setMaximumSize(comboBoxSize);
         modelNameComboBox.setMaximumSize(comboBoxSize);
+        personaComboBox.setMaximumSize(comboBoxSize);
+        personaPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE,
+                modelProviderComboBox.getPreferredSize().height + 5));
 
         lastSelectedProvider = DevoxxGenieStateService.getInstance().getSelectedProvider(stateKey);
         lastSelectedLanguageModel = DevoxxGenieStateService.getInstance().getSelectedLanguageModel(stateKey);
@@ -515,6 +533,61 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             DevoxxGenieStateService.getInstance().setSelectedProvider(stateKey, modelProvider.getName());
             updateModelNamesComboBox(modelProvider.getName());
         }
+    }
+
+    /**
+     * (Re)populates the persona combo from settings and syncs its visibility with the
+     * "Show personas" setting. The selected item is the tab's runtime selection, which
+     * falls back to the configured default persona.
+     */
+    private void populatePersonaComboBox() {
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        boolean showPersonas = Boolean.TRUE.equals(state.getShowPersonas());
+
+        isUpdatingPersonas = true;
+        try {
+            personaComboBox.removeAllItems();
+            if (showPersonas) {
+                String selectedName = state.getSelectedPersonaName(stateKey);
+                Persona toSelect = null;
+                for (Persona persona : state.getPersonas()) {
+                    personaComboBox.addItem(persona);
+                    if (persona.getName() != null && persona.getName().equalsIgnoreCase(selectedName)) {
+                        toSelect = persona;
+                    }
+                }
+                if (toSelect != null) {
+                    personaComboBox.setSelectedItem(toSelect);
+                }
+                updatePersonaTooltip();
+            }
+            personaPanel.setVisible(showPersonas && personaComboBox.getItemCount() > 0);
+        } finally {
+            isUpdatingPersonas = false;
+        }
+        personaPanel.revalidate();
+        personaPanel.repaint();
+    }
+
+    private void handlePersonaSelectionChange(@NotNull ActionEvent e) {
+        if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || isUpdatingPersonas) {
+            return;
+        }
+        Persona selected = (Persona) personaComboBox.getSelectedItem();
+        if (selected != null) {
+            DevoxxGenieStateService.getInstance().setSelectedPersonaName(stateKey, selected.getName());
+            updatePersonaTooltip();
+        }
+    }
+
+    private void updatePersonaTooltip() {
+        Persona selected = (Persona) personaComboBox.getSelectedItem();
+        personaComboBox.setToolTipText(selected != null ? selected.getPrompt() : null);
+    }
+
+    @Override
+    public void onPersonasChanged() {
+        populatePersonaComboBox();
     }
 
     @Override

@@ -175,7 +175,7 @@ class NonStreamingPromptExecutionServiceTest {
             .thenReturn(dev.langchain4j.service.tool.ToolProviderResult.builder().build());
         agentToolProviderMock.when(() -> AgentToolProviderFactory.createToolProvider(any(), any()))
             .thenReturn(mockToolProvider);
-        chatMemoryManagerMock.when(() -> ChatMemoryManager.buildAugmentedSystemPrompt(any()))
+        chatMemoryManagerMock.when(() -> ChatMemoryManager.buildAugmentedSystemPrompt(any(), any()))
             .thenReturn("You are a helpful assistant");
 
         AiMessage aiMessage = AiMessage.builder()

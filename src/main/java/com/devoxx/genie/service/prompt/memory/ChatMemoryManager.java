@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.prompt.memory;
 
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.Persona;
 import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
@@ -396,7 +397,7 @@ public class ChatMemoryManager {
      * @return The complete system prompt
      */
     private String buildSystemPrompt(@NotNull ChatMessageContext context) {
-        String prompt = buildAugmentedSystemPrompt(context.getProject());
+        String prompt = buildAugmentedSystemPrompt(context.getProject(), context.getMemoryKey());
         // task-209 analytics signal — mirrors the gate used inside buildAugmentedSystemPrompt.
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
             String md = readDevoxxGenieMdFile(context.getProject());
@@ -435,8 +436,18 @@ public class ChatMemoryManager {
     }
 
     public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project) {
+        return buildAugmentedSystemPrompt(project, null);
+    }
+
+    /**
+     * Builds the augmented system prompt for a specific tab. The {@code memoryKey}
+     * (projectHash-tabId) selects the tab's active persona when the personas feature is
+     * enabled; {@code null} falls back to the default persona (or the plain system prompt
+     * when personas are disabled).
+     */
+    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project, @Nullable String memoryKey) {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        String systemPrompt = state.getSystemPrompt() + MARKDOWN;
+        String systemPrompt = resolveBaseSystemPrompt(state, memoryKey) + MARKDOWN;
         String projectPath = project.getBasePath();
 
         // Always tell the LLM the project root when tools are active
@@ -490,6 +501,19 @@ public class ChatMemoryManager {
         systemPrompt += getSkillsSection(project, state);
 
         return TemplateVariableEscaper.escape(systemPrompt);
+    }
+
+    /**
+     * The base system prompt is the active persona's prompt when the personas feature is
+     * enabled, otherwise the user-configured system prompt.
+     */
+    private static @NotNull String resolveBaseSystemPrompt(@NotNull DevoxxGenieStateService state,
+                                                           @Nullable String memoryKey) {
+        Persona persona = state.getActivePersona(memoryKey);
+        if (persona != null && persona.getPrompt() != null && !persona.getPrompt().isBlank()) {
+            return persona.getPrompt();
+        }
+        return state.getSystemPrompt();
     }
 
     private static String getDevoxxGenieMdSection(@NotNull Project project, @NotNull DevoxxGenieStateService state) {

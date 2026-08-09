@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.prompt;
 
 import com.devoxx.genie.ui.listener.NewlineShortcutChangeListener;
+import com.devoxx.genie.ui.listener.PersonaChangeListener;
 import com.devoxx.genie.ui.listener.ShortcutChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -45,6 +46,7 @@ class PromptSettingsConfigurableTest {
 
     private DevoxxGenieStateService stateService;
     private PromptSettingsConfigurable configurable;
+    private PersonaChangeListener personaListener;
 
     @BeforeEach
     void setUp() {
@@ -64,6 +66,8 @@ class PromptSettingsConfigurableTest {
         NewlineShortcutChangeListener newlineListener = mock(NewlineShortcutChangeListener.class);
         lenient().when(messageBus.syncPublisher(AppTopics.SHORTCUT_CHANGED_TOPIC)).thenReturn(shortcutListener);
         lenient().when(messageBus.syncPublisher(AppTopics.NEWLINE_SHORTCUT_CHANGED_TOPIC)).thenReturn(newlineListener);
+        personaListener = mock(PersonaChangeListener.class);
+        lenient().when(messageBus.syncPublisher(AppTopics.PERSONAS_CHANGED_TOPIC)).thenReturn(personaListener);
 
         configurable = new PromptSettingsConfigurable(project);
     }
@@ -308,6 +312,67 @@ class PromptSettingsConfigurableTest {
             assertThat(component.getIncludeProjectTreeCheckbox().isEnabled()).isFalse();
             assertThat(component.getUseDevoxxGenieMdInPromptCheckbox().isEnabled()).isFalse();
             assertThat(component.getCreateDevoxxGenieMdButton().isEnabled()).isFalse();
+        }
+    }
+
+    @Nested
+    class Personas {
+
+        @Test
+        void shouldNotBeModifiedInitially() {
+            PromptSettingsComponent component = getComponent();
+            component.getSystemPromptField().setText(SYSTEM_PROMPT);
+            syncComponentShortcutsToState(component);
+            assertThat(configurable.isModified()).isFalse();
+        }
+
+        @Test
+        void shouldDetectShowPersonasChange() {
+            PromptSettingsComponent component = getComponent();
+            component.getShowPersonasCheckbox().setSelected(true);
+            assertThat(configurable.isModified()).isTrue();
+        }
+
+        @Test
+        void shouldDetectDefaultPersonaChange() {
+            PromptSettingsComponent component = getComponent();
+            component.getDefaultPersonaComboBox().setSelectedItem("Reviewer");
+            assertThat(configurable.isModified()).isTrue();
+        }
+
+        @Test
+        void shouldApplyPersonaSettingsAndPublishChange() {
+            PromptSettingsComponent component = getComponent();
+            component.getShowPersonasCheckbox().setSelected(true);
+            component.getDefaultPersonaComboBox().setSelectedItem("Reviewer");
+
+            configurable.apply();
+
+            assertThat(stateService.getShowPersonas()).isTrue();
+            assertThat(stateService.getDefaultPersonaName()).isEqualTo("Reviewer");
+            Mockito.verify(personaListener).onPersonasChanged();
+        }
+
+        @Test
+        void shouldNotPublishWhenPersonasUnchanged() {
+            PromptSettingsComponent component = getComponent();
+            component.getSystemPromptField().setText(SYSTEM_PROMPT);
+
+            configurable.apply();
+
+            Mockito.verify(personaListener, Mockito.never()).onPersonasChanged();
+        }
+
+        @Test
+        void shouldResetPersonaSettings() {
+            stateService.setShowPersonas(true);
+            stateService.setDefaultPersonaName("Architect");
+
+            configurable.reset();
+
+            PromptSettingsComponent component = getComponent();
+            assertThat(component.getShowPersonasCheckbox().isSelected()).isTrue();
+            assertThat(component.getDefaultPersonaName()).isEqualTo("Architect");
         }
     }
 

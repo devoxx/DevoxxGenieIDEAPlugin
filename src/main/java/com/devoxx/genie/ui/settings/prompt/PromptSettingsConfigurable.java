@@ -44,6 +44,10 @@ public class PromptSettingsConfigurable implements Configurable {
 
         isModified |= !StringUtil.equals(promptSettingsComponent.getSystemPromptField().getText(), settings.getSystemPrompt());
 
+        isModified |= Boolean.TRUE.equals(settings.getShowPersonas()) != promptSettingsComponent.getShowPersonasCheckbox().isSelected();
+        isModified |= !settings.getPersonas().equals(promptSettingsComponent.getPersonas());
+        isModified |= !Objects.equals(settings.getDefaultPersonaName(), promptSettingsComponent.getDefaultPersonaName());
+
         isModified |= settings.getCreateDevoxxGenieMd() != promptSettingsComponent.getCreateDevoxxGenieMdCheckbox().isSelected();
         isModified |= settings.getIncludeProjectTree() != promptSettingsComponent.getIncludeProjectTreeCheckbox().isSelected();
         isModified |= !Objects.equals(settings.getProjectTreeDepth(), promptSettingsComponent.getProjectTreeDepthSpinner().getValue());
@@ -65,6 +69,23 @@ public class PromptSettingsConfigurable implements Configurable {
     public void apply() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         updateTextAreaIfModified(promptSettingsComponent.getSystemPromptField(), settings.getSystemPrompt(), settings::setSystemPrompt);
+
+        boolean personasModified = Boolean.TRUE.equals(settings.getShowPersonas()) != promptSettingsComponent.getShowPersonasCheckbox().isSelected()
+                || !settings.getPersonas().equals(promptSettingsComponent.getPersonas())
+                || !Objects.equals(settings.getDefaultPersonaName(), promptSettingsComponent.getDefaultPersonaName());
+
+        settings.setShowPersonas(promptSettingsComponent.getShowPersonasCheckbox().isSelected());
+        settings.setPersonas(new java.util.ArrayList<>(promptSettingsComponent.getPersonas()));
+        String defaultPersona = promptSettingsComponent.getDefaultPersonaName();
+        if (defaultPersona != null) {
+            settings.setDefaultPersonaName(defaultPersona);
+        }
+
+        if (personasModified) {
+            project.getMessageBus()
+                    .syncPublisher(AppTopics.PERSONAS_CHANGED_TOPIC)
+                    .onPersonasChanged();
+        }
 
         settings.setCreateDevoxxGenieMd(promptSettingsComponent.getCreateDevoxxGenieMdCheckbox().isSelected());
         settings.setIncludeProjectTree(promptSettingsComponent.getIncludeProjectTreeCheckbox().isSelected());
@@ -113,6 +134,9 @@ public class PromptSettingsConfigurable implements Configurable {
     public void reset() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
         promptSettingsComponent.getSystemPromptField().setText(settings.getSystemPrompt());
+
+        promptSettingsComponent.getShowPersonasCheckbox().setSelected(Boolean.TRUE.equals(settings.getShowPersonas()));
+        promptSettingsComponent.setPersonas(settings.getPersonas(), settings.getDefaultPersonaName());
 
         promptSettingsComponent.getCreateDevoxxGenieMdCheckbox().setSelected(settings.getCreateDevoxxGenieMd());
         promptSettingsComponent.getIncludeProjectTreeCheckbox().setSelected(settings.getIncludeProjectTree());
