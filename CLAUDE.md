@@ -9,34 +9,27 @@ Ollama, LMStudio, GPT4All, Llama.cpp, Exo) and cloud-based LLMs (OpenAI, Anthrop
 DeepSeek, OpenRouter, Azure OpenAI, Amazon Bedrock). The plugin supports advanced features like RAG (Retrieval-Augmented
 Generation), MCP (Model Context Protocol) servers, web search, and agentic programming capabilities.
 
-## Best Practices
+## Threading Constraints
 
-Add at the top of CLAUDE.md under ## Project Context\n\nThis is a JetBrains/IntelliJ plugin project (DevoxxGenie).
-Primary language is Java with some TypeScript. Be aware of EDT (Event Dispatch Thread) constraints — UI operations must
-run on EDT, and long-running operations must NOT block EDT. Use `ApplicationManager.getApplication().invokeLater()` or
-`ReadAction`/`WriteAction` as appropriate.
-¬
-Add under a top-level ## Workflow Rules section in CLAUDE.md\n\nWhen asked to investigate or fix an issue, do NOT deeply
-explore the entire codebase autonomously. Start focused on the specific area mentioned, and ask before expanding scope.
-Avoid unnecessary web searches unless explicitly requested.
+This is a JetBrains/IntelliJ plugin. UI operations must run on the EDT (Event Dispatch Thread), and long-running
+operations must NOT block it. Use `ApplicationManager.getApplication().invokeLater()` or `ReadAction`/`WriteAction`
+as appropriate.
 
-Add under ## Git Workflow section in CLAUDE.md\n\nAlways create a feature/fix branch BEFORE making any code changes.
-Never edit code on the current branch without confirming the branch strategy first.
+## Workflow Rules
 
-Add under ## Testing section in CLAUDE.md\n\nWhen asked to investigate a bug, write a reproducing test FIRST before
-applying any fix, unless told otherwise.
+When asked to investigate or fix an issue, do NOT deeply explore the entire codebase autonomously. Start focused on
+the specific area mentioned, and ask before expanding scope. Avoid unnecessary web searches unless explicitly
+requested.
 
-Add under ## Release Process section in CLAUDE.md\n\nFor version bumps, always ask the user what the target version
-should be. Do not assume the next version number.
+## Git Workflow
 
-Create a branch fix/issue-XXX from develop, investigate the bug described in issue #XXX, write a reproducing test first,
-then implement the fix, run all tests, and create a PR.
+Always create a feature/fix branch BEFORE making any code changes. Never edit code on the current branch without
+confirming the branch strategy first. Feature/fix branches for issues are cut from `develop` (e.g. `fix/issue-1234`).
 
-Investigate GitHub issue #[NUMBER]. First, read the issue and explore the relevant code. Then write a minimal failing
-test that reproduces the exact bug. Run the test to confirm it fails. Now implement the fix. Run the full test suite
-repeatedly, iterating on your implementation until ALL tests pass — including your new regression test. Do not ask me
-for feedback until you have a green test suite. Then create a feature branch, commit everything with a descriptive
-message, and show me a summary of what you changed and why.
+## Testing
+
+When asked to investigate a bug, write a reproducing test FIRST — confirm it fails — before applying any fix, unless
+told otherwise.
 
 ## Build & Development Commands
 
@@ -46,14 +39,6 @@ message, and show me a summary of what you changed and why.
 
 ```bash
 export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
-```
-
-### Building
-
-```bash
-./gradlew buildPlugin              # Build plugin (creates ZIP in build/distributions/)
-./gradlew clean                    # Clean build artifacts
-./gradlew shadowJar                # Create shadow JAR with dependencies
 ```
 
 ### Testing
@@ -67,186 +52,16 @@ export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
 ./gradlew verifyPlugin                            # Verify plugin (includes tests)
 ```
 
-### Running & Publishing
-
-```bash
-./gradlew runIde                   # Run IntelliJ IDEA with plugin for testing
-./gradlew publishPlugin            # Publish to JetBrains Marketplace (requires PUBLISH_TOKEN env var)
-```
-
-### Task Automation (using Taskfile)
-
-```bash
-task build                         # Build the plugin
-task test                          # Run tests
-task run-ide                       # Run IDE with plugin
-task generate-changelog VERSION=0.8.0  # Generate changelog from merged PRs
-task preview-changes VERSION=0.8.0     # Preview changelog without committing
-```
-
 ## Core Architecture
 
-### Multi-Module Structure
-
-- **Root module**: Main IntelliJ plugin code (`src/main/java/com/devoxx/genie/`)
-- **Core module**: Shared utilities being refactored (see `core/README.md` - issue #564)
-- **Docusaurus**: Documentation website (`docusaurus/`)
-
-### Key Architectural Components
-
-#### 1. Prompt Execution Flow
-
-The plugin processes user prompts through a layered architecture:
-
-**Entry Point**:
-
-- `UserPromptPanel` → `PromptSubmissionListener.onPromptSubmitted()` →
-  `PromptExecutionController.handlePromptSubmission()`
-
-**Processing Layer**:
-
-- `PromptExecutionService.executeQuery()` - Handles token calculations, RAG, and GitDiff settings
-- `ChatPromptExecutor.executePrompt()` - Dispatches to appropriate LLM provider
-- `LLMProviderService.getAvailableModelProviders()` - Retrieves model from ChatModelFactory
-
-**Execution Strategies**:
-
-- `StreamingPromptExecutor` - Token-by-token streaming responses
-- `NonStreamingPromptExecutionService` - Full response mode
-- `WebSearchPromptExecutionService` - Web search augmented prompts
-
-**Response Rendering**:
-
-- `ChatStreamingResponsePanel` - Real-time streaming UI updates
-- `ChatResponsePanel` - Final response display with code highlighting
-- `ResponseHeaderPanel`, `ResponseDocumentPanel`, `MetricExecutionInfoPanel` - Modular response components
-
-#### 2. LLM Provider System
-
-**Factory Pattern Implementation**:
-
-- `ChatModelFactory` (interface) - Base factory for all providers
-- `ChatModelFactoryProvider` - Provider registry and lookup
-- Provider-specific factories under:
-    - `chatmodel/cloud/` - Cloud providers (OpenAI, Anthropic, Gemini, etc.)
-    - `chatmodel/local/` - Local providers (Ollama, GPT4All, LMStudio, etc.)
-
-**Cloud Providers**: anthropic, azureopenai, bedrock, deepinfra, deepseek, glm, google, grok, groq, kimi, mistral, openai, openrouter
-
-**Local Providers**: ollama, gpt4all, lmstudio, llamacpp, jan, nativ, customopenai
-
-**Adding New Providers**:
+### Adding a New LLM Provider
 
 1. Create factory class implementing `ChatModelFactory` under `chatmodel/cloud/` or `chatmodel/local/`
 2. Implement `createChatModel()` and `createStreamingChatModel()` methods
 3. Register in `ChatModelFactoryProvider`
 4. Add provider to `ModelProvider` enum in `model/enumarations/`
 
-#### 3. RAG (Retrieval-Augmented Generation) System
-
-**Components**:
-
-- `ProjectIndexerService` - Indexes project files for semantic search
-- `ChromaEmbeddingService` - Stores embeddings in ChromaDB (Docker-based, v0.6.2)
-- `SemanticSearchService` - Retrieves relevant code based on similarity
-- Uses Ollama with Nomic Text embeddings for vector generation
-- `RAGValidatorService` - Validates Docker, ChromaDB, and Ollama setup
-
-**Validators**:
-
-- `DockerValidator` - Checks Docker availability
-- `ChromeDBValidator` - Validates ChromaDB connection
-- `OllamaValidator` - Verifies Ollama and embedding model
-- `NomicEmbedTextValidator` - Checks nomic-embed-text model
-
-#### 4. MCP (Model Context Protocol) Support
-
-**Key Services**:
-
-- `MCPService` - Core MCP server management
-- `MCPExecutionService` - Executes MCP tool calls
-- `MCPListenerService` - Implements ChatModelListener for MCP integration
-- `MCPCallbackLogger` - Logs MCP requests/responses for debugging
-
-**Configuration**:
-
-- MCP servers configured in Settings UI (`ui/settings/mcp/`)
-- Supports stdio and HTTP SSE transports
-- Tools are automatically exposed to LLM conversations when MCP is enabled
-
-#### 5. Service Layer Organization
-
-Key services under `service/`:
-
-- `ChatService` - Manages chat conversations
-- `MessageCreationService` - Constructs LLM messages with context
-- `TokenCalculationService` - Calculates token usage and costs
-- `ProjectContentService` - Extracts project content for context
-- `FileListManager` - Manages files added to prompt context
-- `ConversationStorageService` - Persists chat history locally (SQLite)
-
-### UI Architecture
-
-**Main Panels**:
-
-- `DevoxxGenieToolWindowContent` - Main plugin window
-- `ConversationPanel` - Chat conversation display
-- `UserPromptPanel` - User input area with image/file DnD support
-- `ActionButtonsPanel` - Control buttons (submit, stop, clear, etc.)
-- `PromptOutputPanel` - Response output with streaming support
-
-**Settings UI** (`ui/settings/`):
-
-- `LLMProvidersComponent` - Configure LLM providers and API keys
-- `RAGSettingsComponent` - RAG feature configuration
-- `MCPSettingsComponent` - MCP server management
-- `PromptSettingsComponent` - Custom prompts and shortcuts
-- `WebSearchProvidersComponent` - Google/Tavily search setup
-
-### Project Scanner & AST Analysis
-
-**Language-Specific Scanners** (`service/analyzer/languages/`):
-
-- Each language has a `ProjectScannerExtension` implementation
-- Supports: Java, Kotlin, Python, JavaScript, Go, Rust, C++, PHP
-- Extracts AST context (parent classes, field references) for better code analysis
-- `ProjectAnalyzer` coordinates language-specific scanning
-- `CachedProjectScanner` - Caches scan results for performance
-
-### Test Driven Generation (TDG)
-
-**Experimental Feature** (`service/tdg/`):
-
-- `CodeGeneratorService` - Generates implementation from unit tests
-- Allows writing tests first, then generating implementation
-
-## Code Style & Conventions
-
-### Naming Conventions
-
-- **Variables/Methods**: camelCase
-- **Classes/Interfaces**: PascalCase
-- **Constants**: SCREAMING_SNAKE_CASE
-- **Service Classes**: Suffix with "Service" (e.g., `ChatService`)
-- **Factory Classes**: Suffix with "Factory" (e.g., `ChatModelFactory`)
-- **Panel Classes**: Suffix with "Panel" (e.g., `UserPromptPanel`)
-
-### Dependency Management
-
-- Java minimum: JDK 17
-- IntelliJ minimum: 2023.3.4
-- Langchain4J version: 1.17.1 (beta: 1.17.1-beta27 for MCP/Chroma/web search/reactor)
-- Uses Lombok for boilerplate reduction
-- Shadow plugin for fat JAR creation with dependency merging
-
-### Testing Practices
-
-- Tests located in `src/test/java/` mirroring main structure
-- Uses JUnit 5 (Jupiter) for testing
-- Mockito for mocking
-- AssertJ for fluent assertions
-- Integration tests suffixed with `IT` (e.g., `PromptExecutionServiceIT`)
-- Platform tests extend `AbstractLightPlatformTestCase`
+Steps 3 and 4 are easy to miss — a new factory silently does nothing until it is registered in both places.
 
 ## Important Implementation Details
 
@@ -257,48 +72,7 @@ Key services under `service/`:
 - Can be generated via Settings UI or `/init` command in prompt input
 - Provides project-specific guidance to the LLM
 
-### Chat Memory & Context
-
-- Configurable chat memory size (default: 10 messages)
-- `ChatMemoryManager` handles memory lifecycle per conversation
-- Conversations stored locally using SQLite
-- Each conversation maintains independent memory context
-
-### Token Calculation & Cost Estimation
-
-- Real-time token counting using JTokkit library
-- Cost calculation for cloud providers
-- Context window tracking and warnings
-- Supports adding full project to context for large context models (e.g., Gemini 1M tokens)
-
-### Web Search Integration
-
-- Google Custom Search and Tavily supported
-- `WebSearchPromptExecutionService` augments prompts with search results
-- Configured via Settings UI with API keys
-
-### Git Integration
-
-- `GitMergeService` - Git diff integration
-- Can include uncommitted changes in prompt context
-- Useful for explaining changes or generating commit messages
-
-## Plugin Configuration Files
-
-- `src/main/resources/META-INF/plugin.xml` - Main plugin descriptor
-- Language-specific features: `java-features.xml`, `kotlin-features.xml`, `python-features.xml`, etc.
-- `src/main/resources/application.properties` - Application properties (version auto-updated by build)
-- `gradle.properties` - Gradle configuration
-- `.env` - Local environment variables (not committed)
-
 ## Common Development Workflows
-
-### Adding a New Custom Prompt
-
-1. Update `model/CustomPrompt.java` if new model properties needed
-2. Modify `ui/settings/prompt/PromptSettingsComponent.java` for UI
-3. Update `service/prompt/command/CustomPromptCommand.java` for execution
-4. Add entry in Settings → Prompts panel
 
 ### Debugging MCP Issues
 
@@ -328,25 +102,8 @@ Key services under `service/`:
 
 ## Release Process
 
-1. Update version in `build.gradle.kts`
-2. Generate changelog: `task generate-changelog VERSION=x.y.z`
-3. Review and commit changes to `CHANGELOG.md` and `plugin.xml`
-4. Build: `./gradlew buildPlugin`
-5. Test: `./gradlew test` and `./gradlew verifyPlugin`
-6. Publish: Set `PUBLISH_TOKEN` env var and run `./gradlew publishPlugin`
-
-## Key Dependencies & Tools
-
-- **Langchain4J**: LLM integration framework (core abstraction)
-- **Docker Java**: Docker integration for ChromaDB
-- **JTokkit**: Token counting
-- **SQLite JDBC**: Local conversation storage
-- **CommonMark**: Markdown parsing and rendering
-- **Netty**: Async networking
-- **Logback**: Logging framework
-- **Retrofit**: HTTP client for external APIs
-- **AWS SDK**: Amazon Bedrock integration
-
+Use the `release` skill (`.claude/skills/release/`) — it owns the full sequence. Always ask which version to cut;
+never assume the next version number.
 
 <!-- BACKLOG.MD MCP GUIDELINES START -->
 

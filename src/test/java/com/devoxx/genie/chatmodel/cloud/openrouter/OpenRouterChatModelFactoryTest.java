@@ -13,6 +13,7 @@ import com.intellij.testFramework.ServiceContainerUtil;
 import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -72,6 +73,18 @@ public class OpenRouterChatModelFactoryTest extends BasePlatformTestCase {
             mockedProjectManager.when(ProjectManager::getInstance).thenReturn(mock(ProjectManager.class));
             when(ProjectManager.getInstance().getDefaultProject()).thenReturn(defaultProject);
         }
+    }
+
+    /**
+     * Required: without it the platform fixture is never disposed, and because the fixture
+     * points java.io.tmpdir at the temp directory it creates, every following test nests one
+     * directory deeper until the path exceeds the OS limit and setUp() dies with a
+     * FileSystemException.
+     */
+    @Override
+    @AfterEach
+    public void tearDown() throws Exception {
+        super.tearDown();
     }
 
     @Test
