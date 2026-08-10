@@ -30,6 +30,12 @@ We also support RAG-based prompt context based on your vectorized project files,
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
 114K+ Active Users
 
+### 💬 Using DevoxxGenie at work?
+
+**[Share your success story →](https://genie.devoxx.com/success-stories)** Tell us what you built, what got
+faster, and which models you rely on. Stories may be featured on the site, the blog or the newsletter (only with
+your consent).
+
 ## 📚 Documentation
 
 **[📖 Visit our comprehensive documentation at genie.devoxx.com](https://genie.devoxx.com)**
