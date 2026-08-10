@@ -264,12 +264,12 @@ dependencies {
     
     val lg4j_version = "1.18.1"
     val lg4j_beta_version = "1.18.1-beta28"
-    val awsSdkVersion = "2.50.3"
+    val awsSdkVersion = "2.51.2"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.1"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
-    val commonmarkVersion = "0.29.0"
+    val commonmarkVersion = "0.30.0"
     val jsoupVersion = "1.23.1"
     // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
@@ -280,7 +280,7 @@ dependencies {
     // coroutines fork bundled in IJ 2025.3.3, crashing the code-highlighter's awaitDispose
     // with NoSuchMethodError when a streamed code block is disposed (e.g. after an MCP call).
     val markdownRendererVersion = "0.38.1"
-    val nettyVersion = "4.2.16.Final"
+    val nettyVersion = "4.2.17.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.6.1"
