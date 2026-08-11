@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.13.0 - 2026-08-11
+
+The headline is **reviewing what the agent changed**: a real diff in the write-approval dialog before a file is touched, and a changed-files list with per-file diffs under the answer after a run finishes — so there is a diff to review whether or not you approve writes manually.
+
+### Added
+- feat(agent): **review agent file changes with diffs**. Two complementary answers to a long-standing gap (the Git Diff/Merge view was removed back in 0.4.x and never replaced). **Before the write**, the approval dialog for `edit_file`/`write_file` now renders IntelliJ's diff viewer — current vs. proposed, syntax-highlighted — instead of dumping the raw JSON tool arguments; `AgentDiffPreviewFactory` mirrors the executors' own file resolution and replacement logic, including `replace_all` and the LF normalization from #1144, so the preview cannot disagree with what actually gets written, and tools with no previewable file change (`run_command`, MCP tools) keep the existing arguments view. **After the run**, a finished agent run lists the files it changed under its chat response with `+N/-M` counts, each row opening an IDE diff of the file as it was before the run against its current state — this is the path that matters for most setups, since the approval dialog only appears when writes are approved manually. Controlled by *Settings → Agent → "Show changed files with diffs after an agent run"*, **on by default**. `AgentFileChangeTracker` snapshots content on the first write to each file per run, so a file edited five times shows one cumulative diff rather than five; snapshots are retained for the last 20 runs and capped at 1MB per file, and every tracker call site degrades silently because the review is a convenience that must never stop the agent from working. Both the streaming and non-streaming completion paths drain onto the finished message. Known limitations: a **cancelled** run shows no review section (the files were still changed, but the completion hook never fires), and the **CLI and ACP runners are not covered** since their edits do not go through the `edit_file`/`write_file` executors (#705, #1270)
+
+### Documentation
+- docs(agent): new *Reviewing What the Agent Changed* and *Reviewing Before a Write Happens* sections in the Agent Mode guide, plus the two approval settings added to its settings table — previously referenced but never documented — and a blog post announcing the feature with screenshots of both the approval dialog and the post-run list. Also removes the stale **Git Diff/Merge** references that still advertised the removed 0.4.x feature as current in `README.md`, the introduction, the chat-interface feature toggles and the `plugin.xml` description; the historical changelog entry recording the removal is left intact (#1270)
+- docs: new **Success Stories** page collecting how people actually use DevoxxGenie, linked from the site footer and the README, alongside a blog post inviting users to share theirs (#1265, #1266)
+- docs(blog): add tool window screenshots to the Personas post, so the v1.12.0 announcement shows the dropdown and persona selection rather than describing them (#1264)
+
+### Dependencies
+- chore(deps): bump docs toolchain — js-yaml 4.3.0 → 4.3.1 (#1268)
+
+### Contributors
+- @stephanj
+
 ## v1.12.0 - 2026-08-09
 
 The headline is **Personas**: named system prompts you pick from a dropdown in the tool window, so each role gets a clean prompt instead of one system prompt full of conditionals. Alongside that, agent mode works again on Cloudflare Workers AI models, and the landing-page stats finally refresh on every deploy.

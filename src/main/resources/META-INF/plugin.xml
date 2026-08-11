@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.13.0</h2>
+        <UL>
+                    <LI>feat(agent): the write-approval dialog now shows a real <b>diff</b> — current vs. proposed, syntax-highlighted — for <code>edit_file</code> and <code>write_file</code>, instead of the raw JSON tool arguments (#705)</LI>
+                    <LI>feat(agent): a finished agent run lists the <b>files it changed</b> under its answer with +N/-M counts; clicking a row opens a diff of the file before the run against its current state. On by default, toggled under Settings → Agent (#705)</LI>
+                </UL>
         <h2>v1.12.0</h2>
         <UL>
                     <LI>feat(personas): new <b>Personas</b> dropdown in the tool window — named system prompts that <i>replace</i> the system prompt for a conversation. Ships with Developer (the default, unchanged), Reviewer, Architect and Test Engineer, and you can add your own in Settings (#1260)</LI>
