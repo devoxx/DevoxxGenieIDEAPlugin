@@ -17,7 +17,7 @@ The DevoxxGenie chat interface is the primary way you interact with LLM models. 
 The DevoxxGenie chat interface consists of several key components:
 
 1. **LLM Provider Selector**: Choose between different LLM providers and models
-2. **Feature Toggles**: Enable/disable features like RAG, Web Search, and Git Diff
+2. **Feature Toggles**: Enable/disable features like RAG, Web Search, and Agent Mode
 3. **Conversation History**: View and manage past conversations
 4. **Chat Messages Area**: Display the ongoing conversation
 5. **Context Files Panel**: View and manage files added to the context
@@ -104,7 +104,7 @@ The feature toggle buttons allow you to enable or disable key features:
 
 1. **RAG**: Retrieval-Augmented Generation for context-aware responses
 2. **Web Search**: Incorporate web search results in responses
-3. **Git Diff**: Enable Git diff view for code changes
+3. **Agent Mode**: Let the LLM read, search and edit files using built-in tools
 
 These toggles allow you to customize how DevoxxGenie behaves for different types of questions.
 

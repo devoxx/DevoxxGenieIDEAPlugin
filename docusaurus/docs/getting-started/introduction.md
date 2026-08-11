@@ -30,7 +30,7 @@ DevoxxGenie provides a rich set of features to enhance your development workflow
 - **[Inline Code Completion](../features/inline-completion.md)** *(v0.9.6+)*: AI-powered code suggestions as you type using Fill-in-the-Middle (FIM) models via Ollama or LM Studio.
 - **[Commands](../features/commands.md)**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) for common development tasks. *(Previously called "Custom Prompts" / "Skills".)*
 - **[Skills](../features/skills.md)**: LLM-activated `SKILL.md` capabilities loaded from disk, compatible with `.claude/skills` and `.agents/skills` directories. Requires Agent Mode.
-- **Git Diff/Merge**: Show Git Diff/Merge dialog to accept LLM suggestions.
+- **[Agent Change Review](../features/agent-mode.md)** *(v1.13.0+)*: A finished agent run lists the files it changed; clicking one opens an IDE diff of the file before the run against its current state.
 - **[Chat History](../features/chat-interface.md)**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **[Project Scanner](../features/project-scanner.md)**: Add source code (full project or by package) to prompt context when using compatible LLM providers.
 - **[Token Cost Calculator](../configuration/token-cost.md)**: Calculate the cost when using Cloud LLM providers.

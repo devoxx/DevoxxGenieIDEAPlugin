@@ -97,6 +97,27 @@ Only flag-like tokens (starting with `-`) may be skipped between two matched pat
 The blacklist protects against an agent that misunderstood your intent or took a destructive shortcut. It is not a security boundary against a model deliberately trying to evade it. Combine it with per-tool disabling, approval dialogs, and the agent log panel.
 :::
 
+### Reviewing What the Agent Changed
+
+*(v1.13.0+)* When an agent run finishes, its answer is followed by a list of every file it changed, with `+added -removed` line counts. Clicking a file opens an IDE diff of its content **before the run** against its **current state**.
+
+![An agent run listing the three files it changed, each with line counts](/img/agent-changed-files.png)
+
+- **One row per file, not per edit.** A file rewritten five times during a run shows a single cumulative diff.
+- **New files** diff against an empty side.
+- **The right-hand side is live**, so the diff keeps up if you edit the file while it's open.
+- **Snapshots are retained for the last 20 runs**, so older messages in a conversation stay clickable. Files over 1 MB are listed but not diffable.
+
+The switch is **Show changed files with diffs after an agent run**, enabled by default, under **Settings > Tools > DevoxxGenie > Agent > Approval**.
+
+![The "Show changed files with diffs after an agent run" setting](/img/agent-changed-files-setting.png)
+
+This is the counterpart to the approval dialog. If you keep **Write tools always require approval** on, you review each write up front as a side-by-side diff of the file against what the tool is about to write. If you auto-approve writes, the post-run list is where you review instead — so either way there is a diff.
+
+:::note Not covered
+A **cancelled** run produces no change list — the files it already wrote are still changed, so fall back to IntelliJ's Local History. **CLI and ACP runners** are also not covered: their edits don't go through the built-in `edit_file`/`write_file` tools.
+:::
+
 ## Getting Started
 
 ### 1. Enable Agent Mode
@@ -281,6 +302,7 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 | **Built-in Tools** | All enabled | Per-tool checkboxes to enable/disable individual tools (read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page) |
 | **Command blacklist** | 5 destructive git/rm commands | Shell commands `run_command` may not run unsupervised — see [Command Blacklist](#command-blacklist) |
 | **When a command matches the blacklist** | Ask for approval | Force the approval dialog, or block the command outright |
+| **Show changed files with diffs after an agent run** | Enabled | Lists the files a finished run changed; clicking one opens a diff — see [Reviewing What the Agent Changed](#reviewing-what-the-agent-changed) |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
 
 ### PSI Tools Settings
