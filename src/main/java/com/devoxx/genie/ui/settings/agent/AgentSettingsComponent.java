@@ -200,10 +200,14 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addFullWidthRow(contentPanel, gbc, autoApproveReadOnlyCheckbox);
 
         addFullWidthRow(contentPanel, gbc, writeApprovalRequiredCheckbox);
-        addFullWidthRow(contentPanel, gbc, showChangedFilesCheckbox);
         addHelpText(contentPanel, gbc,
                 "When enabled, a confirmation dialog is shown before executing write tools. " +
                 "You can also disable this from the approval dialog itself via the \"Don't ask again\" checkbox.");
+
+        addFullWidthRow(contentPanel, gbc, showChangedFilesCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, a finished agent run lists the files it changed under its answer. " +
+                "Clicking a file opens a diff of its content before the run against its current state.");
 
         // --- Test Execution ---
         addSection(contentPanel, gbc, "Test Execution");
