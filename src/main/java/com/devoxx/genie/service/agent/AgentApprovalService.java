@@ -17,10 +17,19 @@ import javax.swing.JTextArea;
 import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
+import com.devoxx.genie.service.agent.tool.AgentDiffPreviewFactory;
+import com.devoxx.genie.service.agent.tool.AgentDiffPreviewFactory.DiffPreview;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.util.ReadAccess;
+import com.intellij.diff.DiffContentFactory;
+import com.intellij.diff.DiffManager;
+import com.intellij.diff.DiffRequestPanel;
+import com.intellij.diff.requests.SimpleDiffRequest;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
@@ -28,6 +37,7 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.PathUtil;
 import com.intellij.util.ui.JBUI;
 
 import lombok.extern.slf4j.Slf4j;
@@ -85,8 +95,14 @@ public class AgentApprovalService {
 
         publishApprovalEvent(project, AgentType.APPROVAL_REQUESTED, toolName, arguments);
 
+        // Resolve the diff preview here, on the calling (agent) thread, so the EDT never does
+        // file IO. Empty for non-file tools or unresolvable edits — the dialog then falls back
+        // to the raw arguments view.
+        DiffPreview preview = buildPreview(project, toolName, arguments);
+
         ApplicationManager.getApplication().invokeLater(() -> {
-            AgentApprovalDialog dialog = new AgentApprovalDialog(project, toolName, arguments, blacklistedPattern);
+            AgentApprovalDialog dialog =
+                    new AgentApprovalDialog(project, toolName, arguments, blacklistedPattern, preview);
             boolean approved = dialog.showAndGet();
 
             // If approved with "don't ask again" checked, disable future approvals.
@@ -127,6 +143,27 @@ public class AgentApprovalService {
     }
 
     /**
+     * Builds the before/after preview for a file-mutating tool call (issue #705). Returns null
+     * when there is nothing to show — a preview is a convenience, so any failure degrades to the
+     * raw arguments view rather than blocking the approval.
+     */
+    private static @Nullable DiffPreview buildPreview(@Nullable Project project,
+                                                      @NotNull String toolName,
+                                                      @NotNull String arguments) {
+        if (project == null || project.isDisposed()) {
+            return null;
+        }
+        try {
+            AgentDiffPreviewFactory factory = new AgentDiffPreviewFactory(project);
+            return ReadAccess.<DiffPreview>compute(
+                    () -> factory.create(toolName, arguments).orElse(null));
+        } catch (Exception e) {
+            log.debug("Could not build approval diff preview for {}", toolName, e);
+            return null;
+        }
+    }
+
+    /**
      * Publishes the approval lifecycle on the shared activity topic so the chat timeline
      * (and the Logs tool window, which already renders APPROVAL_* types) can show why the
      * agent loop is paused. Gated behind the same debug-logs setting as the loop tracker's
@@ -163,19 +200,24 @@ public class AgentApprovalService {
      * Dialog for requesting agent tool execution approval.
      */
     private static class AgentApprovalDialog extends DialogWrapper {
+        private final Project project;
         private final String toolName;
         private final String arguments;
         private final String blacklistedPattern;
+        private final DiffPreview preview;
         private final JBCheckBox dontAskAgainCheckbox;
 
         protected AgentApprovalDialog(@Nullable Project project,
                                       @NotNull String toolName,
                                       @NotNull String arguments,
-                                      @Nullable String blacklistedPattern) {
+                                      @Nullable String blacklistedPattern,
+                                      @Nullable DiffPreview preview) {
             super(project, false);
+            this.project = project;
             this.toolName = toolName;
             this.arguments = arguments;
             this.blacklistedPattern = blacklistedPattern;
+            this.preview = preview;
             this.dontAskAgainCheckbox = new JBCheckBox("Don't ask again — auto-approve write actions");
             setTitle("Approve Agent Tool Execution");
             setOKButtonText("Approve");
@@ -194,15 +236,17 @@ public class AgentApprovalService {
         protected @Nullable JComponent createCenterPanel() {
             JPanel panel = new JPanel(new BorderLayout());
             panel.setBorder(JBUI.Borders.empty(10));
-            panel.setPreferredSize(new Dimension(500, 350));
+            // A diff needs considerably more room than a two-field argument dump.
+            panel.setPreferredSize(preview != null ? new Dimension(900, 600) : new Dimension(500, 350));
 
             // Header with warning icon
             JPanel headerPanel = new JPanel(new BorderLayout());
             JBLabel iconLabel = new JBLabel(Messages.getWarningIcon());
             headerPanel.add(iconLabel, BorderLayout.WEST);
 
-            JBLabel messageLabel = new JBLabel(
-                    "<html><b>The AI agent wants to execute the following tool:</b></html>");
+            JBLabel messageLabel = new JBLabel(preview != null
+                    ? "<html><b>The AI agent wants to change " + preview.path() + "</b></html>"
+                    : "<html><b>The AI agent wants to execute the following tool:</b></html>");
             messageLabel.setBorder(JBUI.Borders.emptyLeft(8));
             headerPanel.add(messageLabel, BorderLayout.CENTER);
 
@@ -216,7 +260,53 @@ public class AgentApprovalService {
             }
             panel.add(headerPanel, BorderLayout.NORTH);
 
-            // Tool info panel
+            panel.add(preview != null ? createDiffPanel(preview) : createArgumentsPanel(),
+                    BorderLayout.CENTER);
+
+            // Bottom panel with checkbox and warning
+            JPanel bottomPanel = new JPanel(new BorderLayout());
+            bottomPanel.setBorder(JBUI.Borders.emptyTop(8));
+
+            if (blacklistedPattern == null) {
+                bottomPanel.add(dontAskAgainCheckbox, BorderLayout.NORTH);
+            }
+
+            JBLabel warningLabel = new JBLabel(
+                    "<html><i>Warning: Only approve if you trust this tool execution. " +
+                    "You can re-enable approval in Settings → Agent.</i></html>");
+            warningLabel.setForeground(JBColor.RED);
+            warningLabel.setBorder(JBUI.Borders.emptyTop(4));
+            bottomPanel.add(warningLabel, BorderLayout.SOUTH);
+
+            panel.add(bottomPanel, BorderLayout.SOUTH);
+
+            return panel;
+        }
+
+        /**
+         * Side-by-side diff of the file as it is now against what the tool would write.
+         * The panel is tied to the dialog's disposable so its editors are released on close.
+         */
+        private @NotNull JComponent createDiffPanel(@NotNull DiffPreview diffPreview) {
+            FileType fileType = FileTypeManager.getInstance()
+                    .getFileTypeByFileName(PathUtil.getFileName(diffPreview.path()));
+
+            DiffContentFactory contentFactory = DiffContentFactory.getInstance();
+            SimpleDiffRequest request = new SimpleDiffRequest(
+                    diffPreview.path(),
+                    contentFactory.create(project, diffPreview.before(), fileType),
+                    contentFactory.create(project, diffPreview.after(), fileType),
+                    "Current",
+                    "Proposed by agent");
+
+            DiffRequestPanel diffPanel = DiffManager.getInstance()
+                    .createRequestPanel(project, getDisposable(), null);
+            diffPanel.setRequest(request);
+            return diffPanel.getComponent();
+        }
+
+        /** Fallback view for tools without a file preview (run_command, MCP tools, ...). */
+        private @NotNull JComponent createArgumentsPanel() {
             JPanel infoPanel = new JPanel(new GridBagLayout());
             GridBagConstraints c = new GridBagConstraints();
             c.fill = GridBagConstraints.HORIZONTAL;
@@ -249,26 +339,7 @@ public class AgentApprovalService {
             scrollPane.setPreferredSize(new Dimension(350, 150));
             infoPanel.add(scrollPane, c);
 
-            panel.add(infoPanel, BorderLayout.CENTER);
-
-            // Bottom panel with checkbox and warning
-            JPanel bottomPanel = new JPanel(new BorderLayout());
-            bottomPanel.setBorder(JBUI.Borders.emptyTop(8));
-
-            if (blacklistedPattern == null) {
-                bottomPanel.add(dontAskAgainCheckbox, BorderLayout.NORTH);
-            }
-
-            JBLabel warningLabel = new JBLabel(
-                    "<html><i>Warning: Only approve if you trust this tool execution. " +
-                    "You can re-enable approval in Settings → Agent.</i></html>");
-            warningLabel.setForeground(JBColor.RED);
-            warningLabel.setBorder(JBUI.Borders.emptyTop(4));
-            bottomPanel.add(warningLabel, BorderLayout.SOUTH);
-
-            panel.add(bottomPanel, BorderLayout.SOUTH);
-
-            return panel;
+            return infoPanel;
         }
 
         @Override
