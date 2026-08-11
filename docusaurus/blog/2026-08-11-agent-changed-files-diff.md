@@ -44,19 +44,34 @@ It is **on by default**. You'll find the switch under **Settings → Tools → D
 
 Untick it and agent answers go back to being just answers.
 
-## The approval dialog got a diff too
+## Review before it happens, not just after
 
-There is a second place this shows up. If you keep **"Write tools always require approval"** enabled, the approval dialog used to hand you the tool's raw JSON arguments and ask you to decide:
+The list above tells you what the agent *did*. If you'd rather decide before anything touches disk, keep **"Write tools always require approval"** enabled — and that dialog got the same treatment.
+
+It used to hand you the tool's raw JSON arguments and ask you to decide:
 
 ```json
 {"path": "src/main/java/Main.java", "old_string": "public class Main {\n    public static void main...
 ```
 
-Approving a change based on an escaped JSON string is not reviewing it. That dialog now renders a proper side-by-side diff — current file on the left, what the tool is about to write on the right, with syntax highlighting from the file's type. Approve or deny with the change actually in front of you.
+Approving a change based on an escaped JSON string is not reviewing it. The dialog now renders a real diff of the file as it is now against what the tool is about to write, with syntax highlighting from the file's type:
+
+![The Approve Agent Tool Execution dialog showing a diff of a file the agent wants to change, with Current and "Proposed by agent" panes and Deny / Approve buttons](/img/agent-approval-diff.png)
+
+It's IntelliJ's own diff viewer, so everything you'd expect works: toggle between side-by-side and unified, jump between differences, change the whitespace policy. Then **Approve** or **Deny** with the change actually in front of you — and a denial stops the write, telling the agent the user refused.
 
 Tools with nothing file-shaped to preview — `run_command`, MCP tools — keep the arguments view, which is the right thing to show for a shell command.
 
-The two features are deliberately complementary. The approval dialog only appears if you review writes one at a time; the post-run list appears either way. If you auto-approve writes — and most people who use Agent Mode seriously do — the post-run list is the one you'll live in.
+## Which one you'll use
+
+The two are deliberately complementary, and you don't have to choose:
+
+| | Write approvals **on** | Write approvals **off** (auto-approve) |
+|---|---|---|
+| **Before the write** | Diff in the approval dialog, per file, with Approve/Deny | — |
+| **After the run** | Changed-files list under the answer | Changed-files list under the answer |
+
+Approve-as-you-go is the careful mode: nothing lands without you seeing it. Auto-approve plus the post-run list is the fast mode: the agent works uninterrupted and you review the result as a whole. Either way, there's a diff — which was the entire complaint in #705.
 
 ## Worth knowing
 
