@@ -37,6 +37,22 @@ data class FileReferenceUiModel(
 )
 
 /**
+ * One file an agent run changed, shown under the response so the user can review what
+ * happened even when writes were auto-approved (issue #705). [absolutePath] is the key the
+ * change tracker retains its before-snapshot under; [diffable] is false once that snapshot
+ * is gone or was never taken (new file, or too large), in which case the row does not click.
+ */
+data class ChangedFileUiModel(
+    val messageId: String,
+    val absolutePath: String,
+    val displayPath: String,
+    val fileName: String,
+    val linesAdded: Int,
+    val linesRemoved: Int,
+    val diffable: Boolean,
+)
+
+/**
  * Lifecycle of an activity timeline row. Tool calls start RUNNING and resolve to
  * SUCCESS or ERROR when their response arrives; PENDING_APPROVAL is an intermediate
  * state while the approval dialog is up. INFO is for entries with no lifecycle
@@ -88,6 +104,7 @@ data class MessageUiModel(
     val isStreaming: Boolean = false,
     val isLoadingIndicatorVisible: Boolean = false,
     val fileReferences: List<FileReferenceUiModel> = emptyList(),
+    val changedFiles: List<ChangedFileUiModel> = emptyList(),
     val activityEntries: List<ActivityEntryUiModel> = emptyList(),
     val activitySectionVisible: Boolean = true,
     /**

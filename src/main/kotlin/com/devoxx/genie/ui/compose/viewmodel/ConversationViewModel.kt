@@ -8,6 +8,7 @@ import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.activity.ActivitySource
 import com.devoxx.genie.model.agent.AgentType
 import com.devoxx.genie.model.request.ChatMessageContext
+import com.devoxx.genie.service.agent.AgentFileChangeTracker
 import com.devoxx.genie.service.blog.BlogFeedService
 import com.devoxx.genie.service.blog.BlogPost
 import com.devoxx.genie.service.prompt.response.streaming.ThinkingResponseFormatter
@@ -365,6 +366,28 @@ class ConversationViewModel(
         }
         updateMessage(context.id) { msg ->
             msg.copy(fileReferences = msg.fileReferences + fileModels)
+        }
+    }
+
+    /**
+     * Attaches the files an agent run changed to its finished message (issue #705). The
+     * before-snapshots stay in AgentFileChangeTracker; the UI model only carries the key
+     * needed to look one up when the user clicks a row.
+     */
+    fun addChangedFiles(context: ChatMessageContext, changes: List<AgentFileChangeTracker.FileChange>) {
+        val models = changes.map { change ->
+            ChangedFileUiModel(
+                messageId = context.id,
+                absolutePath = change.absolutePath(),
+                displayPath = change.displayPath(),
+                fileName = change.fileName(),
+                linesAdded = change.linesAdded(),
+                linesRemoved = change.linesRemoved(),
+                diffable = change.diffable(),
+            )
+        }
+        updateMessage(context.id) { msg ->
+            msg.copy(changedFiles = models)
         }
     }
 

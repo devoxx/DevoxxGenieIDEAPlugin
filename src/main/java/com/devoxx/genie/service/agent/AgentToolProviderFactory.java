@@ -53,6 +53,15 @@ public class AgentToolProviderFactory {
             return null;
         }
 
+        // One provider chain is built per prompt, which makes this the run boundary for the
+        // post-run change review (issue #705): anything the previous run recorded is done with.
+        // Never fatal — the review is a convenience, and the service is absent in unit tests.
+        try {
+            AgentFileChangeTracker.getInstance(project).startRun();
+        } catch (Exception e) {
+            log.debug("Could not start agent file change tracking", e);
+        }
+
         List<ToolProvider> providers = new ArrayList<>();
 
         // Add built-in IDE tools (including parallel_explore if enabled)

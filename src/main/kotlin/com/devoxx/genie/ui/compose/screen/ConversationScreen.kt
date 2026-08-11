@@ -9,6 +9,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.devoxx.genie.ui.compose.model.ChangedFileUiModel
 import com.devoxx.genie.ui.compose.model.ConversationState
 import com.devoxx.genie.ui.compose.theme.DevoxxGenieTheme
 import com.devoxx.genie.ui.compose.util.IdeAnimations
@@ -19,6 +20,7 @@ fun ConversationScreen(
     viewModel: ConversationViewModel,
     onFileClick: (String) -> Unit,
     onCustomPromptClick: (String) -> Unit,
+    onChangedFileClick: (ChangedFileUiModel) -> Unit = {},
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
     onOpenLogs: () -> Unit = {},
@@ -71,6 +73,7 @@ fun ConversationScreen(
                     ChatScreen(
                         messages = s.messages,
                         onFileClick = onFileClick,
+                        onChangedFileClick = onChangedFileClick,
                         onRetryClick = onRetryClick,
                         onOpenAgentSettings = onOpenAgentSettings,
                         onOpenLogs = onOpenLogs,

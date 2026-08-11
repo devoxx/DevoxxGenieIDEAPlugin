@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.agent.AgentChangedFilesPublisher;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.prompt.response.nonstreaming.NonStreamingPromptExecutionService;
@@ -114,6 +115,10 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                     log.debug("Adding file references to conversation: {} files", context.getFileReferences().size());
                     panel.getConversationPanel().viewController.addFileReferences(context, context.getFileReferences());
                 }
+
+                // List the files the agent changed, each opening a diff (issue #705)
+                AgentChangedFilesPublisher.publish(context,
+                        panel.getConversationPanel() != null ? panel.getConversationPanel().viewController : null);
 
                 // Hide loading indicator on successful completion
                 if (panel.getConversationPanel() != null && panel.getConversationPanel().viewController != null) {

@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.service.agent.AgentFileChangeTracker;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
@@ -11,6 +12,7 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -71,15 +73,42 @@ public class WriteFileToolExecutor implements ToolExecutor {
 
             String fileName = extractFileName(path);
             VirtualFile file = parentDir.findChild(fileName);
-            if (file == null) {
+            boolean isNewFile = file == null;
+            if (isNewFile) {
                 file = parentDir.createChildData(this, fileName);
             }
+
+            // Snapshot for the post-run change review (issue #705). A new file has no "before",
+            // which the tracker renders as a diff against an empty side.
+            recordChange(path, file, isNewFile ? null : readExistingContent(file));
 
             file.setBinaryContent(content.getBytes(StandardCharsets.UTF_8));
             return "Successfully wrote " + content.length() + " characters to " + path;
         } catch (Exception e) {
             log.error("Error in write command action", e);
             return "Error: Failed to write file - " + e.getMessage();
+        }
+    }
+
+    /** Reads the content a write is about to replace; null when it cannot be read. */
+    @Nullable String readExistingContent(@NotNull VirtualFile file) {
+        try {
+            return new String(file.contentsToByteArray(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.debug("Could not read existing content of {}", file.getPath(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Hands the pre-write content to the change tracker. Never fails the write: the review
+     * panel is a convenience, so a tracker problem must not stop the agent from working.
+     */
+    void recordChange(@NotNull String path, @NotNull VirtualFile file, @Nullable String rawContent) {
+        try {
+            AgentFileChangeTracker.getInstance(project).recordBeforeWrite(path, file, rawContent);
+        } catch (Exception e) {
+            log.debug("Could not record agent file change for {}", path, e);
         }
     }
 

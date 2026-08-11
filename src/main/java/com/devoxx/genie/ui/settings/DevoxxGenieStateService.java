@@ -418,6 +418,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean agentAutoApproveReadOnly = false;
     private Boolean agentWriteApprovalRequired = true;
     /**
+     * Whether a finished agent run lists the files it changed under its chat response, each
+     * opening an IDE diff of the file before the run against its current state (issue #705).
+     * Mainly valuable when writes are auto-approved, since then no approval dialog — and thus
+     * no diff — is ever shown.
+     */
+    private Boolean agentShowChangedFiles = true;
+    /**
      * Commands the run_command agent tool must never execute silently (issue #1209).
      * Matched token-wise and case-insensitively against the command the agent wants to
      * run; see {@code CommandBlacklist} for the exact semantics. What happens on a match

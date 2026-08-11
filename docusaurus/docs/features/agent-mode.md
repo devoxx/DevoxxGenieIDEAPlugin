@@ -60,7 +60,7 @@ Each built-in tool can be individually enabled or disabled in the **Built-in Too
 The `run_tests`, `parallel_explore`, and backlog tools have their own dedicated toggles in separate settings sections.
 
 :::tip Safety
-Write operations require user approval by default. You'll see a diff preview before any changes are applied to your project. Terminal commands get an extra layer of protection through the [command blacklist](#command-blacklist).
+Write operations require user approval by default, and the approval dialog shows a [diff of the pending change](#reviewing-before-a-write-happens). If you auto-approve writes instead, a finished run still [lists every file it changed](#reviewing-what-the-agent-changed). Terminal commands get an extra layer of protection through the [command blacklist](#command-blacklist).
 :::
 
 ### Command Blacklist
@@ -95,6 +95,46 @@ Only flag-like tokens (starting with `-`) may be skipped between two matched pat
 
 :::note Guardrail, not a sandbox
 The blacklist protects against an agent that misunderstood your intent or took a destructive shortcut. It is not a security boundary against a model deliberately trying to evade it. Combine it with per-tool disabling, approval dialogs, and the agent log panel.
+:::
+
+### Reviewing What the Agent Changed
+
+*(v1.13.0+)* When an agent run finishes, its answer is followed by a list of every file it changed, with `+added -removed` line counts. Clicking a file opens an IDE diff of its content **before the run** against its **current state**.
+
+![An agent run listing the three files it changed, each with line counts](/img/agent-changed-files.png)
+
+- **One row per file, not per edit.** A file rewritten five times during a run shows a single cumulative diff.
+- **New files** diff against an empty side.
+- **The right-hand side is live**, so the diff keeps up if you edit the file while it's open.
+- **Snapshots are retained for the last 20 runs**, so older messages in a conversation stay clickable. Files over 1 MB are listed but not diffable.
+
+The switch is **Show changed files with diffs after an agent run**, enabled by default, under **Settings > Tools > DevoxxGenie > Agent > Approval**.
+
+![The "Show changed files with diffs after an agent run" setting](/img/agent-changed-files-setting.png)
+
+### Reviewing Before a Write Happens
+
+*(v1.13.0+)* With **Write tools always require approval** enabled, `write_file` and `edit_file` pause for confirmation — and the dialog shows a diff of the file as it is now against what the tool is about to write, rather than the tool's raw JSON arguments.
+
+![The Approve Agent Tool Execution dialog showing a diff of the file the agent wants to change](/img/agent-approval-diff.png)
+
+It's IntelliJ's own diff viewer, so side-by-side/unified toggling, difference navigation and whitespace policy all work as usual. **Approve** lets the write through; **Deny** stops it and tells the agent the user refused.
+
+Tools with no file change to preview — `run_command`, MCP tools — still show the arguments view, which is the useful thing for a shell command. The same applies when a preview can't be resolved (for example an `edit_file` whose `old_string` matches ambiguously, which the tool would reject anyway).
+
+### Which Review Fits Your Workflow
+
+The two reviews are complementary, and you don't have to choose:
+
+| | Write approvals **on** | Write approvals **off** (auto-approve) |
+|---|---|---|
+| **Before the write** | Diff in the approval dialog, per file, with Approve/Deny | — |
+| **After the run** | Changed-files list under the answer | Changed-files list under the answer |
+
+Approve-as-you-go means nothing lands without you seeing it. Auto-approve plus the post-run list lets the agent work uninterrupted and reviews the result as a whole.
+
+:::note Not covered
+A **cancelled** run produces no change list — the files it already wrote are still changed, so fall back to IntelliJ's Local History. **CLI and ACP runners** are also not covered: their edits don't go through the built-in `edit_file`/`write_file` tools.
 :::
 
 ## Getting Started
@@ -279,8 +319,11 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 |---------|---------|-------------|
 | **Enable Agent Mode** | Disabled | Enables the agent with full tool access (read, write, and execute) |
 | **Built-in Tools** | All enabled | Per-tool checkboxes to enable/disable individual tools (read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page) |
+| **Auto-approve read-only tools** | Disabled | Lets `read_file`, `list_files`, `search_files`, `fetch_page` and other read-only tools run without confirmation |
+| **Write tools always require approval** | Enabled | Confirm each write, with a diff of the pending change — see [Reviewing Before a Write Happens](#reviewing-before-a-write-happens) |
 | **Command blacklist** | 5 destructive git/rm commands | Shell commands `run_command` may not run unsupervised — see [Command Blacklist](#command-blacklist) |
 | **When a command matches the blacklist** | Ask for approval | Force the approval dialog, or block the command outright |
+| **Show changed files with diffs after an agent run** | Enabled | Lists the files a finished run changed; clicking one opens a diff — see [Reviewing What the Agent Changed](#reviewing-what-the-agent-changed) |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
 
 ### PSI Tools Settings

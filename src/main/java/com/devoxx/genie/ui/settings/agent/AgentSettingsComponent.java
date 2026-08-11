@@ -41,6 +41,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             new JBCheckBox("Auto-approve read-only tools (read_file, list_files, search_files, fetch_page)", stateService.getAgentAutoApproveReadOnly());
     private final JBCheckBox writeApprovalRequiredCheckbox =
             new JBCheckBox("Write tools always require approval (write_file, run_command)", Boolean.TRUE.equals(stateService.getAgentWriteApprovalRequired()));
+    private final JBCheckBox showChangedFilesCheckbox =
+            new JBCheckBox("Show changed files with diffs after an agent run", Boolean.TRUE.equals(stateService.getAgentShowChangedFiles()));
 
     // Command blacklist for run_command (issue #1209)
     private static final String BLACKLIST_ACTION_ASK_LABEL = "Ask for approval";
@@ -201,6 +203,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "When enabled, a confirmation dialog is shown before executing write tools. " +
                 "You can also disable this from the approval dialog itself via the \"Don't ask again\" checkbox.");
+
+        addFullWidthRow(contentPanel, gbc, showChangedFilesCheckbox);
+        addHelpText(contentPanel, gbc,
+                "When enabled, a finished agent run lists the files it changed under its answer. " +
+                "Clicking a file opens a diff of its content before the run against its current state.");
 
         // --- Test Execution ---
         addSection(contentPanel, gbc, "Test Execution");
@@ -935,6 +942,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || maxToolCallsSpinner.getNumber() != (state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS)
                 || autoApproveReadOnlyCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly())
                 || writeApprovalRequiredCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentWriteApprovalRequired())
+                || showChangedFilesCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentShowChangedFiles())
                 || !Objects.equals(getBlacklistFromUi(), state.getAgentCommandBlacklist() != null ? state.getAgentCommandBlacklist() : Collections.emptyList())
                 || !Objects.equals(getSelectedBlacklistAction(), state.getAgentCommandBlacklistAction() != null ? state.getAgentCommandBlacklistAction() : COMMAND_BLACKLIST_ACTION_ASK)
                 || enableDebugLogsCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentDebugLogsEnabled())
@@ -973,6 +981,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setAgentMaxToolCalls(maxToolCallsSpinner.getNumber());
         stateService.setAgentAutoApproveReadOnly(autoApproveReadOnlyCheckbox.isSelected());
         stateService.setAgentWriteApprovalRequired(writeApprovalRequiredCheckbox.isSelected());
+        stateService.setAgentShowChangedFiles(showChangedFilesCheckbox.isSelected());
         stateService.setAgentCommandBlacklist(getBlacklistFromUi());
         stateService.setAgentCommandBlacklistAction(getSelectedBlacklistAction());
         stateService.setAgentDebugLogsEnabled(enableDebugLogsCheckbox.isSelected());
@@ -1012,6 +1021,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         maxToolCallsSpinner.setNumber(state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS);
         autoApproveReadOnlyCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly()));
         writeApprovalRequiredCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentWriteApprovalRequired()));
+        showChangedFilesCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentShowChangedFiles()));
         commandBlacklistArea.setText(String.join("\n", state.getAgentCommandBlacklist() != null
                 ? state.getAgentCommandBlacklist() : DEFAULT_COMMAND_BLACKLIST));
         blacklistActionComboBox.setSelectedIndex(
