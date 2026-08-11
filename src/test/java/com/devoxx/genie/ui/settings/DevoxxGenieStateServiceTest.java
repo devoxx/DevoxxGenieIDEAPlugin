@@ -185,6 +185,9 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getAgentMaxToolCalls()).isEqualTo(AGENT_MAX_TOOL_CALLS);
             assertThat(stateService.getAgentAutoApproveReadOnly()).isFalse();
             assertThat(stateService.getAgentWriteApprovalRequired()).isTrue();
+            // The post-run change review must be on out of the box (issue #705): with writes
+            // auto-approved it is the only place the user ever sees what the agent did.
+            assertThat(stateService.getAgentShowChangedFiles()).isTrue();
             assertThat(stateService.getAgentDebugLogsEnabled()).isFalse();
         }
 
