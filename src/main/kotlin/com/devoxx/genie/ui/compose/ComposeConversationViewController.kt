@@ -90,14 +90,20 @@ class ComposeConversationViewController(
      */
     private fun openAgentChangeDiff(file: ChangedFileUiModel) {
         val proj = project ?: return
-        val change = AgentFileChangeTracker.getInstance(proj)
-            .findChange(file.messageId, file.absolutePath)
-            .orElse(null)
-        if (change == null || !change.diffable()) {
-            openFileInEditor(file.absolutePath)
-            return
+        // Compose click handlers do not run on the EDT, and both the VFS lookup and
+        // DiffManager require it.
+        com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+            val change = AgentFileChangeTracker.getInstance(proj)
+                .findChange(file.messageId, file.absolutePath)
+                .orElse(null)
+            if (change == null || !change.diffable()) {
+                // The run aged out of the retention window: no snapshot left to diff against,
+                // so show the file itself rather than doing nothing.
+                openFileInEditor(file.absolutePath)
+            } else {
+                AgentFileChangeTracker.getInstance(proj).showDiff(change)
+            }
         }
-        AgentFileChangeTracker.getInstance(proj).showDiff(change)
     }
 
     /** Focuses the DevoxxGenie Logs tool window — the full, untruncated activity trace. */
