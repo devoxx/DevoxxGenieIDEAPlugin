@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.service.agent.AgentFileChangeTracker;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
@@ -126,6 +127,9 @@ public class EditFileToolExecutor implements ToolExecutor {
                     ? newContent
                     : newContent.replace("\n", lineSeparator);
 
+            // Snapshot for the post-run change review (issue #705), before the content is gone.
+            recordChange(path, file, rawContent);
+
             file.setBinaryContent(outContent.getBytes(StandardCharsets.UTF_8));
 
             if (replaceAll && count > 1) {
@@ -136,6 +140,18 @@ public class EditFileToolExecutor implements ToolExecutor {
         } catch (Exception e) {
             log.error("Error in edit command action", e);
             return "Error: Failed to edit file - " + e.getMessage();
+        }
+    }
+
+    /**
+     * Hands the pre-edit content to the change tracker. Never fails the edit: the review panel
+     * is a convenience, so a tracker problem must not stop the agent from working.
+     */
+    void recordChange(@NotNull String path, @NotNull VirtualFile file, @NotNull String rawContent) {
+        try {
+            AgentFileChangeTracker.getInstance(project).recordBeforeWrite(path, file, rawContent);
+        } catch (Exception e) {
+            log.debug("Could not record agent file change for {}", path, e);
         }
     }
 

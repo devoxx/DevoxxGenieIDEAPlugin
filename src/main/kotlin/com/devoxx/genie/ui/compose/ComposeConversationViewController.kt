@@ -3,6 +3,8 @@ package com.devoxx.genie.ui.compose
 import androidx.compose.ui.awt.ComposePanel
 import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.request.ChatMessageContext
+import com.devoxx.genie.service.agent.AgentFileChangeTracker
+import com.devoxx.genie.ui.compose.model.ChangedFileUiModel
 import com.devoxx.genie.ui.compose.model.TerminalState
 import com.devoxx.genie.ui.compose.screen.ConversationScreen
 import com.devoxx.genie.ui.compose.viewmodel.ConversationViewModel
@@ -47,6 +49,7 @@ class ComposeConversationViewController(
                         ConversationScreen(
                             viewModel = viewModel,
                             onFileClick = ::openFileInEditor,
+                            onChangedFileClick = ::openAgentChangeDiff,
                             onCustomPromptClick = onCustomPromptClick,
                             onRetryClick = viewModel::onRetryClicked,
                             onOpenAgentSettings = ::openAgentSettings,
@@ -78,6 +81,23 @@ class ComposeConversationViewController(
             OpenFileDescriptor(proj, virtualFile),
             true,
         )
+    }
+
+    /**
+     * Opens the IDE diff for a file an agent run changed. The before-snapshot lives in the
+     * tracker; if its run has aged out of the retention window there is nothing to show, so
+     * the file is opened in the editor instead of failing silently.
+     */
+    private fun openAgentChangeDiff(file: ChangedFileUiModel) {
+        val proj = project ?: return
+        val change = AgentFileChangeTracker.getInstance(proj)
+            .findChange(file.messageId, file.absolutePath)
+            .orElse(null)
+        if (change == null || !change.diffable()) {
+            openFileInEditor(file.absolutePath)
+            return
+        }
+        AgentFileChangeTracker.getInstance(proj).showDiff(change)
     }
 
     /** Focuses the DevoxxGenie Logs tool window — the full, untruncated activity trace. */
@@ -172,6 +192,13 @@ class ComposeConversationViewController(
 
     override fun addFileReferences(chatMessageContext: ChatMessageContext, files: List<VirtualFile>) {
         viewModel.addFileReferences(chatMessageContext, files)
+    }
+
+    override fun addChangedFiles(
+        chatMessageContext: ChatMessageContext,
+        changes: List<AgentFileChangeTracker.FileChange>,
+    ) {
+        viewModel.addChangedFiles(chatMessageContext, changes)
     }
 
     override fun addSystemMessage(markdownContent: String) {

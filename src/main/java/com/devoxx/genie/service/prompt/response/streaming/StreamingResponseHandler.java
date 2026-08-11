@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.prompt.response.streaming;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.agent.AgentChangedFilesPublisher;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.StreamingException;
@@ -282,6 +283,9 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
                 );
             }
             
+            // List the files the agent changed, each opening a diff (issue #705)
+            AgentChangedFilesPublisher.publish(context, conversationViewController);
+
             log.debug("Streaming completed for context {}", context.getId());
             onCompleteCallback.accept(response);
         } catch (Exception e) {

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.devoxx.genie.ui.compose.model.ChangedFileUiModel
 import com.devoxx.genie.ui.compose.model.MessageUiModel
 import com.devoxx.genie.ui.compose.model.TerminalState
 
@@ -27,6 +28,7 @@ fun MessagePair(
     message: MessageUiModel,
     onFileClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onChangedFileClick: (ChangedFileUiModel) -> Unit = {},
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
     onOpenLogs: () -> Unit = {},
@@ -77,6 +79,14 @@ fun MessagePair(
             FileReferencesSection(
                 files = message.fileReferences,
                 onFileClick = onFileClick,
+            )
+        }
+
+        // Files the agent changed during this run
+        if (message.changedFiles.isNotEmpty()) {
+            ChangedFilesSection(
+                files = message.changedFiles,
+                onChangedFileClick = onChangedFileClick,
             )
         }
     }

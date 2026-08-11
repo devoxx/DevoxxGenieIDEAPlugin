@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.compose
 
 import com.devoxx.genie.model.activity.ActivityMessage
 import com.devoxx.genie.model.request.ChatMessageContext
+import com.devoxx.genie.service.agent.AgentFileChangeTracker
 import com.devoxx.genie.ui.compose.model.TerminalState
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.ResourceBundle
@@ -56,6 +57,12 @@ interface ConversationViewController {
 
     fun updateAiMessageContent(chatMessageContext: ChatMessageContext)
     fun addFileReferences(chatMessageContext: ChatMessageContext, files: List<VirtualFile>)
+
+    /** Lists the files an agent run changed under its response, each opening a diff (issue #705). */
+    fun addChangedFiles(
+        chatMessageContext: ChatMessageContext,
+        changes: List<AgentFileChangeTracker.FileChange>,
+    )
 
     /** Adds a system/help message consisting only of markdown (no user prompt). */
     fun addSystemMessage(markdownContent: String)

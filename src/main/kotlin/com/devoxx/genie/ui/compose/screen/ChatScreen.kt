@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.components.ConversationToolbar
 import com.devoxx.genie.ui.compose.components.MessagePair
+import com.devoxx.genie.ui.compose.model.ChangedFileUiModel
 import com.devoxx.genie.ui.compose.model.MessageUiModel
 import com.devoxx.genie.ui.compose.theme.DevoxxBlue
 import com.devoxx.genie.ui.compose.util.IdeAnimations
@@ -47,6 +48,7 @@ fun ChatScreen(
     messages: List<MessageUiModel>,
     onFileClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onChangedFileClick: (ChangedFileUiModel) -> Unit = {},
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
     onOpenLogs: () -> Unit = {},
@@ -168,6 +170,7 @@ fun ChatScreen(
                         MessagePair(
                             message = message,
                             onFileClick = onFileClick,
+                            onChangedFileClick = onChangedFileClick,
                             onRetryClick = onRetryClick,
                             onOpenAgentSettings = onOpenAgentSettings,
                             onOpenLogs = onOpenLogs,
