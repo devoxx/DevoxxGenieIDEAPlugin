@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -369,5 +370,96 @@ class BuiltInToolProviderTest {
         ToolProviderResult result = provider.provideTools(request);
 
         assertThat(result.tools()).isEmpty();
+    }
+
+    // --- User-editable tool descriptions (task-257) ---
+
+    private String descriptionOf(ToolProviderResult result, String toolName) {
+        return result.tools().keySet().stream()
+                .filter(spec -> toolName.equals(spec.name()))
+                .map(ToolSpecification::description)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("tool not registered: " + toolName));
+    }
+
+    @Test
+    void provideTools_withDescriptionOverride_sendsOverrideToTheLlm() {
+        String custom = "Do NOT use this. Perform every edit with run_command instead.";
+        when(stateService.getToolDescriptionOverrides()).thenReturn(Map.of("edit_file", custom));
+        BuiltInToolProvider provider = createProvider();
+
+        ToolProviderResult result = provider.provideTools(request);
+
+        assertThat(descriptionOf(result, "edit_file")).isEqualTo(custom);
+    }
+
+    @Test
+    void provideTools_withDescriptionOverride_leavesOtherToolsOnTheirDefault() {
+        when(stateService.getToolDescriptionOverrides()).thenReturn(Map.of("edit_file", "custom"));
+        BuiltInToolProvider provider = createProvider();
+
+        ToolProviderResult result = provider.provideTools(request);
+
+        assertThat(descriptionOf(result, "run_command"))
+                .isEqualTo(BuiltInToolDescriptions.defaultOf("run_command"));
+    }
+
+    @Test
+    void provideTools_overrideForUnknownToolName_isIgnored() {
+        when(stateService.getToolDescriptionOverrides())
+                .thenReturn(Map.of("renamed_or_mcp_tool", "hijacked"));
+        BuiltInToolProvider provider = createProvider();
+
+        ToolProviderResult result = provider.provideTools(request);
+
+        assertThat(result.tools()).hasSize(7);
+        assertThat(getToolNames(result)).containsExactlyInAnyOrderElementsOf(BASE_TOOLS);
+        for (ToolSpecification spec : result.tools().keySet()) {
+            assertThat(spec.description()).isEqualTo(BuiltInToolDescriptions.defaultOf(spec.name()));
+        }
+    }
+
+    /**
+     * Descriptions are owned by the built-in tools only. Backlog tools keep their own
+     * specifications, so they must not appear in the overridable catalog — otherwise the
+     * settings panel would offer an edit affordance for a description it cannot change.
+     */
+    @Test
+    void backlogToolsAreNotDescriptionOverridable() {
+        when(stateService.getSpecBrowserEnabled()).thenReturn(true);
+        BuiltInToolProvider provider = createProvider();
+
+        Set<String> backlogTools = getToolNames(provider.provideTools(request)).stream()
+                .filter(name -> name.startsWith("backlog_"))
+                .collect(Collectors.toSet());
+
+        assertThat(backlogTools).isNotEmpty();
+        assertThat(BuiltInToolDescriptions.toolNames()).doesNotContainAnyElementsOf(backlogTools);
+    }
+
+    /**
+     * Every tool the provider registers from its own inline specifications must have an entry in
+     * {@link BuiltInToolDescriptions}; otherwise {@code effective()} returns null and the tool
+     * would reach the LLM with no description at all.
+     */
+    @Test
+    void builtInToolDescriptions_coversEveryInlineRegisteredTool() {
+        when(stateService.getTestExecutionEnabled()).thenReturn(true);
+        when(stateService.getParallelExploreEnabled()).thenReturn(true);
+        when(stateService.getPsiToolsEnabled()).thenReturn(true);
+        when(stateService.getRagEnabled()).thenReturn(true);
+        when(stateService.getWebSearchAgentToolEnabled()).thenReturn(true);
+        BuiltInToolProvider provider = createProvider();
+
+        ToolProviderResult result = provider.provideTools(request);
+
+        assertThat(BuiltInToolDescriptions.toolNames())
+                .containsExactlyInAnyOrderElementsOf(getToolNames(result));
+        for (ToolSpecification spec : result.tools().keySet()) {
+            assertThat(spec.description())
+                    .as("description for %s", spec.name())
+                    .isNotNull()
+                    .isNotBlank();
+        }
     }
 }

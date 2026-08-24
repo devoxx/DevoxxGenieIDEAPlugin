@@ -5,6 +5,7 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.agent.tool.BuiltInToolDescriptions;
 import com.devoxx.genie.service.agent.tool.psi.PsiToolCatalog;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.model.ChromaCollection;
@@ -13,6 +14,7 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.ComboBox;
@@ -23,6 +25,10 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
+import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -116,12 +122,28 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     };
     private final Map<String, JBCheckBox> toolCheckboxes = new LinkedHashMap<>();
 
+    /**
+     * Working copy of the per-tool LLM-facing description overrides, edited via the pencil button
+     * on each tool row and only written to settings on {@link #apply()}. Keyed by tool name; a tool
+     * on its shipped default has no entry. See {@link BuiltInToolDescriptions}.
+     */
+    private final Map<String, String> pendingDescriptionOverrides = new LinkedHashMap<>();
+    /** "custom description" markers per tool row, shown only while an override is pending/saved. */
+    private final Map<String, JBLabel> descriptionOverrideBadges = new LinkedHashMap<>();
+    /**
+     * The checkbox each description-editable tool row hangs off, so the row tooltip can be
+     * refreshed. Not the same as {@link #toolCheckboxes}: run_tests, parallel_explore and
+     * web_search are description-editable but toggled by a feature flag, not by disabledAgentTools.
+     */
+    private final Map<String, JBCheckBox> descriptionRowCheckboxes = new LinkedHashMap<>();
+
     // Per-agent model override rows
     private final JPanel agentConfigPanel = new JPanel();
     private final List<AgentConfigRow> agentConfigRows = new ArrayList<>();
     private final JButton addAgentButton = new JButton("+ Add");
 
     public AgentSettingsComponent() {
+        loadPendingDescriptionOverrides();
         setupSubAgentComboBoxes();
         blacklistActionComboBox.setSelectedIndex(
                 COMMAND_BLACKLIST_ACTION_BLOCK.equals(stateService.getAgentCommandBlacklistAction()) ? 1 : 0);
@@ -155,7 +177,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             String toolDesc = toolInfo[1];
             JBCheckBox cb = new JBCheckBox(toolName + " - " + toolDesc, !disabledSet.contains(toolName));
             toolCheckboxes.put(toolName, cb);
-            addFullWidthRow(contentPanel, gbc, cb);
+            addFullWidthRow(contentPanel, gbc, buildToolRow(cb, toolName));
 
             // Inline sub-section for run_command: shell environment configuration.
             if ("run_command".equals(toolName)) {
@@ -164,7 +186,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
             // Inline web_search toggle under fetch_page (requires a web search API key).
             if ("fetch_page".equals(toolName)) {
-                addFullWidthRow(contentPanel, gbc, enableWebSearchToolCheckbox);
+                addFullWidthRow(contentPanel, gbc, buildToolRow(enableWebSearchToolCheckbox, "web_search"));
                 addHelpText(contentPanel, gbc,
                         "Registers a 'web_search' tool so the agent can query the web directly. " +
                         "Requires a Tavily or Google Custom Search API key in Settings → Web search.");
@@ -181,7 +203,10 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         addHelpText(contentPanel, gbc,
                 "Uncheck tools to prevent them from being available to the agent. " +
-                "This does not affect the run_tests, parallel_explore, or backlog tools which have their own toggles above/below.");
+                "This does not affect the run_tests, parallel_explore, or backlog tools which have their own toggles above/below. " +
+                "Use the pencil button to rewrite the description the LLM receives for a tool — " +
+                "for example, disable edit_file and tell the model to make all edits via run_command. " +
+                "Hover a tool to see the description currently sent to the model.");
 
         // --- Loop Controls ---
         addSection(contentPanel, gbc, "Loop Controls");
@@ -212,7 +237,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         // --- Test Execution ---
         addSection(contentPanel, gbc, "Test Execution");
 
-        addFullWidthRow(contentPanel, gbc, enableTestExecutionCheckbox);
+        addFullWidthRow(contentPanel, gbc, buildToolRow(enableTestExecutionCheckbox, "run_tests"));
         addHelpText(contentPanel, gbc,
                 "When enabled, the agent gets a 'run_tests' tool that auto-detects the project's " +
                 "build system and runs tests. The agent is instructed to run tests after code changes.");
@@ -250,7 +275,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             cb.setEnabled(enablePsiToolsCheckbox.isSelected());
             toolCheckboxes.put(psiTool.name(), cb);
             psiToolCheckboxes.add(cb);
-            addIndentedRow(contentPanel, gbc, cb);
+            addIndentedRow(contentPanel, gbc, buildToolRow(cb, psiTool.name()));
         }
         enablePsiToolsCheckbox.addItemListener(e ->
                 psiToolCheckboxes.forEach(cb -> cb.setEnabled(enablePsiToolsCheckbox.isSelected())));
@@ -258,7 +283,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         // --- Parallel Exploration ---
         addSection(contentPanel, gbc, "Parallel Exploration");
 
-        addFullWidthRow(contentPanel, gbc, enableParallelExploreCheckbox);
+        addFullWidthRow(contentPanel, gbc, buildToolRow(enableParallelExploreCheckbox, "parallel_explore"));
         addHelpText(contentPanel, gbc,
                 "When enabled, the agent gets a 'parallel_explore' tool that launches multiple " +
                 "sub-agents in parallel to explore different aspects of the codebase simultaneously. " +
@@ -896,6 +921,122 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         return panel;
     }
 
+    // --- Editable tool descriptions (task-257) ---------------------------------------------
+
+    /**
+     * Wraps a tool's checkbox in a row that also carries a pencil button for editing the
+     * LLM-facing description and a marker shown while that description is customised.
+     *
+     * <p>The checkbox keeps its short label — the full description would make rows multi-line —
+     * so the real text sent to the model is surfaced as the row's tooltip and in the editor.
+     */
+    private @NotNull JPanel buildToolRow(@NotNull JBCheckBox checkBox, @NotNull String toolName) {
+        JPanel row = new JPanel();
+        row.setLayout(new BoxLayout(row, BoxLayout.X_AXIS));
+        row.setOpaque(false);
+        row.add(checkBox);
+
+        JButton editButton = new JButton(AllIcons.Actions.Edit);
+        editButton.setToolTipText("Edit the description the LLM receives for " + toolName);
+        editButton.getAccessibleContext().setAccessibleName("Edit description of " + toolName);
+        editButton.setBorderPainted(false);
+        editButton.setContentAreaFilled(false);
+        editButton.setFocusPainted(false);
+        editButton.setOpaque(false);
+        editButton.setMargin(JBUI.emptyInsets());
+        editButton.setBorder(JBUI.Borders.emptyLeft(6));
+        editButton.addActionListener(e -> editToolDescription(toolName));
+        // BoxLayout would otherwise stretch the borderless button to the full row height.
+        editButton.setMaximumSize(editButton.getPreferredSize());
+        row.add(editButton);
+
+        JBLabel badge = new JBLabel("custom description");
+        badge.setComponentStyle(UIUtil.ComponentStyle.SMALL);
+        badge.setForeground(JBColor.namedColor("Component.infoForeground", JBColor.GRAY));
+        badge.setBorder(JBUI.Borders.emptyLeft(6));
+        descriptionOverrideBadges.put(toolName, badge);
+        descriptionRowCheckboxes.put(toolName, checkBox);
+        row.add(badge);
+
+        row.add(Box.createHorizontalGlue());
+
+        refreshToolDescriptionUi(toolName);
+        return row;
+    }
+
+    /** Opens the description editor for {@code toolName} and records the result as pending. */
+    private void editToolDescription(@NotNull String toolName) {
+        String defaultDescription = BuiltInToolDescriptions.defaultOf(toolName);
+        if (defaultDescription == null) {
+            return;
+        }
+        ToolDescriptionEditorDialog dialog = new ToolDescriptionEditorDialog(
+                toolName, defaultDescription, pendingDescriptionOverrides.get(toolName));
+        if (!dialog.showAndGet()) {
+            return;
+        }
+        String override = dialog.getOverride();
+        if (override == null) {
+            pendingDescriptionOverrides.remove(toolName);
+        } else {
+            pendingDescriptionOverrides.put(toolName, override);
+        }
+        refreshToolDescriptionUi(toolName);
+    }
+
+    /** Re-syncs one tool row's "custom description" marker and tooltip with the pending state. */
+    private void refreshToolDescriptionUi(@NotNull String toolName) {
+        String override = pendingDescriptionOverrides.get(toolName);
+        String effective = override != null ? override : BuiltInToolDescriptions.defaultOf(toolName);
+
+        JBLabel badge = descriptionOverrideBadges.get(toolName);
+        if (badge != null) {
+            badge.setVisible(override != null);
+        }
+        JBCheckBox checkBox = descriptionRowCheckboxes.get(toolName);
+        if (checkBox != null && effective != null) {
+            checkBox.setToolTipText(descriptionTooltip(toolName, effective, override != null));
+        }
+    }
+
+    private static @NotNull String descriptionTooltip(@NotNull String toolName,
+                                                      @NotNull String description,
+                                                      boolean customised) {
+        String header = customised
+                ? "Custom description sent to the LLM for <b>" + toolName + "</b>:"
+                : "Description sent to the LLM for <b>" + toolName + "</b>:";
+        return "<html><body style='width: 420px'>" + header + "<br><br>"
+                + escapeHtml(description) + "</body></html>";
+    }
+
+    private static @NotNull String escapeHtml(@NotNull String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    /** Loads the pending override map from settings, dropping blank and unknown-tool entries. */
+    private void loadPendingDescriptionOverrides() {
+        pendingDescriptionOverrides.clear();
+        pendingDescriptionOverrides.putAll(normalizedOverrides(stateService.getToolDescriptionOverrides()));
+    }
+
+    /**
+     * Canonical form of an override map: trimmed values, no blanks, and only names that are
+     * actually overridable — so a stale entry for a removed tool never counts as "modified".
+     */
+    private static @NotNull Map<String, String> normalizedOverrides(@Nullable Map<String, String> raw) {
+        Map<String, String> normalized = new LinkedHashMap<>();
+        if (raw == null) {
+            return normalized;
+        }
+        for (Map.Entry<String, String> entry : raw.entrySet()) {
+            String value = entry.getValue();
+            if (value != null && !value.isBlank() && BuiltInToolDescriptions.defaultOf(entry.getKey()) != null) {
+                normalized.put(entry.getKey(), value.trim());
+            }
+        }
+        return normalized;
+    }
+
     private void addFullWidthRow(JPanel panel, GridBagConstraints gbc, JComponent component) {
         gbc.gridwidth = 2;
         gbc.gridx = 0;
@@ -960,7 +1101,13 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || !Objects.equals(getSelectedModelName(), state.getSubAgentModelName() != null ? state.getSubAgentModelName() : "")
                 || isPerAgentConfigsModified()
                 || isToolCheckboxesModified()
+                || isToolDescriptionsModified()
                 || enableWebSearchToolCheckbox.isSelected() != Boolean.TRUE.equals(state.getWebSearchAgentToolEnabled());
+    }
+
+    private boolean isToolDescriptionsModified() {
+        return !pendingDescriptionOverrides.equals(
+                normalizedOverrides(stateService.getToolDescriptionOverrides()));
     }
 
     private boolean isToolCheckboxesModified() {
@@ -1011,6 +1158,10 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         stateService.setWebSearchAgentToolEnabled(enableWebSearchToolCheckbox.isSelected());
 
+        // Save edited tool descriptions (task-257). Stored per tool name; tools left on their
+        // shipped default have no entry, so a future wording change still reaches those users.
+        stateService.setToolDescriptionOverrides(new LinkedHashMap<>(pendingDescriptionOverrides));
+
         // Re-arm the feature-enablement analytics snapshot (task-209).
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
@@ -1055,6 +1206,10 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         }
         // Re-sync PSI sub-tool grey-out with the (just-reset) master toggle.
         psiToolCheckboxes.forEach(cb -> cb.setEnabled(enablePsiToolsCheckbox.isSelected()));
+
+        // Discard in-flight description edits and re-render the per-tool markers/tooltips.
+        loadPendingDescriptionOverrides();
+        descriptionOverrideBadges.keySet().forEach(this::refreshToolDescriptionUi);
 
         // customTestCommandField.setText() above triggers caret-based scrollRectToVisible,
         // which scrolls IntelliJ's viewport to mid-panel. Scroll back to top

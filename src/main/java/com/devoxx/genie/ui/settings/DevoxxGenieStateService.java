@@ -447,6 +447,14 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean showToolActivityInChat = false;
     private List<String> disabledAgentTools = new ArrayList<>();
 
+    /**
+     * User-edited LLM-facing descriptions for built-in agent tools, keyed by tool name
+     * (see {@code BuiltInToolDescriptions}). Absent or blank entries mean "use the shipped
+     * default"; entries for unknown tool names are ignored. Lets a user steer the agent — e.g.
+     * disable {@code edit_file} and tell the model to make all edits through {@code run_command}.
+     */
+    private Map<String, String> toolDescriptionOverrides = new HashMap<>();
+
     // PSI (Program Structure Interface) tools
     private Boolean psiToolsEnabled = true;
 

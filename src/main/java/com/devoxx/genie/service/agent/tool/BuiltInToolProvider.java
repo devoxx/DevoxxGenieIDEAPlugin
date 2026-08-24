@@ -19,6 +19,10 @@ import java.util.*;
 /**
  * Provides built-in IDE tools for agentic interactions:
  * read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page, run_tests, parallel_explore.
+ *
+ * <p>The LLM-facing tool descriptions live in {@link BuiltInToolDescriptions}, which resolves the
+ * user's per-tool override (Settings → DevoxxGenie → Agent) before falling back to the shipped
+ * text. A fresh provider is built per prompt, so an edited description applies to the next prompt.
  */
 public class BuiltInToolProvider implements ToolProvider {
 
@@ -32,7 +36,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("read_file")
-                        .description("Read the contents of a file in the project")
+                        .description(BuiltInToolDescriptions.effective("read_file"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("path", "File path relative to project root")
                                 .required("path")
@@ -45,7 +49,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("write_file")
-                        .description("Write content to a file in the project. Creates the file and parent directories if they don't exist.")
+                        .description(BuiltInToolDescriptions.effective("write_file"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("path", "File path relative to project root")
                                 .addStringProperty("content", "The content to write to the file")
@@ -59,9 +63,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("edit_file")
-                        .description("Edit a file by replacing an exact string match with new content. " +
-                                "The file must already exist. If the old_string appears multiple times, " +
-                                "either provide more context to make it unique, or set replace_all to true.")
+                        .description(BuiltInToolDescriptions.effective("edit_file"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("path", "File path relative to project root")
                                 .addStringProperty("old_string", "The exact text to find in the file")
@@ -78,7 +80,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("list_files")
-                        .description("List files and directories in the project. Skips common build/VCS directories.")
+                        .description(BuiltInToolDescriptions.effective("list_files"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("path", "Directory path relative to project root (defaults to root)")
                                 .addBooleanProperty("recursive", "Whether to list files recursively (default: false)")
@@ -91,7 +93,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("search_files")
-                        .description("Search for a regex pattern in project files. Returns matching lines with file paths and line numbers.")
+                        .description(BuiltInToolDescriptions.effective("search_files"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("pattern", "Regex pattern to search for")
                                 .addStringProperty("path", "Directory path to search in (defaults to project root)")
@@ -106,7 +108,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("run_command")
-                        .description("Execute a terminal command in the project directory. Has a 30-second timeout.")
+                        .description(BuiltInToolDescriptions.effective("run_command"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("command", "The command to execute")
                                 .addStringProperty("working_dir", "Working directory relative to project root (defaults to project root)")
@@ -120,10 +122,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("fetch_page")
-                        .description("Fetch a web page by URL and return its readable text content. " +
-                                "HTML tags, CSS, and JavaScript are stripped. " +
-                                "Useful for reading documentation, API references, and web pages. " +
-                                "Large pages are truncated to 100K characters.")
+                        .description(BuiltInToolDescriptions.effective("fetch_page"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("url", "The URL to fetch (must start with http:// or https://)")
                                 .required("url")
@@ -137,10 +136,7 @@ public class BuiltInToolProvider implements ToolProvider {
             tools.put(
                     ToolSpecification.builder()
                             .name("run_tests")
-                            .description("Run tests in the project. Auto-detects build system (Gradle/Maven/npm/etc.) " +
-                                    "and executes the appropriate test command. Returns structured results with pass/fail counts. " +
-                                    "Use this after modifying code to verify changes don't break existing tests. " +
-                                    "Has a configurable timeout (default 5 minutes).")
+                            .description(BuiltInToolDescriptions.effective("run_tests"))
                             .parameters(JsonObjectSchema.builder()
                                     .addStringProperty("test_target",
                                             "Specific test class, method, or pattern to run (optional). " +
@@ -181,11 +177,7 @@ public class BuiltInToolProvider implements ToolProvider {
             tools.put(
                     ToolSpecification.builder()
                             .name("parallel_explore")
-                            .description("Launch multiple sub-agents in parallel to explore different aspects " +
-                                    "of the codebase simultaneously. Each sub-agent has its own model and read-only " +
-                                    "tool access (read_file, list_files, search_files). Use this for broad exploration " +
-                                    "tasks that benefit from investigating multiple angles at once. " +
-                                    "Provide 2-5 focused exploration queries.")
+                            .description(BuiltInToolDescriptions.effective("parallel_explore"))
                             .parameters(JsonObjectSchema.builder()
                                     .addProperty("queries", JsonArraySchema.builder()
                                             .items(JsonStringSchema.builder()
@@ -214,13 +206,7 @@ public class BuiltInToolProvider implements ToolProvider {
             tools.put(
                     ToolSpecification.builder()
                             .name("semantic_search")
-                            .description("Search the project's semantic (vector) index for content conceptually similar to a query. " +
-                                    "USE THIS TOOL FIRST for any question about what the project content discusses, mentions, " +
-                                    "covers, or explains — for example: 'which slides discuss MCP', 'where do we explain RAG', " +
-                                    "'find anything about authentication', 'what files describe the build process'. " +
-                                    "Returns ranked file paths, similarity scores, and matching content snippets. " +
-                                    "Only fall back to `search_files` (regex grep) when you need to locate a known exact string, " +
-                                    "or when this tool returns no useful hits.")
+                            .description(BuiltInToolDescriptions.effective("semantic_search"))
                             .parameters(JsonObjectSchema.builder()
                                     .addStringProperty("query",
                                             "Natural-language query describing the concept or topic to retrieve. " +
@@ -237,12 +223,7 @@ public class BuiltInToolProvider implements ToolProvider {
             tools.put(
                     ToolSpecification.builder()
                             .name("web_search")
-                            .description("Search the web for current information, documentation, news, or any topic. " +
-                                    "Returns ranked results with titles, URLs, and content snippets. " +
-                                    "Use when the answer requires information beyond the project codebase — " +
-                                    "e.g. library docs, API references, recent releases, or general knowledge. " +
-                                    "Requires a Tavily or Google Custom Search API key configured in " +
-                                    "Settings → DevoxxGenie → Web search.")
+                            .description(BuiltInToolDescriptions.effective("web_search"))
                             .parameters(JsonObjectSchema.builder()
                                     .addStringProperty("query",
                                             "Search query as a natural-language question or keyword phrase.")
@@ -259,9 +240,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("find_symbols")
-                        .description("Search for symbol definitions (classes, methods, fields) by name in the project. " +
-                                "Unlike text search, this uses the IDE's semantic index and only returns actual declarations, not usages. " +
-                                "Works across all languages supported by the IDE (Java, Kotlin, Python, JS/TS, Go, etc.).")
+                        .description(BuiltInToolDescriptions.effective("find_symbols"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("name", "Exact symbol name to search for (e.g. 'ChatService', 'executeQuery')")
                                 .addStringProperty("kind", "Optional filter: 'class', 'method', or 'field'")
@@ -275,9 +254,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("document_symbols")
-                        .description("List all symbol definitions in a file with their kind (class, method, field) " +
-                                "and line numbers. Shows the nesting structure (e.g. methods inside classes). " +
-                                "Useful for understanding file structure before reading specific sections.")
+                        .description(BuiltInToolDescriptions.effective("document_symbols"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root")
                                 .required("file")
@@ -290,9 +267,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("find_references")
-                        .description("Find all references (usages) of a symbol defined at a given file and line. " +
-                                "Uses the IDE's semantic reference search, which is more accurate than text search " +
-                                "because it understands imports, qualified names, and language semantics.")
+                        .description(BuiltInToolDescriptions.effective("find_references"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root where the symbol is defined")
                                 .addIntegerProperty("line", "1-based line number where the symbol is defined")
@@ -307,9 +282,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("find_definition")
-                        .description("Navigate from a symbol usage to its definition. Given a file position where " +
-                                "a symbol is used, resolves and returns the location where it is defined. " +
-                                "Understands imports, inheritance, and cross-file references.")
+                        .description(BuiltInToolDescriptions.effective("find_definition"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root containing the symbol usage")
                                 .addIntegerProperty("line", "1-based line number of the symbol usage")
@@ -325,8 +298,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("find_implementations")
-                        .description("Find all implementations of an interface, abstract class, or abstract method. " +
-                                "Useful for understanding the type hierarchy and finding concrete implementations.")
+                        .description(BuiltInToolDescriptions.effective("find_implementations"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root where the interface/class is defined")
                                 .addIntegerProperty("line", "1-based line number of the interface/class/method definition")
@@ -350,12 +322,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("find_callees")
-                        .description("List the methods that a given method calls (outgoing edges). " +
-                                "This is the inverse of find_references: find_references answers 'who calls X', " +
-                                "find_callees answers 'what does X call'. Each call target is resolved through the " +
-                                "IDE's semantic index, so overloads, inheritance, and imports are understood — more " +
-                                "accurate than grepping the method body with search_files. " +
-                                "Currently supports Java; other languages return a clear 'not supported' message.")
+                        .description(BuiltInToolDescriptions.effective("find_callees"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root where the method is defined")
                                 .addIntegerProperty("line", "1-based line number where the method is declared")
@@ -370,12 +337,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("trace_call_chains")
-                        .description("Trace call chains from a start method, walking caller→callee or callee→caller " +
-                                "edges up to a bounded depth, and return the path(s). Use this to answer 'how does " +
-                                "execution reach X' or 'what chain of calls does X trigger' — questions that need the " +
-                                "path between two methods, which a single find_references/find_callees call cannot give. " +
-                                "Provide an optional 'target' to stop as soon as a named method is reached. " +
-                                "Bounded in depth (default 5, hard max 10) and number of paths. Java only in v1.")
+                        .description(BuiltInToolDescriptions.effective("trace_call_chains"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root where the start method is defined")
                                 .addIntegerProperty("line", "1-based line number where the start method is declared")
@@ -393,11 +355,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("calculate_complexity")
-                        .description("Compute cyclomatic (McCabe) complexity for Java methods by counting decision " +
-                                "points (if/for/while/case/catch/&&/||/ternary). With 'line' it scores a single " +
-                                "method; without it, scores every method in the file and flags those over a " +
-                                "threshold. Use this to find the riskiest methods to refactor or test — something " +
-                                "search_files cannot measure. Java only in v1.")
+                        .description(BuiltInToolDescriptions.effective("calculate_complexity"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root")
                                 .addIntegerProperty("line", "Optional: 1-based line of a single method to score; omit to score the whole file")
@@ -412,12 +370,7 @@ public class BuiltInToolProvider implements ToolProvider {
         tools.put(
                 ToolSpecification.builder()
                         .name("find_dead_code")
-                        .description("Report symbols in a file with zero project-scope references — HEURISTIC " +
-                                "dead-code CANDIDATES, not certainties. Results require human confirmation before " +
-                                "deletion: reflection, serialization, dependency injection, and out-of-project " +
-                                "callers can reference a symbol invisibly. Conservatively excludes public members, " +
-                                "constructors/main, @Override and any annotated member, and serialization members " +
-                                "to keep false positives low. Java only in v1.")
+                        .description(BuiltInToolDescriptions.effective("find_dead_code"))
                         .parameters(JsonObjectSchema.builder()
                                 .addStringProperty("file", "File path relative to project root to scan for unreferenced symbols")
                                 .required("file")
