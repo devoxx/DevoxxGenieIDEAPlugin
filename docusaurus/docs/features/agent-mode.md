@@ -59,6 +59,22 @@ Each built-in tool can be individually enabled or disabled in the **Built-in Too
 
 The `run_tests`, `parallel_explore`, and backlog tools have their own dedicated toggles in separate settings sections.
 
+### Editing a Tool's Description
+
+Every tool ships with a description that tells the LLM what the tool does and when to reach for it — that description is a large part of how the model decides which tool to call. Click the **pencil button** next to any built-in tool in the Agent settings to rewrite it.
+
+Hovering a tool shows the description currently being sent to the model; the pencil opens it in an editor, and **Reset to Default** puts the shipped wording back. A tool whose description you have changed is marked *custom description* in the settings list. Clearing the text also restores the default, so you can never end up with a tool that has no description at all.
+
+This is the lever for steering the agent without disabling capabilities outright. A common pattern is to combine it with the per-tool checkboxes:
+
+- Uncheck `edit_file`, then edit `run_command`'s description to add *"Use this for all file edits, e.g. via `sed` or `patch`."* — the agent stops reaching for the structured edit tool and works through the shell instead.
+- Add a house rule to `run_command`, such as *"Always use `./gradlew` rather than a global `gradle`."*
+- Make `search_files` the preferred discovery path over `list_files` for a very large repository.
+
+Edits are saved with the rest of the Agent settings and apply from your next prompt onwards — no IDE restart needed. They also apply to the read-only tools handed to [parallel sub-agents](#parallel-sub-agents).
+
+Descriptions are editable for the built-in tools only. Tools provided by [MCP servers](/docs/features/mcp_expanded) and [Skills](/docs/features/skills) keep the descriptions their provider publishes. Tools left on their default keep tracking the shipped wording, so they pick up improvements in future plugin releases automatically.
+
 :::tip Safety
 Write operations require user approval by default, and the approval dialog shows a [diff of the pending change](#reviewing-before-a-write-happens). If you auto-approve writes instead, a finished run still [lists every file it changed](#reviewing-what-the-agent-changed). Terminal commands get an extra layer of protection through the [command blacklist](#command-blacklist).
 :::
@@ -319,6 +335,7 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 |---------|---------|-------------|
 | **Enable Agent Mode** | Disabled | Enables the agent with full tool access (read, write, and execute) |
 | **Built-in Tools** | All enabled | Per-tool checkboxes to enable/disable individual tools (read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page) |
+| **Tool descriptions** | Shipped defaults | Pencil button per tool — rewrite the description the LLM receives, or reset it to the default. See [Editing a Tool's Description](#editing-a-tools-description) |
 | **Auto-approve read-only tools** | Disabled | Lets `read_file`, `list_files`, `search_files`, `fetch_page` and other read-only tools run without confirmation |
 | **Write tools always require approval** | Enabled | Confirm each write, with a diff of the pending change — see [Reviewing Before a Write Happens](#reviewing-before-a-write-happens) |
 | **Command blacklist** | 5 destructive git/rm commands | Shell commands `run_command` may not run unsupervised — see [Command Blacklist](#command-blacklist) |
