@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.14.0 - 2026-08-24
+
+The headline is **editing what your tools tell the model**: the descriptions the agent reads when choosing a built-in tool are no longer compiled-in string literals — you can rewrite any of them from Settings.
+
+### Added
+- feat(agent): **user-editable built-in tool descriptions**. An agent picks a tool almost entirely from that tool's description, but those descriptions were string literals compiled into the plugin — you could switch a tool *off* via `disabledAgentTools`, yet say nothing about the tools that remained. A new `BuiltInToolDescriptions` catalog is the single source of truth for the LLM-facing text of the 20 tools `BuiltInToolProvider`/`ReadOnlyToolProvider` register inline (8 core, 9 PSI, `run_tests`, `parallel_explore`, `web_search`), and `effective(name)` returns your override when set and non-blank, otherwise the shipped default. The Agent settings panel gains a **pencil button per tool** opening an editor dialog with *Reset to Default*, a *custom description* marker on edited tools, and a **row tooltip showing the exact text sent to the model** — the short label beside each checkbox never was that text. Edits stay pending until Apply, honour `isModified`/`apply`/`reset`, and take effect from the next prompt with no IDE restart. Overrides resolve **inside the catalog** rather than in a `ToolProvider` decorator, which keeps MCP and Skills tools untouched by construction — their descriptions are their provider's contract — and also reaches `ReadOnlyToolProvider`, so `parallel_explore` sub-agents see the same text as the main agent; backlog and security-scan tools are excluded, having separate spec classes and no per-tool settings row. **Only tools you actually edit are stored**, so anything you leave alone keeps tracking the shipped wording and picks up improvements in future releases. Settings access is guarded and falls back to the default whenever no `Application` is available, so tool registration can never fail because of this. One consequence worth knowing before you rewrite a description to redirect work to the shell: `run_command` is **not** on `AgentApprovalProvider.READ_ONLY_TOOLS`, so routing file reads through it turns previously auto-approved reads into approval prompts (task-257, #1274)
+
+### Fixed
+- fix(mcp): **keep the SSE transport working — langchain4j held at 1.18.1**. Dependabot bumped langchain4j 1.18.1 → 1.19.0, which stopped the build compiling: upstream's *"MCP client according to 2026-07-28"* (langchain4j PR #5881) **removed the legacy SSE transport `HttpMcpTransport` outright**, and both `MCPExecutionService` and `HttpSseTransportPanel` depend on it. The obvious migration is a trap — upstream's new auto-detection negotiates only 2026-07-28 against 2025-11-25, *both* Streamable HTTP and both POSTing to a single URL, so the 2024-11-05 HTTP+SSE transport has no replacement at all. `StreamableHttpMcpTransport` does open a `GET text/event-stream` stream, but only as the optional `subsidiaryChannel` for the legacy protocol, never as the primary channel, and `initialize` is still a POST. Swapping `HTTP_SSE` over to it compiles cleanly and silently reintroduces **#1151**: SSE-only endpoints such as the JetBrains IDE MCP server on `http://127.0.0.1:64342/sse` answer that POST with **HTTP 405**. langchain4j is therefore pinned to 1.18.1/1.18.1-beta28 with an explanatory comment until upstream restores an SSE transport. Transport construction moves into package-private `buildHttpSseTransport`/`buildStreamableHttpTransport` so the choice is unit-testable, and four new regression tests pin it — verified by mutation, since swapping `HTTP_SSE` to the streamable transport turns three of them red while the HTTP-path test correctly stays green (#1151, #1273)
+
+### Documentation
+- docs(agent): new *Editing a Tool's Description* section in the Agent Mode guide, plus a blog post built around the verified end-to-end example — unchecking `read_file` and appending *"Use the sed command for reading parts of a source file"* to `run_command`, after which the agent reads files with `sed` and needs no per-prompt reminders (#1274)
+
+### Dependencies
+- chore(deps): upgrade AWS SDK BOM 2.50.3 → 2.53.1, commonmark 0.29.0 → 0.30.0, Netty 4.2.16 → 4.2.17.Final, Logback 1.6.1 → 1.6.3, JUnit 6.1.2 → 6.1.3 (api, engine, params, platform-launcher) and mockwebserver 5.4.0 → 5.5.0 (#1273)
+- chore(deps): **langchain4j deliberately held at 1.18.1** and the **Gradle wrapper at 9.6.1** — see the Fixed entry above for langchain4j; Gradle 9.7.0 fails `instrumentCode` with `NoSuchMethodError` on `org.jetbrains.org.objectweb.asm.ClassReader` under IntelliJ Platform Gradle Plugin 2.13.1 (#1273)
+- chore(deps): bump docs toolchain — postcss 8.5.20 → 8.5.26 (#1269)
+
+### Contributors
+- @stephanj
+
 ## v1.13.0 - 2026-08-11
 
 The headline is **reviewing what the agent changed**: a real diff in the write-approval dialog before a file is touched, and a changed-files list with per-file diffs under the answer after a run finishes — so there is a diff to review whether or not you approve writes manually.

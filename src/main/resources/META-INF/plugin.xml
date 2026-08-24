@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.14.0</h2>
+        <UL>
+                    <LI>feat(agent): <b>built-in agent tool descriptions are now editable</b> — a pencil button per tool in Settings → Agent opens an editor (with <i>Reset to Default</i>) for the text the model actually reads when choosing that tool, covering the 20 built-in tools including the PSI code-navigation set (#1274)</LI>
+                    <LI>feat(agent): each tool row now has a <b>tooltip showing the exact description sent to the model</b> — the short label beside the checkbox never was. Only tools you edit are stored, so untouched tools keep picking up improved wording in future releases (#1274)</LI>
+                </UL>
         <h2>v1.13.0</h2>
         <UL>
                     <LI>feat(agent): the write-approval dialog now shows a real <b>diff</b> — current vs. proposed, syntax-highlighted — for <code>edit_file</code> and <code>write_file</code>, instead of the raw JSON tool arguments (#705)</LI>
