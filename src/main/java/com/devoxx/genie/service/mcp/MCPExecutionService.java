@@ -264,6 +264,52 @@ public class MCPExecutionService implements Disposable {
     }
 
     /**
+     * Builds the transport for an {@code HTTP_SSE} server, without opening a connection.
+     * <p>
+     * This must stay on the SSE-based {@link HttpMcpTransport}, which opens the event stream
+     * via a GET on {@code /sse}. It must NOT be switched to {@code StreamableHttpMcpTransport}:
+     * that transport POSTs to the single URL, and SSE-only endpoints such as the JetBrains IDE
+     * MCP server reject the initialize POST with HTTP 405 (see issue #1151).
+     * <p>
+     * Package-private for testing.
+     */
+    @SuppressWarnings({"deprecation", "removal"}) // SSE transport is required for SSE-only servers (issue #1151)
+    static McpTransport buildHttpSseTransport(@NotNull MCPServer mcpServer) {
+        HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
+                .sseUrl(mcpServer.getUrl())
+                .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
+                .logRequests(MCPService.isDebugLogsEnabled())
+                .logResponses(MCPService.isDebugLogsEnabled())
+                .logger(new MCPTrafficLogger(createTrafficConsumer()));
+
+        if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
+            transportBuilder.customHeaders(mcpServer.getHeaders());
+        }
+
+        return transportBuilder.build();
+    }
+
+    /**
+     * Builds the transport for an {@code HTTP} (streamable) server, without opening a connection.
+     * <p>
+     * Package-private for testing.
+     */
+    static McpTransport buildStreamableHttpTransport(@NotNull MCPServer mcpServer) {
+        StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
+                .url(mcpServer.getUrl())
+                .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
+                .logRequests(MCPService.isDebugLogsEnabled())
+                .logResponses(MCPService.isDebugLogsEnabled())
+                .logger(new MCPTrafficLogger(createTrafficConsumer()));
+
+        if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
+            transportBuilder.customHeaders(mcpServer.getHeaders());
+        }
+
+        return transportBuilder.build();
+    }
+
+    /**
      * Helper method to initialize an HTTP SSE client with error handling.
      * Package-private for testing.
      *
@@ -283,21 +329,7 @@ public class MCPExecutionService implements Disposable {
 
             MCPService.logDebug("Initializing SSE transport for HTTP_SSE config with URL: " + sseUrl);
 
-            // Use the SSE-based transport for HTTP_SSE servers. The streamable HTTP transport POSTs
-            // to the single URL, which SSE-only endpoints (e.g. the JetBrains MCP server) reject with
-            // HTTP 405 (see issue #1151). HttpMcpTransport opens the event stream via a GET on /sse.
-            HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
-                    .sseUrl(sseUrl)
-                    .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
-                    .logRequests(MCPService.isDebugLogsEnabled())
-                    .logResponses(MCPService.isDebugLogsEnabled())
-                    .logger(new MCPTrafficLogger(createTrafficConsumer()));
-
-            if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
-                transportBuilder.customHeaders(mcpServer.getHeaders());
-            }
-
-            McpTransport transport = transportBuilder.build();
+            McpTransport transport = buildHttpSseTransport(mcpServer);
 
             // Create and return the client
             return new DefaultMcpClient.Builder()
@@ -334,19 +366,7 @@ public class MCPExecutionService implements Disposable {
 
             MCPService.logDebug("Initializing streamable HTTP transport with URL: " + url);
 
-            // Create the transport
-            StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
-                    .url(url)
-                    .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
-                    .logRequests(MCPService.isDebugLogsEnabled())
-                    .logResponses(MCPService.isDebugLogsEnabled())
-                    .logger(new MCPTrafficLogger(createTrafficConsumer()));
-
-            if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
-                transportBuilder.customHeaders(mcpServer.getHeaders());
-            }
-
-            McpTransport transport = transportBuilder.build();
+            McpTransport transport = buildStreamableHttpTransport(mcpServer);
 
             // Create and return the client
             return new DefaultMcpClient.Builder()

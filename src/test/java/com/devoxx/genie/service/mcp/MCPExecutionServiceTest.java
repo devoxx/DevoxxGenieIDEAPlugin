@@ -5,6 +5,9 @@ import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.service.tool.ToolProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -557,6 +560,79 @@ class MCPExecutionServiceTest {
             // Should not throw
             consumer.accept("> some request");
             consumer.accept("< some response");
+        }
+    }
+
+    // ─── Transport selection (issue #1151 regression guard) ────────────────
+
+    /**
+     * Regression guard for issue #1151.
+     * <p>
+     * An {@code HTTP_SSE} server must get the SSE-based {@link HttpMcpTransport}, which opens the
+     * event stream with a GET on {@code /sse}. Switching it to {@code StreamableHttpMcpTransport}
+     * compiles cleanly but breaks every SSE-only endpoint — the JetBrains IDE MCP server on
+     * {@code http://127.0.0.1:64342/sse} rejects the initialize POST with HTTP 405, which is
+     * exactly the failure reported in #1151.
+     * <p>
+     * This also pins the langchain4j version: 1.19.0 (upstream PR #5881) deleted
+     * {@code HttpMcpTransport} outright, so bumping past 1.18.1 must not be done without first
+     * restoring an SSE transport.
+     */
+    @Nested
+    class TransportSelection {
+
+        @BeforeEach
+        void stubTimeout() {
+            when(stateService.getTimeout()).thenReturn(60);
+        }
+
+        @Test
+        void httpSseServerUsesSseTransportNotStreamable() throws Exception {
+            try (McpTransport built = MCPExecutionService.buildHttpSseTransport(
+                    httpSseServer("jetbrains", "http://127.0.0.1:64342/sse"))) {
+
+                assertThat(built)
+                        .as("HTTP_SSE must use the SSE-based HttpMcpTransport; the streamable transport "
+                            + "POSTs to the single URL and SSE-only servers answer 405 (issue #1151)")
+                        .isInstanceOf(HttpMcpTransport.class);
+            }
+        }
+
+        @Test
+        void httpSseServerIsNotGivenTheStreamableTransport() throws Exception {
+            try (McpTransport built = MCPExecutionService.buildHttpSseTransport(
+                    httpSseServer("jetbrains", "http://127.0.0.1:64342/sse"))) {
+
+                assertThat(built)
+                        .as("issue #1151: the streamable transport must never serve an HTTP_SSE server")
+                        .isNotInstanceOf(StreamableHttpMcpTransport.class);
+            }
+        }
+
+        @Test
+        void httpServerUsesStreamableTransport() throws Exception {
+            try (McpTransport built = MCPExecutionService.buildStreamableHttpTransport(
+                    httpServer("remote", "https://example.com/mcp"))) {
+
+                assertThat(built)
+                        .as("HTTP (non-SSE) servers use the streamable HTTP transport")
+                        .isInstanceOf(StreamableHttpMcpTransport.class);
+            }
+        }
+
+        @Test
+        void httpSseTransportCarriesCustomHeaders() throws Exception {
+            MCPServer server = MCPServer.builder()
+                    .name("jetbrains")
+                    .enabled(true)
+                    .transportType(MCPServer.TransportType.HTTP_SSE)
+                    .url("http://127.0.0.1:64342/sse")
+                    .headers(Map.of("Authorization", "Bearer token"))
+                    .build();
+
+            try (McpTransport built = MCPExecutionService.buildHttpSseTransport(server)) {
+                assertThat(built).isInstanceOf(HttpMcpTransport.class);
+            }
         }
     }
 }

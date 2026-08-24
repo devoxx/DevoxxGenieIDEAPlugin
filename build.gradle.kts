@@ -262,8 +262,13 @@ dependencies {
         testFramework(TestFrameworkType.Platform)
     }
     
-    val lg4j_version = "1.19.0"
-    val lg4j_beta_version = "1.19.0-beta29"
+    // Pinned to 1.18.1: langchain4j 1.19.0 (PR #5881, "MCP client according to 2026-07-28")
+    // removed the legacy SSE transport HttpMcpTransport with no replacement. Its auto-detection
+    // only negotiates 2026-07-28 vs 2025-11-25 — both Streamable HTTP, both POST-to-single-URL —
+    // so SSE-only endpoints such as the JetBrains IDE MCP server would again fail the initialize
+    // POST with HTTP 405 (issue #1151). Do not bump without restoring an SSE transport first.
+    val lg4j_version = "1.18.1"
+    val lg4j_beta_version = "1.18.1-beta28"
     val awsSdkVersion = "2.53.1"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.1"
