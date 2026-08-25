@@ -30,6 +30,7 @@ import dev.snipme.highlights.model.BoldHighlight
 import dev.snipme.highlights.model.CodeHighlight
 import dev.snipme.highlights.model.ColorHighlight
 import dev.snipme.highlights.model.SyntaxLanguage
+import dev.snipme.highlights.model.SyntaxTheme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -89,16 +90,39 @@ internal fun buildSafeHighlightedAnnotatedString(
     AnnotatedString(code)
 }
 
+/**
+ * Computes syntax highlights for [code] under [theme].
+ *
+ * The [Highlights.Builder] is constructed here, per call, and never escapes. That matters:
+ * `Builder` is a data class whose fields are `var`, `code(...)` mutates it in place and `build()`
+ * snapshots whatever the fields hold at that instant, so a builder shared between code blocks
+ * highlighting concurrently on [Dispatchers.Default] can hand one block offsets computed from
+ * another block's text (TASK-259). [theme] is an immutable data class and is safe to share.
+ */
+internal fun computeHighlights(
+    code: String,
+    language: String?,
+    theme: SyntaxTheme,
+): List<CodeHighlight> {
+    val syntaxLanguage = language?.let { SyntaxLanguage.getByName(it) }
+    return Highlights.Builder()
+        .theme(theme)
+        .code(code)
+        .let { if (syntaxLanguage != null) it.language(syntaxLanguage) else it }
+        .build()
+        .getHighlights()
+}
+
 @Composable
 fun SafeMarkdownHighlightedCodeFence(
     content: String,
     node: ASTNode,
     style: TextStyle = LocalMarkdownTypography.current.code,
-    highlightsBuilder: Highlights.Builder,
+    syntaxTheme: SyntaxTheme,
     showHeader: Boolean = false,
 ) {
     MarkdownCodeFence(content, node, style) { code, language, codeStyle ->
-        SafeMarkdownHighlightedCode(code, language, codeStyle, highlightsBuilder, showHeader)
+        SafeMarkdownHighlightedCode(code, language, codeStyle, syntaxTheme, showHeader)
     }
 }
 
@@ -107,11 +131,11 @@ fun SafeMarkdownHighlightedCodeBlock(
     content: String,
     node: ASTNode,
     style: TextStyle = LocalMarkdownTypography.current.code,
-    highlightsBuilder: Highlights.Builder,
+    syntaxTheme: SyntaxTheme,
     showHeader: Boolean = false,
 ) {
     MarkdownCodeBlock(content, node, style) { code, language, codeStyle ->
-        SafeMarkdownHighlightedCode(code, language, codeStyle, highlightsBuilder, showHeader)
+        SafeMarkdownHighlightedCode(code, language, codeStyle, syntaxTheme, showHeader)
     }
 }
 
@@ -120,13 +144,13 @@ private fun SafeMarkdownHighlightedCode(
     code: String,
     language: String?,
     style: TextStyle,
-    highlightsBuilder: Highlights.Builder,
+    syntaxTheme: SyntaxTheme,
     showHeader: Boolean,
 ) {
     val backgroundCodeColor = LocalMarkdownColors.current.codeBackground
     val codeBackgroundCornerSize = LocalMarkdownDimens.current.codeBackgroundCornerSize
     val codeBlockPadding = LocalMarkdownPadding.current.codeBlock
-    val codeHighlights: AnnotatedString by produceSafeHighlightsState(code, language, highlightsBuilder)
+    val codeHighlights: AnnotatedString by produceSafeHighlightsState(code, language, syntaxTheme)
 
     MarkdownCodeBackground(
         color = backgroundCodeColor,
@@ -150,20 +174,13 @@ private fun SafeMarkdownHighlightedCode(
 private fun produceSafeHighlightsState(
     code: String,
     language: String?,
-    highlightsBuilder: Highlights.Builder,
+    syntaxTheme: SyntaxTheme,
 ): State<AnnotatedString> = produceState(
     initialValue = AnnotatedString(text = code),
     key1 = code,
 ) {
-    val syntaxLanguage = language?.let { SyntaxLanguage.getByName(it) }
     val job = launch(Dispatchers.Default) {
-        value = buildSafeHighlightedAnnotatedString(code) {
-            highlightsBuilder
-                .code(code)
-                .let { if (syntaxLanguage != null) it.language(syntaxLanguage) else it }
-                .build()
-                .getHighlights()
-        }
+        value = buildSafeHighlightedAnnotatedString(code) { computeHighlights(code, language, syntaxTheme) }
     }
     awaitDispose {
         job.cancel()

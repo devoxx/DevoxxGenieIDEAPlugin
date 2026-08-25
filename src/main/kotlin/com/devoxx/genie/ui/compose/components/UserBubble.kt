@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
@@ -21,7 +22,6 @@ import com.mikepenz.markdown.compose.Markdown
 import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.model.DefaultMarkdownColors
 import com.mikepenz.markdown.model.DefaultMarkdownTypography
-import dev.snipme.highlights.Highlights
 import dev.snipme.highlights.model.SyntaxThemes
 
 @Composable
@@ -73,17 +73,19 @@ fun UserBubble(
         table = baseStyle,
     )
 
-    val highlightsBuilder = Highlights.Builder().theme(SyntaxThemes.default(darkMode = colors.isDark))
+    // Immutable, so sharing one instance across the message's code blocks is safe. The mutable
+    // Highlights.Builder is created per block inside computeHighlights instead (TASK-259).
+    val syntaxTheme = remember(colors.isDark) { SyntaxThemes.default(darkMode = colors.isDark) }
 
     val codeFence: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            SafeMarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder = highlightsBuilder)
+            SafeMarkdownHighlightedCodeFence(model.content, model.node, syntaxTheme = syntaxTheme)
         }
     }
 
     val codeBlock: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            SafeMarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder = highlightsBuilder)
+            SafeMarkdownHighlightedCodeBlock(model.content, model.node, syntaxTheme = syntaxTheme)
         }
     }
 
