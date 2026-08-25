@@ -72,4 +72,5 @@ Code blocks in one message no longer risk being syntax-highlighted against each 
 The mutable builder no longer crosses a block boundary: the composables now take an immutable `SyntaxTheme`, and `computeHighlights(code, language, theme)` constructs a builder per call that never escapes. Nothing is allocated at composition time, so recomposition of an unchanged block allocates nothing either.
 
 Verified with `./gradlew cleanTest test`: 3650 tests, 0 failures. The new concurrency test was mutation-tested — reintroducing a shared builder makes it fail — so it will catch a regression.
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1278
 <!-- SECTION:FINAL_SUMMARY:END -->
