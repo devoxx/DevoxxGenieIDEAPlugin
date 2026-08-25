@@ -32,7 +32,7 @@ import com.mikepenz.markdown.compose.components.MarkdownComponent
 import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.model.DefaultMarkdownColors
 import com.mikepenz.markdown.model.DefaultMarkdownTypography
-import dev.snipme.highlights.Highlights
+import dev.snipme.highlights.model.SyntaxTheme
 import dev.snipme.highlights.model.SyntaxThemes
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
@@ -134,11 +134,12 @@ private fun extractCodeText(content: String, node: org.intellij.markdown.ast.AST
 }
 
 /**
- * Creates a theme-aware Highlights.Builder that uses the correct dark/light syntax theme
- * to ensure mark characters ({, }, (, ), etc.) are visible against the code background.
+ * Selects the correct dark/light syntax theme, so mark characters ({, }, (, ), etc.) stay
+ * visible against the code background. [SyntaxTheme] is immutable, so one instance is safely
+ * shared by every code block; the mutable [dev.snipme.highlights.Highlights.Builder] is built
+ * per block inside [computeHighlights] instead (TASK-259).
  */
-private fun createHighlightsBuilder(isDark: Boolean): Highlights.Builder =
-    Highlights.Builder().theme(SyntaxThemes.default(darkMode = isDark))
+private fun syntaxThemeFor(isDark: Boolean): SyntaxTheme = SyntaxThemes.default(darkMode = isDark)
 
 /**
  * Creates a custom code fence component with a copy button overlay.
@@ -147,7 +148,7 @@ private fun createHighlightsBuilder(isDark: Boolean): Highlights.Builder =
 private fun codeFenceWithCopy(isDark: Boolean): MarkdownComponent = { model ->
     val codeText = extractCodeText(model.content, model.node)
     Box(modifier = Modifier.fillMaxWidth()) {
-        SafeMarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder = createHighlightsBuilder(isDark))
+        SafeMarkdownHighlightedCodeFence(model.content, model.node, syntaxTheme = syntaxThemeFor(isDark))
         CopyButton(
             textToCopy = codeText,
             modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
@@ -162,7 +163,7 @@ private fun codeFenceWithCopy(isDark: Boolean): MarkdownComponent = { model ->
 private fun codeBlockWithCopy(isDark: Boolean): MarkdownComponent = { model ->
     val codeText = extractCodeText(model.content, model.node)
     Box(modifier = Modifier.fillMaxWidth()) {
-        SafeMarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder = createHighlightsBuilder(isDark))
+        SafeMarkdownHighlightedCodeBlock(model.content, model.node, syntaxTheme = syntaxThemeFor(isDark))
         CopyButton(
             textToCopy = codeText,
             modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
