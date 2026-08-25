@@ -72,4 +72,5 @@ No dependency upgrade: the build pins the renderer and highlighter to the Intell
 Verified with `./gradlew test` on the rebased branch: 3646 tests, 0 failures. `SafeHighlightedCodeTest` adds 8 tests, including a characterization test pinning the upstream defect (it fails if a future bump fixes it) and one asserting the unguarded code path still throws the reported exception for the same input.
 
 Known follow-up, out of scope here: `UserBubble` shares one mutable `Highlights.Builder` across every code block in a message, and `.code()` mutates it, so concurrent highlighting can compute highlights against the wrong block's text. The new guard downgrades that from a crash to at-worst mis-coloring.
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1277
 <!-- SECTION:FINAL_SUMMARY:END -->
