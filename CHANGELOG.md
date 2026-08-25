@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.14.1 - 2026-08-25
+
+A patch release for one crash: a single fenced code block could stop the whole chat panel from rendering, and nothing about the failure pointed at the code block.
+
+### Fixed
+- fix(ui): **a code block containing an unmatched comment terminator no longer kills the conversation panel**. A reply whose fenced code contained a `*/` before the first `/*` — an LLM streaming a Javadoc excerpt, or showing a diff hunk that starts inside a comment — took the entire Compose panel down with `IllegalArgumentException: Reversed range is not supported`, not just the offending block. The cause is upstream in `dev.snipme:highlights`, whose `MultilineCommentLocator` pairs the Nth `/*` index with the Nth `*/` index **positionally**, never checking that the end follows the start: for text like `*/ /* */` it emits a highlight location of `(3, 2)`. `multiplatform-markdown-renderer` passed that straight to `AnnotatedString.Builder.addStyle`, which rejects a reversed range — and it threw from a `produceState` coroutine on `Dispatchers.Default` where nothing caught it, tearing down the Compose **frame clock** and with it every message on screen. Neither library could be upgraded out of the problem: both are pinned to the IntelliJ 253 Compose/Skiko toolchain for the ABI and classloader reasons documented in `build.gradle.kts`. A new `SafeHighlightedCode` reimplements the two highlighted-code composables on the renderer's public `MarkdownCodeFence`/`MarkdownCodeBlock`/`MarkdownCodeBackground` building blocks, clamping every highlight location into `[0, code.length]`, dropping whatever is left with `end <= start`, and falling back to **unstyled but intact** code on any `Throwable` (rethrowing `CancellationException` so `produceState` disposal still works) — so a future locator defect costs one code block its colours instead of the panel. Both the AI and user bubbles route through it. Eight regression tests cover it, including a characterization test that pins the upstream defect so a future dependency bump that fixes it fails loudly, and one asserting the *unguarded* path still throws the reported exception (task-258, #1277)
+
+### Changed
+- refactor(ui): **syntax highlights are built per code block**. `Highlights.Builder` is a data class with `var` fields — `code(...)` mutates it in place and `build()` snapshots whatever the fields hold at that instant — and the user bubble handed **one** builder to every code block in a message. Since each block highlights in its own `produceState` coroutine on `Dispatchers.Default`, two blocks could interleave and one could be styled with offsets computed from the other block's text; after the fix above those offsets are clamped away rather than fatal, so the visible effect was mis-colouring. The mutable builder no longer crosses a block boundary: the composables take an immutable `SyntaxTheme`, and a new `computeHighlights(code, language, theme)` constructs a builder per call that never escapes, making the isolation structural rather than a matter of discipline. It also drops builder allocation from composition entirely — one is created only when `produceState`'s `code` key changes, which is stricter than wrapping the old builder in `remember`. Pinned by a deterministic characterization of the interleaving plus a 200-iteration concurrency test, itself mutation-tested: reintroducing a shared builder makes it fail (task-259, #1278)
+
+### Dependencies
+- chore(deps): bump docs toolchain — brace-expansion 1.1.13 → 1.1.18 (#1275)
+
+### Contributors
+- @stephanj
+
 ## v1.14.0 - 2026-08-24
 
 The headline is **editing what your tools tell the model**: the descriptions the agent reads when choosing a built-in tool are no longer compiled-in string literals — you can rewrite any of them from Settings.

@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h2>v1.14.1</h2>
+        <UL>
+                    <LI>fix(ui): a reply containing a code block with an unmatched <code>*/</code> before its first <code>/*</code> — a streamed Javadoc excerpt or a diff hunk starting inside a comment — <b>no longer stops the whole chat panel from rendering</b>. Malformed highlight ranges are now discarded, and a code block that cannot be highlighted falls back to unstyled but intact text (#1277)</LI>
+                    <LI>fix(ui): code blocks in the same message can no longer be <b>syntax-coloured against each other's text</b> — each block now builds its own highlights (#1278)</LI>
+                </UL>
         <h2>v1.14.0</h2>
         <UL>
                     <LI>feat(agent): <b>built-in agent tool descriptions are now editable</b> — a pencil button per tool in Settings → Agent opens an editor (with <i>Reset to Default</i>) for the text the model actually reads when choosing that tool, covering the 20 built-in tools including the PSI code-navigation set (#1274)</LI>
