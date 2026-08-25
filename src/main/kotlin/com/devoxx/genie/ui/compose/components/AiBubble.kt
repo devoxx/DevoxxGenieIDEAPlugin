@@ -30,8 +30,6 @@ import com.devoxx.genie.ui.compose.theme.*
 import com.mikepenz.markdown.compose.Markdown
 import com.mikepenz.markdown.compose.components.MarkdownComponent
 import com.mikepenz.markdown.compose.components.markdownComponents
-import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeBlock
-import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeFence
 import com.mikepenz.markdown.model.DefaultMarkdownColors
 import com.mikepenz.markdown.model.DefaultMarkdownTypography
 import dev.snipme.highlights.Highlights
@@ -149,7 +147,7 @@ private fun createHighlightsBuilder(isDark: Boolean): Highlights.Builder =
 private fun codeFenceWithCopy(isDark: Boolean): MarkdownComponent = { model ->
     val codeText = extractCodeText(model.content, model.node)
     Box(modifier = Modifier.fillMaxWidth()) {
-        MarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder = createHighlightsBuilder(isDark))
+        SafeMarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder = createHighlightsBuilder(isDark))
         CopyButton(
             textToCopy = codeText,
             modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
@@ -164,7 +162,7 @@ private fun codeFenceWithCopy(isDark: Boolean): MarkdownComponent = { model ->
 private fun codeBlockWithCopy(isDark: Boolean): MarkdownComponent = { model ->
     val codeText = extractCodeText(model.content, model.node)
     Box(modifier = Modifier.fillMaxWidth()) {
-        MarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder = createHighlightsBuilder(isDark))
+        SafeMarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder = createHighlightsBuilder(isDark))
         CopyButton(
             textToCopy = codeText,
             modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),

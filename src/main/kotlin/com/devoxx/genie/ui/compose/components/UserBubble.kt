@@ -19,8 +19,6 @@ import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
 import com.devoxx.genie.ui.compose.theme.DevoxxOrange
 import com.mikepenz.markdown.compose.Markdown
 import com.mikepenz.markdown.compose.components.markdownComponents
-import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeBlock
-import com.mikepenz.markdown.compose.elements.MarkdownHighlightedCodeFence
 import com.mikepenz.markdown.model.DefaultMarkdownColors
 import com.mikepenz.markdown.model.DefaultMarkdownTypography
 import dev.snipme.highlights.Highlights
@@ -79,13 +77,13 @@ fun UserBubble(
 
     val codeFence: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            MarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder = highlightsBuilder)
+            SafeMarkdownHighlightedCodeFence(model.content, model.node, highlightsBuilder = highlightsBuilder)
         }
     }
 
     val codeBlock: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
         Box(modifier = Modifier.fillMaxWidth()) {
-            MarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder = highlightsBuilder)
+            SafeMarkdownHighlightedCodeBlock(model.content, model.node, highlightsBuilder = highlightsBuilder)
         }
     }
 
