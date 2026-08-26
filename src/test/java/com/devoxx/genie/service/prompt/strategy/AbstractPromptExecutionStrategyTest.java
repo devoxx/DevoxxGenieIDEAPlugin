@@ -12,6 +12,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.ImageContent;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -337,5 +339,60 @@ class AbstractPromptExecutionStrategyTest {
         assertThat(result)
             .doesNotContain("<attached_images>")
             .contains(userPrompt);
+    }
+    @Test
+    void buildPromptWithHistory_WithImageInHistory_DoesNotThrowAndKeepsText() {
+        // Given: an earlier turn that carried an image (multimodal UserMessage in memory) — issue #1282
+        String base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+        List<ChatMessage> history = new ArrayList<>();
+        history.add(UserMessage.from(TextContent.from("what is this image ?"), ImageContent.from(base64, "image/png")));
+        history.add(AiMessage.from("I don't see any image attached."));
+        history.add(UserMessage.from("what i asked you ?")); // current prompt
+        when(mockChatMemoryManager.getMessagesByKey(any())).thenReturn(history);
+
+        ChatMessageContext realContext = ChatMessageContext.builder()
+            .project(mockProject)
+            .tabId("tab-1")
+            .userPrompt("what i asked you ?")
+            .languageModel(LanguageModel.builder()
+                .provider(ModelProvider.CLIRunners)
+                .modelName("Claude")
+                .displayName("Claude")
+                .build())
+            .build();
+
+        // When
+        String result = testStrategy.testBuildPromptWithHistory(realContext);
+
+        // Then: no crash, the text survives, the image is represented by a marker, and the base64 is not leaked
+        assertThat(result)
+            .contains("[user]: what is this image ?")
+            .contains("[image attached]")
+            .contains("[assistant]: I don't see any image attached.")
+            .doesNotContain(base64)
+            .endsWith("what i asked you ?");
+    }
+
+    @Test
+    void buildPromptWithHistory_WithTextOnlyHistory_HasNoImageMarker() {
+        List<ChatMessage> history = new ArrayList<>();
+        history.add(UserMessage.from("first question"));
+        history.add(AiMessage.from("first answer"));
+        history.add(UserMessage.from("second question"));
+        when(mockChatMemoryManager.getMessagesByKey(any())).thenReturn(history);
+
+        ChatMessageContext realContext = ChatMessageContext.builder()
+            .project(mockProject)
+            .tabId("tab-1")
+            .userPrompt("second question")
+            .languageModel(LanguageModel.builder()
+                .provider(ModelProvider.CLIRunners).modelName("Claude").displayName("Claude").build())
+            .build();
+
+        String result = testStrategy.testBuildPromptWithHistory(realContext);
+
+        assertThat(result)
+            .contains("[user]: first question")
+            .doesNotContain("[image attached]");
     }
 }
