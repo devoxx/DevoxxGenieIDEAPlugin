@@ -42,8 +42,10 @@ import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Unified log panel that merges Agent and MCP log streams with source-based filtering.
@@ -52,22 +54,11 @@ import java.util.function.Function;
 @Slf4j
 public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityLoggingMessage, MCPLoggingMessage, RAGLoggingMessage, Disposable {
 
-    private static final int DEFAULT_MAX_LOG_ENTRIES = 1000;
+    private static final int DEFAULT_MAX_LOG_ENTRIES = 250;
     private static final int BATCH_SIZE = 20;
-    /**
-     * Maximum characters per individual line shown in the panel preview. Very long single lines
-     * are truncated with an ellipsis; the full content remains available via tooltip and the
-     * double-click editor view.
-     */
-    private static final int INLINE_PREVIEW_MAX_LINE_LEN = 500;
-    /**
-     * Maximum number of lines rendered in a single panel row. Multi-line tool output beyond
-     * this cap is collapsed into a "(N more lines)" hint so a giant {@code ps -ef} doesn't eat
-     * the whole panel.
-     */
-    private static final int INLINE_PREVIEW_MAX_LINES = 10;
+    private static final int LIST_ROW_PREVIEW_MAX_LEN = 500;
+    private static final int LIST_ROW_HEIGHT = 24;
 
-    /** Maximum characters shown in the hover tooltip. Beyond this, content is truncated with an ellipsis. */
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -94,10 +85,13 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     private LogFilter currentFilter = LogFilter.ALL;
 
     private final transient Project project;
-    private final DefaultListModel<LogEntry> logListModel = new DefaultListModel<>();
+    private final ActivityLogListModel<LogEntry> logListModel = new ActivityLogListModel<>();
     private final JBList<LogEntry> logList;
+    private final JBScrollPane logScrollPane;
+    private final Timer pendingLogsTimer;
     private final List<LogEntry> fullLogs = new ArrayList<>();
     private final List<LogEntry> pendingLogs = new ArrayList<>();
+    private boolean disposed;
 
     public AgentMcpLogPanel(@NotNull Project project) {
         super(true);
@@ -115,7 +109,10 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         };
         logList.setCellRenderer(new CombinedLogEntryRenderer());
         logList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        // No fixed cell height — multi-line entries grow to fit their content.
+        // Rows are deliberately fixed-height and single-line. A variable-height list asks Swing
+        // to measure every retained row whenever the model changes; at 1,000 HTML rows that froze
+        // the EDT for tens of seconds (TASK-260).
+        logList.setFixedCellHeight(JBUI.scale(LIST_ROW_HEIGHT));
         logList.setVisibleRowCount(20);
         // No hover expansion popup: with large entries the popup repaints on every
         // mouse move and flickers. Full content stays reachable via double-click.
@@ -133,10 +130,13 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
             }
         });
 
-        JBScrollPane scrollPane = new JBScrollPane(logList);
-        scrollPane.setBorder(JBUI.Borders.empty());
-        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        setContent(scrollPane);
+        logScrollPane = new JBScrollPane(logList);
+        logScrollPane.setBorder(JBUI.Borders.empty());
+        logScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        setContent(logScrollPane);
+
+        pendingLogsTimer = new Timer(100, e -> processPendingLogs());
+        pendingLogsTimer.setRepeats(false);
 
         setupToolbar();
 
@@ -265,10 +265,10 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
         private void applyFilter() {
             ApplicationManager.getApplication().invokeLater(() -> {
-                logListModel.clear();
-                fullLogs.stream()
+                List<LogEntry> filteredLogs = fullLogs.stream()
                         .filter(AgentMcpLogPanel.this::matchesFilter)
-                        .forEach(logListModel::addElement);
+                        .toList();
+                logListModel.replaceAll(filteredLogs);
                 scrollToBottom();
             });
         }
@@ -285,9 +285,16 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     }
 
     private void scrollToBottom() {
-        if (!logListModel.isEmpty()) {
-            logList.ensureIndexIsVisible(logListModel.size() - 1);
-        }
+        if (logListModel.isEmpty() || !logScrollPane.isShowing()) return;
+
+        // Scrolling via the scrollbar avoids JList.ensureIndexIsVisible(), which forces a full
+        // variable-row layout pass. Run after the model event has updated the scrollbar range.
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (!disposed && logScrollPane.isShowing()) {
+                JScrollBar scrollBar = logScrollPane.getVerticalScrollBar();
+                scrollBar.setValue(scrollBar.getMaximum());
+            }
+        });
     }
 
     @Override
@@ -301,7 +308,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         }
 
         if (message.getSource() == ActivitySource.AGENT) {
-            String displayText = formatAgentActivityMessage(message, AgentMcpLogPanel::formatForRow);
+            String displayText = formatAgentActivityRow(message);
             String clipboardText = formatAgentActivityMessage(message, AgentMcpLogPanel::formatForClipboard);
             String fullContent = buildAgentActivityFullContent(message);
             LogEntry entry = new LogEntry(
@@ -322,7 +329,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     LogSource.RAW,
                     null,
                     message.getRawTrafficType(),
-                    summary,
+                    formatForListRow(summary),
                     summary,
                     content
             );
@@ -334,7 +341,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     LogSource.MCP,
                     null,
                     null,
-                    content,
+                    formatForListRow(content),
                     content,
                     content
             );
@@ -362,7 +369,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 LogSource.MCP,
                 null,
                 null,
-                content,
+                formatForListRow(content),
                 content,
                 content
         );
@@ -387,7 +394,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 LogSource.RAG,
                 null,
                 null,
-                formatRagRow(message),
+                formatForListRow(formatRagRow(message)),
                 formatRagForClipboard(message),
                 formatRagFullContent(message)
         );
@@ -396,10 +403,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
     private static @NotNull String formatRagRow(@NotNull RAGLogMessage m) {
         // Single-line summary. The multi-line bullet list of hits used to be inlined here,
-        // but the resulting tall variable-height JList cells caused continuous repaint of the
-        // tool window (visible as IDE-wide flicker) while MCP/Agent rows — always single-line —
-        // were fine. Full per-hit detail is still available via the hover tooltip and the
-        // double-click "open in editor" view.
+        // but tall variable-height JList cells caused continuous tool-window repaint. Full
+        // per-hit detail remains available through copy and the double-click editor view.
         StringBuilder sb = new StringBuilder();
         int hitCount = m.getHits() == null ? 0 : m.getHits().size();
         sb.append("RAG: \"").append(summarize(m.getQuery(), 80))
@@ -482,48 +487,64 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     }
 
     private void addToPending(LogEntry entry) {
+        boolean flushImmediately;
         synchronized (pendingLogs) {
             pendingLogs.add(entry);
-            if (pendingLogs.size() >= BATCH_SIZE) {
-                processPendingLogs();
-            } else if (pendingLogs.size() == 1) {
-                Timer timer = new Timer(100, e -> processPendingLogs());
-                timer.setRepeats(false);
-                timer.start();
-            }
+            flushImmediately = pendingLogs.size() >= BATCH_SIZE;
         }
-    }
-
-    private synchronized void processPendingLogs() {
-        if (pendingLogs.isEmpty()) {
-            return;
-        }
-        List<LogEntry> logsToProcess = new ArrayList<>(pendingLogs);
-        pendingLogs.clear();
 
         ApplicationManager.getApplication().invokeLater(() -> {
-            int excess = (fullLogs.size() + logsToProcess.size()) - maxLogEntries;
-            if (excess > 0) {
-                trimExcessLogs(excess);
+            if (disposed) return;
+            if (flushImmediately) {
+                pendingLogsTimer.stop();
+                processPendingLogs();
+            } else if (!pendingLogsTimer.isRunning()) {
+                pendingLogsTimer.start();
             }
-            fullLogs.addAll(logsToProcess);
-            for (LogEntry entry : logsToProcess) {
-                if (matchesFilter(entry)) {
-                    logListModel.addElement(entry);
-                }
-            }
-            scrollToBottom();
         });
     }
 
-    private void trimExcessLogs(int excess) {
-        int toRemove = Math.min(excess, fullLogs.size());
-        List<LogEntry> removed = new ArrayList<>(fullLogs.subList(0, toRemove));
-        fullLogs.subList(0, toRemove).clear();
-        long filteredCount = removed.stream().filter(this::matchesFilter).count();
-        for (int i = 0; i < filteredCount && !logListModel.isEmpty(); i++) {
-            logListModel.remove(0);
+    private void processPendingLogs() {
+        List<LogEntry> logsToProcess;
+        synchronized (pendingLogs) {
+            if (pendingLogs.isEmpty()) return;
+            logsToProcess = new ArrayList<>(pendingLogs);
+            pendingLogs.clear();
         }
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (disposed) return;
+            boolean followTail = isFollowingTail(
+                    logScrollPane.isShowing(),
+                    logListModel.isEmpty(),
+                    logScrollPane.getVerticalScrollBar().getModel());
+
+            int oldLogCount = fullLogs.size();
+            int excess = (oldLogCount + logsToProcess.size()) - maxLogEntries;
+            int visibleEntriesToRemove = trimOldestAndCountMatching(
+                    fullLogs, Math.min(excess, oldLogCount), this::matchesFilter);
+            int incomingEntriesToDiscard = Math.max(0, excess - oldLogCount);
+            List<LogEntry> retainedIncomingLogs = logsToProcess.subList(
+                    Math.min(incomingEntriesToDiscard, logsToProcess.size()), logsToProcess.size());
+            fullLogs.addAll(retainedIncomingLogs);
+            List<LogEntry> visibleEntriesToAdd = retainedIncomingLogs.stream()
+                    .filter(this::matchesFilter)
+                    .toList();
+            logListModel.appendAllAndRemoveFirst(visibleEntriesToAdd, visibleEntriesToRemove);
+            if (followTail) scrollToBottom();
+        });
+    }
+
+    static <E> int trimOldestAndCountMatching(@NotNull List<E> entries,
+                                               int excess,
+                                               @NotNull Predicate<E> visiblePredicate) {
+        int toRemove = Math.min(Math.max(excess, 0), entries.size());
+        int visibleCount = 0;
+        for (int i = 0; i < toRemove; i++) {
+            if (visiblePredicate.test(entries.get(i))) visibleCount++;
+        }
+        if (toRemove > 0) entries.subList(0, toRemove).clear();
+        return visibleCount;
     }
 
     static @NotNull String formatAgentActivityMessage(@NotNull ActivityMessage message,
@@ -576,6 +597,11 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
         return sb.toString();
     }
 
+    static @NotNull String formatAgentActivityRow(@NotNull ActivityMessage message) {
+        return formatForListRow(
+                formatAgentActivityMessage(message, AgentMcpLogPanel::formatForListRow));
+    }
+
     private static void formatToolRequest(@NotNull StringBuilder sb, @NotNull ActivityMessage message,
                                           @NotNull Function<String, String> contentFormatter) {
         sb.append("▶ ").append(message.getToolName());
@@ -603,36 +629,56 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
     }
 
     /**
-     * Formats a tool argument/result for the multi-line panel preview. Each input line maps to
-     * an output line (real {@code \n} separators) so the renderer can render rows that grow
-     * vertically. Each line is truncated to {@link #INLINE_PREVIEW_MAX_LINE_LEN} characters and
-     * the overall block is capped at {@link #INLINE_PREVIEW_MAX_LINES} lines with a "(N more
-     * lines)" hint; the full content remains available via tooltip and the double-click editor.
+     * Produces the bounded, single-line text stored in the Swing list model. The original content
+     * remains in {@link LogEntry#clipboardMessage()} and {@link LogEntry#fullContent()}.
+     * Processing stops as soon as the preview is full, so a multi-megabyte MCP response does not
+     * need to be copied merely to paint one row.
      */
-    static @NotNull String formatForRow(@NotNull String text) {
-        return formatForRow(text, INLINE_PREVIEW_MAX_LINE_LEN, INLINE_PREVIEW_MAX_LINES);
+    static @NotNull String formatForListRow(@NotNull String text) {
+        return formatForListRow(text, LIST_ROW_PREVIEW_MAX_LEN);
     }
 
-    static @NotNull String formatForRow(@NotNull String text, int maxLineLen, int maxLines) {
-        String[] lines = splitLines(text);
-        int total = effectiveLineCount(lines);
-        if (total == 0) return "";
+    static @NotNull String formatForListRow(@NotNull String text, int maxLen) {
+        if (text.isEmpty() || maxLen <= 0) return "";
 
-        int shown = Math.min(total, maxLines);
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < shown; i++) {
-            if (i > 0) sb.append('\n');
-            String line = lines[i];
-            if (line.length() > maxLineLen) {
-                sb.append(line, 0, maxLineLen).append('…');
+        StringBuilder preview = new StringBuilder(Math.min(text.length(), maxLen));
+        boolean pendingSpace = false;
+        boolean pendingLineBreak = false;
+        boolean truncated = false;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\r' || c == '\n') {
+                if (c == '\r' && i + 1 < text.length() && text.charAt(i + 1) == '\n') i++;
+                pendingLineBreak = !preview.isEmpty();
+                pendingSpace = false;
+            } else if (Character.isWhitespace(c)) {
+                if (!preview.isEmpty() && !pendingLineBreak) pendingSpace = true;
             } else {
-                sb.append(line);
+                int separatorLength = pendingLineBreak ? 3 : pendingSpace ? 1 : 0;
+                if (preview.length() + separatorLength + 1 > maxLen) {
+                    truncated = true;
+                    break;
+                }
+                if (pendingLineBreak) preview.append(" ↵ ");
+                else if (pendingSpace) preview.append(' ');
+                preview.append(c);
+                pendingLineBreak = false;
+                pendingSpace = false;
             }
         }
-        if (total > shown) {
-            sb.append('\n').append("… (").append(total - shown).append(" more lines)");
+
+        if (truncated) {
+            if (preview.length() == maxLen) preview.setLength(maxLen - 1);
+            preview.append('…');
         }
-        return sb.toString();
+        return preview.toString();
+    }
+
+    static boolean isFollowingTail(boolean isShowing,
+                                   boolean isEmpty,
+                                   @NotNull BoundedRangeModel scrollModel) {
+        if (!isShowing) return false;
+        return isEmpty || scrollModel.getValue() + scrollModel.getExtent() >= scrollModel.getMaximum();
     }
 
     /**
@@ -788,22 +834,40 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
 
     private void pruneLogsToMaxSize() {
         ApplicationManager.getApplication().invokeLater(() -> {
-            while (fullLogs.size() > maxLogEntries) {
-                fullLogs.remove(0);
-            }
-            while (logListModel.size() > maxLogEntries) {
-                logListModel.remove(0);
-            }
+            int excess = fullLogs.size() - maxLogEntries;
+            int visibleEntriesToRemove = trimOldestAndCountMatching(
+                    fullLogs, excess, this::matchesFilter);
+            logListModel.removeFirst(visibleEntriesToRemove);
         });
     }
 
     @Override
     public void dispose() {
+        disposed = true;
+        pendingLogsTimer.stop();
         synchronized (pendingLogs) {
             pendingLogs.clear();
         }
         fullLogs.clear();
         logListModel.clear();
+    }
+
+    /** List model operations that emit at most one event per bulk removal or addition. */
+    static final class ActivityLogListModel<E> extends DefaultListModel<E> {
+        void appendAllAndRemoveFirst(@NotNull Collection<? extends E> entries, int removeFirstCount) {
+            removeFirst(removeFirstCount);
+            if (!entries.isEmpty()) addAll(entries);
+        }
+
+        void replaceAll(@NotNull Collection<? extends E> entries) {
+            if (!isEmpty()) removeRange(0, size() - 1);
+            if (!entries.isEmpty()) addAll(entries);
+        }
+
+        void removeFirst(int count) {
+            int actualCount = Math.min(Math.max(count, 0), size());
+            if (actualCount > 0) removeRange(0, actualCount - 1);
+        }
     }
 
     private class CombinedLogEntryRenderer extends DefaultListCellRenderer {
@@ -829,8 +893,10 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 };
                 String badge = currentFilter == LogFilter.ALL ? sourceTag : "";
                 String plain = entry.timestamp() + " " + badge + entry.message();
-                label.setText(toHtmlRow(plain));
-                label.setVerticalAlignment(SwingConstants.TOP);
+                // Plain text is intentional. Swing reparses JLabel HTML on both setText and
+                // setForeground; doing that for every retained row caused the TASK-260 freezes.
+                label.setText(plain);
+                label.setVerticalAlignment(SwingConstants.CENTER);
                 // No hover tooltip: large log entries produce a huge popup that flickers
                 // as the mouse moves. Double-click opens the full content in an editor.
                 label.setToolTipText(null);
@@ -840,15 +906,6 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 }
             }
             return label;
-        }
-
-        private @NotNull String toHtmlRow(@NotNull String text) {
-            String escaped = text
-                    .replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace("\n", "<br>");
-            return "<html><pre style=\"font-family:monospace;margin:0;padding:0\">" + escaped + "</pre></html>";
         }
 
         private Color resolveEntryColor(LogEntry entry) {
