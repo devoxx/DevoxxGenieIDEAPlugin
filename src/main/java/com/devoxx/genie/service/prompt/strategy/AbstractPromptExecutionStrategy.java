@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.SemanticFile;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
@@ -18,6 +19,7 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
@@ -270,7 +272,21 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
                       .append(filesContext)
                       .append("</attached_files>\n\n");
         }
-        
+
+        // Attached images never reach filesContext: MessageCreationService.addImages() puts them into
+        // ImageContent, which CLI/ACP runners cannot transport (they only receive plain text). The
+        // image files are already on disk, so hand the agent their paths and let it read them itself.
+        List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(project, context.getTabId());
+        if (!imageFiles.isEmpty()) {
+            fullPrompt.append("<attached_images>\n");
+            for (VirtualFile imageFile : imageFiles) {
+                fullPrompt.append(imageFile.getPath()).append("\n");
+            }
+            fullPrompt.append("</attached_images>\n")
+                      .append("The user attached the image file(s) listed above. ")
+                      .append("Read them with your file-reading tool before answering.\n\n");
+        }
+
         // Add the user prompt
         fullPrompt.append(context.getUserPrompt());
         
