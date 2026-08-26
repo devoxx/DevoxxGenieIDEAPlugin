@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.14.2 - 2026-08-26
+
+A patch release for one freeze: the Activity Log tool window could lock up the IDE after a busy agent or MCP session, and the cost was paid by every window in the IDE, not just the log.
+
+### Fixed
+- fix(ui): **the Activity Log no longer freezes the IDE under sustained MCP and agent traffic**. The panel's `JList` was deliberately variable-height so multi-line tool output could grow its row, and each row's text was set as Swing HTML. Both decisions compound: a variable-height list has no cached row geometry, so Swing re-measures *every retained row* on each model change, and `JLabel` reparses its HTML on **both** `setText` and `setForeground` — which `DefaultListCellRenderer` calls for each cell, each pass. With 1,000 retained entries, some of them multi-megabyte MCP responses, a single new log line meant a full HTML re-layout of the whole backlog on the EDT; entries also arrived one `addElement`/`remove` at a time, each firing its own model event and its own layout pass, and `scrollToBottom` called `ensureIndexIsVisible`, which forces exactly the variable-row layout being avoided. Under a busy agent run that added up to tens of seconds of frozen EDT — the whole IDE, since it is one thread. Rows are now **fixed-height (24px) and single-line**: `formatForListRow` collapses a payload into a bounded 500-character preview with `↵` markers where line breaks were, and stops scanning as soon as the preview is full, so a multi-megabyte response is never copied merely to paint one row. The renderer sets plain text instead of HTML, a new `ActivityLogListModel` coalesces retention trimming and filter changes into **one** bulk event per update (`appendAllAndRemoveFirst`, `replaceAll`, `removeFirst`) instead of one per entry, and scrolling moves the scrollbar directly and **only when you are already at the bottom** — `isFollowingTail` leaves the view alone if you have scrolled up to read something, where before every new entry yanked you back to the tail. The pending-log timer is now a single reusable non-repeating `Timer` started on the EDT rather than a fresh one per batch, and it is stopped on dispose alongside a `disposed` guard so queued `invokeLater` work cannot touch a closed panel. Two user-visible changes come with this: **rows are single-line previews rather than growing multi-line blocks**, and **default retention drops from 1,000 to 250 entries** — the complete, untruncated payload is still one copy or double-click away, in the editor view. A new `AgentMcpLogPanelPerformanceTest` covers large payloads, pruning arithmetic under an active filter, and the tail-follow decision (task-260, #1279)
+
+### Contributors
+- @stephanj
+
 ## v1.14.1 - 2026-08-25
 
 A patch release for one crash: a single fenced code block could stop the whole chat panel from rendering, and nothing about the failure pointed at the code block.

@@ -15,7 +15,7 @@ plugins {
 }
 
 group = "com.devoxx.genie"
-version = "1.14.1"
+version = "1.14.2"
 
 repositories {
     mavenCentral()
