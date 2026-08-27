@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.strategy;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.SemanticFile;
+import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
@@ -18,9 +19,13 @@ import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -247,7 +252,7 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
                 continue;
             }
             if (msg instanceof UserMessage userMsg) {
-                history.append("[user]: ").append(userMsg.singleText()).append("\n");
+                history.append("[user]: ").append(historyTextOf(userMsg)).append("\n");
             } else if (msg instanceof AiMessage aiMsg) {
                 history.append("[assistant]: ").append(aiMsg.text()).append("\n");
             }
@@ -270,11 +275,56 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
                       .append(filesContext)
                       .append("</attached_files>\n\n");
         }
-        
+
+        // Attached images never reach filesContext: MessageCreationService.addImages() puts them into
+        // ImageContent, which CLI/ACP runners cannot transport (they only receive plain text). The
+        // image files are already on disk, so hand the agent their paths and let it read them itself.
+        List<VirtualFile> imageFiles = FileListManager.getInstance().getImageFiles(project, context.getTabId());
+        if (!imageFiles.isEmpty()) {
+            fullPrompt.append("<attached_images>\n");
+            for (VirtualFile imageFile : imageFiles) {
+                fullPrompt.append(imageFile.getPath()).append("\n");
+            }
+            fullPrompt.append("</attached_images>\n")
+                      .append("The user attached the image file(s) listed above. ")
+                      .append("Read them with your file-reading tool before answering.\n\n");
+        }
+
         // Add the user prompt
         fullPrompt.append(context.getUserPrompt());
         
         return fullPrompt.toString();
+    }
+
+    /**
+     * Plain-text rendering of a user message for history replay (issue #1282).
+     * <p>
+     * Image prompts are stored in memory as multimodal messages ({@code TextContent} +
+     * {@code ImageContent}); {@link UserMessage#singleText()} throws on those, which used to
+     * make every follow-up CLI/ACP prompt in the conversation fail. CLI/ACP runners only take
+     * text, so the text parts are joined and each image is replaced by a marker instead of
+     * leaking its base64 payload into the prompt.
+     */
+    static @NotNull String historyTextOf(@NotNull UserMessage userMsg) {
+        if (userMsg.hasSingleText()) {
+            return userMsg.singleText();
+        }
+        StringBuilder text = new StringBuilder();
+        int images = 0;
+        for (Content content : userMsg.contents()) {
+            if (content instanceof TextContent textContent) {
+                if (!text.isEmpty()) {
+                    text.append('\n');
+                }
+                text.append(textContent.text());
+            } else if (content instanceof ImageContent) {
+                images++;
+            }
+        }
+        for (int i = 0; i < images; i++) {
+            text.append(text.isEmpty() ? "" : " ").append("[image attached]");
+        }
+        return text.toString();
     }
 
     /**
