@@ -267,9 +267,9 @@ dependencies {
     // only negotiates 2026-07-28 vs 2025-11-25 — both Streamable HTTP, both POST-to-single-URL —
     // so SSE-only endpoints such as the JetBrains IDE MCP server would again fail the initialize
     // POST with HTTP 405 (issue #1151). Do not bump without restoring an SSE transport first.
-    val lg4j_version = "1.18.1"
-    val lg4j_beta_version = "1.18.1-beta28"
-    val awsSdkVersion = "2.53.1"
+    val lg4j_version = "1.19.0"
+    val lg4j_beta_version = "1.19.0-beta29"
+    val awsSdkVersion = "2.54.2"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.2.1"
     val dockerJavaVersion = "3.7.1"
