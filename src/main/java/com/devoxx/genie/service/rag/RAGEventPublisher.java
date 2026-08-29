@@ -57,6 +57,8 @@ public final class RAGEventPublisher {
                     .score(r.score())
                     .preview(preview)
                     .chunkLength(content.length())
+                    .preRerankRank(r.preRerankRank())
+                    .rerankerScore(r.rerankerScore())
                     .build());
         }
 
@@ -66,7 +68,15 @@ public final class RAGEventPublisher {
         log.info("RAG retrieval: query=\"{}\" hits={} duration={}ms",
                 summarizeQuery(query), results.size(), durationMs);
         for (SearchResult r : results) {
-            log.info("RAG hit  score={}  file={}", formatScore(r.score()), r.filePath());
+            if (r.rerankerScore() != null) {
+                log.info("RAG hit  score={}  rerank={}  preRank={}  file={}",
+                        formatScore(r.score()),
+                        formatScore(r.rerankerScore()),
+                        r.preRerankRank() == null ? "n/a" : r.preRerankRank(),
+                        r.filePath());
+            } else {
+                log.info("RAG hit  score={}  file={}", formatScore(r.score()), r.filePath());
+            }
         }
 
         try {

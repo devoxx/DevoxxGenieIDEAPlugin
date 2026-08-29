@@ -95,12 +95,20 @@ public class RAGSettingsHandler implements ActionListener {
             handleChromaDBAction(action);
         } else if (status.validatorType() == ValidatorType.NOMIC) {
             handleNomicAction(action);
+        } else if (status.validatorType() == ValidatorType.RERANKER) {
+            handleRerankerAction(action);
         }
     }
 
     private void handleNomicAction(@NotNull ValidationActionType action) {
         if (action == ValidationActionType.PULL_NOMIC) {
             pullNomicModel();
+        }
+    }
+
+    private void handleRerankerAction(@NotNull ValidationActionType action) {
+        if (action == ValidationActionType.PULL_RERANKER) {
+            pullRerankerModel();
         }
     }
 
@@ -124,6 +132,8 @@ public class RAGSettingsHandler implements ActionListener {
             }
         } else if (validatorType == ValidatorType.NOMIC) {
             handleNomicAction(action);
+        } else if (validatorType == ValidatorType.RERANKER) {
+            handleRerankerAction(action);
         }
     }
 
@@ -154,6 +164,47 @@ public class RAGSettingsHandler implements ActionListener {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         NotificationUtil.sendNotification(project, "Failed to pull Nomic Embed model: " +
                                 e.getMessage());
+                        performValidation();
+                    }, ModalityState.any());
+                } finally {
+                    validationInProgress = false;
+                }
+            }
+        }.queue();
+    }
+
+    private void pullRerankerModel() {
+        String modelName = com.devoxx.genie.ui.settings.DevoxxGenieStateService.getInstance().getRerankerModelName();
+        if (modelName == null || modelName.isEmpty()) {
+            validationInProgress = false;
+            NotificationUtil.sendNotification(project, "Reranker model name is not set");
+            return;
+        }
+        new Task.Backgroundable(project, "Pulling Reranker Model " + modelName) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                indicator.setIndeterminate(false);
+                try {
+                    OllamaModelService.getInstance().pullModel(modelName, status -> {
+                        if (status.startsWith("Downloading:")) {
+                            try {
+                                double progress = Double.parseDouble(status.substring(12, status.length() - 1));
+                                indicator.setFraction(progress / 100.0);
+                                indicator.setText(status);
+                            } catch (NumberFormatException ignored) {}
+                        } else {
+                            indicator.setText(status);
+                        }
+                    });
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        NotificationUtil.sendNotification(project,
+                                "Reranker model " + modelName + " pulled successfully");
+                        performValidation();
+                    }, ModalityState.any());
+                } catch (IOException e) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        NotificationUtil.sendNotification(project,
+                                "Failed to pull reranker model " + modelName + ": " + e.getMessage());
                         performValidation();
                     }, ModalityState.any());
                 } finally {
