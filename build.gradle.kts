@@ -267,15 +267,15 @@ dependencies {
     // only negotiates 2026-07-28 vs 2025-11-25 — both Streamable HTTP, both POST-to-single-URL —
     // so SSE-only endpoints such as the JetBrains IDE MCP server would again fail the initialize
     // POST with HTTP 405 (issue #1151). Do not bump without restoring an SSE transport first.
-    val lg4j_version = "1.18.1"
-    val lg4j_beta_version = "1.18.1-beta28"
-    val awsSdkVersion = "2.53.1"
+    val lg4j_version = "1.19.0"
+    val lg4j_beta_version = "1.19.0-beta29"
+    val awsSdkVersion = "2.54.6"
     val retrofitVersion = "3.0.0"
-    val sqliteVersion = "3.53.2.1"
+    val sqliteVersion = "3.53.4.0"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
     val commonmarkVersion = "0.30.0"
-    val jsoupVersion = "1.23.1"
+    val jsoupVersion = "1.23.2"
     // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
     // Its CMP-1.9.2-compiled code runs on the platform's CMP 1.10.0 runtime via Compose's
