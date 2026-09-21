@@ -5,7 +5,6 @@ import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.ui.components.JBScrollPane;
-import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import lombok.extern.slf4j.Slf4j;
@@ -180,11 +179,7 @@ public class StdioTransportPanel implements TransportPanel {
                 .logEvents(true) // Enable logging to capture errors in the logs
                 .build();
         
-        return new DefaultMcpClient.Builder()
-                .clientName("DevoxxGenie")
-                .protocolVersion("2024-11-05")
-                .transport(transport)
-                .build();
+        return MCPExecutionService.newClientBuilder(transport).build();
     }
 
     @Override

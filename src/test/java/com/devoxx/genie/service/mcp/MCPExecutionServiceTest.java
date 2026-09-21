@@ -4,10 +4,15 @@ import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
+import dev.langchain4j.mcp.client.McpCallContext;
 import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpOperationHandler;
 import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
+import dev.langchain4j.mcp.protocol.McpClientMessage;
+import dev.langchain4j.mcp.protocol.McpClientMethod;
+import dev.langchain4j.mcp.protocol.McpInitializeParams;
+import dev.langchain4j.mcp.protocol.McpInitializeRequest;
 import dev.langchain4j.service.tool.ToolProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -355,10 +361,10 @@ class MCPExecutionServiceTest {
     class CreateNewClient {
 
         @Test
-        void routesToHttpSseForHttpSseTransport() {
+        void routesLegacyHttpSseToStreamableHttp() {
             MCPServer server = httpSseServer("sse-server", null);
 
-            // With null URL, initHttpSseClient returns null (URL validation)
+            // HTTP_SSE is an alias for HTTP; with null URL, initHttpClient returns null (URL validation)
             McpClient result = MCPExecutionService.createNewClient(server);
 
             assertThat(result).isNull();
@@ -386,16 +392,16 @@ class MCPExecutionServiceTest {
         }
     }
 
-    // ─── initHttpSseClient ─────────────────────────────────────
+    // ─── initHttpClient (legacy HTTP_SSE alias) ────────────────
 
     @Nested
-    class InitHttpSseClient {
+    class InitHttpClientForLegacyHttpSse {
 
         @Test
         void returnsNullForNullUrl() {
             MCPServer server = httpSseServer("sse", null);
 
-            McpClient result = MCPExecutionService.initHttpSseClient(server);
+            McpClient result = MCPExecutionService.initHttpClient(server);
 
             assertThat(result).isNull();
         }
@@ -404,7 +410,7 @@ class MCPExecutionServiceTest {
         void returnsNullForEmptyUrl() {
             MCPServer server = httpSseServer("sse", "");
 
-            McpClient result = MCPExecutionService.initHttpSseClient(server);
+            McpClient result = MCPExecutionService.initHttpClient(server);
 
             assertThat(result).isNull();
         }
@@ -413,22 +419,22 @@ class MCPExecutionServiceTest {
         void returnsNullForBlankUrl() {
             MCPServer server = httpSseServer("sse", "   ");
 
-            McpClient result = MCPExecutionService.initHttpSseClient(server);
+            McpClient result = MCPExecutionService.initHttpClient(server);
 
             assertThat(result).isNull();
         }
     }
 
-    // ─── initStreamableHttpClient ──────────────────────────────
+    // ─── initHttpClient ────────────────────────────────────────
 
     @Nested
-    class InitStreamableHttpClient {
+    class InitHttpClient {
 
         @Test
         void returnsNullForNullUrl() {
             MCPServer server = httpServer("http", null);
 
-            McpClient result = MCPExecutionService.initStreamableHttpClient(server);
+            McpClient result = MCPExecutionService.initHttpClient(server);
 
             assertThat(result).isNull();
         }
@@ -437,7 +443,7 @@ class MCPExecutionServiceTest {
         void returnsNullForEmptyUrl() {
             MCPServer server = httpServer("http", "");
 
-            McpClient result = MCPExecutionService.initStreamableHttpClient(server);
+            McpClient result = MCPExecutionService.initHttpClient(server);
 
             assertThat(result).isNull();
         }
@@ -446,7 +452,7 @@ class MCPExecutionServiceTest {
         void returnsNullForBlankUrl() {
             MCPServer server = httpServer("http", "   ");
 
-            McpClient result = MCPExecutionService.initStreamableHttpClient(server);
+            McpClient result = MCPExecutionService.initHttpClient(server);
 
             assertThat(result).isNull();
         }
@@ -563,20 +569,13 @@ class MCPExecutionServiceTest {
         }
     }
 
-    // ─── Transport selection (issue #1151 regression guard) ────────────────
+    // ─── Transport selection ───────────────────────────────────────────────
 
     /**
-     * Regression guard for issue #1151.
-     * <p>
-     * An {@code HTTP_SSE} server must get the SSE-based {@link HttpMcpTransport}, which opens the
-     * event stream with a GET on {@code /sse}. Switching it to {@code StreamableHttpMcpTransport}
-     * compiles cleanly but breaks every SSE-only endpoint — the JetBrains IDE MCP server on
-     * {@code http://127.0.0.1:64342/sse} rejects the initialize POST with HTTP 405, which is
-     * exactly the failure reported in #1151.
-     * <p>
-     * This also pins the langchain4j version: 1.19.0 (upstream PR #5881) deleted
-     * {@code HttpMcpTransport} outright, so bumping past 1.18.1 must not be done without first
-     * restoring an SSE transport.
+     * langchain4j-mcp 1.19+ removed the legacy 2024-11-05 HTTP+SSE transport ({@code HttpMcpTransport})
+     * with no replacement. {@code HTTP_SSE} is therefore kept only as an alias for persisted
+     * configurations and is served by the streamable HTTP transport. SSE-only servers (issue #1151)
+     * are no longer supported.
      */
     @Nested
     class TransportSelection {
@@ -587,52 +586,159 @@ class MCPExecutionServiceTest {
         }
 
         @Test
-        void httpSseServerUsesSseTransportNotStreamable() throws Exception {
-            try (McpTransport built = MCPExecutionService.buildHttpSseTransport(
+        void legacyHttpSseServerIsAliasedToStreamableTransport() throws Exception {
+            try (McpTransport built = MCPExecutionService.buildHttpTransport(
                     httpSseServer("jetbrains", "http://127.0.0.1:64342/sse"))) {
 
                 assertThat(built)
-                        .as("HTTP_SSE must use the SSE-based HttpMcpTransport; the streamable transport "
-                            + "POSTs to the single URL and SSE-only servers answer 405 (issue #1151)")
-                        .isInstanceOf(HttpMcpTransport.class);
-            }
-        }
-
-        @Test
-        void httpSseServerIsNotGivenTheStreamableTransport() throws Exception {
-            try (McpTransport built = MCPExecutionService.buildHttpSseTransport(
-                    httpSseServer("jetbrains", "http://127.0.0.1:64342/sse"))) {
-
-                assertThat(built)
-                        .as("issue #1151: the streamable transport must never serve an HTTP_SSE server")
-                        .isNotInstanceOf(StreamableHttpMcpTransport.class);
-            }
-        }
-
-        @Test
-        void httpServerUsesStreamableTransport() throws Exception {
-            try (McpTransport built = MCPExecutionService.buildStreamableHttpTransport(
-                    httpServer("remote", "https://example.com/mcp"))) {
-
-                assertThat(built)
-                        .as("HTTP (non-SSE) servers use the streamable HTTP transport")
+                        .as("HTTP_SSE is a legacy alias: langchain4j 1.19+ has no SSE transport, "
+                            + "so it must be served by the streamable HTTP transport")
                         .isInstanceOf(StreamableHttpMcpTransport.class);
             }
         }
 
         @Test
-        void httpSseTransportCarriesCustomHeaders() throws Exception {
+        void httpServerUsesStreamableTransport() throws Exception {
+            try (McpTransport built = MCPExecutionService.buildHttpTransport(
+                    httpServer("remote", "https://example.com/mcp"))) {
+
+                assertThat(built)
+                        .as("HTTP servers use the streamable HTTP transport")
+                        .isInstanceOf(StreamableHttpMcpTransport.class);
+            }
+        }
+
+        @Test
+        void httpTransportCarriesCustomHeaders() throws Exception {
             MCPServer server = MCPServer.builder()
-                    .name("jetbrains")
+                    .name("remote")
                     .enabled(true)
-                    .transportType(MCPServer.TransportType.HTTP_SSE)
-                    .url("http://127.0.0.1:64342/sse")
+                    .transportType(MCPServer.TransportType.HTTP)
+                    .url("https://example.com/mcp")
                     .headers(Map.of("Authorization", "Bearer token"))
                     .build();
 
-            try (McpTransport built = MCPExecutionService.buildHttpSseTransport(server)) {
-                assertThat(built).isInstanceOf(HttpMcpTransport.class);
+            try (McpTransport built = MCPExecutionService.buildHttpTransport(server)) {
+                assertThat(built).isInstanceOf(StreamableHttpMcpTransport.class);
             }
+        }
+    }
+
+    // ─── Protocol negotiation ──────────────────────────────────────────────
+
+    /**
+     * The client must not pin the protocol version: langchain4j 1.20 auto-detects the MCP
+     * protocol by probing {@code server/discover} (2026-07-28) and falling back to the legacy
+     * {@code initialize} handshake (2025-11-25). Pinning {@code 2024-11-05} skips both.
+     */
+    @Nested
+    class ProtocolNegotiation {
+
+        @BeforeEach
+        void stubTimeout() {
+            when(stateService.getTimeout()).thenReturn(60);
+        }
+
+        @Test
+        void clientProbesModernProtocolThenFallsBackToLegacyInitialize() {
+            RecordingTransport transport = new RecordingTransport();
+
+            assertThatThrownBy(() -> MCPExecutionService.newClientBuilder(transport).build())
+                    .isInstanceOf(RuntimeException.class);
+
+            assertThat(transport.sent)
+                    .as("first request must be the 2026-07-28 server/discover probe")
+                    .isNotEmpty();
+            assertThat(transport.sent.get(0).method).isEqualTo(McpClientMethod.SERVER_DISCOVER);
+
+            assertThat(transport.sent)
+                    .as("after the probe fails the client falls back to a legacy initialize")
+                    .hasSize(2);
+            McpClientMessage fallback = transport.sent.get(1);
+            assertThat(fallback.method).isEqualTo(McpClientMethod.INITIALIZE);
+            McpInitializeParams params = (McpInitializeParams) ((McpInitializeRequest) fallback).getParams();
+            assertThat(params.getProtocolVersion()).isEqualTo("2025-11-25");
+        }
+
+        @Test
+        void protocolDetectionTimeoutFollowsUserTimeout() {
+            when(stateService.getTimeout()).thenReturn(1);
+            // The probe is never answered; only the configured detection timeout can end it.
+            RecordingTransport transport = new RecordingTransport(McpClientMethod.SERVER_DISCOVER);
+
+            long started = System.nanoTime();
+            assertThatThrownBy(() -> MCPExecutionService.newClientBuilder(transport).build())
+                    .isInstanceOf(RuntimeException.class);
+            long elapsedMillis = (System.nanoTime() - started) / 1_000_000;
+
+            assertThat(transport.sent)
+                    .as("after the probe times out the client still falls back to legacy initialize")
+                    .hasSize(2);
+            assertThat(elapsedMillis)
+                    .as("detection must give up after the user's 1s timeout, not the library default")
+                    .isBetween(900L, 10_000L);
+        }
+    }
+
+    /**
+     * Transport that records every outgoing request and answers each with a failed future,
+     * so the client walks the whole auto-detection path without a network. Requests whose
+     * method is in {@code neverAnswered} get a future that never completes instead.
+     */
+    private static final class RecordingTransport implements McpTransport {
+        final List<McpClientMessage> sent = new ArrayList<>();
+        private final Set<McpClientMethod> neverAnswered;
+
+        RecordingTransport(McpClientMethod... neverAnswered) {
+            this.neverAnswered = Set.of(neverAnswered);
+        }
+
+        private CompletableFuture<String> record(McpClientMessage message) {
+            sent.add(message);
+            return neverAnswered.contains(message.method)
+                    ? new CompletableFuture<>()
+                    : CompletableFuture.failedFuture(new RuntimeException("recording transport"));
+        }
+
+        @Override
+        public void start(McpOperationHandler handler) {
+        }
+
+        @Override
+        public CompletableFuture<String> sendInitializeRequest(McpInitializeRequest request) {
+            return record(request);
+        }
+
+        @Override
+        public CompletableFuture<String> sendRequest(McpCallContext context) {
+            return record(context.message());
+        }
+
+        @Override
+        public CompletableFuture<String> sendRequest(McpClientMessage message) {
+            return record(message);
+        }
+
+        @Override
+        public void sendMessage(McpCallContext context) {
+            sent.add(context.message());
+        }
+
+        @Override
+        public void sendMessage(McpClientMessage message) {
+            sent.add(message);
+        }
+
+        @Override
+        public void checkHealth() {
+        }
+
+        @Override
+        public void onFailure(Runnable runnable) {
+        }
+
+        @Override
+        public void close() {
         }
     }
 }

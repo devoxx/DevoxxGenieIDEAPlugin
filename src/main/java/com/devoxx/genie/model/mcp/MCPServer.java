@@ -20,8 +20,17 @@ public class MCPServer {
      */
     public enum TransportType {
         STDIO,    // Standard I/O communication with a subprocess
-        HTTP_SSE, // HTTP Server-Sent Events for communication (deprecated)
-        HTTP      // Streamable HTTP
+        /**
+         * Legacy 2024-11-05 HTTP+SSE transport. Kept only so persisted configurations still load;
+         * langchain4j-mcp 1.19+ has no SSE transport, so it is served as {@link #HTTP}.
+         */
+        HTTP_SSE,
+        HTTP;     // Streamable HTTP
+
+        /** The transport actually used at runtime ({@code HTTP_SSE} resolves to {@code HTTP}). */
+        public TransportType effective() {
+            return this == HTTP_SSE ? HTTP : this;
+        }
     }
     
     @Builder.Default

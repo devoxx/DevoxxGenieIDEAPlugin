@@ -14,7 +14,6 @@ import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.HttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import dev.langchain4j.service.tool.ToolProvider;
@@ -36,7 +35,6 @@ import java.util.function.Consumer;
 public class MCPExecutionService implements Disposable {
 
     public static final String DEVOXX_GENIE = "DevoxxGenie";
-    public static final String PROTOCOL_VERSION = "2024-11-05";
 
     /**
      * Strategy for creating MCP clients from server configurations.
@@ -248,10 +246,8 @@ public class MCPExecutionService implements Disposable {
      */
     @Nullable
     static McpClient createNewClient(@NotNull MCPServer mcpServer) {
-        if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP_SSE) {
-            return initHttpSseClient(mcpServer);
-        } else if (mcpServer.getTransportType() == MCPServer.TransportType.HTTP) {
-            return initStreamableHttpClient(mcpServer);
+        if (mcpServer.getTransportType().effective() == MCPServer.TransportType.HTTP) {
+            return initHttpClient(mcpServer);
         } else {
             List<String> commandList = new ArrayList<>();
             commandList.add(mcpServer.getCommand());
@@ -264,43 +260,21 @@ public class MCPExecutionService implements Disposable {
     }
 
     /**
-     * Builds the transport for an {@code HTTP_SSE} server, without opening a connection.
+     * Builds the transport for an {@code HTTP} server (and the legacy {@code HTTP_SSE} alias),
+     * without opening a connection.
      * <p>
-     * This must stay on the SSE-based {@link HttpMcpTransport}, which opens the event stream
-     * via a GET on {@code /sse}. It must NOT be switched to {@code StreamableHttpMcpTransport}:
-     * that transport POSTs to the single URL, and SSE-only endpoints such as the JetBrains IDE
-     * MCP server reject the initialize POST with HTTP 405 (see issue #1151).
+     * The subsidiary SSE channel is enabled so servers that push notifications over a separate
+     * GET event stream (the 2025-03-26 style) still deliver them.
      * <p>
-     * Package-private for testing.
      */
-    @SuppressWarnings({"deprecation", "removal"}) // SSE transport is required for SSE-only servers (issue #1151)
-    static McpTransport buildHttpSseTransport(@NotNull MCPServer mcpServer) {
-        HttpMcpTransport.Builder transportBuilder = new HttpMcpTransport.Builder()
-                .sseUrl(mcpServer.getUrl())
-                .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
-                .logRequests(MCPService.isDebugLogsEnabled())
-                .logResponses(MCPService.isDebugLogsEnabled())
-                .logger(new MCPTrafficLogger(createTrafficConsumer()));
-
-        if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
-            transportBuilder.customHeaders(mcpServer.getHeaders());
-        }
-
-        return transportBuilder.build();
-    }
-
-    /**
-     * Builds the transport for an {@code HTTP} (streamable) server, without opening a connection.
-     * <p>
-     * Package-private for testing.
-     */
-    static McpTransport buildStreamableHttpTransport(@NotNull MCPServer mcpServer) {
+    public static McpTransport buildHttpTransport(@NotNull MCPServer mcpServer) {
         StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
                 .url(mcpServer.getUrl())
-                .timeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
+                .timeout(Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
                 .logRequests(MCPService.isDebugLogsEnabled())
                 .logResponses(MCPService.isDebugLogsEnabled())
-                .logger(new MCPTrafficLogger(createTrafficConsumer()));
+                .logger(new MCPTrafficLogger(createTrafficConsumer()))
+                .subsidiaryChannel(true);
 
         if (mcpServer.getHeaders() != null && !mcpServer.getHeaders().isEmpty()) {
             transportBuilder.customHeaders(mcpServer.getHeaders());
@@ -310,41 +284,21 @@ public class MCPExecutionService implements Disposable {
     }
 
     /**
-     * Helper method to initialize an HTTP SSE client with error handling.
-     * Package-private for testing.
-     *
-     * @param mcpServer The MCP server configuration
-     * @return An initialized MCP client or null if creation fails
+     * Common client configuration for every transport.
+     * <p>
+     * The protocol version is deliberately not pinned: langchain4j auto-detects it by probing
+     * {@code server/discover} (2026-07-28) and falling back to the legacy {@code initialize}
+     * handshake (2025-11-25). The probe is bounded by the user's timeout so a slow server is not
+     * misclassified as legacy after the (longer) default detection timeout.
      */
-    @Nullable
-    @SuppressWarnings({"deprecation", "removal"}) // SSE transport is required for SSE-only servers (issue #1151)
-    static McpClient initHttpSseClient(@NotNull MCPServer mcpServer) {
-        try {
-            String sseUrl = mcpServer.getUrl();
-            if (sseUrl == null || sseUrl.trim().isEmpty()) {
-                log.error("SSE URL cannot be empty for HTTP SSE transport");
-                MCPService.logDebug("SSE URL cannot be empty for HTTP SSE transport");
-                return null;
-            }
-
-            MCPService.logDebug("Initializing SSE transport for HTTP_SSE config with URL: " + sseUrl);
-
-            McpTransport transport = buildHttpSseTransport(mcpServer);
-
-            // Create and return the client
-            return new DefaultMcpClient.Builder()
-                    .clientName(DEVOXX_GENIE)
-                    .protocolVersion(PROTOCOL_VERSION)
-                    .transport(transport)
-                    .logHandler(new MCPLogMessageHandler())
-                    .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Failed to initialize HTTP SSE client with URL: {}", mcpServer.getUrl(), e);
-            MCPService.logDebug("Failed to initialize HTTP SSE client with URL: " + mcpServer.getUrl() + " - " + e.getMessage());
-            return null;
-        }
+    public static DefaultMcpClient.Builder newClientBuilder(@NotNull McpTransport transport) {
+        Duration timeout = Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout());
+        return new DefaultMcpClient.Builder()
+                .clientName(DEVOXX_GENIE)
+                .transport(transport)
+                .logHandler(new MCPLogMessageHandler())
+                .protocolDetectionTimeout(timeout)
+                .toolExecutionTimeout(timeout);
     }
 
     /**
@@ -355,7 +309,7 @@ public class MCPExecutionService implements Disposable {
      * @return An initialized MCP client or null if creation fails
      */
     @Nullable
-    static McpClient initStreamableHttpClient(@NotNull MCPServer mcpServer) {
+    static McpClient initHttpClient(@NotNull MCPServer mcpServer) {
         try {
             String url = mcpServer.getUrl();
             if (url == null || url.trim().isEmpty()) {
@@ -366,16 +320,9 @@ public class MCPExecutionService implements Disposable {
 
             MCPService.logDebug("Initializing streamable HTTP transport with URL: " + url);
 
-            McpTransport transport = buildStreamableHttpTransport(mcpServer);
+            McpTransport transport = buildHttpTransport(mcpServer);
 
-            // Create and return the client
-            return new DefaultMcpClient.Builder()
-                    .clientName(DEVOXX_GENIE)
-                    .protocolVersion(PROTOCOL_VERSION)
-                    .transport(transport)
-                    .logHandler(new MCPLogMessageHandler())
-                    .toolExecutionTimeout(java.time.Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
-                    .build();
+            return newClientBuilder(transport).build();
 
         } catch (Exception e) {
             log.error("Failed to initialize streamable HTTP client with URL: {}", mcpServer.getUrl(), e);
@@ -422,14 +369,7 @@ public class MCPExecutionService implements Disposable {
                     .logger(new MCPTrafficLogger(createTrafficConsumer()))
                     .build();
 
-            // Create and return the client
-            return new DefaultMcpClient.Builder()
-                    .clientName(DEVOXX_GENIE)
-                    .protocolVersion(PROTOCOL_VERSION)
-                    .transport(transport)
-                    .logHandler(new MCPLogMessageHandler())
-                    .toolExecutionTimeout(Duration.ofSeconds(DevoxxGenieStateService.getInstance().getTimeout()))
-                    .build();
+            return newClientBuilder(transport).build();
 
         } catch (Exception e) {
             log.error("Failed to initialize stdio client with command: {}", command, e);

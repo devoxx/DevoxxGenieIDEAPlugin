@@ -63,13 +63,19 @@ The Marketplace pulls from the official [MCP server registry](https://modelconte
 
 ### Transport Types
 
-DevoxxGenie supports three MCP transport types:
+DevoxxGenie supports two MCP transport types:
 
 | Transport | Description | Use Case |
 |-----------|-------------|----------|
 | **STDIO** | Communicates via standard input/output with a local process | npm packages, Docker containers, local scripts |
-| **HTTP SSE** | HTTP with Server-Sent Events for streaming | Remote servers with streaming support |
-| **HTTP** | Standard HTTP requests | Simple remote servers |
+| **HTTP** | Streamable HTTP (MCP 2025-03-26 and later), with automatic protocol version negotiation | Remote servers |
+
+:::note Legacy HTTP+SSE servers
+The original HTTP+SSE transport (MCP 2024-11-05, a `GET /sse` event stream plus a separate POST
+endpoint) is no longer supported. Previously saved **HTTP SSE** servers are kept and connected over
+Streamable HTTP; servers that only speak the legacy SSE protocol will fail to connect and need to be
+upgraded to Streamable HTTP.
+:::
 
 ### Adding a Server Manually
 
@@ -121,11 +127,11 @@ The import/export follows the Anthropic/Claude Desktop standard format:
 }
 ```
 
-DevoxxGenie also supports extensions for transport type (`stdio`, `http`, `http-sse`), enabled status, custom headers, and URLs for HTTP transports.
+DevoxxGenie also supports extensions for transport type (`stdio`, `http`; `http-sse` is still accepted and treated as `http`), enabled status, custom headers, and URLs for HTTP transports.
 
 ### Custom HTTP Headers
 
-For HTTP and HTTP SSE transport types, you can configure custom HTTP headers. This is useful for authenticated MCP servers that require API keys or bearer tokens:
+For the HTTP transport type, you can configure custom HTTP headers. This is useful for authenticated MCP servers that require API keys or bearer tokens:
 
 ```
 Authorization: Bearer your-api-key

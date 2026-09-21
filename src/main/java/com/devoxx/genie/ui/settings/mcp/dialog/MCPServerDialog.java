@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.settings.mcp.dialog;
 
 import com.devoxx.genie.model.mcp.MCPServer;
-import com.devoxx.genie.ui.settings.mcp.dialog.transport.HttpSseTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.StdioTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.StreamableHttpTransportPanel;
 import com.devoxx.genie.ui.settings.mcp.dialog.transport.TransportPanel;
@@ -31,7 +30,9 @@ import java.util.List;
 @Slf4j
 public class MCPServerDialog extends DialogWrapper {
     private final JTextField nameField = new JTextField();
-    private final JComboBox<MCPServer.TransportType> transportTypeCombo = new JComboBox<>(MCPServer.TransportType.values());
+    // HTTP_SSE is a legacy alias for HTTP and is not offered for new servers
+    private final JComboBox<MCPServer.TransportType> transportTypeCombo =
+            new JComboBox<>(new MCPServer.TransportType[]{MCPServer.TransportType.STDIO, MCPServer.TransportType.HTTP});
     private final JButton testConnectionButton = new JButton("Test Connection & Fetch Tools");
     
     private final Map<MCPServer.TransportType, TransportPanel> transportPanels = new EnumMap<>(MCPServer.TransportType.class);
@@ -58,7 +59,6 @@ public class MCPServerDialog extends DialogWrapper {
         
         // Initialize transport panels
         transportPanels.put(MCPServer.TransportType.STDIO, new StdioTransportPanel());
-        transportPanels.put(MCPServer.TransportType.HTTP_SSE, new HttpSseTransportPanel());
         transportPanels.put(MCPServer.TransportType.HTTP, new StreamableHttpTransportPanel());
         
         // Initialize UI components
@@ -100,13 +100,15 @@ public class MCPServerDialog extends DialogWrapper {
         nameField.setText(existingServer.getName());
         nameField.setEditable(false); // Disable name field when editing
         
-        transportTypeCombo.setSelectedItem(existingServer.getTransportType());
+        // Legacy HTTP_SSE servers are edited (and re-saved) as HTTP
+        MCPServer.TransportType transportType = existingServer.getTransportType().effective();
+        transportTypeCombo.setSelectedItem(transportType);
         
         // Explicitly show the correct panel in the CardLayout
-        ((CardLayout) cardPanel.getLayout()).show(cardPanel, existingServer.getTransportType().toString());
+        ((CardLayout) cardPanel.getLayout()).show(cardPanel, transportType.toString());
         
         // Load settings into the appropriate transport panel
-        TransportPanel panel = transportPanels.get(existingServer.getTransportType());
+        TransportPanel panel = transportPanels.get(transportType);
         if (panel != null) {
             panel.loadSettings(existingServer);
         }
