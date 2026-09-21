@@ -276,6 +276,24 @@ class MCPRegistryServiceTest {
         }
 
         @Test
+        void searchServers_doesNotRetryFailedRegistryRequests() {
+            // The marketplace search is a debounced typeahead: a failed or timed-out request must
+            // surface immediately rather than being retried (with backoff) by the shared client's
+            // RetryInterceptor, which would leave the dialog on "Loading..." for minutes.
+            mockServer.enqueue(new MockResponse().setResponseCode(500));
+            mockServer.enqueue(new MockResponse().setResponseCode(500));
+            mockServer.enqueue(new MockResponse().setResponseCode(500));
+
+            String mockUrl = mockServer.url("/v0.1/servers").toString();
+            service = new MCPRegistryService(MCPRegistryService.registryClient(), gson, mockUrl);
+
+            assertThatThrownBy(() -> service.searchServers("slow", null, 100))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("HTTP 500");
+            assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        }
+
+        @Test
         void searchServers_buildsUrlWithSearchParameter() throws Exception {
             MCPRegistryResponse responseBody = new MCPRegistryResponse();
             mockServer.enqueue(new MockResponse()
