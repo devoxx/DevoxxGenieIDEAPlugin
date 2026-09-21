@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.settings.mcp.dialog.transport;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.time.Duration;
 import java.util.Map;
 
 import javax.swing.JLabel;
@@ -11,13 +10,12 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.devoxx.genie.model.mcp.MCPServer;
+import com.devoxx.genie.service.mcp.MCPExecutionService;
 
 import lombok.extern.slf4j.Slf4j;
 
-import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
-import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 
 /**
  * Panel for configuring Streamable HTTP MCP transport
@@ -107,25 +105,16 @@ public class StreamableHttpTransportPanel implements TransportPanel {
 
         log.debug("Creating Streamable HTTP transport with URL: {}", url);
 
-        // Create the transport
-        StreamableHttpMcpTransport.Builder transportBuilder = new StreamableHttpMcpTransport.Builder()
+        // Build the transport exactly as the runtime does, so "Test Connection" exercises the
+        // same configuration (timeout, logging, headers) the server will get once saved.
+        MCPServer probe = MCPServer.builder()
+                .transportType(MCPServer.TransportType.HTTP)
                 .url(url)
-                .timeout(Duration.ofSeconds(60))
-                .logRequests(true)
-                .logResponses(true);
-
-        if (headers != null && !headers.isEmpty()) {
-            transportBuilder.customHeaders(headers);
-        }
-
-        McpTransport transport = transportBuilder.build();
-
-        // Create and return the client
-        return new DefaultMcpClient.Builder()
-                .clientName("DevoxxGenie")
-                .protocolVersion("2024-11-05")
-                .transport(transport)
+                .headers(headers)
                 .build();
+        McpTransport transport = MCPExecutionService.buildHttpTransport(probe);
+
+        return MCPExecutionService.newClientBuilder(transport).build();
     }
 
     @Override
