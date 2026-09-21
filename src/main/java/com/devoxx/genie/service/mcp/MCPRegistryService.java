@@ -28,7 +28,20 @@ public class MCPRegistryService {
     private List<MCPRegistryServerEntry> cachedServers = null;
 
     public MCPRegistryService() {
-        this(HttpClientProvider.getClient(), new GsonBuilder().create());
+        this(registryClient(), new GsonBuilder().create());
+    }
+
+    /**
+     * The HTTP client used for registry requests: the shared client (same timeouts and connection
+     * pool) minus its retry interceptor. Marketplace searches are debounced typeahead requests
+     * against a registry whose {@code search} endpoint is often slow, so a timed-out request should
+     * surface once rather than being retried with backoff while the dialog sits on "Loading...".
+     * Package-private so tests can exercise the real client.
+     */
+    static OkHttpClient registryClient() {
+        OkHttpClient.Builder builder = HttpClientProvider.getClient().newBuilder();
+        builder.interceptors().clear();
+        return builder.build();
     }
 
     /**

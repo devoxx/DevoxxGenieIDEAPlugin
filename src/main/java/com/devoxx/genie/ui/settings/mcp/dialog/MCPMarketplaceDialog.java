@@ -70,10 +70,14 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         pagingState.setQuery("");
         loadPage(false);
 
-        // Typing in the search field triggers a debounced server-side search.
+        // Typing narrows the already-loaded rows immediately and (debounced) asks the registry
+        // for matches across the whole catalogue. The registry search can take many seconds,
+        // so without the local pass the table would appear frozen until the response lands.
         searchField.addDocumentListener(new com.intellij.ui.DocumentAdapter() {
             @Override
             protected void textChanged(javax.swing.event.@NotNull DocumentEvent e) {
+                pagingState.setQuery(searchField.getText().trim());
+                applyFilters();
                 searchDebounceTimer.restart();
             }
         });
@@ -167,11 +171,10 @@ public class MCPMarketplaceDialog extends DialogWrapper {
     }
 
     /**
-     * Trigger a fresh server-side search using the current text in the search field.
-     * Invoked (debounced) when the user types.
+     * Trigger a fresh server-side search for the query currently held in {@link #pagingState}.
+     * Invoked (debounced) after the user stops typing.
      */
     private void triggerSearch() {
-        pagingState.setQuery(searchField.getText().trim());
         loadPage(false);
     }
 
@@ -188,10 +191,12 @@ public class MCPMarketplaceDialog extends DialogWrapper {
     private void loadPage(boolean append) {
         final int generation = requestGeneration.incrementAndGet();
         setLoading(true);
-        statusLabel.setText("Loading...");
 
         final String query = pagingState.getQuery();
         final String effectiveQuery = (query == null || query.isBlank()) ? null : query;
+        statusLabel.setText(effectiveQuery == null
+                ? "Loading..."
+                : "Searching registry for '" + effectiveQuery + "'...");
         final String cursor = append ? pagingState.getNextCursor() : null;
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             MCPRegistryResponse response = null;
@@ -261,8 +266,9 @@ public class MCPMarketplaceDialog extends DialogWrapper {
     }
 
     /**
-     * Apply the client-side Location/Type filters over the pages loaded so far.
-     * Text search is performed server-side (see {@link #loadPage}), so it is not re-applied here.
+     * Apply the search text and Location/Type filters over the pages loaded so far.
+     * The search text is also sent to the registry (see {@link #loadPage}); applying it locally
+     * as well gives immediate feedback while that request is in flight.
      */
     private void applyFilters() {
         if (populatingFilters) {
@@ -272,12 +278,14 @@ public class MCPMarketplaceDialog extends DialogWrapper {
         String selectedType = (String) typeFilter.getSelectedItem();
         MCPRegistryService registryService = MCPRegistryService.getInstance();
 
-        List<MCPRegistryServerEntry> filtered = pagingState.getLoadedServers().stream()
-                .filter(entry -> SERVER_FILTER.matches(entry, "", selectedLocation, selectedType, registryService))
-                .toList();
+        List<MCPRegistryServerEntry> filtered =
+                pagingState.visibleServers(selectedLocation, selectedType, registryService);
 
         tableModel.setServers(filtered);
-        statusLabel.setText(buildStatusText(filtered.size()));
+        // Keep the "Searching registry..." message while a search request is in flight.
+        if (refreshButton.isEnabled()) {
+            statusLabel.setText(buildStatusText(filtered.size()));
+        }
         loadMoreButton.setEnabled(refreshButton.isEnabled() && pagingState.hasMorePages());
         updateOkAction();
     }
@@ -332,6 +340,18 @@ public class MCPMarketplaceDialog extends DialogWrapper {
 
         List<MCPRegistryServerEntry> getLoadedServers() {
             return loadedServers;
+        }
+
+        /**
+         * The subset of loaded servers that should be shown in the table: those matching the
+         * current query (name or description, case-insensitive) and the Location/Type selection.
+         */
+        List<MCPRegistryServerEntry> visibleServers(@Nullable String selectedLocation,
+                                                    @Nullable String selectedType,
+                                                    MCPRegistryService registryService) {
+            return loadedServers.stream()
+                    .filter(entry -> SERVER_FILTER.matches(entry, query, selectedLocation, selectedType, registryService))
+                    .toList();
         }
 
         @Nullable

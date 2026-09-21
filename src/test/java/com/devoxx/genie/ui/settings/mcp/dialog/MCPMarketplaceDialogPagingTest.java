@@ -4,6 +4,7 @@ import com.devoxx.genie.model.mcp.registry.MCPRegistryMetadata;
 import com.devoxx.genie.model.mcp.registry.MCPRegistryResponse;
 import com.devoxx.genie.model.mcp.registry.MCPRegistryServerEntry;
 import com.devoxx.genie.model.mcp.registry.MCPRegistryServerInfo;
+import com.devoxx.genie.service.mcp.MCPRegistryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -97,6 +98,34 @@ class MCPMarketplaceDialogPagingTest {
 
         state.setQuery(null);
         assertThat(state.getQuery()).isEmpty();
+    }
+
+    @Test
+    void visibleServersAppliesCurrentQueryToLoadedPagesBeforeServerResponds() {
+        // First page loaded without a query...
+        state.apply(page(List.of(entry("ac.inference.sh/mcp"), entry("io.github.upstash/context7")), "cursor-2"), false);
+
+        // ...then the user types a query. The registry search is slow, so until its response
+        // replaces the loaded page the already-loaded rows must be narrowed locally.
+        state.setQuery("context7");
+
+        List<MCPRegistryServerEntry> visible = state.visibleServers("All", "All", new MCPRegistryService());
+
+        assertThat(visible).extracting(e -> e.getServer().getName())
+                .containsExactly("io.github.upstash/context7");
+    }
+
+    @Test
+    void visibleServersMatchesQueryCaseInsensitivelyOnNameOrDescription() {
+        MCPRegistryServerEntry byDescription = entry("com.example/docs");
+        byDescription.getServer().setDescription("Up-to-date Context7 style documentation");
+        state.apply(page(List.of(entry("other"), byDescription), null), false);
+
+        state.setQuery("CONTEXT7");
+
+        assertThat(state.visibleServers("All", "All", new MCPRegistryService()))
+                .extracting(e -> e.getServer().getName())
+                .containsExactly("com.example/docs");
     }
 
     // ─── Helpers ──────────────────────────────────────────────
