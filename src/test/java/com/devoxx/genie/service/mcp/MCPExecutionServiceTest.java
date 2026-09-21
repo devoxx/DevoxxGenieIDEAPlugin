@@ -662,24 +662,43 @@ class MCPExecutionServiceTest {
 
         @Test
         void protocolDetectionTimeoutFollowsUserTimeout() {
-            when(stateService.getTimeout()).thenReturn(7);
-            RecordingTransport transport = new RecordingTransport();
+            when(stateService.getTimeout()).thenReturn(1);
+            // The probe is never answered; only the configured detection timeout can end it.
+            RecordingTransport transport = new RecordingTransport(McpClientMethod.SERVER_DISCOVER);
 
+            long started = System.nanoTime();
             assertThatThrownBy(() -> MCPExecutionService.newClientBuilder(transport).build())
                     .isInstanceOf(RuntimeException.class);
+            long elapsedMillis = (System.nanoTime() - started) / 1_000_000;
 
-            // A short user timeout still yields both probe and fallback — i.e. detection ran and
-            // did not hang on the (never answered) probe for the default duration.
-            assertThat(transport.sent).hasSize(2);
+            assertThat(transport.sent)
+                    .as("after the probe times out the client still falls back to legacy initialize")
+                    .hasSize(2);
+            assertThat(elapsedMillis)
+                    .as("detection must give up after the user's 1s timeout, not the library default")
+                    .isBetween(900L, 10_000L);
         }
     }
 
     /**
      * Transport that records every outgoing request and answers each with a failed future,
-     * so the client walks the whole auto-detection path without a network.
+     * so the client walks the whole auto-detection path without a network. Requests whose
+     * method is in {@code neverAnswered} get a future that never completes instead.
      */
     private static final class RecordingTransport implements McpTransport {
         final List<McpClientMessage> sent = new ArrayList<>();
+        private final Set<McpClientMethod> neverAnswered;
+
+        RecordingTransport(McpClientMethod... neverAnswered) {
+            this.neverAnswered = Set.of(neverAnswered);
+        }
+
+        private CompletableFuture<String> record(McpClientMessage message) {
+            sent.add(message);
+            return neverAnswered.contains(message.method)
+                    ? new CompletableFuture<>()
+                    : CompletableFuture.failedFuture(new RuntimeException("recording transport"));
+        }
 
         @Override
         public void start(McpOperationHandler handler) {
@@ -687,20 +706,17 @@ class MCPExecutionServiceTest {
 
         @Override
         public CompletableFuture<String> sendInitializeRequest(McpInitializeRequest request) {
-            sent.add(request);
-            return CompletableFuture.failedFuture(new RuntimeException("recording transport"));
+            return record(request);
         }
 
         @Override
         public CompletableFuture<String> sendRequest(McpCallContext context) {
-            sent.add(context.message());
-            return CompletableFuture.failedFuture(new RuntimeException("recording transport"));
+            return record(context.message());
         }
 
         @Override
         public CompletableFuture<String> sendRequest(McpClientMessage message) {
-            sent.add(message);
-            return CompletableFuture.failedFuture(new RuntimeException("recording transport"));
+            return record(message);
         }
 
         @Override

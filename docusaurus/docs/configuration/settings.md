@@ -77,7 +77,7 @@ Configure Model Context Protocol (MCP) servers:
 
 - Enable/disable MCP support
 - Browse and install servers from the MCP Marketplace
-- Add and configure MCP servers manually (STDIO, HTTP, HTTP SSE transports)
+- Add and configure MCP servers manually (STDIO and Streamable HTTP transports)
 - Enable human-in-the-loop approval with configurable timeout
 - Enable MCP logging for debugging
 
