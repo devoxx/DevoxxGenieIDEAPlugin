@@ -10,6 +10,9 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ServiceContainerUtil;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.mistralai.MistralAiChatModel;
+import dev.langchain4j.model.mistralai.MistralAiChatRequestParameters;
+import dev.langchain4j.model.mistralai.MistralAiStreamingChatModel;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,13 +94,15 @@ public class MistralChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     private static boolean returnThinking(Object mistralModel) {
-        try {
-            java.lang.reflect.Field field = mistralModel.getClass().getDeclaredField("returnThinking");
-            field.setAccessible(true);
-            return (boolean) field.get(mistralModel);
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError("Unable to read LangChain4j Mistral returnThinking flag", e);
+        MistralAiChatRequestParameters parameters;
+        if (mistralModel instanceof MistralAiChatModel chatModel) {
+            parameters = chatModel.defaultRequestParameters();
+        } else if (mistralModel instanceof MistralAiStreamingChatModel streamingChatModel) {
+            parameters = streamingChatModel.defaultRequestParameters();
+        } else {
+            throw new AssertionError("Not a LangChain4j Mistral model: " + mistralModel);
         }
+        return Boolean.TRUE.equals(parameters.returnThinking());
     }
 
     @Test

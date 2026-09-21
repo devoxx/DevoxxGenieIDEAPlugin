@@ -92,20 +92,24 @@ class ChromaEmbeddingServiceInitV2Test {
      * collection must all be created. Produces 6 requests (3 GET + 3 POST).
      */
     private void enqueueColdStart() {
-        // Tenant not found (ChromaDB returns 500 for missing tenant)
-        server.enqueue(new MockResponse().setResponseCode(500));
+        // Status codes below are what chromadb/chroma:0.6.2 really returns (verified against the
+        // image): 404 NotFoundError for a missing tenant or database, 400 InvalidCollection for a
+        // missing collection. langchain4j-chroma 1.20+ only treats these as "not found"; a 500
+        // is propagated as an error.
+        // Tenant not found
+        server.enqueue(new MockResponse().setResponseCode(404));
         // Create tenant
         server.enqueue(new MockResponse()
                 .addHeader("Content-Type", "application/json")
                 .setBody("{\"name\":\"default_tenant\"}"));
         // Database not found
-        server.enqueue(new MockResponse().setResponseCode(500));
+        server.enqueue(new MockResponse().setResponseCode(404));
         // Create database
         server.enqueue(new MockResponse()
                 .addHeader("Content-Type", "application/json")
                 .setBody("{\"name\":\"default_database\",\"tenant\":\"default_tenant\"}"));
         // Collection not found
-        server.enqueue(new MockResponse().setResponseCode(500));
+        server.enqueue(new MockResponse().setResponseCode(400));
         // Create collection
         server.enqueue(new MockResponse()
                 .addHeader("Content-Type", "application/json")
