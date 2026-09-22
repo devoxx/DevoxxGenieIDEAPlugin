@@ -54,6 +54,7 @@ Supported cloud providers:
 - [Kimi](cloud-models.md#kimi)
 - [GLM](cloud-models.md#glm) (Zhipu AI)
 - [OpenRouter](cloud-models.md#openrouter)
+- [Requesty](cloud-models.md#requesty)
 - [NVIDIA](cloud-models.md#nvidia) (NIM-hosted models through an OpenAI-compatible API)
 - [Cloudflare AI Gateway](cloud-models.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
 - [Azure OpenAI](cloud-models.md#azure-openai)

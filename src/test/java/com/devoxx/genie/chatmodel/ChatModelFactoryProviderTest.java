@@ -13,6 +13,7 @@ import com.devoxx.genie.chatmodel.cloud.kimi.KimiChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.requesty.RequestyChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
@@ -56,6 +57,7 @@ class ChatModelFactoryProviderTest {
                 Arguments.of("Ollama", OllamaChatModelFactory.class),
                 Arguments.of("OpenAI", OpenAIChatModelFactory.class),
                 Arguments.of("OpenRouter", OpenRouterChatModelFactory.class),
+                Arguments.of("Requesty", RequestyChatModelFactory.class),
                 Arguments.of("Grok", GrokChatModelFactory.class),
                 Arguments.of("Kimi", KimiChatModelFactory.class),
                 Arguments.of("GLM", GLMChatModelFactory.class),
@@ -110,7 +112,7 @@ class ChatModelFactoryProviderTest {
     @Test
     void testGetFactoryByProvider_AllCloudProviders() {
         String[] cloudProviders = {"Anthropic", "AzureOpenAI", "Bedrock", "DeepInfra", "DeepSeek",
-                "Google", "Groq", "Mistral", "OpenAI", "OpenRouter", "Grok", "Kimi", "GLM"};
+                "Google", "Groq", "Mistral", "OpenAI", "OpenRouter", "Requesty", "Grok", "Kimi", "GLM"};
 
         for (String provider : cloudProviders) {
             Optional<ChatModelFactory> factory = ChatModelFactoryProvider.getFactoryByProvider(provider);

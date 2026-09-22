@@ -232,6 +232,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case GLM -> stateService.isGlmEnabled();
                     case Nvidia -> stateService.isNvidiaEnabled();
                     case Cloudflare -> stateService.isCloudflareEnabled();
+                    case Requesty -> stateService.isRequestyEnabled();
                     case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                     case Bedrock -> stateService.isAwsEnabled();
                     case CLIRunners -> true;
@@ -393,6 +394,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                provider == ModelProvider.Nativ ||
                provider == ModelProvider.GPT4All ||
                provider == ModelProvider.OpenRouter ||
+               provider == ModelProvider.Requesty ||
                provider == ModelProvider.Bedrock;
     }
 

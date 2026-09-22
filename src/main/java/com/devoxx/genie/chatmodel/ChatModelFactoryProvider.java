@@ -15,6 +15,7 @@ import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.nvidia.NvidiaChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.requesty.RequestyChatModelFactory;
 import com.devoxx.genie.chatmodel.local.acprunners.AcpRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.clirunners.CliRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
@@ -67,6 +68,7 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.AzureOpenAI, AzureOpenAIChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Bedrock, BedrockModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Cloudflare, CloudflareChatModelFactory::new);
+        FACTORY_SUPPLIERS.put(ModelProvider.Requesty, RequestyChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.CustomOpenAI, CustomOpenAIChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Exo, ExoChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.DeepInfra, DeepInfraChatModelFactory::new);
