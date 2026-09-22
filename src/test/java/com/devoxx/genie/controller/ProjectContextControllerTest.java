@@ -109,7 +109,7 @@ class ProjectContextControllerTest {
     @ParameterizedTest
     @EnumSource(value = ModelProvider.class, names = {
             "Google", "Anthropic", "OpenAI", "Mistral", "DeepSeek",
-            "OpenRouter", "DeepInfra", "Ollama", "Jan", "Bedrock",
+            "OpenRouter", "Requesty", "DeepInfra", "Ollama", "Jan", "Bedrock",
             "LMStudio", "AzureOpenAI"
     })
     void testIsProjectContextSupportedProvider_SupportedProviders_ReturnsTrue(ModelProvider provider) {

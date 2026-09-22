@@ -114,6 +114,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.isGoogleEnabled()).isFalse();
             assertThat(stateService.isDeepSeekEnabled()).isFalse();
             assertThat(stateService.isOpenRouterEnabled()).isFalse();
+            assertThat(stateService.isRequestyEnabled()).isFalse();
         }
 
         @Test
@@ -126,6 +127,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getGeminiKey()).isEmpty();
             assertThat(stateService.getDeepSeekKey()).isEmpty();
             assertThat(stateService.getOpenRouterKey()).isEmpty();
+            assertThat(stateService.getRequestyKey()).isEmpty();
             assertThat(stateService.getAwsBearerToken()).isEmpty();
         }
 
