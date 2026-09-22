@@ -108,6 +108,7 @@ class LlmProviderPanelTest {
         lenient().when(stateService.isGoogleEnabled()).thenReturn(false);
         lenient().when(stateService.isDeepSeekEnabled()).thenReturn(false);
         lenient().when(stateService.isOpenRouterEnabled()).thenReturn(false);
+        lenient().when(stateService.isRequestyEnabled()).thenReturn(false);
         lenient().when(stateService.isGrokEnabled()).thenReturn(false);
         lenient().when(stateService.isKimiEnabled()).thenReturn(false);
         lenient().when(stateService.isGlmEnabled()).thenReturn(false);

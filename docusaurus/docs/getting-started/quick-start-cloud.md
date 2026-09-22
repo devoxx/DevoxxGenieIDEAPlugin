@@ -31,6 +31,7 @@ DevoxxGenie supports several cloud LLM providers:
 - [Kimi](https://platform.moonshot.ai/)
 - [GLM](https://open.bigmodel.cn/) (Zhipu AI)
 - [OpenRouter](https://www.openrouter.ai/)
+- [Requesty](https://requesty.ai/)
 - [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 - [Amazon Bedrock](https://aws.amazon.com/bedrock)
 
