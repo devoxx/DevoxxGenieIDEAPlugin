@@ -162,6 +162,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("cloudflareKey")
     private String cloudflareKey = "";
 
+    // Requesty fields
+    private boolean isRequestyEnabled = false;
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("requestyKey")
+    private String requestyKey = "";
+
     // Local LLM Providers
     private boolean isOllamaEnabled = true;
     private boolean isLmStudioEnabled = true;
@@ -1055,6 +1060,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     @Transient @Override public @NotNull String getCloudflareKey()       { return creds().getCredential(CredentialKey.CLOUDFLARE_KEY); }
     @Transient @Override public void          setCloudflareKey(String v) { creds().setCredential(CredentialKey.CLOUDFLARE_KEY, v); }
+
+    @Transient @Override public @NotNull String getRequestyKey()       { return creds().getCredential(CredentialKey.REQUESTY_KEY); }
+    @Transient @Override public void          setRequestyKey(String v) { creds().setCredential(CredentialKey.REQUESTY_KEY, v); }
 
     @Transient @Override public @NotNull String getGoogleSearchKey()       { return creds().getCredential(CredentialKey.GOOGLE_SEARCH_KEY); }
     @Transient @Override public void          setGoogleSearchKey(String v) { creds().setCredential(CredentialKey.GOOGLE_SEARCH_KEY, v); }

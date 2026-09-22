@@ -25,6 +25,7 @@ public class DefaultLLMSettingsUtil {
                 provider == ModelProvider.DeepInfra ||
                 provider == ModelProvider.Google ||
                 provider == ModelProvider.OpenRouter ||
+                provider == ModelProvider.Requesty ||
                 provider == ModelProvider.AzureOpenAI;
     }
 

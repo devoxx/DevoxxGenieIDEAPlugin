@@ -23,7 +23,7 @@
 
         <h3>Key Features</h3>
         <UL>
-            <LI><strong>Local &amp; Cloud LLMs:</strong> Ollama, LMStudio, GPT4All, Llama.cpp, Exo + OpenAI, Anthropic, Gemini, Mistral, Groq, DeepInfra, DeepSeek, Kimi, GLM, OpenRouter, Azure OpenAI, Amazon Bedrock</LI>
+            <LI><strong>Local &amp; Cloud LLMs:</strong> Ollama, LMStudio, GPT4All, Llama.cpp, Exo + OpenAI, Anthropic, Gemini, Mistral, Groq, DeepInfra, DeepSeek, Kimi, GLM, OpenRouter, Requesty, Azure OpenAI, Amazon Bedrock</LI>
             <LI><strong>Agent Mode:</strong> Autonomous code tools with parallel sub-agents, multi-turn tool use, and built-in file/search/run_command tools</LI>
             <LI><strong>Skills (new in v1.5.0):</strong> Portable <code>SKILL.md</code> files the LLM activates mid-conversation — the same files also work in Claude Code, Codex and Gemini</LI>
             <LI><strong>Commands:</strong> User-defined slash commands (previously "Custom Prompts") for reusable prompt templates</LI>
@@ -893,6 +893,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.lmstudio.LMStudioModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.requesty.RequestyService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.bedrock.BedrockService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.nativ.NativModelService"/>
