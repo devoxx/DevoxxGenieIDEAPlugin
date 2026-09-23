@@ -438,6 +438,31 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      */
     private String agentCommandBlacklistAction = COMMAND_BLACKLIST_ACTION_ASK;
     private Boolean agentDebugLogsEnabled = false;
+
+    // Agent loop efficiency settings
+    /**
+     * Trim large tool results that are no longer among the most recent ones before they are
+     * re-sent to the LLM on later round trips. Chat memory keeps the full text; only the
+     * outgoing request is compacted.
+     */
+    private Boolean agentCompactToolResults = true;
+    /**
+     * Serve identical read-only tool calls (same tool, same arguments, nothing modified since)
+     * from a per-run cache, and stop the model from repeating the same call endlessly.
+     */
+    private Boolean agentDeduplicateToolCalls = true;
+    /**
+     * When more than {@link #agentDeferMcpToolsThreshold} MCP tools are enabled, withhold
+     * their definitions from requests and expose a {@code search_tools} tool that loads the
+     * relevant ones on demand.
+     */
+    private Boolean agentDeferMcpTools = true;
+    private Integer agentDeferMcpToolsThreshold = AGENT_DEFER_MCP_TOOLS_THRESHOLD;
+    /**
+     * Wrap tool output from outside the project (fetch_page, web_search, MCP servers) in
+     * untrusted-content tags and tell the model never to follow instructions inside them.
+     */
+    private Boolean agentWrapUntrustedOutput = true;
     /**
      * When enabled, the full request/response exchanged with the LLM provider (messages, tool
      * calls, token usage) is captured and shown in the Activity Log panel, with likely secrets

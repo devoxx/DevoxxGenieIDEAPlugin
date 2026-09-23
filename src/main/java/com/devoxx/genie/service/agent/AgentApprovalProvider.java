@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent;
 
+import com.devoxx.genie.service.agent.loop.SearchToolsToolExecutor;
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
@@ -33,7 +34,11 @@ public class AgentApprovalProvider implements ToolProvider {
 
     private static final String DENIED_BY_USER_MESSAGE = "Tool execution was denied by the user.";
 
-    private static final Set<String> READ_ONLY_TOOLS = Set.of(
+    /**
+     * Tools that only read. They may be auto-approved, and their results may be served from
+     * the per-run call cache ({@code ToolCallCache}) when called again with identical arguments.
+     */
+    public static final Set<String> READ_ONLY_TOOLS = Set.of(
             "read_file", "list_files", "search_files", "fetch_page", "semantic_search",
             "web_search",
             "find_symbols", "document_symbols", "find_references", "find_definition", "find_implementations",
@@ -119,6 +124,11 @@ public class AgentApprovalProvider implements ToolProvider {
                             + "command or variations of it; ask the user to run it manually if it is really needed.";
                 }
             }
+        }
+
+        // search_tools only loads tool definitions into the conversation; it never needs approval.
+        if (SearchToolsToolExecutor.TOOL_NAME.equals(toolRequest.name())) {
+            return null;
         }
 
         boolean isReadOnly = READ_ONLY_TOOLS.contains(toolRequest.name());

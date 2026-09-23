@@ -4,6 +4,10 @@ import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.activity.ActivityMessage;
 import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
+import com.devoxx.genie.service.agent.loop.AgentRunContext;
+import com.devoxx.genie.service.agent.loop.AgentRunMetrics;
+import com.devoxx.genie.service.agent.loop.ToolCallCache;
+import com.devoxx.genie.service.agent.loop.UntrustedContent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
@@ -22,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,9 +37,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Returns an error string (not an exception) when the limit is reached,
  * so the LLM can gracefully wrap up the conversation.
  * Also publishes agent debug log events to the message bus.
+ *
+ * <p>The tracker also owns the run's {@link AgentRunContext}: every call is timed into
+ * {@link AgentRunMetrics}, and when de-duplication is enabled identical read-only calls are
+ * served from the run's {@link ToolCallCache} instead of executing again.
  */
 @Slf4j
 public class AgentLoopTracker implements ToolProvider {
+
+    /**
+     * Built-in tools whose output comes from outside the project and is therefore wrapped as
+     * untrusted content (MCP tool output is wrapped by {@code GuardedMcpToolProvider}).
+     */
+    static final Set<String> UNTRUSTED_BUILT_IN_TOOLS = Set.of("fetch_page", "web_search");
 
     private final ToolProvider delegate;
     private final int maxToolCalls;
@@ -43,6 +58,7 @@ public class AgentLoopTracker implements ToolProvider {
     private final @Nullable Project project;
     private final @Nullable String subAgentId;
     private final List<Cancellable> children = new CopyOnWriteArrayList<>();
+    private volatile AgentRunContext runContext = AgentRunContext.disabled();
 
     public AgentLoopTracker(@NotNull ToolProvider delegate, int maxToolCalls) {
         this(delegate, maxToolCalls, null, null);
@@ -136,13 +152,44 @@ public class AgentLoopTracker implements ToolProvider {
 
         publishLogEvent(AgentType.TOOL_REQUEST, toolRequest.name(), toolRequest.arguments(), null, count);
 
+        AgentRunContext context = runContext;
+        AgentRunMetrics metrics = context.getMetrics();
+        ToolCallCache cache = context.getCallCache();
+        long started = System.nanoTime();
+
+        if (cache != null) {
+            // The most recent tool results are never compacted, so a repeat of one of them can
+            // point back at it instead of re-sending the whole output. The window is one less
+            // than the compactor's because this call's own result also counts as recent.
+            ToolCallCache.Lookup lookup = cache.lookup(toolRequest.name(), toolRequest.arguments(),
+                    count, Constant.AGENT_COMPACT_KEEP_RECENT_RESULTS - 1);
+            if (lookup.kind() == ToolCallCache.Lookup.Kind.HIT) {
+                metrics.recordToolCall(toolRequest.name(), started, started, false, true);
+                publishLogEvent(AgentType.TOOL_RESPONSE, toolRequest.name(), null, lookup.text(), count);
+                return lookup.text();
+            }
+            if (lookup.kind() == ToolCallCache.Lookup.Kind.REPEAT_BLOCKED) {
+                metrics.recordRepeatBlocked();
+                publishLogEvent(AgentType.TOOL_ERROR, toolRequest.name(), toolRequest.arguments(), lookup.text(), count);
+                return lookup.text();
+            }
+        }
+
         String toolResult;
         try {
             toolResult = invoker.invoke();
         } catch (Exception e) {
             String errorResult = "Error: " + e.getMessage();
+            metrics.recordToolCall(toolRequest.name(), started, System.nanoTime(), true, false);
             publishLogEvent(AgentType.TOOL_ERROR, toolRequest.name(), toolRequest.arguments(), errorResult, count);
             return errorResult;
+        }
+        metrics.recordToolCall(toolRequest.name(), started, System.nanoTime(), isErrorResult(toolResult), false);
+        if (UNTRUSTED_BUILT_IN_TOOLS.contains(toolRequest.name())) {
+            toolResult = UntrustedContent.wrapIfEnabled(toolRequest.name(), toolResult);
+        }
+        if (cache != null) {
+            cache.store(toolRequest.name(), toolRequest.arguments(), toolResult, count);
         }
 
         // Tool executors signal failure by returning an "Error: ..." string rather than
@@ -219,6 +266,26 @@ public class AgentLoopTracker implements ToolProvider {
         }
     }
 
+    /** Attaches the run's efficiency context (metrics, call cache, compaction, deferred tools). */
+    public void setRunContext(@NotNull AgentRunContext runContext) {
+        this.runContext = runContext;
+    }
+
+    public @NotNull AgentRunContext getRunContext() {
+        return runContext;
+    }
+
+    /**
+     * Logs the run's metrics and publishes them to the activity log as a
+     * {@link AgentType#RUN_SUMMARY} event (shown when agent debug logs are enabled).
+     * Call once when the run has finished.
+     */
+    public void publishRunSummary() {
+        String summary = runContext.getMetrics().summary();
+        log.info("{}", summary);
+        publishLogEvent(AgentType.RUN_SUMMARY, null, null, summary, callCount.get());
+    }
+
     /**
      * Registers a child cancellable that will be cancelled when this tracker is cancelled.
      * Used to propagate cancellation to sub-agents running inside parallel_explore.
@@ -276,5 +343,9 @@ public class AgentLoopTracker implements ToolProvider {
     public void reset() {
         callCount.set(0);
         cancelled.set(false);
+        ToolCallCache cache = runContext.getCallCache();
+        if (cache != null) {
+            cache.clear();
+        }
     }
 }

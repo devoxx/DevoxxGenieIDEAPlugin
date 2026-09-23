@@ -114,6 +114,17 @@ public class Constant {
      * HTTP call still has its own per-request timeout via the Langchain4j SDK.
      */
     public static final int AGENT_MAX_EXECUTION_SECONDS = 300;
+    /**
+     * Above this many enabled MCP tools, agent mode withholds the MCP tool definitions from
+     * each request and exposes a {@code search_tools} tool that loads them on demand.
+     */
+    public static final int AGENT_DEFER_MCP_TOOLS_THRESHOLD = 20;
+    /** Tool results kept verbatim in outgoing requests (most recent first). */
+    public static final int AGENT_COMPACT_KEEP_RECENT_RESULTS = 4;
+    /** Older tool results shorter than this are never compacted. */
+    public static final int AGENT_COMPACT_MIN_CHARS = 2_000;
+    /** Leading characters kept from a compacted tool result. */
+    public static final int AGENT_COMPACT_HEAD_CHARS = 600;
     public static final int SUB_AGENT_MAX_TOOL_CALLS = 200;
     public static final int SUB_AGENT_DEFAULT_PARALLELISM = 3;
     public static final int SUB_AGENT_MAX_PARALLELISM = 10;

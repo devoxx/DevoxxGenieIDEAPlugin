@@ -6,6 +6,7 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.AgentToolProviderFactory;
 import com.devoxx.genie.service.agent.ToolErrorRecovery;
+import com.devoxx.genie.service.agent.loop.AgentRequestTransformer;
 import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.prompt.steering.SteeringMessageInjector;
@@ -128,6 +129,7 @@ public class NonStreamingPromptExecutionService {
                 // success, error, and cancellation (task-209 AC #23).
                 if (finishedTracker != null) {
                     FeatureUsageTracker.agentCompleted(chatMessageContext, finishedTracker.getCallCount());
+                    finishedTracker.publishRunSummary();
                 }
 
                 // Add file references if any, similar to StreamingResponseHandler
@@ -247,7 +249,12 @@ public class NonStreamingPromptExecutionService {
             // agent loop runs are injected into the next round-trip request.
             String memoryKey = chatMessageContext.getMemoryKey();
             SteeringMessageQueue steeringQueue = SteeringMessageQueue.getInstance();
-            assistantBuilder.chatRequestTransformer(new SteeringMessageInjector(steeringQueue, memoryKey, chatMemory));
+            SteeringMessageInjector steering = new SteeringMessageInjector(steeringQueue, memoryKey, chatMemory);
+            // In agent mode, also compact older tool results, withhold deferred tool
+            // definitions and record request metrics on every round trip.
+            assistantBuilder.chatRequestTransformer(toolProvider instanceof AgentLoopTracker agentTracker
+                    ? AgentRequestTransformer.chain(steering, agentTracker.getRunContext().requestTransformer())
+                    : steering);
             steeringQueue.activate(memoryKey);
             assistant = assistantBuilder.build();
 

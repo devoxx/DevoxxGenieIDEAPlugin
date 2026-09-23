@@ -3,6 +3,7 @@ package com.devoxx.genie.service.mcp;
 import com.devoxx.genie.model.mcp.MCPMessage;
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.model.mcp.MCPType;
+import com.devoxx.genie.service.agent.loop.AgentRunMetrics;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.Disposable;
@@ -164,6 +165,17 @@ public class MCPExecutionService implements Disposable {
      */
     @Nullable
     public ToolProvider createRawMCPToolProvider(@Nullable java.util.concurrent.atomic.AtomicInteger mcpCallCounter) {
+        return createRawMCPToolProvider(mcpCallCounter, null);
+    }
+
+    /**
+     * Same as {@link #createRawMCPToolProvider(java.util.concurrent.atomic.AtomicInteger)} and
+     * records local argument rejections and transient-failure retries of the outermost
+     * {@link GuardedMcpToolProvider} into the agent run's metrics when supplied.
+     */
+    @Nullable
+    public ToolProvider createRawMCPToolProvider(@Nullable java.util.concurrent.atomic.AtomicInteger mcpCallCounter,
+                                                 @Nullable AgentRunMetrics runMetrics) {
         log.debug("Creating raw MCP Tool Provider");
 
         // Get all configured MCP servers
@@ -199,10 +211,14 @@ public class MCPExecutionService implements Disposable {
         ToolProvider filtered = new FilteredMcpToolProvider(rawProvider);
 
         // Wrap with per-prompt usage counter (task-209) when the caller supplies one.
-        if (mcpCallCounter != null) {
-            return new InstrumentedMcpToolProvider(filtered, mcpCallCounter);
-        }
-        return filtered;
+        ToolProvider counted = mcpCallCounter != null
+                ? new InstrumentedMcpToolProvider(filtered, mcpCallCounter)
+                : filtered;
+
+        // Outermost: validate arguments locally, retry transient failures of read-only tools
+        // once, and mark server output as untrusted. Sits outside the counter so calls rejected
+        // locally are not counted as MCP invocations.
+        return new GuardedMcpToolProvider(counted, runMetrics);
     }
 
     /**

@@ -322,15 +322,17 @@ class MCPExecutionServiceTest {
         }
 
         @Test
-        void returnsFilteredProviderForEnabledServers() {
+        void returnsGuardedProviderForEnabledServers() {
             MCPServer server = stdioServer("my-server");
             when(mcpSettings.getMcpServers()).thenReturn(Map.of("my-server", server));
             when(mockCreator.create(server)).thenReturn(mockClient1);
 
             ToolProvider result = service.createRawMCPToolProvider();
 
+            // Outermost layer validates arguments, retries transient failures and marks
+            // output as untrusted; FilteredMcpToolProvider sits underneath it.
             assertThat(result).isNotNull();
-            assertThat(result).isInstanceOf(FilteredMcpToolProvider.class);
+            assertThat(result).isInstanceOf(GuardedMcpToolProvider.class);
         }
 
         @Test

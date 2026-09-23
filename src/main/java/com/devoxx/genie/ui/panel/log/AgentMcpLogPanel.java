@@ -551,7 +551,8 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                                                       @NotNull Function<String, String> contentFormatter) {
         StringBuilder sb = new StringBuilder();
         if (message.getAgentType() != AgentType.INTERMEDIATE_RESPONSE
-                && message.getAgentType() != AgentType.SYSTEM_PROMPT) {
+                && message.getAgentType() != AgentType.SYSTEM_PROMPT
+                && message.getAgentType() != AgentType.RUN_SUMMARY) {
             sb.append("[").append(message.getCallNumber()).append("/").append(message.getMaxCalls()).append("] ");
         }
         if (message.getSubAgentId() != null) {
@@ -589,6 +590,12 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                 break;
             case SYSTEM_PROMPT:
                 sb.append("📋 System prompt");
+                if (message.getResult() != null) {
+                    sb.append('\n').append(contentFormatter.apply(message.getResult()));
+                }
+                break;
+            case RUN_SUMMARY:
+                sb.append("📊 Agent run summary");
                 if (message.getResult() != null) {
                     sb.append('\n').append(contentFormatter.apply(message.getResult()));
                 }
@@ -921,7 +928,7 @@ public class AgentMcpLogPanel extends SimpleToolWindowPanel implements ActivityL
                     case SUB_AGENT_STARTED -> null;
                     case SUB_AGENT_COMPLETED -> null;
                     case SUB_AGENT_ERROR -> null;
-                    case SYSTEM_PROMPT -> JBColor.foreground();
+                    case SYSTEM_PROMPT, RUN_SUMMARY -> JBColor.foreground();
                 };
             }
             if (entry.source() == LogSource.MCP) {

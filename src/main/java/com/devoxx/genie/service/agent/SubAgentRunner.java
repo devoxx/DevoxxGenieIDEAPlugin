@@ -5,6 +5,7 @@ import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.agent.loop.AgentRunContext;
 import com.devoxx.genie.service.agent.tool.ReadOnlyToolProvider;
 import com.devoxx.genie.service.analytics.AnalyticsService;
 import com.devoxx.genie.service.analytics.Buckets;
@@ -88,6 +89,10 @@ public class SubAgentRunner {
             ToolProvider readOnlyTools = new ReadOnlyToolProvider(project);
             String subAgentLabel = buildSubAgentLabel();
             tracker = new AgentLoopTracker(readOnlyTools, maxToolCalls, project, subAgentLabel);
+            // Sub-agents only get read-only tools, so de-duplication and compaction apply;
+            // tool deferral does not (there are no MCP tools here).
+            AgentRunContext runContext = AgentRunContext.fromSettings(settings);
+            tracker.setRunContext(runContext);
 
             // Share cancellation state
             if (cancelled.get()) {
@@ -101,6 +106,7 @@ public class SubAgentRunner {
                             // configured sub-agent tool-call limit is the one that actually applies.
                             .maxToolCallingRoundTrips(tracker.getMaxToolCallingRoundTrips())
                             .chatMemoryProvider(memoryId -> memory)
+                            .chatRequestTransformer(runContext.requestTransformer())
                             .systemMessageProvider(memoryId -> SYSTEM_PROMPT))
                     .build();
 
@@ -114,6 +120,7 @@ public class SubAgentRunner {
 
             log.info("Sub-agent #{} completed with {} tool calls", agentIndex + 1,
                     tracker.getCallCount());
+            tracker.publishRunSummary();
 
             return result;
         } catch (Exception e) {

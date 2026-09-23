@@ -346,6 +346,38 @@ class SearchFilesToolExecutorTest {
         assertThat(result).contains("showing first " + SearchFilesToolExecutor.MAX_RESULTS);
     }
 
+    @Test
+    void searchFiles_tooBroad_reportsTotalsTopFilesAndHowToNarrow() throws IOException {
+        SearchFilesToolExecutor testExecutor = createTestableExecutor();
+        VirtualFile projectBase = mock(VirtualFile.class);
+        // 30 matches in Big.java and 1 in each of 40 small files: 70 matches, 41 files.
+        VirtualFile[] files = new VirtualFile[41];
+        files[0] = createRereadableMockFile("Big.java", "java", "hit\n".repeat(30));
+        for (int i = 1; i < files.length; i++) {
+            files[i] = createRereadableMockFile("Small" + i + ".java", "java", "hit");
+        }
+        when(projectBase.getChildren()).thenReturn(files);
+
+        String result = testExecutor.searchFiles("hit", null, Pattern.compile("hit"), null, projectBase);
+
+        assertThat(result).contains("truncated, showing first " + SearchFilesToolExecutor.MAX_RESULTS + " of 70 matches in 41 files");
+        assertThat(result).contains("Files with the most matches:\n  Big.java (30)");
+        assertThat(result).contains("too broad").contains("file_pattern");
+        assertThat(result.lines().filter(l -> l.contains(".java:")).count()).isEqualTo(SearchFilesToolExecutor.MAX_RESULTS);
+    }
+
+    @Test
+    void searchFiles_belowLimit_hasNoTooBroadSummary() throws IOException {
+        SearchFilesToolExecutor testExecutor = createTestableExecutor();
+        VirtualFile projectBase = mock(VirtualFile.class);
+        VirtualFile file = createRereadableMockFile("A.java", "java", "hit\nhit");
+        when(projectBase.getChildren()).thenReturn(new VirtualFile[]{file});
+
+        String result = testExecutor.searchFiles("hit", null, Pattern.compile("hit"), null, projectBase);
+
+        assertThat(result).doesNotContain("truncated").doesNotContain("too broad");
+    }
+
     // --- searchInDirectory tests ---
 
     @Test
@@ -754,6 +786,16 @@ class SearchFilesToolExecutorTest {
     }
 
     // --- Helper ---
+
+    /** Like {@link #createMockFile} but every {@code getInputStream()} call returns a fresh stream. */
+    private VirtualFile createRereadableMockFile(String name, String extension, String content) throws IOException {
+        VirtualFile file = mock(VirtualFile.class);
+        when(file.isDirectory()).thenReturn(false);
+        when(file.getExtension()).thenReturn(extension);
+        when(file.getName()).thenReturn(name);
+        when(file.getInputStream()).thenAnswer(inv -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
+        return file;
+    }
 
     private VirtualFile createMockFile(String name, String extension, String content) throws IOException {
         VirtualFile file = mock(VirtualFile.class);

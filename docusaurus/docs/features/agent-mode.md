@@ -343,6 +343,21 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 | **Show changed files with diffs after an agent run** | Enabled | Lists the files a finished run changed; clicking one opens a diff — see [Reviewing What the Agent Changed](#reviewing-what-the-agent-changed) |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
 
+### Efficiency Settings
+
+These features cut what is re-sent to the LLM on every round trip and stop wasted tool calls. All are enabled by default and can be switched off individually under **Efficiency**.
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Compact older tool results** | Enabled | Every round trip re-sends the whole conversation. Tool results larger than 2,000 characters that are no longer among the 4 most recent ones are shortened to their first 600 characters in the outgoing request, with a note telling the model to call the tool again if it needs the full text. Chat history keeps the full output. |
+| **Reuse identical read-only tool calls** | Enabled | A repeated read-only call (same tool, same arguments) made while nothing has been modified is answered from a per-run cache instead of running again. A repeat of a very recent call just points back at it. After two cached repeats of the same call the model is told to move on. Any write, command or MCP call clears the cache. |
+| **Load MCP tool definitions on demand** | Enabled, above 20 tools | When more MCP tools are enabled than the threshold, their definitions are left out of each request. The model sees a `search_tools` tool listing their names; searching by keyword (or calling a tool directly by name) loads the matching definitions from the next step on. |
+| **Mark web and MCP tool output as untrusted** | Enabled | Output from `fetch_page`, `web_search` and MCP servers is wrapped in `<untrusted_tool_output>` tags, and the system prompt tells the model never to follow instructions inside them — a guard against prompt injection from web pages and third-party servers. |
+
+MCP tool calls are also checked against the tool's declared input schema before they are sent. Invalid calls (a missing required parameter, a wrong value type, an unknown enum value) get a precise error back without contacting the server. When a server marks a tool as read-only or idempotent (`readOnlyHint` / `idempotentHint`), a call that fails with a network error or timeout is retried once. Tools that may have side effects are never retried.
+
+`search_files` no longer truncates silently. When a search hits its 50-result limit, the result says how many matches exist in how many files, lists the files with the most matches, and asks the model to narrow the search. `parallel_explore` likewise reports duplicate queries and any queries it could not explore because of the parallelism limit.
+
 ### PSI Tools Settings
 
 | Setting | Default | Description |
@@ -436,6 +451,8 @@ Open the **Agent Log** tool window to see real-time activity from both the main 
 - **Action**: What tool was called and with what arguments
 
 You can also **copy all logs to clipboard** using the toolbar button for sharing or analysis.
+
+When debug logs are enabled, every finished run also adds a **📊 Agent run summary** entry: LLM round trips, characters sent, token usage (streaming mode), tool calls executed vs. served from cache, tool time (wall-clock, with overlapping calls counted once, and summed), compaction savings, deferred tool definitions withheld and unlocked, and MCP validation rejects and retries, plus per-tool call, error and cache counts. The same summary is written to `idea.log`.
 
 ### WebView Activity
 

@@ -6,6 +6,7 @@ import com.devoxx.genie.service.MessageCreationService;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.AgentToolProviderFactory;
 import com.devoxx.genie.service.agent.ToolErrorRecovery;
+import com.devoxx.genie.service.agent.loop.AgentRequestTransformer;
 import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.prompt.steering.SteeringMessageInjector;
@@ -24,12 +25,14 @@ import com.intellij.openapi.project.Project;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.service.tool.ToolExecution;
 import dev.langchain4j.service.tool.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -124,6 +127,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             AgentLoopTracker tracker = currentTracker.getAndSet(null);
             if (tracker != null) {
                 FeatureUsageTracker.agentCompleted(context, tracker.getCallCount());
+                tracker.publishRunSummary();
             }
         });
     }
@@ -187,7 +191,11 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
                 .onPartialThinking(handler::onPartialThinking)
                 .onIntermediateResponse(handler::onIntermediateResponse)
                 .onToolExecuted(this::logToolExecution)
-                .onCompleteResponse(handler::onCompleteResponse)
+                .onCompleteResponse(response -> {
+                    // AiServices sums token usage over all round trips into the final response.
+                    recordTokenUsage(response);
+                    handler.onCompleteResponse(response);
+                })
                 .onError(handler::onError)
                 .start();
 
@@ -250,11 +258,27 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
             // agent loop runs are injected into the next round-trip request.
             String memoryKey = context.getMemoryKey();
             SteeringMessageQueue steeringQueue = SteeringMessageQueue.getInstance();
-            builder.chatRequestTransformer(new SteeringMessageInjector(steeringQueue, memoryKey, chatMemory));
+            SteeringMessageInjector steering = new SteeringMessageInjector(steeringQueue, memoryKey, chatMemory);
+            // In agent mode, also compact older tool results, withhold deferred tool
+            // definitions and record request metrics on every round trip.
+            builder.chatRequestTransformer(toolProvider instanceof AgentLoopTracker tracker
+                    ? AgentRequestTransformer.chain(steering, tracker.getRunContext().requestTransformer())
+                    : steering);
             steeringQueue.activate(memoryKey);
         }
 
         return builder.build();
+    }
+
+    private void recordTokenUsage(@Nullable ChatResponse response) {
+        AgentLoopTracker tracker = currentTracker.get();
+        if (tracker == null || response == null || response.tokenUsage() == null) {
+            return;
+        }
+        TokenUsage usage = response.tokenUsage();
+        tracker.getRunContext().getMetrics().recordTokens(
+                usage.inputTokenCount() != null ? usage.inputTokenCount() : 0,
+                usage.outputTokenCount() != null ? usage.outputTokenCount() : 0);
     }
 
     private void logToolExecution(@NotNull ToolExecution toolExecution) {

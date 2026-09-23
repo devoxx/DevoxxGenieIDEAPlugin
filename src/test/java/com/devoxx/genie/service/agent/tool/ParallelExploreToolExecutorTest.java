@@ -202,9 +202,42 @@ class ParallelExploreToolExecutorTest {
             assertThat(result).contains("Sub-Agent #1").contains("q1");
             assertThat(result).contains("Sub-Agent #2").contains("q2");
             assertThat(result).doesNotContain("Sub-Agent #3");
+            // The dropped queries are reported instead of silently discarded.
+            assertThat(result).contains("were NOT explored").contains("- q3").contains("- q4").contains("- q5");
         } finally {
             directExecutor.shutdownNow();
         }
+    }
+
+    @Test
+    void execute_duplicateQueries_exploredOnceAndReported() {
+        when(stateService.getSubAgentParallelism()).thenReturn(3);
+
+        ExecutorService directExecutor = Executors.newFixedThreadPool(2);
+        when(threadPoolManager.getSubAgentPool()).thenReturn(directExecutor);
+
+        try (MockedConstruction<SubAgentRunner> mocked = mockConstruction(SubAgentRunner.class,
+                (runner, context) -> when(runner.execute(any())).thenReturn("Result"))) {
+
+            ToolExecutionRequest request = ToolExecutionRequest.builder()
+                    .name("parallel_explore")
+                    .arguments("{\"queries\": [\"Find auth\", \"find  AUTH \", \"find db\", \" \"]}")
+                    .build();
+
+            String result = executor.execute(request, null);
+
+            assertThat(mocked.constructed()).hasSize(2);
+            assertThat(result).contains("Sub-Agent #1: Find auth").contains("Sub-Agent #2: find db");
+            assertThat(result).contains("2 duplicate or blank queries were skipped").doesNotContain("NOT explored");
+        } finally {
+            directExecutor.shutdownNow();
+        }
+    }
+
+    @Test
+    void distinctQueries_ignoresCaseWhitespaceAndBlanks() {
+        assertThat(ParallelExploreToolExecutor.distinctQueries(java.util.Arrays.asList("A  b", "a b", "", null, "c")))
+                .containsExactly("A  b", "c");
     }
 
     @Test

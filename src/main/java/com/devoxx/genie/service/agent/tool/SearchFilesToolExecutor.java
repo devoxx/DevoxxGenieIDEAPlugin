@@ -15,6 +15,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,6 +26,13 @@ import java.util.regex.Pattern;
 public class SearchFilesToolExecutor implements ToolExecutor {
 
     static final int MAX_RESULTS = 50;
+    /**
+     * When a search hits {@link #MAX_RESULTS}, matches are counted up to this cap so the model
+     * learns how broad the search really was instead of seeing a silently truncated list.
+     */
+    static final int MAX_COUNTED_MATCHES = 2_000;
+    /** Files listed in the "most matches" overview of a too-broad search. */
+    static final int TOP_FILES_SHOWN = 10;
     static final int MAX_LINE_LENGTH = 200;
     static final Set<String> SKIP_DIRS = Set.of(
             ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle"
@@ -99,9 +109,75 @@ public class SearchFilesToolExecutor implements ToolExecutor {
             return "No matches found for pattern: " + patternStr;
         }
         if (count[0] >= MAX_RESULTS) {
-            result.append("\n... (truncated, showing first ").append(MAX_RESULTS).append(" results)");
+            appendTooBroadSummary(result, searchDir, projectBase, regex, fileMatcher);
         }
         return result.toString();
+    }
+
+    /**
+     * Describes how broad a truncated search really was — total matches (up to
+     * {@link #MAX_COUNTED_MATCHES}), number of files and the files with the most matches — and
+     * how to narrow it, so the model refines the query instead of guessing from a partial list.
+     */
+    void appendTooBroadSummary(StringBuilder result, VirtualFile searchDir, VirtualFile projectBase,
+                               Pattern regex, PathMatcher fileMatcher) {
+        Map<String, Integer> perFile = new LinkedHashMap<>();
+        int[] total = {0};
+        countMatchesInDirectory(searchDir, projectBase, regex, fileMatcher, perFile, total);
+
+        String totalText = total[0] >= MAX_COUNTED_MATCHES ? MAX_COUNTED_MATCHES + "+" : String.valueOf(total[0]);
+        result.append("\n... (truncated, showing first ").append(MAX_RESULTS).append(" of ")
+                .append(totalText).append(" matches in ").append(perFile.size())
+                .append(total[0] >= MAX_COUNTED_MATCHES ? "+" : "").append(" files)\n");
+
+        List<Map.Entry<String, Integer>> top = perFile.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(TOP_FILES_SHOWN)
+                .toList();
+        if (!top.isEmpty()) {
+            result.append("Files with the most matches:\n");
+            for (Map.Entry<String, Integer> e : top) {
+                result.append("  ").append(e.getKey()).append(" (").append(e.getValue()).append(")\n");
+            }
+        }
+        result.append("This search is too broad to review completely. Narrow it with a more specific pattern, ")
+                .append("the 'path' parameter or 'file_pattern' (e.g. '*.java') rather than drawing conclusions ")
+                .append("from the partial list above.");
+    }
+
+    void countMatchesInDirectory(VirtualFile dir, VirtualFile projectBase, Pattern regex, PathMatcher fileMatcher,
+                                 Map<String, Integer> perFile, int[] total) {
+        VirtualFile[] children = dir.getChildren();
+        if (children == null) return;
+        for (VirtualFile child : children) {
+            if (total[0] >= MAX_COUNTED_MATCHES) return;
+            if (child.isDirectory()) {
+                if (SKIP_DIRS.contains(child.getName())) continue;
+                countMatchesInDirectory(child, projectBase, regex, fileMatcher, perFile, total);
+            } else {
+                if (isBinaryFile(child)) continue;
+                if (fileMatcher != null && !fileMatcher.matches(java.nio.file.Path.of(child.getName()))) continue;
+                countMatchesInFile(child, projectBase, regex, perFile, total);
+            }
+        }
+    }
+
+    private void countMatchesInFile(VirtualFile file, VirtualFile projectBase, Pattern regex,
+                                    Map<String, Integer> perFile, int[] total) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            String relativePath = getRelativePath(file, projectBase);
+            if (relativePath == null) return;
+            String line;
+            while ((line = reader.readLine()) != null && total[0] < MAX_COUNTED_MATCHES) {
+                if (regex.matcher(line).find()) {
+                    perFile.merge(relativePath, 1, Integer::sum);
+                    total[0]++;
+                }
+            }
+        } catch (Exception e) {
+            // Skip files that can't be read
+        }
     }
 
     static VirtualFile resolveSearchDir(String path, @NotNull VirtualFile projectBase) {

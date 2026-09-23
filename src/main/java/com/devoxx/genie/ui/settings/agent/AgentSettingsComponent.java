@@ -50,6 +50,24 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBCheckBox showChangedFilesCheckbox =
             new JBCheckBox("Show changed files with diffs after an agent run", Boolean.TRUE.equals(stateService.getAgentShowChangedFiles()));
 
+    // Agent loop efficiency
+    private final JBCheckBox compactToolResultsCheckbox = new JBCheckBox(
+            "Compact older tool results before re-sending them to the LLM",
+            !Boolean.FALSE.equals(stateService.getAgentCompactToolResults()));
+    private final JBCheckBox deduplicateToolCallsCheckbox = new JBCheckBox(
+            "Reuse results of identical read-only tool calls within a run",
+            !Boolean.FALSE.equals(stateService.getAgentDeduplicateToolCalls()));
+    private final JBCheckBox deferMcpToolsCheckbox = new JBCheckBox(
+            "Load MCP tool definitions on demand (search_tools) when more than",
+            !Boolean.FALSE.equals(stateService.getAgentDeferMcpTools()));
+    private final JBIntSpinner deferMcpToolsThresholdSpinner = new JBIntSpinner(
+            stateService.getAgentDeferMcpToolsThreshold() != null
+                    ? stateService.getAgentDeferMcpToolsThreshold() : AGENT_DEFER_MCP_TOOLS_THRESHOLD,
+            0, 500);
+    private final JBCheckBox wrapUntrustedOutputCheckbox = new JBCheckBox(
+            "Mark web and MCP tool output as untrusted (prompt-injection guard)",
+            !Boolean.FALSE.equals(stateService.getAgentWrapUntrustedOutput()));
+
     // Command blacklist for run_command (issue #1209)
     private static final String BLACKLIST_ACTION_ASK_LABEL = "Ask for approval";
     private static final String BLACKLIST_ACTION_BLOCK_LABEL = "Block automatically";
@@ -218,6 +236,34 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "Maximum number of tool calls the LLM can make per prompt. " +
                 "Prevents infinite loops. The LLM will provide its best answer when the limit is reached.");
+
+        // --- Efficiency ---
+        addSection(contentPanel, gbc, "Efficiency");
+
+        addFullWidthRow(contentPanel, gbc, compactToolResultsCheckbox);
+        addHelpText(contentPanel, gbc,
+                "Every round trip re-sends the whole conversation. Large tool results that are no longer among the " +
+                "most recent ones are shortened in the request (chat history keeps the full text); the model can " +
+                "call the tool again if it needs the full output.");
+
+        addFullWidthRow(contentPanel, gbc, deduplicateToolCallsCheckbox);
+        addHelpText(contentPanel, gbc,
+                "An identical read-only call (same tool, same arguments) made while nothing was modified returns the " +
+                "earlier result instead of running again, and endlessly repeated calls are stopped.");
+
+        JPanel deferRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        deferRow.add(deferMcpToolsCheckbox);
+        deferRow.add(deferMcpToolsThresholdSpinner);
+        deferRow.add(new JBLabel(" MCP tools are enabled"));
+        addFullWidthRow(contentPanel, gbc, deferRow);
+        addHelpText(contentPanel, gbc,
+                "With many MCP tools, their definitions are left out of each request; the model finds and loads " +
+                "the ones it needs with the search_tools tool.");
+
+        addFullWidthRow(contentPanel, gbc, wrapUntrustedOutputCheckbox);
+        addHelpText(contentPanel, gbc,
+                "Output from fetch_page, web_search and MCP servers is wrapped in <untrusted_tool_output> tags and " +
+                "the model is told never to follow instructions found inside it.");
 
         // --- Approval ---
         addSection(contentPanel, gbc, "Approval");
@@ -1102,7 +1148,17 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || isPerAgentConfigsModified()
                 || isToolCheckboxesModified()
                 || isToolDescriptionsModified()
-                || enableWebSearchToolCheckbox.isSelected() != Boolean.TRUE.equals(state.getWebSearchAgentToolEnabled());
+                || enableWebSearchToolCheckbox.isSelected() != Boolean.TRUE.equals(state.getWebSearchAgentToolEnabled())
+                || isEfficiencyModified(state);
+    }
+
+    private boolean isEfficiencyModified(@NotNull DevoxxGenieStateService state) {
+        return compactToolResultsCheckbox.isSelected() != !Boolean.FALSE.equals(state.getAgentCompactToolResults())
+                || deduplicateToolCallsCheckbox.isSelected() != !Boolean.FALSE.equals(state.getAgentDeduplicateToolCalls())
+                || deferMcpToolsCheckbox.isSelected() != !Boolean.FALSE.equals(state.getAgentDeferMcpTools())
+                || deferMcpToolsThresholdSpinner.getNumber() != (state.getAgentDeferMcpToolsThreshold() != null
+                        ? state.getAgentDeferMcpToolsThreshold() : AGENT_DEFER_MCP_TOOLS_THRESHOLD)
+                || wrapUntrustedOutputCheckbox.isSelected() != !Boolean.FALSE.equals(state.getAgentWrapUntrustedOutput());
     }
 
     private boolean isToolDescriptionsModified() {
@@ -1126,6 +1182,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     public void apply() {
         stateService.setAgentModeEnabled(enableAgentModeCheckbox.isSelected());
         stateService.setAgentMaxToolCalls(maxToolCallsSpinner.getNumber());
+        stateService.setAgentCompactToolResults(compactToolResultsCheckbox.isSelected());
+        stateService.setAgentDeduplicateToolCalls(deduplicateToolCallsCheckbox.isSelected());
+        stateService.setAgentDeferMcpTools(deferMcpToolsCheckbox.isSelected());
+        stateService.setAgentDeferMcpToolsThreshold(deferMcpToolsThresholdSpinner.getNumber());
+        stateService.setAgentWrapUntrustedOutput(wrapUntrustedOutputCheckbox.isSelected());
         stateService.setAgentAutoApproveReadOnly(autoApproveReadOnlyCheckbox.isSelected());
         stateService.setAgentWriteApprovalRequired(writeApprovalRequiredCheckbox.isSelected());
         stateService.setAgentShowChangedFiles(showChangedFilesCheckbox.isSelected());
@@ -1170,6 +1231,12 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         enableAgentModeCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentModeEnabled()));
         maxToolCallsSpinner.setNumber(state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS);
+        compactToolResultsCheckbox.setSelected(!Boolean.FALSE.equals(state.getAgentCompactToolResults()));
+        deduplicateToolCallsCheckbox.setSelected(!Boolean.FALSE.equals(state.getAgentDeduplicateToolCalls()));
+        deferMcpToolsCheckbox.setSelected(!Boolean.FALSE.equals(state.getAgentDeferMcpTools()));
+        deferMcpToolsThresholdSpinner.setNumber(state.getAgentDeferMcpToolsThreshold() != null
+                ? state.getAgentDeferMcpToolsThreshold() : AGENT_DEFER_MCP_TOOLS_THRESHOLD);
+        wrapUntrustedOutputCheckbox.setSelected(!Boolean.FALSE.equals(state.getAgentWrapUntrustedOutput()));
         autoApproveReadOnlyCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly()));
         writeApprovalRequiredCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentWriteApprovalRequired()));
         showChangedFilesCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentShowChangedFiles()));

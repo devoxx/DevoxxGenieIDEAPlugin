@@ -12,5 +12,7 @@ public enum AgentType {
     SUB_AGENT_STARTED,
     SUB_AGENT_COMPLETED,
     SUB_AGENT_ERROR,
-    SYSTEM_PROMPT
+    SYSTEM_PROMPT,
+    /** End-of-run efficiency metrics (tool timings, cache hits, compaction, deferred tools). */
+    RUN_SUMMARY
 }

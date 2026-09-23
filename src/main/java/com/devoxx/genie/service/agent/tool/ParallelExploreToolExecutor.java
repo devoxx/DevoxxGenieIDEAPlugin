@@ -16,7 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -62,9 +65,18 @@ public class ParallelExploreToolExecutor implements ToolExecutor, AgentLoopTrack
                 ? settings.getSubAgentTimeoutSeconds()
                 : SUB_AGENT_TIMEOUT_SECONDS;
 
+        // Drop blank and duplicate queries (same text ignoring case/whitespace) so no sub-agent
+        // slot is spent exploring the same thing twice.
+        List<String> distinctQueries = distinctQueries(queries);
+        if (distinctQueries.isEmpty()) {
+            return "Error: 'queries' parameter is required and must be a non-empty array of strings.";
+        }
+        int duplicatesDropped = queries.size() - distinctQueries.size();
+
         // Cap the number of queries to prevent abuse
-        int effectiveCount = Math.min(queries.size(), maxParallelism);
-        List<String> effectiveQueries = queries.subList(0, effectiveCount);
+        int effectiveCount = Math.min(distinctQueries.size(), maxParallelism);
+        List<String> effectiveQueries = distinctQueries.subList(0, effectiveCount);
+        List<String> skippedQueries = distinctQueries.subList(effectiveCount, distinctQueries.size());
 
         log.info("Parallel explore: launching {} sub-agents", effectiveCount);
         publishEvent(AgentType.SUB_AGENT_STARTED, "parallel_explore",
@@ -120,7 +132,42 @@ public class ParallelExploreToolExecutor implements ToolExecutor, AgentLoopTrack
 
         activeRunners.clear();
 
-        return formatCombinedResults(effectiveQueries, results);
+        return formatCombinedResults(effectiveQueries, results)
+                + formatSkippedNote(skippedQueries, duplicatesDropped, maxParallelism);
+    }
+
+    /** Non-blank queries in order, keeping the first of any that differ only in case/whitespace. */
+    static @NotNull List<String> distinctQueries(@NotNull List<String> queries) {
+        Map<String, String> byKey = new LinkedHashMap<>();
+        for (String query : queries) {
+            if (query == null || query.isBlank()) continue;
+            String key = query.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+            byKey.putIfAbsent(key, query.strip());
+        }
+        return new ArrayList<>(byKey.values());
+    }
+
+    /**
+     * Tells the model which queries were not explored rather than dropping them silently, so it
+     * can run them in a follow-up call or explore them itself.
+     */
+    static @NotNull String formatSkippedNote(@NotNull List<String> skipped, int duplicatesDropped, int maxParallelism) {
+        if (skipped.isEmpty() && duplicatesDropped == 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder("## Note\n\n");
+        if (duplicatesDropped > 0) {
+            sb.append(duplicatesDropped).append(duplicatesDropped == 1 ? " duplicate or blank query was"
+                    : " duplicate or blank queries were").append(" skipped.\n");
+        }
+        if (!skipped.isEmpty()) {
+            sb.append("Only ").append(maxParallelism).append(" queries can be explored per call (parallelism limit); ")
+                    .append("these were NOT explored — call parallel_explore again for them if they still matter:\n");
+            for (String query : skipped) {
+                sb.append("- ").append(query).append('\n');
+            }
+        }
+        return sb.toString();
     }
 
     /**

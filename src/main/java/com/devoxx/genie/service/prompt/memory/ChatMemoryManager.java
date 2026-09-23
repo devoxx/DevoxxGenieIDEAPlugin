@@ -7,6 +7,7 @@ import com.devoxx.genie.model.activity.ActivitySource;
 import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.agent.loop.UntrustedContent;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.prompt.error.MemoryException;
 import com.devoxx.genie.service.skill.SkillRegistry;
@@ -474,6 +475,12 @@ public class ChatMemoryManager {
                     "\nMake sure to use this information for your MCP tooling calls\n" +
                     "</MCP_INSTRUCTION>";
             MCPService.logDebug("Added MCP instructions to system prompt");
+        }
+
+        // Tell the model that web / MCP tool output is data, not instructions (prompt-injection guard).
+        if ((Boolean.TRUE.equals(state.getAgentModeEnabled()) || MCPService.isMCPEnabled())
+                && !Boolean.FALSE.equals(state.getAgentWrapUntrustedOutput())) {
+            systemPrompt += UntrustedContent.SYSTEM_PROMPT_INSTRUCTION;
         }
 
         // Add RAG/semantic_search instruction when both agent mode and RAG are active.
