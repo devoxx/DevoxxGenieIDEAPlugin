@@ -12,12 +12,17 @@ import software.amazon.awssdk.identity.spi.ResolveIdentityRequest;
 import software.amazon.awssdk.identity.spi.TokenIdentity;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.bedrock.BedrockClientBuilder;
+import software.amazon.awssdk.services.bedrock.auth.scheme.BedrockAuthSchemeProvider;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClientBuilder;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClientBuilder;
+import software.amazon.awssdk.services.bedrockruntime.auth.scheme.BedrockRuntimeAuthSchemeProvider;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class BedrockAuthResolver {
+
+    private static final List<String> BEARER_AUTH_PREFERENCE = List.of("httpBearerAuth");
 
     public @NotNull BedrockRuntimeClientBuilder configure(@NotNull BedrockRuntimeClientBuilder builder) {
         return configureAuth(builder.region(getRegion()));
@@ -74,21 +79,27 @@ public class BedrockAuthResolver {
     private @NotNull BedrockRuntimeClientBuilder configureAuth(@NotNull BedrockRuntimeClientBuilder builder) {
         return switch (getAuthMode()) {
             case ACCESS_KEY, PROFILE -> builder.credentialsProvider(getCredentialsProvider());
-            case BEARER_TOKEN -> builder.tokenProvider(getTokenProvider());
+            case BEARER_TOKEN -> builder
+                    .tokenProvider(getTokenProvider())
+                    .authSchemeProvider(BedrockRuntimeAuthSchemeProvider.defaultProvider(BEARER_AUTH_PREFERENCE));
          };
      }
 
     private @NotNull BedrockRuntimeAsyncClientBuilder configureAuth(@NotNull BedrockRuntimeAsyncClientBuilder builder) {
         return switch (getAuthMode()) {
             case ACCESS_KEY, PROFILE -> builder.credentialsProvider(getCredentialsProvider());
-            case BEARER_TOKEN -> builder.tokenProvider(getTokenProvider());
+            case BEARER_TOKEN -> builder
+                    .tokenProvider(getTokenProvider())
+                    .authSchemeProvider(BedrockRuntimeAuthSchemeProvider.defaultProvider(BEARER_AUTH_PREFERENCE));
          };
      }
 
     private @NotNull BedrockClientBuilder configureAuth(@NotNull BedrockClientBuilder builder) {
         return switch (getAuthMode()) {
             case ACCESS_KEY, PROFILE -> builder.credentialsProvider(getCredentialsProvider());
-            case BEARER_TOKEN -> builder.tokenProvider(getTokenProvider());
+            case BEARER_TOKEN -> builder
+                    .tokenProvider(getTokenProvider())
+                    .authSchemeProvider(BedrockAuthSchemeProvider.defaultProvider(BEARER_AUTH_PREFERENCE));
          };
      }
 }
