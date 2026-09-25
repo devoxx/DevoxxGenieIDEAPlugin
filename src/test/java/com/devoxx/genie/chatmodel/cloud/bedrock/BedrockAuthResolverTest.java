@@ -9,7 +9,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.http.auth.scheme.BearerAuthScheme;
+import software.amazon.awssdk.http.auth.spi.scheme.AuthSchemeOption;
 import software.amazon.awssdk.identity.spi.TokenIdentity;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.bedrock.BedrockClient;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -66,5 +74,47 @@ class BedrockAuthResolverTest extends AbstractLightPlatformTestCase {
 
         TokenIdentity tokenIdentity = resolver.getTokenProvider().resolveIdentity().join();
         assertThat(tokenIdentity.token()).isEqualTo("bedrock-token");
+    }
+
+    @Test
+    void shouldPreferBearerAuthSchemeOnRuntimeClientForBearerMode() {
+        when(settingsStateMock.getAwsBedrockAuthMode()).thenReturn(AwsBedrockAuthMode.BEARER_TOKEN);
+
+        BedrockAuthResolver resolver = new BedrockAuthResolver();
+
+        try (BedrockRuntimeClient client = resolver.configure(BedrockRuntimeClient.builder()).build()) {
+            List<AuthSchemeOption> options = client.serviceClientConfiguration().authSchemeProvider()
+                    .resolveAuthScheme(p -> p.operation("Converse").region(Region.US_EAST_1));
+
+            assertThat(options.get(0).schemeId()).isEqualTo(BearerAuthScheme.SCHEME_ID);
+        }
+    }
+
+    @Test
+    void shouldPreferBearerAuthSchemeOnRuntimeAsyncClientForBearerMode() {
+        when(settingsStateMock.getAwsBedrockAuthMode()).thenReturn(AwsBedrockAuthMode.BEARER_TOKEN);
+
+        BedrockAuthResolver resolver = new BedrockAuthResolver();
+
+        try (BedrockRuntimeAsyncClient client = resolver.configure(BedrockRuntimeAsyncClient.builder()).build()) {
+            List<AuthSchemeOption> options = client.serviceClientConfiguration().authSchemeProvider()
+                    .resolveAuthScheme(p -> p.operation("ConverseStream").region(Region.US_EAST_1));
+
+            assertThat(options.get(0).schemeId()).isEqualTo(BearerAuthScheme.SCHEME_ID);
+        }
+    }
+
+    @Test
+    void shouldPreferBearerAuthSchemeOnBedrockClientForBearerMode() {
+        when(settingsStateMock.getAwsBedrockAuthMode()).thenReturn(AwsBedrockAuthMode.BEARER_TOKEN);
+
+        BedrockAuthResolver resolver = new BedrockAuthResolver();
+
+        try (BedrockClient client = resolver.configure(BedrockClient.builder()).build()) {
+            List<AuthSchemeOption> options = client.serviceClientConfiguration().authSchemeProvider()
+                    .resolveAuthScheme(p -> p.operation("ListFoundationModels").region(Region.US_EAST_1));
+
+            assertThat(options.get(0).schemeId()).isEqualTo(BearerAuthScheme.SCHEME_ID);
+        }
     }
 }
