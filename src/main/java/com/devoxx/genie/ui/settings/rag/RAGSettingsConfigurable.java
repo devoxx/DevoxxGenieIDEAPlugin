@@ -61,6 +61,16 @@ public class RAGSettingsConfigurable implements Configurable {
         isModified |= !ragSettingsComponent.getRagExcludedDirsPanel().getData()
                 .equals(stateService.getRagExcludedDirectories());
 
+        // Reranker (task-214)
+        isModified |= ragSettingsComponent.getRerankCheckBox().isSelected()
+                != Boolean.TRUE.equals(stateService.getRerankResults());
+        String storedModel = stateService.getRerankerModelName();
+        isModified |= !ragSettingsComponent.getRerankerModelField().getText().equals(storedModel);
+        int storedShortlist = stateService.getRerankerShortlistSize() == null ? 30 : stateService.getRerankerShortlistSize();
+        isModified |= ragSettingsComponent.getRerankerShortlistSpinner().getNumber() != storedShortlist;
+        int storedTimeout = stateService.getRerankerTimeoutMs() == null ? 2000 : stateService.getRerankerTimeoutMs();
+        isModified |= ragSettingsComponent.getRerankerTimeoutSpinner().getNumber() != storedTimeout;
+
         return isModified;
     }
 
@@ -82,6 +92,12 @@ public class RAGSettingsConfigurable implements Configurable {
         stateService.setRagQueryExpansionN(ragSettingsComponent.getQueryExpansionVariantsSpinner().getNumber());
         stateService.setRagExcludedDirectories(
                 new java.util.ArrayList<>(ragSettingsComponent.getRagExcludedDirsPanel().getData()));
+
+        // Reranker (task-214)
+        stateService.setRerankResults(ragSettingsComponent.getRerankCheckBox().isSelected());
+        stateService.setRerankerModelName(ragSettingsComponent.getRerankerModelField().getText().trim());
+        stateService.setRerankerShortlistSize(ragSettingsComponent.getRerankerShortlistSpinner().getNumber());
+        stateService.setRerankerTimeoutMs(ragSettingsComponent.getRerankerTimeoutSpinner().getNumber());
 
         // Re-arm the feature-enablement analytics snapshot (task-209).
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
@@ -109,5 +125,14 @@ public class RAGSettingsConfigurable implements Configurable {
                 stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN());
         ragSettingsComponent.getRagExcludedDirsPanel().setData(
                 new java.util.ArrayList<>(stateService.getRagExcludedDirectories()));
+
+        // Reranker (task-214)
+        ragSettingsComponent.getRerankCheckBox().setSelected(
+                Boolean.TRUE.equals(stateService.getRerankResults()));
+        ragSettingsComponent.getRerankerModelField().setText(stateService.getRerankerModelName());
+        ragSettingsComponent.getRerankerShortlistSpinner().setNumber(
+                stateService.getRerankerShortlistSize() == null ? 30 : stateService.getRerankerShortlistSize());
+        ragSettingsComponent.getRerankerTimeoutSpinner().setNumber(
+                stateService.getRerankerTimeoutMs() == null ? 2000 : stateService.getRerankerTimeoutMs());
     }
 }
