@@ -118,6 +118,52 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
                 .anyMatch(RawTrafficListenerService.class::isInstance);
     }
 
+    @Test
+    void createAnthropicModelOmitsTemperatureForModelsThatRejectIt() {
+        when(settingsStateMock.getShouldEnableAWSRegionalInference()).thenReturn(false);
+
+        BedrockModelFactory factory = new BedrockModelFactory();
+
+        CustomChatModel opus48 = new CustomChatModel();
+        opus48.setModelName("anthropic.claude-opus-4-8");
+        opus48.setTemperature(0.7);
+
+        assertThat(factory.createChatModel(opus48).defaultRequestParameters().temperature()).isNull();
+        assertThat(factory.createStreamingChatModel(opus48).defaultRequestParameters().temperature()).isNull();
+    }
+
+    @Test
+    void createAnthropicModelKeepsTemperatureForModelsThatAcceptIt() {
+        when(settingsStateMock.getShouldEnableAWSRegionalInference()).thenReturn(false);
+
+        BedrockModelFactory factory = new BedrockModelFactory();
+
+        CustomChatModel sonnet4 = new CustomChatModel();
+        sonnet4.setModelName("anthropic.claude-sonnet-4-20250514-v1:0");
+        sonnet4.setTemperature(0.7);
+
+        assertThat(factory.createChatModel(sonnet4).defaultRequestParameters().temperature()).isEqualTo(0.7);
+        assertThat(factory.createStreamingChatModel(sonnet4).defaultRequestParameters().temperature()).isEqualTo(0.7);
+    }
+
+    @Test
+    void rejectsTemperatureForClaudeModelsWithoutSamplingParameters() {
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-4-7")).isTrue();
+        assertThat(BedrockModelFactory.rejectsTemperature("us.anthropic.claude-opus-4-8")).isTrue();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-5")).isTrue();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-5-5")).isTrue();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-sonnet-5")).isTrue();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-fable-5-1")).isTrue();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-mythos-5-1")).isTrue();
+
+        assertThat(BedrockModelFactory.rejectsTemperature("global.anthropic.claude-opus-4-6-v1")).isFalse();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-sonnet-4-6")).isFalse();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-sonnet-4-5-20250929-v1:0")).isFalse();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-haiku-4-5-20251001-v1:0")).isFalse();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-4-20250514-v1:0")).isFalse();
+        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-3-7-sonnet-20250219-v1:0")).isFalse();
+    }
+
     private static LanguageModel model(String modelName) {
         return LanguageModel.builder()
             .provider(ModelProvider.Bedrock)

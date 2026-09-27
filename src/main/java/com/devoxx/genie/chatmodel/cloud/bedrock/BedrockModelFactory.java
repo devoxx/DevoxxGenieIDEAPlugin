@@ -33,7 +33,20 @@ public class BedrockModelFactory implements ChatModelFactory {
     // Langchain4J doesn't support this yet
     private static final String MODEL_PREFIX_AMAZON = "amazon";
 
+    private static final List<String> MODELS_WITHOUT_TEMPERATURE = List.of(
+            "claude-opus-4-7",
+            "claude-opus-4-8",
+            "claude-opus-5",
+            "claude-sonnet-5",
+            "claude-fable",
+            "claude-mythos"
+    );
+
     private final BedrockAuthResolver authResolver = new BedrockAuthResolver();
+
+    static boolean rejectsTemperature(@NotNull String modelName) {
+        return MODELS_WITHOUT_TEMPERATURE.stream().anyMatch(modelName::contains);
+    }
 
     /**
      * Creates a {@link ChatModel} based on the provided {@link CustomChatModel}.
@@ -91,10 +104,7 @@ public class BedrockModelFactory implements ChatModelFactory {
         return BedrockChatModel.builder()
                 .modelId(getModelId(customChatModel.getModelName()))
                 .client(authResolver.configure(BedrockRuntimeClient.builder()).build())
-                .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(customChatModel.getTemperature())
-                        .maxOutputTokens(customChatModel.getMaxTokens())
-                        .build())
+                .defaultRequestParameters(anthropicRequestParameters(customChatModel))
                 .listeners(getListener())
                 .build();
     }
@@ -110,11 +120,15 @@ public class BedrockModelFactory implements ChatModelFactory {
         return BedrockStreamingChatModel.builder()
                 .modelId(getModelId(customChatModel.getModelName()))
                 .client(authResolver.configure(BedrockRuntimeAsyncClient.builder()).build())
-                .defaultRequestParameters(ChatRequestParameters.builder()
-                        .temperature(customChatModel.getTemperature())
-                        .maxOutputTokens(customChatModel.getMaxTokens())
-                        .build())
+                .defaultRequestParameters(anthropicRequestParameters(customChatModel))
                 .listeners(getListener())
+                .build();
+    }
+
+    private @NotNull ChatRequestParameters anthropicRequestParameters(@NotNull CustomChatModel customChatModel) {
+        return ChatRequestParameters.builder()
+                .temperature(rejectsTemperature(customChatModel.getModelName()) ? null : customChatModel.getTemperature())
+                .maxOutputTokens(customChatModel.getMaxTokens())
                 .build();
     }
 
