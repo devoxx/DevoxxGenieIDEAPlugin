@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-06-10",
+  "lastUpdated": "2026-09-27",
   "_sources": {
     "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
@@ -16,6 +16,42 @@
   },
   "providers": {
     "Anthropic": [
+      {
+        "modelName": "claude-fable-5-1",
+        "displayName": "Claude Fable 5.1",
+        "inputCost": 10,
+        "outputCost": 50,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "claude-opus-5-5",
+        "displayName": "Claude Opus 5.5",
+        "inputCost": 4,
+        "outputCost": 20,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "claude-opus-5",
+        "displayName": "Claude Opus 5",
+        "inputCost": 5,
+        "outputCost": 25,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "claude-sonnet-5",
+        "displayName": "Claude Sonnet 5",
+        "inputCost": 2,
+        "outputCost": 10,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
       {
         "modelName": "claude-fable-5",
         "displayName": "Claude Fable 5",
@@ -645,6 +681,34 @@
       }
     ],
     "Bedrock": [
+      {
+        "modelName": "anthropic.claude-fable-5-1",
+        "displayName": "Claude Fable 5.1",
+        "inputCost": 10,
+        "outputCost": 50,
+        "inputMaxTokens": 1000000
+      },
+      {
+        "modelName": "anthropic.claude-opus-5-5",
+        "displayName": "Claude Opus 5.5",
+        "inputCost": 4,
+        "outputCost": 20,
+        "inputMaxTokens": 1000000
+      },
+      {
+        "modelName": "anthropic.claude-opus-5",
+        "displayName": "Claude Opus 5",
+        "inputCost": 5,
+        "outputCost": 25,
+        "inputMaxTokens": 1000000
+      },
+      {
+        "modelName": "anthropic.claude-sonnet-5",
+        "displayName": "Claude Sonnet 5",
+        "inputCost": 2,
+        "outputCost": 10,
+        "inputMaxTokens": 1000000
+      },
       {
         "modelName": "anthropic.claude-fable-5",
         "displayName": "Claude Fable 5",

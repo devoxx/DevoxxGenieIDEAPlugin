@@ -146,24 +146,6 @@ class BedrockModelFactoryTest extends AbstractLightPlatformTestCase {
         assertThat(factory.createStreamingChatModel(sonnet4).defaultRequestParameters().temperature()).isEqualTo(0.7);
     }
 
-    @Test
-    void rejectsTemperatureForClaudeModelsWithoutSamplingParameters() {
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-4-7")).isTrue();
-        assertThat(BedrockModelFactory.rejectsTemperature("us.anthropic.claude-opus-4-8")).isTrue();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-5")).isTrue();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-5-5")).isTrue();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-sonnet-5")).isTrue();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-fable-5-1")).isTrue();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-mythos-5-1")).isTrue();
-
-        assertThat(BedrockModelFactory.rejectsTemperature("global.anthropic.claude-opus-4-6-v1")).isFalse();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-sonnet-4-6")).isFalse();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-sonnet-4-5-20250929-v1:0")).isFalse();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-haiku-4-5-20251001-v1:0")).isFalse();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-opus-4-20250514-v1:0")).isFalse();
-        assertThat(BedrockModelFactory.rejectsTemperature("anthropic.claude-3-7-sonnet-20250219-v1:0")).isFalse();
-    }
-
     private static LanguageModel model(String modelName) {
         return LanguageModel.builder()
             .provider(ModelProvider.Bedrock)

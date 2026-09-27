@@ -72,4 +72,39 @@ public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase
         List<LanguageModel> modelNames = factory.getModels();
         Assertions.assertThat(modelNames).size().isGreaterThan(3);
     }
+
+    @Test
+    void createModelsOmitTemperatureForModelsThatRejectIt() {
+        var factory = new AnthropicChatModelFactory();
+
+        assertThat(List.of("claude-opus-4-7", "claude-opus-4-8", "claude-opus-5", "claude-opus-5-5",
+                "claude-sonnet-5", "claude-fable-5", "claude-fable-5-1")).allSatisfy(modelName -> {
+            var customChatModel = customChatModelWithTemperature(modelName);
+
+            assertThat(factory.createChatModel(customChatModel).defaultRequestParameters().temperature()).isNull();
+            assertThat(factory.createStreamingChatModel(customChatModel).defaultRequestParameters().temperature()).isNull();
+        });
+    }
+
+    @Test
+    void createModelsKeepTemperatureForModelsThatAcceptIt() {
+        var factory = new AnthropicChatModelFactory();
+
+        assertThat(List.of("claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001",
+                "claude-sonnet-4-5-20250929", "claude-opus-4-5-20251101")).allSatisfy(modelName -> {
+            var customChatModel = customChatModelWithTemperature(modelName);
+
+            assertThat(factory.createChatModel(customChatModel).defaultRequestParameters().temperature()).isEqualTo(0.7);
+            assertThat(factory.createStreamingChatModel(customChatModel).defaultRequestParameters().temperature()).isEqualTo(0.7);
+        });
+    }
+
+    private static CustomChatModel customChatModelWithTemperature(String modelName) {
+        var customChatModel = new CustomChatModel();
+        customChatModel.setModelName(modelName);
+        customChatModel.setTemperature(0.7);
+        customChatModel.setMaxTokens(256);
+        customChatModel.setMaxRetries(3);
+        return customChatModel;
+    }
 }
