@@ -13,6 +13,8 @@ class ClaudeModelsTest {
         assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-opus-5")).isTrue();
         assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-opus-5-5")).isTrue();
         assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-sonnet-5")).isTrue();
+        assertThat(ClaudeModels.rejectsTemperature("claude-sonnet-5-5")).isTrue();
+        assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-sonnet-5-5")).isTrue();
         assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-fable-5-1")).isTrue();
         assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-mythos-5-1")).isTrue();
 

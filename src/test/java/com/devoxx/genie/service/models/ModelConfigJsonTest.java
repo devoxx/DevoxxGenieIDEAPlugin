@@ -117,6 +117,30 @@ class ModelConfigJsonTest {
     }
 
     @Test
+    void shouldListClaudeSonnet55ForAnthropicAndBedrock() {
+        assertThat(config.getProviders().get("Anthropic"))
+                .filteredOn(model -> model.getModelName().equals("claude-sonnet-5-5"))
+                .singleElement()
+                .satisfies(model -> {
+                    assertThat(model.getDisplayName()).isEqualTo("Claude Sonnet 5.5");
+                    assertThat(model.getInputCost()).isEqualTo(2);
+                    assertThat(model.getOutputCost()).isEqualTo(10);
+                    assertThat(model.getInputMaxTokens()).isEqualTo(1_000_000);
+                    assertThat(model.getOutputMaxTokens()).isEqualTo(128_000);
+                });
+
+        assertThat(config.getProviders().get("Bedrock"))
+                .filteredOn(model -> model.getModelName().equals("anthropic.claude-sonnet-5-5"))
+                .singleElement()
+                .satisfies(model -> {
+                    assertThat(model.getDisplayName()).isEqualTo("Claude Sonnet 5.5");
+                    assertThat(model.getInputCost()).isEqualTo(2);
+                    assertThat(model.getOutputCost()).isEqualTo(10);
+                    assertThat(model.getInputMaxTokens()).isEqualTo(1_000_000);
+                });
+    }
+
+    @Test
     void shouldHaveReasonableTokenLimits() {
         for (Map.Entry<String, List<ModelConfigEntry>> entry : config.getProviders().entrySet()) {
             for (ModelConfigEntry model : entry.getValue()) {
