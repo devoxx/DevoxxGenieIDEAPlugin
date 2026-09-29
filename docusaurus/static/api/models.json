@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-09-27",
+  "lastUpdated": "2026-09-28",
   "_sources": {
     "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
@@ -39,6 +39,15 @@
         "displayName": "Claude Opus 5",
         "inputCost": 5,
         "outputCost": 25,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "claude-sonnet-5-5",
+        "displayName": "Claude Sonnet 5.5",
+        "inputCost": 2,
+        "outputCost": 10,
         "inputMaxTokens": 1000000,
         "outputMaxTokens": 128000,
         "apiKeyUsed": true
@@ -700,6 +709,13 @@
         "displayName": "Claude Opus 5",
         "inputCost": 5,
         "outputCost": 25,
+        "inputMaxTokens": 1000000
+      },
+      {
+        "modelName": "anthropic.claude-sonnet-5-5",
+        "displayName": "Claude Sonnet 5.5",
+        "inputCost": 2,
+        "outputCost": 10,
         "inputMaxTokens": 1000000
       },
       {
