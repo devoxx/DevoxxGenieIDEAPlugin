@@ -47,6 +47,11 @@ class DefaultLLMSettingsUtilTest {
     }
 
     @Test
+    void isApiKeyBasedProvider_requesty_returnsTrue() {
+        assertThat(DefaultLLMSettingsUtil.isApiKeyBasedProvider(ModelProvider.Requesty)).isTrue();
+    }
+
+    @Test
     void isApiKeyBasedProvider_azureOpenAI_returnsTrue() {
         assertThat(DefaultLLMSettingsUtil.isApiKeyBasedProvider(ModelProvider.AzureOpenAI)).isTrue();
     }

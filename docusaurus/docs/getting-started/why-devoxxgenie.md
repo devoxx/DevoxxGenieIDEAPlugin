@@ -39,7 +39,7 @@ This matters for:
 
 Copilot uses GPT-4o. Cursor uses Claude and GPT-4. JetBrains AI Assistant uses a single provider. DevoxxGenie works with all of them — plus dozens more:
 
-**Cloud providers**: OpenAI, Anthropic (Claude), Google Gemini, Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek, Kimi (Moonshot AI), GLM (Zhipu AI), OpenRouter, Azure OpenAI, Amazon Bedrock
+**Cloud providers**: OpenAI, Anthropic (Claude), Google Gemini, Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek, Kimi (Moonshot AI), GLM (Zhipu AI), OpenRouter, Requesty, Azure OpenAI, Amazon Bedrock
 
 **Local providers**: Ollama, LM Studio, GPT4All, Llama.cpp, Jan, any OpenAI-compatible endpoint
 

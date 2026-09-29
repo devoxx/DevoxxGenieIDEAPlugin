@@ -26,7 +26,7 @@ Define tasks as structured markdown specs with acceptance criteria, and let the 
 Connect to a wide range of LLM providers:
 
 - **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Jan, and custom OpenAI-compatible providers
-- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, Kimi, GLM (Zhipu AI), OpenRouter, Cloudflare AI Gateway, Azure OpenAI, and Amazon Bedrock
+- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, Kimi, GLM (Zhipu AI), OpenRouter, Requesty, Cloudflare AI Gateway, Azure OpenAI, and Amazon Bedrock
 
 ### Chat Interface
 

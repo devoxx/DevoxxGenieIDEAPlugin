@@ -26,6 +26,7 @@ public enum CredentialKey {
     GLM_KEY              ("glmKey"),
     NVIDIA_KEY           ("nvidiaKey"),
     CLOUDFLARE_KEY       ("cloudflareKey"),
+    REQUESTY_KEY         ("requestyKey"),
     AZURE_OPEN_AI_KEY    ("azureOpenAIKey"),
     AWS_ACCESS_KEY_ID    ("awsAccessKeyId"),
     AWS_SECRET_KEY       ("awsSecretKey"),

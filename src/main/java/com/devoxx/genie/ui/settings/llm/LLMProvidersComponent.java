@@ -134,6 +134,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField cloudflareApiKeyField = new JPasswordField(stateService.getCloudflareKey());
     @Getter
+    private final JPasswordField requestyApiKeyField = new JPasswordField(stateService.getRequestyKey());
+    @Getter
     private final JTextField cloudflareAccountIdField = new JTextField(stateService.getCloudflareAccountId());
     @Getter
     private final JTextField cloudflareGatewayNameField = new JTextField(stateService.getCloudflareGatewayName());
@@ -209,6 +211,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox cloudflareEnabledCheckBox = new JCheckBox("", stateService.isCloudflareEnabled());
     @Getter
     private final JCheckBox cloudflareModelNameEnabledCheckBox = new JCheckBox("", stateService.isCloudflareModelNameEnabled());
+    @Getter
+    private final JCheckBox requestyEnabledCheckBox = new JCheckBox("", stateService.isRequestyEnabled());
     @Getter
     private final JCheckBox enableAzureOpenAICheckBox = new JCheckBox("", stateService.getShowAzureOpenAIFields());
     @Getter
@@ -468,6 +472,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addHintText(cloudPanel, gbc, "Model ids use <code>provider/model</code> form, e.g. <code>openai/gpt-4o</code>. " +
                 "Workers AI ids (<code>@cf/...</code>) get the <code>workers-ai/</code> prefix added automatically.");
         addHintText(cloudPanel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
+        addProviderSettingRow(cloudPanel, gbc, "Requesty API Key", requestyEnabledCheckBox,
+                createTextWithPasswordButton(requestyApiKeyField, "https://app.requesty.ai/api-keys"));
+        addHintText(cloudPanel, gbc, "Uses the Requesty OpenAI-compatible router (router.requesty.ai); model ids are either a managed policy such as <code>claude-sonnet-4-5</code> or the <code>vendor/model</code> form, e.g. <code>openai/gpt-4o-mini</code>. Get your key at app.requesty.ai");
 
         addAzureOpenAIPanel(cloudPanel, gbc);
         addAWSPanel(cloudPanel, gbc);
@@ -522,6 +529,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         nvidiaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nvidiaEnabledCheckBox, nvidiaApiKeyField));
         cloudflareEnabledCheckBox.addItemListener(e -> updateUrlFieldState(cloudflareEnabledCheckBox, cloudflareApiKeyField));
         cloudflareModelNameEnabledCheckBox.addItemListener(e -> updateUrlFieldState(cloudflareModelNameEnabledCheckBox, cloudflareModelNameField));
+        requestyEnabledCheckBox.addItemListener(e -> updateUrlFieldState(requestyEnabledCheckBox, requestyApiKeyField));
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
 
         updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);

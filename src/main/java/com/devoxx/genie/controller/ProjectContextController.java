@@ -100,6 +100,7 @@ public class ProjectContextController {
                 modelProvider.equals(Mistral) ||
                 modelProvider.equals(DeepSeek) ||
                 modelProvider.equals(OpenRouter) ||
+                modelProvider.equals(Requesty) ||
                 modelProvider.equals(DeepInfra) ||
                 modelProvider.equals(Ollama) ||
                 modelProvider.equals(Jan) ||

@@ -32,6 +32,7 @@ public enum ModelProvider {
     GLM("GLM", Type.CLOUD),
     Nvidia("NVIDIA", Type.CLOUD),
     Cloudflare("Cloudflare", Type.CLOUD),
+    Requesty("Requesty", Type.CLOUD),
 
     AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
     Bedrock("Bedrock", Type.OPTIONAL);
