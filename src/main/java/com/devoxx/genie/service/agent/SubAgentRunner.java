@@ -10,9 +10,10 @@ import com.devoxx.genie.service.analytics.AnalyticsService;
 import com.devoxx.genie.service.analytics.Buckets;
 import com.devoxx.genie.service.analytics.FeatureId;
 import com.devoxx.genie.service.analytics.ProviderType;
+import com.devoxx.genie.service.prompt.memory.TaskPreservingMessageWindowChatMemory;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.tool.ToolProvider;
@@ -75,10 +76,7 @@ public class SubAgentRunner {
                        "Check that a sub-agent model is configured in Settings > Agent.";
             }
 
-            MessageWindowChatMemory memory = MessageWindowChatMemory.builder()
-                    .id("sub-agent-" + UUID.randomUUID())
-                    .maxMessages(SUB_AGENT_MEMORY_SIZE)
-                    .build();
+            ChatMemory memory = newSubAgentMemory();
 
             DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
             int maxToolCalls = settings.getSubAgentMaxToolCalls() != null
@@ -122,6 +120,13 @@ public class SubAgentRunner {
         } finally {
             emitAgentFeatureUsed();
         }
+    }
+
+    static ChatMemory newSubAgentMemory() {
+        return TaskPreservingMessageWindowChatMemory.builder()
+                .id("sub-agent-" + UUID.randomUUID())
+                .maxMessages(SUB_AGENT_MEMORY_SIZE)
+                .build();
     }
 
     /**

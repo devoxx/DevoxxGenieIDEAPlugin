@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +32,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
     public static final String FAILED_TO_CHECK_IF_MEMORY_IS_EMPTY = "Failed to check if memory is empty";
     public static final String FAILED_TO_REMOVE_LAST_MESSAGE_FROM_MEMORY = "Failed to remove last message from memory";
 
-    private final Map<String, MessageWindowChatMemory> projectConversations = new ConcurrentHashMap<>();
+    private final Map<String, TaskPreservingMessageWindowChatMemory> projectConversations = new ConcurrentHashMap<>();
     private final InMemoryChatMemoryStore inMemoryChatMemoryStore = new InMemoryChatMemoryStore();
 
     public static ChatMemoryService getInstance() {
@@ -84,7 +83,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      */
     public void clearMemoryByKey(@NotNull String memoryKey) {
         try {
-            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
+            TaskPreservingMessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 memory.clear();
                 log.debug("Cleared memory for key: {}", memoryKey);
@@ -112,7 +111,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      */
     public void addMessageByKey(@NotNull String memoryKey, ChatMessage chatMessage) {
         try {
-            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
+            TaskPreservingMessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 // Check for duplicate messages to prevent adding the same message multiple times
                 List<ChatMessage> currentMessages = memory.messages();
@@ -160,7 +159,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      */
     public List<ChatMessage> getMessagesByKey(@NotNull String memoryKey) {
         try {
-            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
+            TaskPreservingMessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 return memory.messages();
             } else {
@@ -199,7 +198,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      */
     public boolean isEmptyByKey(@NotNull String memoryKey) {
         try {
-            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
+            TaskPreservingMessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 return memory.messages().isEmpty();
             } else {
@@ -224,7 +223,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      */
     public void removeLastMessageByKey(@NotNull String memoryKey) {
         try {
-            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
+            TaskPreservingMessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 List<ChatMessage> messages = memory.messages();
                 if (!messages.isEmpty()) {
@@ -265,7 +264,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      */
     public void removeMessagesByKey(@NotNull String memoryKey, List<ChatMessage> messagesToRemove) {
         try {
-            MessageWindowChatMemory memory = projectConversations.get(memoryKey);
+            TaskPreservingMessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
                 List<ChatMessage> currentMessages = memory.messages();
 
@@ -297,7 +296,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param memoryKey The memory key to remove
      */
     public void removeByKey(@NotNull String memoryKey) {
-        MessageWindowChatMemory memory = projectConversations.remove(memoryKey);
+        TaskPreservingMessageWindowChatMemory memory = projectConversations.remove(memoryKey);
         if (memory != null) {
             memory.clear();
             log.debug("Removed memory for key: {}", memoryKey);
@@ -310,7 +309,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param chatMemorySize The maximum number of messages to retain
      */
     private void createChatMemory(@NotNull String projectHash, int chatMemorySize) {
-        MessageWindowChatMemory chatMemory = MessageWindowChatMemory.builder()
+        TaskPreservingMessageWindowChatMemory chatMemory = TaskPreservingMessageWindowChatMemory.builder()
                 .id("devoxxgenie-" + projectHash)
                 .chatMemoryStore(inMemoryChatMemoryStore)
                 .maxMessages(chatMemorySize)
