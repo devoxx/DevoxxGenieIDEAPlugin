@@ -7,6 +7,7 @@ import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -19,9 +20,13 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -238,6 +243,103 @@ class RunCommandToolExecutorTest {
 
         String result = timeoutExecutor.execute(request, null);
         assertThat(result).contains("timed out after 1 seconds").contains("partial-output");
+    }
+
+    @Test
+    void execute_realCommandRunningLongerThanTimeout_returnsTimeoutError() {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        RunCommandToolExecutor oneSecondTimeout = new RunCommandToolExecutor(project, 1, 10_000);
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"sleep 5\"}")
+                .build();
+
+        String result = oneSecondTimeout.execute(request, null);
+
+        assertThat(result).contains("timed out after 1 seconds");
+    }
+
+    @Test
+    void execute_realCommandRunningLongerThanTimeout_keepsOutputPrintedBeforeTheTimeout() {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        RunCommandToolExecutor oneSecondTimeout = new RunCommandToolExecutor(project, 1, 10_000);
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"echo printed-before-timeout; sleep 5\"}")
+                .build();
+
+        String result = oneSecondTimeout.execute(request, null);
+
+        assertThat(result).contains("timed out after 1 seconds").contains("printed-before-timeout");
+    }
+
+    @Test
+    void execute_commandReadingStdin_getsEndOfInputInsteadOfWaitingForTheTimeout() {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        RunCommandToolExecutor tenSecondTimeout = new RunCommandToolExecutor(project, 10, 10_000);
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"read line; echo read-finished\"}")
+                .build();
+
+        String result = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> tenSecondTimeout.execute(request, null));
+
+        assertThat(result).contains("read-finished").doesNotContain("timed out");
+    }
+
+    @Test
+    void execute_backgroundChildHoldingOutputOpen_returnsWithoutWaitingForTheChild() {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        RunCommandToolExecutor tenSecondTimeout = new RunCommandToolExecutor(project, 10, 10_000);
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"sleep 8 & echo started-in-background\"}")
+                .build();
+
+        String result = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> tenSecondTimeout.execute(request, null));
+
+        assertThat(result).contains("started-in-background").doesNotContain("timed out");
+    }
+
+    @Test
+    void execute_timeout_killsChildProcessesOfTheShell(@TempDir Path tempDir) throws Exception {
+        if (SystemInfo.isWindows) {
+            return;
+        }
+        Path childPidFile = tempDir.resolve("child.pid");
+        RunCommandToolExecutor oneSecondTimeout = new RunCommandToolExecutor(project, 1, 10_000);
+        ToolExecutionRequest request = ToolExecutionRequest.builder()
+                .name("run_command")
+                .arguments("{\"command\": \"sleep 30 & echo $! > '" + childPidFile + "'; wait\"}")
+                .build();
+
+        String result = oneSecondTimeout.execute(request, null);
+
+        long childPid = Long.parseLong(Files.readString(childPidFile).trim());
+        assertThat(result).contains("timed out after 1 seconds");
+        assertThat(processExitsWithin(childPid, Duration.ofSeconds(2))).isTrue();
+    }
+
+    private static boolean processExitsWithin(long pid, Duration grace) throws Exception {
+        Optional<ProcessHandle> handle = ProcessHandle.of(pid);
+        if (handle.isEmpty()) {
+            return true;
+        }
+        try {
+            handle.get().onExit().get(grace.toMillis(), TimeUnit.MILLISECONDS);
+            return true;
+        } catch (TimeoutException e) {
+            handle.get().destroyForcibly();
+            return false;
+        }
     }
 
     @Test

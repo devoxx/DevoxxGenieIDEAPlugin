@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.SystemInfo;
@@ -14,18 +15,26 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Slf4j
 public class RunCommandToolExecutor implements ToolExecutor {
 
     private static final int DEFAULT_TIMEOUT_SECONDS = 30;
     private static final int DEFAULT_MAX_OUTPUT_LENGTH = 10000;
+    private static final long OUTPUT_DRAIN_GRACE_MILLIS = 1_000;
+    private static final File NULL_DEVICE = new File(SystemInfo.isWindows ? "NUL" : "/dev/null");
 
     private final Project project;
     private final int timeoutSeconds;
     private final int maxOutputLength;
     private final ProcessStarter processStarter;
+    private final ExecutorService executor;
     private final String shellEnvFile;
     private final String shell;
 
@@ -52,7 +61,16 @@ public class RunCommandToolExecutor implements ToolExecutor {
         this.maxOutputLength = maxOutputLength;
         this.processStarter = processStarter != null ? processStarter : this::createProcess;
         this.shellEnvFile = shellEnvFile != null ? shellEnvFile : "";
+        this.executor = outputReaderExecutor();
         this.shell = shell != null ? shell : "";
+    }
+
+    private static ExecutorService outputReaderExecutor() {
+        try {
+            return ThreadPoolManager.getInstance().getPromptExecutionPool();
+        } catch (Exception e) {
+            return ForkJoinPool.commonPool();
+        }
     }
 
     private static String readShellEnvFileSetting() {
@@ -83,22 +101,50 @@ public class RunCommandToolExecutor implements ToolExecutor {
 
             Process process = processStarter.start(effectiveCommand, workingDir);
 
-            String output = readProcessOutput(process);
+            StringBuffer outputSoFar = new StringBuffer();
+            Future<String> output = executor.submit(() -> readProcessOutput(process, outputSoFar));
 
-            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+            boolean finished = exitedWithinTimeout(process);
             if (!finished) {
-                process.destroyForcibly();
-                return formatTimeoutError(output);
+                destroyWithDescendants(process);
+                return formatTimeoutError(awaitOutput(output, outputSoFar));
             }
 
             int exitCode = process.exitValue();
-            return formatResult(exitCode, output);
+            return formatResult(exitCode, awaitOutput(output, outputSoFar));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Command execution was interrupted", e);
         } catch (Exception e) {
             log.error("Error executing command", e);
             return "Error: Failed to execute command - " + e.getMessage();
+        }
+    }
+
+    private boolean exitedWithinTimeout(Process process) throws InterruptedException {
+        try {
+            return process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            destroyWithDescendants(process);
+            throw e;
+        }
+    }
+
+    private static void destroyWithDescendants(Process process) {
+        try {
+            process.descendants().forEach(ProcessHandle::destroyForcibly);
+        } catch (UnsupportedOperationException e) {
+            log.debug("Process does not expose its descendants", e);
+        }
+        process.destroyForcibly();
+    }
+
+    private static String awaitOutput(Future<String> output, StringBuffer outputSoFar)
+            throws InterruptedException, ExecutionException {
+        try {
+            return output.get(OUTPUT_DRAIN_GRACE_MILLIS, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            return outputSoFar.toString();
         }
     }
 
@@ -136,6 +182,7 @@ public class RunCommandToolExecutor implements ToolExecutor {
         File dir = determineWorkingDirectory(workingDir);
         processBuilder.directory(dir);
         processBuilder.redirectErrorStream(true);
+        processBuilder.redirectInput(ProcessBuilder.Redirect.from(NULL_DEVICE));
 
         return processBuilder.start();
     }
@@ -166,8 +213,7 @@ public class RunCommandToolExecutor implements ToolExecutor {
         return new File(Objects.requireNonNull(project.getBasePath()));
     }
 
-    private String readProcessOutput(Process process) throws IOException {
-        StringBuilder output = new StringBuilder();
+    private String readProcessOutput(Process process, StringBuffer output) throws IOException {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getInputStream()))) {
             String line;
