@@ -26,3 +26,4 @@ docusaurus/static/img/git-diff-viewer.png
 .settings/
 *.class
 out/*
+*.log
