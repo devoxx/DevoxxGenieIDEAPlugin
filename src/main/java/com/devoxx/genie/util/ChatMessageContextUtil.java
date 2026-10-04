@@ -4,23 +4,18 @@ import com.devoxx.genie.model.ChatContextParameters;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
-import com.devoxx.genie.model.request.EditorInfo;
 import dev.langchain4j.data.message.UserMessage;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.devoxx.genie.action.AddSnippetAction.*;
 
 @Slf4j
 public class ChatMessageContextUtil {
@@ -97,15 +92,18 @@ public class ChatMessageContextUtil {
         } else {
             // We don't include separate added files to the context if the full project is already included
             processAttachedFiles(chatMessageContext);
+        }
 
-            // Set editor info if available and if useFileInEditor setting is enabled
-            Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
-
-            // Include selected text (if any)
-            if ((chatMessageContext.getFilesContext() == null || chatMessageContext.getFilesContext().isEmpty()) &&
-                selectedTextEditor != null) {
-                addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
+        Editor selectedTextEditor = editorFileButtonManager != null
+                ? editorFileButtonManager.getSelectedTextEditor()
+                : null;
+        if (selectedTextEditor != null) {
+            // Consume one-shot file attachments after their current-message snapshot is captured.
+            if (projectContext == null || !isProjectContextAdded) {
+                FileListManager.getInstance().clearNonImageFiles(chatMessageContext.getProject(), chatMessageContext.getTabId());
             }
+
+            chatMessageContext.setEditorInfo(EditorUtil.getEditorInfo(selectedTextEditor));
         }
     }
 
@@ -132,44 +130,6 @@ public class ChatMessageContextUtil {
             // task-209 analytics signal — no content, only a boolean flag
             chatMessageContext.setProjectContextSelectedUsed(true);
         }
-    }
-
-    private static void addDefaultEditorInfoToMessageContext(Editor editor,
-                                                             @NotNull ChatMessageContext chatMessageContext) {
-
-        // Only clear non-image files; image files are preserved for addImages() processing
-        FileListManager.getInstance().clearNonImageFiles(chatMessageContext.getProject(), chatMessageContext.getTabId());
-
-        EditorInfo editorInfo = EditorUtil.getEditorInfo(editor);
-        chatMessageContext.setEditorInfo(editorInfo);
-
-        Document document = editor.getDocument();
-
-        VirtualFile originalFile = editor.getVirtualFile();
-
-        SelectionModel selectionModel = editor.getSelectionModel();
-        String selectedText = selectionModel.getSelectedText();
-        if (selectedText != null && !selectedText.isEmpty()) {
-            int startOffset = selectionModel.getSelectionStart();
-            int endOffset = selectionModel.getSelectionEnd();
-            int startLine = document.getLineNumber(startOffset);
-            int endLine = document.getLineNumber(endOffset);
-            originalFile.putUserData(ORIGINAL_FILE_KEY, originalFile);
-            originalFile.putUserData(SELECTED_TEXT_KEY, selectedText);
-            originalFile.putUserData(SELECTION_START_KEY, startOffset);
-            originalFile.putUserData(SELECTION_END_KEY, endOffset);
-            originalFile.putUserData(SELECTION_START_LINE_KEY, startLine);
-            originalFile.putUserData(SELECTION_END_LINE_KEY, endLine);
-            // When text is selected, always add the file to FileListManager
-            FileListManager.getInstance().addFile(chatMessageContext.getProject(), chatMessageContext.getTabId(), originalFile);
-        } else {
-            originalFile.putUserData(SELECTED_TEXT_KEY, "");
-            // When no text is selected, only add file if useFileInEditor is enabled
-            if (originalFile != null && Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
-                FileListManager.getInstance().addFile(chatMessageContext.getProject(), chatMessageContext.getTabId(), originalFile);
-            }
-        }
-
     }
 
     /**

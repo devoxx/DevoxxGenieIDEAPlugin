@@ -268,11 +268,15 @@ class MessageCreationServiceTest {
     }
 
     @Test
-    void testEditorContentWithSelectedText() {
+    void testEditorContentWithSelectedText() throws IOException {
         when(mockChatMessageContext.getFilesContext()).thenReturn(null);
         when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
         when(mockEditorInfo.getSelectedText()).thenReturn("Selected text content");
-        when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
+        when(mockEditorInfo.getSelectionFilePath()).thenReturn("/project/src/TestFile.java");
+        when(mockEditorInfo.getSelectionStartLine()).thenReturn(4);
+        when(mockEditorInfo.getSelectionEndLine()).thenReturn(6);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(List.of(mockVirtualFile));
+        when(mockVirtualFile.contentsToByteArray()).thenReturn("whole file content".getBytes(StandardCharsets.UTF_8));
 
         try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
              MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
@@ -283,11 +287,129 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             when(mockStateService.getRagEnabled()).thenReturn(false);
+            when(mockStateService.getUseFileInEditor()).thenReturn(false);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(messageCaptor.capture());
 
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
 
             verify(mockChatMessageContext).setUserMessage(any(UserMessage.class));
+            String prompt = messageCaptor.getValue().singleText();
+            assertTrue(prompt.contains("<SelectedText>"));
+            assertTrue(prompt.contains("File: /project/src/TestFile.java"));
+            assertTrue(prompt.contains("Lines: 4-6"));
+            assertTrue(prompt.contains("Selected text content"));
+            assertFalse(prompt.contains("whole file content"));
+        }
+    }
+
+    @Test
+    void testSelectionAndSmallOpenFileAreIncludedWithAttachedFileContextWhenEnabled() throws IOException {
+        when(mockChatMessageContext.getFilesContext()).thenReturn("Attached file content");
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn("Selected text content");
+        when(mockEditorInfo.getSelectionFilePath()).thenReturn("/project/src/TestFile.java");
+        when(mockEditorInfo.getSelectionStartLine()).thenReturn(4);
+        when(mockEditorInfo.getSelectionEndLine()).thenReturn(6);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(List.of(mockVirtualFile));
+        when(mockVirtualFile.getLength()).thenReturn(1024L);
+        when(mockVirtualFile.getCanonicalPath()).thenReturn("/project/src/TestFile.java");
+        when(mockVirtualFile.contentsToByteArray()).thenReturn("whole file content".getBytes(StandardCharsets.UTF_8));
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+            when(mockStateService.getUseFileInEditor()).thenReturn(true);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(messageCaptor.capture());
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            String prompt = messageCaptor.getValue().singleText();
+            assertTrue(prompt.contains("Attached file content"));
+            assertTrue(prompt.contains("File: /project/src/TestFile.java"));
+            assertTrue(prompt.contains("Lines: 4-6"));
+            assertTrue(prompt.contains("Selected text content"));
+            assertTrue(prompt.contains("whole file content"));
+        }
+    }
+
+    @Test
+    void testSelectedTextAndOpenFileWhenEnabled() throws IOException {
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn("Selected text content");
+        when(mockEditorInfo.getSelectionFilePath()).thenReturn("/project/src/TestFile.java");
+        when(mockEditorInfo.getSelectionStartLine()).thenReturn(4);
+        when(mockEditorInfo.getSelectionEndLine()).thenReturn(6);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(List.of(mockVirtualFile));
+        when(mockVirtualFile.getCanonicalPath()).thenReturn("/project/src/TestFile.java");
+        when(mockVirtualFile.contentsToByteArray()).thenReturn("whole file content".getBytes(StandardCharsets.UTF_8));
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
+            when(mockStateService.getUseFileInEditor()).thenReturn(true);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(messageCaptor.capture());
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            String prompt = messageCaptor.getValue().singleText();
+            assertTrue(prompt.contains("Lines: 4-6"));
+            assertTrue(prompt.contains("Selected text content"));
+            assertTrue(prompt.contains("whole file content"));
+        }
+    }
+
+    @Test
+    void testSelectedTextDoesNotIncludeLargeOpenFileWhenEnabled() throws IOException {
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn("Selected text content");
+        when(mockEditorInfo.getSelectionFilePath()).thenReturn("/project/src/TestFile.java");
+        when(mockEditorInfo.getSelectionStartLine()).thenReturn(4);
+        when(mockEditorInfo.getSelectionEndLine()).thenReturn(6);
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(List.of(mockVirtualFile));
+        when(mockVirtualFile.getLength()).thenReturn(2049L);
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
+            when(mockStateService.getUseFileInEditor()).thenReturn(true);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(messageCaptor.capture());
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            String prompt = messageCaptor.getValue().singleText();
+            assertTrue(prompt.contains("File: /project/src/TestFile.java"));
+            assertTrue(prompt.contains("Lines: 4-6"));
+            assertTrue(prompt.contains("Selected text content"));
+            assertFalse(prompt.contains("FileContents"));
+            verify(mockVirtualFile, never()).contentsToByteArray();
         }
     }
 
@@ -310,15 +432,20 @@ class MessageCreationServiceTest {
             fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
 
             when(mockStateService.getRagEnabled()).thenReturn(false);
+            when(mockStateService.getUseFileInEditor()).thenReturn(true);
             when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
 
             // mock file content
             byte[] fileContent = "Test file content".getBytes(StandardCharsets.UTF_8);
             when(mockVirtualFile.contentsToByteArray()).thenReturn(fileContent);
 
+            ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(messageCaptor.capture());
+
             messageCreationService.addUserMessageToContext(mockChatMessageContext);
 
             verify(mockChatMessageContext).setUserMessage(any(UserMessage.class));
+            assertTrue(messageCaptor.getValue().singleText().contains("Test file content"));
         } catch (IOException e) {
             fail("Exception should not be thrown", e);
         }
