@@ -79,7 +79,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
         // already enabled by addUserPromptMessage() — can repaint immediately.
         threadPoolManager.getPromptExecutionPool().execute(() -> {
             try {
-                prepareMemory(context);
+                prepareMemory(context, panel, resultTask);
 
                 // Record start time
                 long startTime = System.currentTimeMillis();

@@ -73,6 +73,7 @@ public class HelpUtil {
             .collect(Collectors.joining("\n"));
 
         return "### Available commands\n\n" +
+            "- **/compact** : Summarize earlier history while keeping the latest exchange.\n" +
             commands + "\n\n" +
             "The Devoxx Genie is open source and available at " +
             "[GitHub](https://github.com/devoxx/DevoxxGenieIDEAPlugin). " +

@@ -54,7 +54,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param memoryKey The composite key to initialize
      * @param chatMemorySize The maximum number of messages to retain
      */
-    public void initializeByKey(@NotNull String memoryKey, int chatMemorySize) {
+    public synchronized void initializeByKey(@NotNull String memoryKey, int chatMemorySize) {
         try {
             log.debug("Initializing chat memory for key: {} with size: {}", memoryKey, chatMemorySize);
 
@@ -82,7 +82,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * Clears all messages for a given memory key
      * @param memoryKey The memory key to clear
      */
-    public void clearMemoryByKey(@NotNull String memoryKey) {
+    public synchronized void clearMemoryByKey(@NotNull String memoryKey) {
         try {
             MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
@@ -110,7 +110,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param memoryKey The memory key
      * @param chatMessage The message to add
      */
-    public void addMessageByKey(@NotNull String memoryKey, ChatMessage chatMessage) {
+    public synchronized void addMessageByKey(@NotNull String memoryKey, ChatMessage chatMessage) {
         try {
             MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
@@ -158,7 +158,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param memoryKey The memory key
      * @return List of chat messages
      */
-    public List<ChatMessage> getMessagesByKey(@NotNull String memoryKey) {
+    public synchronized List<ChatMessage> getMessagesByKey(@NotNull String memoryKey) {
         try {
             MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
@@ -222,7 +222,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * Removes the last message from memory identified by key
      * @param memoryKey The memory key
      */
-    public void removeLastMessageByKey(@NotNull String memoryKey) {
+    public synchronized void removeLastMessageByKey(@NotNull String memoryKey) {
         try {
             MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
@@ -263,7 +263,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * @param memoryKey The memory key
      * @param messagesToRemove The messages to remove
      */
-    public void removeMessagesByKey(@NotNull String memoryKey, List<ChatMessage> messagesToRemove) {
+    public synchronized void removeMessagesByKey(@NotNull String memoryKey, List<ChatMessage> messagesToRemove) {
         try {
             MessageWindowChatMemory memory = projectConversations.get(memoryKey);
             if (memory != null) {
@@ -296,7 +296,7 @@ public class ChatMemoryService implements ChatMemoryProvider {
      * Completely removes a memory entry by key (used for tab cleanup)
      * @param memoryKey The memory key to remove
      */
-    public void removeByKey(@NotNull String memoryKey) {
+    public synchronized void removeByKey(@NotNull String memoryKey) {
         MessageWindowChatMemory memory = projectConversations.remove(memoryKey);
         if (memory != null) {
             memory.clear();
@@ -317,6 +317,19 @@ public class ChatMemoryService implements ChatMemoryProvider {
                 .build();
         projectConversations.put(projectHash, chatMemory);
         log.debug("Created new chat memory for project: {}", projectHash);
+    }
+
+    /** Replace only the snapshot that was summarized; never overwrite a newer turn or cleared tab. */
+    public synchronized boolean replaceMessagesByKey(@NotNull String memoryKey,
+                                                     @NotNull List<ChatMessage> expected,
+                                                     @NotNull List<ChatMessage> replacement) {
+        MessageWindowChatMemory memory = projectConversations.get(memoryKey);
+        if (memory == null || !memory.messages().equals(expected)) {
+            return false;
+        }
+        memory.clear();
+        replacement.forEach(memory::add);
+        return true;
     }
 
     @Override

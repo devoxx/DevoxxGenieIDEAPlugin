@@ -75,7 +75,7 @@ public class PromptExecutionController implements PromptExecutionListener {
         
         processedPrompt.ifPresentOrElse(
                 command -> {
-                    if (!isHelpCommand) {
+                    if (!isHelpCommand && !"compact".equals(currentChatMessageContext.getCommandName())) {
                         // Show the resolved prompt (e.g. expanded custom skill), not the raw /command
                         promptOutputPanel.getConversationPanel().addUserPromptMessage(currentChatMessageContext);
                     }

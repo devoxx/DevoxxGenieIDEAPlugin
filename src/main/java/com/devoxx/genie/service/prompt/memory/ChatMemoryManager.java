@@ -117,6 +117,13 @@ public class ChatMemoryManager {
         }
     }
 
+    /** Only model-facing memory is replaced; saved conversation messages are independent. */
+    public boolean replaceMessages(@NotNull ChatMessageContext context,
+                                   @NotNull List<ChatMessage> expected,
+                                   @NotNull List<ChatMessage> replacement) {
+        return chatMemoryService.replaceMessagesByKey(context.getMemoryKey(), expected, replacement);
+    }
+
     /**
      * Adds AI response to memory from the provided context
      * @param context The chat message context containing the AI message

@@ -335,6 +335,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer timeout = TIMEOUT;
     private Integer maxRetries = MAX_RETRIES;
     private Integer chatMemorySize = MAX_MEMORY;
+    private Boolean autoCompactEnabled = false;
+    private Integer autoCompactThresholdPercent = 80;
     private Integer maxOutputTokens = MAX_OUTPUT_TOKENS;
 
     private String systemPrompt = SYSTEM_PROMPT;

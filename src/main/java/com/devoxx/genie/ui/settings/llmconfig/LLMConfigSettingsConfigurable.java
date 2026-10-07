@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.llmconfig;
 
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
@@ -45,7 +44,7 @@ public class LLMConfigSettingsConfigurable implements Configurable {
      */
     @Override
     public boolean isModified() {
-        DevoxxGenieSettingsService stateService = DevoxxGenieStateService.getInstance();
+        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
 
@@ -56,6 +55,8 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         isModified |= llmConfigSettingsComponent.getTimeoutField().getNumber() != stateService.getTimeout();
         isModified |= llmConfigSettingsComponent.getRetryField().getNumber() != stateService.getMaxRetries();
         isModified |= llmConfigSettingsComponent.getUseFileInEditorCheckBox().isSelected() != stateService.getUseFileInEditor();
+        isModified |= llmConfigSettingsComponent.getAutoCompactEnabledCheckBox().isSelected() != Boolean.TRUE.equals(stateService.getAutoCompactEnabled());
+        isModified |= llmConfigSettingsComponent.getAutoCompactThresholdField().getNumber() != stateService.getAutoCompactThresholdPercent();
         return isModified;
     }
 
@@ -69,6 +70,8 @@ public class LLMConfigSettingsConfigurable implements Configurable {
         stateService.setTemperature(((Double) llmConfigSettingsComponent.getTemperatureField().getValue()));
         stateService.setTopP(((Double) llmConfigSettingsComponent.getTopPField().getValue()));
 
+        stateService.setAutoCompactEnabled(llmConfigSettingsComponent.getAutoCompactEnabledCheckBox().isSelected());
+        stateService.setAutoCompactThresholdPercent(llmConfigSettingsComponent.getAutoCompactThresholdField().getNumber());
         stateService.setChatMemorySize(llmConfigSettingsComponent.getChatMemorySizeField().getNumber());
         stateService.setMaxOutputTokens(llmConfigSettingsComponent.getMaxOutputTokensField().getNumber());
         stateService.setTimeout(llmConfigSettingsComponent.getTimeoutField().getNumber());
@@ -89,6 +92,9 @@ public class LLMConfigSettingsConfigurable implements Configurable {
 
         llmConfigSettingsComponent.getMaxOutputTokensField().setNumber(stateService.getMaxOutputTokens());
         llmConfigSettingsComponent.getChatMemorySizeField().setNumber(stateService.getChatMemorySize());
+        llmConfigSettingsComponent.getAutoCompactEnabledCheckBox().setSelected(Boolean.TRUE.equals(stateService.getAutoCompactEnabled()));
+        llmConfigSettingsComponent.getAutoCompactThresholdField().setNumber(stateService.getAutoCompactThresholdPercent());
+        llmConfigSettingsComponent.getAutoCompactThresholdField().setEnabled(Boolean.TRUE.equals(stateService.getAutoCompactEnabled()));
         llmConfigSettingsComponent.getTimeoutField().setNumber(stateService.getTimeout());
         llmConfigSettingsComponent.getRetryField().setNumber(stateService.getMaxRetries());
 

@@ -99,7 +99,7 @@ public class StreamingPromptStrategy extends AbstractPromptExecutionStrategy {
         // free EDT can now repaint it immediately.
         threadPoolManager.getPromptExecutionPool().execute(() -> {
             try {
-                prepareMemory(context);
+                prepareMemory(context, panel, resultTask);
             } catch (Exception e) {
                 log.error("Error preparing memory for streaming prompt", e);
                 handler.onError(e);
