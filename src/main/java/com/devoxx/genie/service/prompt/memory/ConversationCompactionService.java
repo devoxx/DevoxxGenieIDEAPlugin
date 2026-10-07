@@ -95,22 +95,27 @@ public final class ConversationCompactionService {
 
     public static void autoCompact(ChatMessageContext context, PromptOutputPanel panel, BooleanSupplier cancelled) {
         var settings = DevoxxGenieStateService.getInstance();
-        if (!Boolean.TRUE.equals(settings.getAutoCompactEnabled()) || context.getLanguageModel() == null) {
+        if (settings == null || !Boolean.TRUE.equals(settings.getAutoCompactEnabled()) || context.getLanguageModel() == null) {
             return;
         }
         int window = context.getLanguageModel().getInputMaxTokens();
         if (window <= 0) {
             return;
         }
-        List<ChatMessage> projected = new ArrayList<>(ChatMemoryManager.getInstance()
-                .getMessagesByKey(context.getMemoryKey()));
-        if (context.getUserMessage() != null) {
-            projected.add(context.getUserMessage());
-        }
-        Integer configuredPercent = settings.getAutoCompactThresholdPercent();
-        int percent = Math.max(1, Math.min(100, configuredPercent == null ? 80 : configuredPercent));
-        if (TokenCalculationService.estimateChatTokens(projected) >= (long) window * percent / 100) {
-            showNotice(context, panel, compact(context, cancelled));
+        // Auto-compaction only saves tokens: when it fails, the prompt still goes out, with the full history.
+        try {
+            List<ChatMessage> projected = new ArrayList<>(ChatMemoryManager.getInstance()
+                    .getMessagesByKey(context.getMemoryKey()));
+            if (context.getUserMessage() != null) {
+                projected.add(context.getUserMessage());
+            }
+            Integer configuredPercent = settings.getAutoCompactThresholdPercent();
+            int percent = Math.max(1, Math.min(100, configuredPercent == null ? 80 : configuredPercent));
+            if (TokenCalculationService.estimateChatTokens(projected) >= (long) window * percent / 100) {
+                showNotice(context, panel, compact(context, cancelled));
+            }
+        } catch (RuntimeException e) {
+            showNotice(context, panel, "Auto-compaction failed, so the full history was sent: " + e.getMessage());
         }
     }
 
