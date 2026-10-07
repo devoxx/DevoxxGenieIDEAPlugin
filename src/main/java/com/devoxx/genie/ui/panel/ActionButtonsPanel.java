@@ -60,6 +60,7 @@ public class ActionButtonsPanel extends JPanel
     private JButton steerBtn;
     private JButton addProjectBtn;
     private JButton calcTokenCostBtn;
+    private JButton compactBtn;
 
     private final SubmitPanel submitPanel;
     private final JPanel calcProjectPanel = createCalcProjectPanel();
@@ -160,6 +161,16 @@ public class ActionButtonsPanel extends JPanel
         addFileBtn = new AddFilesToContextButton(project, this::addFileToConversationContext, this::showFilePickerPopup);
         addProjectBtn = createActionButton(AddProjectIcon, ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT, this::handleProjectContext);
         calcTokenCostBtn = createActionButton(CalculateIcon, CALCULATE_TOKEN_COST_TOOLTIP, e -> controller.calculateTokensAndCost());
+        compactBtn = new JButton("Compact");
+        compactBtn.setToolTipText("Summarize earlier conversation history using the selected model");
+        compactBtn.addActionListener(e -> {
+            if (!controller.isPromptRunning()) {
+                String draft = promptInputArea.getText();
+                promptInputArea.setText("/compact");
+                onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
+                promptInputArea.setText(draft);
+            }
+        });
     }
 
     /** Adds a picked file to the chat panel's persistent context for the active tab. */
@@ -194,6 +205,7 @@ public class ActionButtonsPanel extends JPanel
         mainButtons.add(queueBtn);
         mainButtons.add(steerBtn);
         mainButtons.add(calcTokenCostBtn);
+        mainButtons.add(compactBtn);
         mainButtons.add(addProjectBtn);
         mainButtons.add(addFileBtn);
         buttonPanel.add(mainButtons, BorderLayout.CENTER);
@@ -379,6 +391,7 @@ public class ActionButtonsPanel extends JPanel
             submitBtn.setToolTipText(SUBMIT_PROMPT_TOOLTIP);
             queueBtn.setVisible(false);
             steerBtn.setVisible(false);
+            compactBtn.setEnabled(true);
             promptInputArea.setEnabled(true);
             // Stop the submit glow (and its Swing timer) on every execution-end path:
             // enableButtons() is reached on completion, error and user stop via
@@ -424,6 +437,7 @@ public class ActionButtonsPanel extends JPanel
 
     public void disableSubmitBtn() {
         ApplicationManager.getApplication().invokeLater(() -> {
+            compactBtn.setEnabled(false);
             submitBtn.setIcon(StopIcon);
             submitBtn.setToolTipText("Stop the running task");
             // Issue #1241: while running, offer Queue (default) and Steer actions
@@ -580,6 +594,7 @@ public class ActionButtonsPanel extends JPanel
         addFileBtn.setEnabled(enabled);
         addProjectBtn.setEnabled(enabled);
         calcTokenCostBtn.setEnabled(enabled);
+        compactBtn.setEnabled(enabled);
         
         // Update visual state
         if (!enabled) {

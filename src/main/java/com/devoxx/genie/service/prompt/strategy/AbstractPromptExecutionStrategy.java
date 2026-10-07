@@ -8,6 +8,7 @@ import com.devoxx.genie.service.prompt.error.ExecutionException;
 import com.devoxx.genie.service.prompt.error.PromptErrorHandler;
 import com.devoxx.genie.service.prompt.error.PromptException;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.prompt.memory.ConversationCompactionService;
 import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.threading.PromptTaskTracker;
@@ -107,6 +108,19 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
         resultTask.putUserData(PromptTask.CONTEXT_KEY, context);
         // Re-index now that context is attached (fixes timing gap from self-registration)
         PromptTaskTracker.getInstance().indexByContextId(resultTask);
+
+        if ("compact".equals(context.getCommandName())) {
+            threadPoolManager.getPromptExecutionPool().execute(() -> {
+                try {
+                    String notice = ConversationCompactionService.compact(context, resultTask::isCancelled);
+                    ConversationCompactionService.showNotice(context, panel, notice);
+                    resultTask.complete(PromptResult.success(context));
+                } catch (Exception e) {
+                    handleExecutionError(e, context, resultTask, panel);
+                }
+            });
+            return resultTask;
+        }
 
         // /find short-circuits ALL strategies — it's a pure semantic-search request, no LLM
         // call needed. Without this gate, streaming mode would run prepareMemory() + an
@@ -208,6 +222,11 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
      *
      * @param context The chat message context
      */
+    protected void prepareMemory(ChatMessageContext context, PromptOutputPanel panel, PromptTask<PromptResult> task) {
+        prepareMemory(context);
+        ConversationCompactionService.autoCompact(context, panel, task::isCancelled);
+    }
+
     public void prepareMemory(ChatMessageContext context) {
         // Prepare memory with system message if needed and add user message
         log.debug("Before memory preparation - context ID: {}", context.getId());

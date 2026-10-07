@@ -30,6 +30,7 @@ public class PromptCommandProcessor {
     public PromptCommandProcessor() {
         // Initialize all command processors
         this.commands = List.of(
+            new CompactCommand(),
             new FindCommand(),
             new SearchCommand(),
             new HelpCommand(),

@@ -14,6 +14,8 @@ import java.awt.*;
 public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
     private final JBIntSpinner chatMemorySizeField = new JBIntSpinner(new UINumericRange(stateService.getChatMemorySize(), 1, 500));
+    private final JCheckBox autoCompactEnabledCheckBox = new JCheckBox("Auto-compact at", Boolean.TRUE.equals(stateService.getAutoCompactEnabled()));
+    private final JBIntSpinner autoCompactThresholdField = new JBIntSpinner(new UINumericRange(stateService.getAutoCompactThresholdPercent(), 1, 100));
     private final JSpinner temperatureField = new JSpinner(new SpinnerNumberModel(stateService.getTemperature().doubleValue(), 0.0d, 2.0d, 0.1d));
     private final JSpinner topPField = new JSpinner(new SpinnerNumberModel(stateService.getTopP().doubleValue(), 0.0d, 1.0d, 0.1d));
     private final JBIntSpinner maxOutputTokensField = new JBIntSpinner(new UINumericRange(stateService.getMaxOutputTokens(), 1, 1_000_000));
@@ -24,6 +26,9 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
 
     public LLMConfigSettingsComponent() {
         addListeners();
+        autoCompactThresholdField.setEnabled(autoCompactEnabledCheckBox.isSelected());
+        autoCompactEnabledCheckBox.addActionListener(e ->
+                autoCompactThresholdField.setEnabled(autoCompactEnabledCheckBox.isSelected()));
     }
 
     @Override
@@ -48,6 +53,15 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
         panel.add(new JLabel("Chat Memory Size"), gbc);
         gbc.gridx = 1;
         panel.add(chatMemorySizeField, gbc);
+
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(autoCompactEnabledCheckBox, gbc);
+        gbc.gridx = 1;
+        JPanel compactionThresholdPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        compactionThresholdPanel.add(autoCompactThresholdField);
+        compactionThresholdPanel.add(new JLabel("% of the context window"));
+        panel.add(compactionThresholdPanel, gbc);
 
         gbc.gridy++;
         gbc.gridx = 0;

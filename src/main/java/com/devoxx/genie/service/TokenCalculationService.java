@@ -5,6 +5,10 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
+import com.devoxx.genie.service.projectscanner.TokenCalculator;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.TextContent;
+import dev.langchain4j.data.message.UserMessage;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
@@ -16,11 +20,40 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class TokenCalculationService {
+
+    private static final TokenCalculator CHAT_TOKEN_CALCULATOR = new TokenCalculator();
+
+    /** Text-token estimate, using the same tokenizer as project context calculations. */
+    public static int estimateChatTokens(List<ChatMessage> messages) {
+        return CHAT_TOKEN_CALCULATOR.calculateTokens(conversationText(messages));
+    }
+
+    /** Serialize history without embedding image bytes or losing tool-call/result context. */
+    public static String conversationText(List<ChatMessage> messages) {
+        StringBuilder text = new StringBuilder();
+        for (var message : messages) {
+            text.append(message.type()).append(": ");
+            if (message instanceof UserMessage user) {
+                for (var content : user.contents()) {
+                    if (content instanceof TextContent part) {
+                        text.append(part.text()).append('\n');
+                    } else {
+                        text.append("[non-text attachment]\n");
+                    }
+                }
+            } else {
+                text.append(message);
+            }
+            text.append('\n');
+        }
+        return text.toString();
+    }
 
     private final ProjectContentService projectContentService;
 
