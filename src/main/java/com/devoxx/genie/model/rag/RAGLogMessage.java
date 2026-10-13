@@ -52,5 +52,15 @@ public class RAGLogMessage {
         private String preview;
         /** Length of the original (un-truncated) chunk in characters. */
         private int chunkLength;
+        /**
+         * 1-based rank of the hit in the retrieval shortlist before the reranker stage
+         * (null when reranking was disabled or did not run). See task-214.
+         */
+        private Integer preRerankRank;
+        /**
+         * Score produced by the reranker for this hit (null when reranking was disabled
+         * or did not run). See task-214.
+         */
+        private Double rerankerScore;
     }
 }

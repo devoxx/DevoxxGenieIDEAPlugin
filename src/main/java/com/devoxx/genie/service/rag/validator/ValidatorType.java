@@ -4,7 +4,8 @@ public enum ValidatorType {
     OLLAMA,
     NOMIC,
     DOCKER,
-    CHROMADB;
+    CHROMADB,
+    RERANKER;
 
     public String getName() {
         return name().toLowerCase();
