@@ -1,17 +1,18 @@
 package com.devoxx.genie.chatmodel.local.ollama;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
-import com.devoxx.genie.util.HttpClientProvider;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
 
@@ -19,6 +20,19 @@ public class OllamaApiService {
 
     private static final Gson gson = new Gson();
     public static final int DEFAULT_CONTEXT_LENGTH = 4096;
+
+    /**
+     * Fail-fast client for the best-effort {@code /api/show} context probe. It deliberately
+     * does NOT use the shared {@link HttpClientProvider} client, whose retry/backoff
+     * (2s/4s/8s) plus 30s read timeout would make model loading appear to hang when the
+     * probe is slow or the endpoint errors. The probe result is optional — a failure simply
+     * falls back to {@link #DEFAULT_CONTEXT_LENGTH} — so it must never block the UI for long.
+     */
+    private static final OkHttpClient PROBE_CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(Duration.ofSeconds(3))
+            .readTimeout(Duration.ofSeconds(5))
+            .writeTimeout(Duration.ofSeconds(5))
+            .build();
 
     /**
      * Get the context length of the model.
@@ -38,10 +52,24 @@ public class OllamaApiService {
             .post(body)
             .build();
 
-        try (Response response = HttpClientProvider.getClient().newCall(request).execute()) {
+        try (Response response = PROBE_CLIENT.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
 
-            JsonObject jsonObject = gson.fromJson(response.body().string(), JsonObject.class);
+            if (response.body() == null) {
+                return DEFAULT_CONTEXT_LENGTH;
+            }
+            String json = response.body().string();
+            // Ollama answers 200 with an EMPTY body for some models (observed with
+            // gemma3n:e4b). gson.fromJson("") returns null, which used to NPE in
+            // findContextLength and — escaping the per-model task — hide the entire
+            // model list. Treat an empty/unparseable body as "context unknown".
+            if (json == null || json.isBlank()) {
+                return DEFAULT_CONTEXT_LENGTH;
+            }
+            JsonObject jsonObject = gson.fromJson(json, JsonObject.class);
+            if (jsonObject == null) {
+                return DEFAULT_CONTEXT_LENGTH;
+            }
             return findContextLength(jsonObject);
         }
     }

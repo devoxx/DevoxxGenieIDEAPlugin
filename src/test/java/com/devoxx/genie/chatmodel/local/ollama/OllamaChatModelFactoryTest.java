@@ -1,6 +1,8 @@
 package com.devoxx.genie.chatmodel.local.ollama;
 
 import com.devoxx.genie.model.CustomChatModel;
+import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.service.debug.RawTrafficListenerService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.model.chat.ChatModel;
@@ -199,6 +201,43 @@ class OllamaChatModelFactoryTest {
 
             org.assertj.core.api.Assertions.assertThat(result.listeners())
                     .anyMatch(RawTrafficListenerService.class::isInstance);
+        }
+    }
+
+    @Test
+    void testBuildLanguageModelFallsBackToDefaultContextWhenApiShowFails() throws Exception {
+        // /api/tags succeeded (the model is listed by Ollama), but the per-model /api/show
+        // context lookup fails (e.g. model not loaded, slow endpoint, non-2xx). The model
+        // must still be listed with the default context window instead of being dropped.
+        OllamaModelEntryDTO entry = new OllamaModelEntryDTO();
+        entry.setName("llama3.2:3b");
+
+        try (MockedStatic<OllamaApiService> mockedApi = Mockito.mockStatic(OllamaApiService.class)) {
+            mockedApi.when(() -> OllamaApiService.getModelContext("llama3.2:3b"))
+                    .thenThrow(new java.io.IOException("Unexpected code HTTP 500"));
+
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
+            LanguageModel model = factory.buildLanguageModel(entry);
+
+            assertThat(model).isNotNull();
+            assertThat(model.getModelName()).isEqualTo("llama3.2:3b");
+            assertThat(model.getInputMaxTokens()).isEqualTo(OllamaApiService.DEFAULT_CONTEXT_LENGTH);
+        }
+    }
+
+    @Test
+    void testBuildLanguageModelUsesContextFromApiShowWhenAvailable() throws Exception {
+        OllamaModelEntryDTO entry = new OllamaModelEntryDTO();
+        entry.setName("llama3.2:3b");
+
+        try (MockedStatic<OllamaApiService> mockedApi = Mockito.mockStatic(OllamaApiService.class)) {
+            mockedApi.when(() -> OllamaApiService.getModelContext("llama3.2:3b")).thenReturn(16384);
+
+            OllamaChatModelFactory factory = new OllamaChatModelFactory();
+            LanguageModel model = factory.buildLanguageModel(entry);
+
+            assertThat(model).isNotNull();
+            assertThat(model.getInputMaxTokens()).isEqualTo(16384);
         }
     }
 
