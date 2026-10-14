@@ -554,6 +554,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
 
     // Model config cache
+    private String modelCatalogUrl = "https://genie.devoxx.com/api/models.json";
     private String modelConfigCachedJson = "";
     private long modelConfigLastFetchTimestamp = 0L;
     private String modelConfigPluginVersion = "";

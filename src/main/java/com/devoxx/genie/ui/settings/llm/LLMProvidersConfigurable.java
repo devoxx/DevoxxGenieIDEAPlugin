@@ -2,6 +2,8 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
+import com.devoxx.genie.service.models.ModelConfigService;
+import com.intellij.openapi.project.ProjectManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -25,6 +27,11 @@ public class LLMProvidersConfigurable implements Configurable {
     public LLMProvidersConfigurable(Project project) {
         this.project = project;
         llmSettingsComponent = new LLMProvidersComponent();
+        llmSettingsComponent.getRefreshModelsButton().addActionListener(event -> {
+            DevoxxGenieStateService.getInstance().setModelCatalogUrl(
+                    llmSettingsComponent.getModelCatalogUrlField().getText().trim());
+            refreshCatalog();
+        });
     }
 
     /**
@@ -59,6 +66,7 @@ public class LLMProvidersConfigurable implements Configurable {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         boolean isModified = false;
+        isModified |= isFieldModified(llmSettingsComponent.getModelCatalogUrlField(), stateService.getModelCatalogUrl());
 
         isModified |= !stateService.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
         isModified |= Boolean.TRUE.equals(stateService.getShowThinkingEnabled())
@@ -170,6 +178,10 @@ public class LLMProvidersConfigurable implements Configurable {
         boolean isModified = isModified();
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        String catalogUrl = llmSettingsComponent.getModelCatalogUrlField().getText().trim();
+        boolean catalogChanged = !catalogUrl.equals(settings.getModelCatalogUrl());
+        settings.setModelCatalogUrl(catalogUrl);
+        if (catalogChanged) refreshCatalog();
 
         settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
         settings.setShowThinkingEnabled(llmSettingsComponent.getShowThinkingCheckBox().isSelected());
@@ -393,6 +405,20 @@ public class LLMProvidersConfigurable implements Configurable {
         return ((Number) field.getValue()).doubleValue();
     }
 
+    private void refreshCatalog() {
+        llmSettingsComponent.getRefreshModelsButton().setEnabled(false);
+        ModelConfigService.getInstance().forceRefresh(() -> {
+            llmSettingsComponent.getRefreshModelsButton().setEnabled(true);
+            boolean hasKey = isAnyApiKeyEnabled(DevoxxGenieStateService.getInstance());
+            for (Project openProject : ProjectManager.getInstance().getOpenProjects()) {
+                if (!openProject.isDisposed()) {
+                    openProject.getMessageBus().syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
+                            .settingsChanged(hasKey);
+                }
+            }
+        });
+    }
+
     private boolean isAnyApiKeyEnabled(DevoxxGenieStateService settings) {
         return hasEnabledMainCloudKey(settings) || hasEnabledAuxCloudKey(settings) || hasEnabledAwsOrAzureKey(settings);
     }
@@ -429,6 +455,7 @@ public class LLMProvidersConfigurable implements Configurable {
     public void reset() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
 
+        llmSettingsComponent.getModelCatalogUrlField().setText(settings.getModelCatalogUrl());
         llmSettingsComponent.getStreamModeCheckBox().setSelected(settings.getStreamMode());
         llmSettingsComponent.getShowThinkingCheckBox().setSelected(Boolean.TRUE.equals(settings.getShowThinkingEnabled()));
 
