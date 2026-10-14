@@ -32,7 +32,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.components.ConversationToolbar
@@ -68,13 +68,14 @@ fun ChatScreen(
     // items scrolled out and back in are also skipped via this set.
     val seenMessageIds = remember { messages.mapTo(HashSet()) { it.id } }
 
-    // Last measured height of each finished AI bubble, keyed by message id. A bubble's
+    // Last measured size of each finished AI bubble, keyed by message id. A bubble's
     // Markdown content reports a tiny height on its first frame and grows once parsed; when
     // a recycled item re-enters at the top of the viewport that one-frame growth makes
     // LazyColumn re-pin the item's top edge, snapping the viewport to the start of the
     // message. Replaying the cached height as a minimum on re-entry keeps the first frame
-    // at full size so the anchor is preserved. Survives recomposition (not config changes).
-    val aiBubbleHeights = remember { mutableStateMapOf<String, Dp>() }
+    // at full size so the anchor is preserved. The width is kept so the height is only
+    // replayed at the width it was measured at. Survives recomposition (not config changes).
+    val aiBubbleSizes = remember { mutableStateMapOf<String, IntSize>() }
 
     // Whether the list should follow the growing tail of the last message. Disabled the
     // moment the user scrolls up (see nestedScrollConnection), re-enabled when the user
@@ -174,8 +175,8 @@ fun ChatScreen(
                             onRetryClick = onRetryClick,
                             onOpenAgentSettings = onOpenAgentSettings,
                             onOpenLogs = onOpenLogs,
-                            cachedAiBubbleHeight = aiBubbleHeights[message.id] ?: Dp.Unspecified,
-                            onAiBubbleMeasured = { height -> aiBubbleHeights[message.id] = height },
+                            cachedAiBubbleSize = aiBubbleSizes[message.id],
+                            onAiBubbleMeasured = { size -> aiBubbleSizes[message.id] = size },
                         )
                     }
                 }
