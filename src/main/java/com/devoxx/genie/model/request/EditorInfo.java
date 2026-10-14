@@ -13,6 +13,9 @@ public class EditorInfo {
 
     private String language;
     private String selectedText;
+    private String selectionFilePath;
+    private Integer selectionStartLine;
+    private Integer selectionEndLine;
     private List<VirtualFile> selectedFiles;
 
     public EditorInfo() {

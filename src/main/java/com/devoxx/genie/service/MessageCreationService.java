@@ -40,6 +40,8 @@ import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
 @Slf4j
 public class MessageCreationService {
 
+    private static final long MAX_SELECTED_EDITOR_FILE_CONTEXT_BYTES = 2 * 1024;
+
     public static final String SEMANTIC_RESULT = """
             File: %s%n
             Score: %.2f%n
@@ -132,6 +134,11 @@ public class MessageCreationService {
             stringBuilder.append("<Context>");
             stringBuilder.append(context);
             stringBuilder.append("</Context>\n");
+        }
+
+        String editorContent = getEditorContentOrSelectedText(chatMessageContext, false);
+        if (!editorContent.isEmpty()) {
+            stringBuilder.append(editorContent).append("\n");
         }
 
         stringBuilder.append("<UserPrompt>");
@@ -342,34 +349,71 @@ public class MessageCreationService {
      * @return the editor content or selected text
      */
     private @NotNull String getEditorContentOrSelectedText(@NotNull ChatMessageContext chatMessageContext) {
+        return getEditorContentOrSelectedText(chatMessageContext, true);
+    }
+
+    private @NotNull String getEditorContentOrSelectedText(@NotNull ChatMessageContext chatMessageContext,
+                                                           boolean includeUnselectedEditorFiles) {
         EditorInfo editorInfo = chatMessageContext.getEditorInfo();
-        if (editorInfo == null ||
-            Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
+        if (editorInfo == null) {
             return "";
         }
 
         StringBuilder contentBuilder = new StringBuilder();
+        String selectedTextContext = getSelectedTextContext(editorInfo);
+        if (!selectedTextContext.isEmpty()) {
+            contentBuilder.append(selectedTextContext).append("\n\n");
+        }
 
-        // Add selected text if present
-        if (editorInfo.getSelectedText() != null && !editorInfo.getSelectedText().isEmpty()) {
-            contentBuilder.append("<SelectedText>\n")
-                    .append(editorInfo.getSelectedText())
-                    .append("\n</SelectedText>\n\n");
+        if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
+            return contentBuilder.toString().trim();
         }
 
         // Add content of selected files
         List<VirtualFile> selectedFiles = editorInfo.getSelectedFiles();
         if (selectedFiles != null && !selectedFiles.isEmpty()) {
-            contentBuilder.append("<FileContents>\n");
-            for (VirtualFile file : selectedFiles) {
-                contentBuilder.append("File: ").append(file.getCanonicalPath()).append("\n")
+            boolean hasSelectedText = editorInfo.getSelectedText() != null && !editorInfo.getSelectedText().isEmpty();
+            List<VirtualFile> filesToInclude = selectedFiles.stream()
+                    .filter(file -> hasSelectedText
+                            ? file.getLength() <= MAX_SELECTED_EDITOR_FILE_CONTEXT_BYTES
+                            : includeUnselectedEditorFiles)
+                    .toList();
+            if (!filesToInclude.isEmpty()) {
+                contentBuilder.append("<FileContents>\n");
+            }
+            for (VirtualFile file : filesToInclude) {
+                String filePath = file.getCanonicalPath();
+                contentBuilder.append("File: ").append(filePath != null ? filePath : file.getPath()).append("\n")
                         .append(readFileContent(file))
                         .append("\n\n");
             }
-            contentBuilder.append("\n</FileContents>\n");
+            if (!filesToInclude.isEmpty()) {
+                contentBuilder.append("\n</FileContents>\n");
+            }
         }
 
         return contentBuilder.toString().trim();
+    }
+
+    private @NotNull String getSelectedTextContext(EditorInfo editorInfo) {
+        if (editorInfo == null || editorInfo.getSelectedText() == null || editorInfo.getSelectedText().isEmpty()) {
+            return "";
+        }
+
+        StringBuilder contentBuilder = new StringBuilder("<SelectedText>\n");
+        if (editorInfo.getSelectionFilePath() != null && !editorInfo.getSelectionFilePath().isBlank()) {
+            contentBuilder.append("File: ").append(editorInfo.getSelectionFilePath()).append("\n");
+        }
+        if (editorInfo.getSelectionStartLine() != null && editorInfo.getSelectionEndLine() != null) {
+            contentBuilder.append("Lines: ")
+                    .append(editorInfo.getSelectionStartLine())
+                    .append("-")
+                    .append(editorInfo.getSelectionEndLine())
+                    .append("\n");
+        }
+        return contentBuilder.append(editorInfo.getSelectedText())
+                .append("\n</SelectedText>")
+                .toString();
     }
 
     private @NotNull String readFileContent(@NotNull VirtualFile file) {

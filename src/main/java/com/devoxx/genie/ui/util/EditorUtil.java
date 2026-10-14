@@ -5,6 +5,7 @@ import com.devoxx.genie.util.FileUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -36,11 +37,18 @@ public class EditorUtil {
             VirtualFile virtualFile = FileDocumentManager.getInstance().getFile(document);
 
             if (virtualFile != null) {
-                String selectedText = editor.getSelectionModel().getSelectedText();
-                if (selectedText != null) {
+                editorInfo.setSelectedFiles(List.of(virtualFile));
+                SelectionModel selectionModel = editor.getSelectionModel();
+                String selectedText = selectionModel.getSelectedText();
+                if (selectedText != null && !selectedText.isEmpty()) {
                     editorInfo.setSelectedText(selectedText);
-                } else {
-                    editorInfo.setSelectedFiles(List.of(virtualFile));
+                    String filePath = virtualFile.getCanonicalPath();
+                    editorInfo.setSelectionFilePath(filePath != null ? filePath : virtualFile.getPath());
+
+                    int selectionStart = selectionModel.getSelectionStart();
+                    int selectionEnd = selectionModel.getSelectionEnd();
+                    editorInfo.setSelectionStartLine(document.getLineNumber(selectionStart) + 1);
+                    editorInfo.setSelectionEndLine(document.getLineNumber(Math.max(selectionStart, selectionEnd - 1)) + 1);
                 }
 
                 editorInfo.setLanguage(FileUtil.getFileType(virtualFile));
