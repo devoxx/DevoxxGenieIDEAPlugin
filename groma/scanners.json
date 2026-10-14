@@ -1,0 +1,76 @@
+{
+  "exclude": [
+    "/docusaurus/scripts/",
+    "/docusaurus/*placeholder*.js",
+    "/docusaurus/static/img/*.js",
+    "/src/main/java/com/devoxx/genie/service/rag/cli/",
+    "/src/main/java/com/devoxx/genie/service/prompt/websearch/cli/"
+  ],
+  "scanners": [
+    {
+      "id": "java",
+      "source": "@groma/scanner-java@0.2.1",
+      "include": [
+        "**/*.java",
+        "**/pom.xml",
+        "**/build.gradle",
+        "**/build.gradle.kts",
+        "**/settings.gradle",
+        "**/settings.gradle.kts"
+      ],
+      "exclude": [
+        "target/",
+        "build/",
+        ".gradle/"
+      ]
+    },
+    {
+      "id": "javascript",
+      "source": "@groma/scanner-javascript@0.2.1",
+      "include": [
+        "**/*.js",
+        "**/*.mjs",
+        "**/*.cjs",
+        "**/*.jsx",
+        "**/package.json",
+        "**/*.html",
+        "**/project.json",
+        "**/nx.json"
+      ],
+      "exclude": [
+        "*.min.js",
+        "*.min.mjs",
+        "*.min.cjs",
+        "*.min.jsx",
+        "node_modules/",
+        "dist/",
+        "build/",
+        "coverage/"
+      ]
+    },
+    {
+      "id": "react",
+      "source": "@groma/scanner-react@0.2.1",
+      "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/tsconfig*.json",
+        "**/package.json",
+        "**/*.html",
+        "**/project.json",
+        "**/nx.json"
+      ],
+      "exclude": [
+        "*.test.ts",
+        "*.test.tsx",
+        "*.spec.ts",
+        "*.spec.tsx",
+        "/test/",
+        "node_modules/",
+        "dist/",
+        "build/",
+        "coverage/"
+      ]
+    }
+  ]
+}
