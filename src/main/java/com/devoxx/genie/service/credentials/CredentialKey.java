@@ -33,7 +33,8 @@ public enum CredentialKey {
     CUSTOM_OPEN_AI_KEY   ("customOpenAIApiKey"),
     GOOGLE_SEARCH_KEY    ("googleSearchKey"),
     GOOGLE_CSI_KEY       ("googleCSIKey"),
-    TAVILY_SEARCH_KEY    ("tavilySearchKey");
+    TAVILY_SEARCH_KEY    ("tavilySearchKey"),
+    GITHUB_TOKEN         ("githubToken");
 
     /** PasswordSafe service-name prefix. Entries appear as "DevoxxGenie — &lt;subKey&gt;". */
     public static final String SERVICE_NAME = "DevoxxGenie";

@@ -1105,6 +1105,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         int skipped = 0;
         int failed = 0;
         for (CredentialKey key : CredentialKey.values()) {
+            // GitHub credentials were introduced directly in PasswordSafe; no legacy field exists.
+            if (key == CredentialKey.GITHUB_TOKEN) continue;
             try {
                 Field field = DevoxxGenieStateService.class.getDeclaredField(key.getSubKey());
                 field.setAccessible(true);

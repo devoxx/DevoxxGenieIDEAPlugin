@@ -5,6 +5,8 @@ import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.credentials.CredentialKey;
+import com.devoxx.genie.service.credentials.CredentialService;
 import com.devoxx.genie.service.agent.tool.BuiltInToolDescriptions;
 import com.devoxx.genie.service.agent.tool.psi.PsiToolCatalog;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
@@ -63,6 +65,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBCheckBox showToolActivityInChatCheckbox =
             new JBCheckBox("Show tool activity in chat output", Boolean.TRUE.equals(stateService.getShowToolActivityInChat()));
 
+    private final JPasswordField githubTokenField = new JPasswordField(
+            CredentialService.getInstance().getCredential(CredentialKey.GITHUB_TOKEN), 30);
+
     // Test execution settings
     private final JBCheckBox enableTestExecutionCheckbox =
             new JBCheckBox("Enable run tests tool", Boolean.TRUE.equals(stateService.getTestExecutionEnabled()));
@@ -118,6 +123,10 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             {"search_files", "Search for regex patterns in project files"},
             {"run_command", "Execute terminal commands in the project directory"},
             {"fetch_page", "Fetch a web page and return its text content"},
+            {"github_issue", "Read a GitHub issue"},
+            {"github_list_issues", "List open GitHub issues"},
+            {"github_pull_request", "Read a GitHub pull request and its changed files"},
+            {"github_comment", "Comment on a GitHub issue or pull request (requires approval)"},
             {"semantic_search", "Query the RAG vector index for conceptually similar chunks (only registered when RAG is enabled and activated)"}
     };
     private final Map<String, JBCheckBox> toolCheckboxes = new LinkedHashMap<>();
@@ -165,6 +174,12 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "When enabled, the LLM gets built-in IDE tools (read_file, write_file, " +
                 "list_files, search_files, run_command) to interact with your project autonomously.");
+
+        addSection(contentPanel, gbc, "GitHub");
+        addFullWidthRow(contentPanel, gbc, new JBLabel("GitHub token:"));
+        addFullWidthRow(contentPanel, gbc, githubTokenField);
+        addHelpText(contentPanel, gbc, "Stored in the IDE password safe. Leave blank to use GITHUB_TOKEN from the environment. "
+                + "Comments on issues and pull requests always require approval.");
 
         // --- Built-in Tools ---
         addSection(contentPanel, gbc, "Built-in Tools");
@@ -1079,7 +1094,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     public boolean isModified() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
-        return enableAgentModeCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentModeEnabled())
+        return !Objects.equals(new String(githubTokenField.getPassword()).trim(),
+                CredentialService.getInstance().getCredential(CredentialKey.GITHUB_TOKEN))
+                || enableAgentModeCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentModeEnabled())
                 || maxToolCallsSpinner.getNumber() != (state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS)
                 || autoApproveReadOnlyCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly())
                 || writeApprovalRequiredCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentWriteApprovalRequired())
@@ -1124,6 +1141,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     }
 
     public void apply() {
+        CredentialService.getInstance().setCredential(CredentialKey.GITHUB_TOKEN,
+                new String(githubTokenField.getPassword()).trim());
         stateService.setAgentModeEnabled(enableAgentModeCheckbox.isSelected());
         stateService.setAgentMaxToolCalls(maxToolCallsSpinner.getNumber());
         stateService.setAgentAutoApproveReadOnly(autoApproveReadOnlyCheckbox.isSelected());
@@ -1167,6 +1186,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     }
 
     public void reset() {
+        githubTokenField.setText(CredentialService.getInstance().getCredential(CredentialKey.GITHUB_TOKEN));
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         enableAgentModeCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentModeEnabled()));
         maxToolCallsSpinner.setNumber(state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS);

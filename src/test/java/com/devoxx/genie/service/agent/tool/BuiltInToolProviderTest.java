@@ -31,7 +31,8 @@ class BuiltInToolProviderTest {
 
     private static final Set<String> BASE_TOOLS = Set.of(
             "read_file", "write_file", "edit_file", "list_files",
-            "search_files", "run_command", "fetch_page"
+            "search_files", "run_command", "fetch_page",
+            "github_issue", "github_list_issues", "github_pull_request", "github_comment"
     );
 
     @Mock
@@ -69,11 +70,11 @@ class BuiltInToolProviderTest {
     // --- Default configuration (all optional features disabled) ---
 
     @Test
-    void provideTools_defaultConfig_returnsSevenBaseTools() {
+    void provideTools_defaultConfig_returnsElevenBaseTools() {
         BuiltInToolProvider provider = createProvider();
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(7);
+        assertThat(result.tools()).hasSize(11);
         assertThat(getToolNames(result)).containsExactlyInAnyOrderElementsOf(BASE_TOOLS);
     }
 
@@ -116,7 +117,7 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(8);
+        assertThat(result.tools()).hasSize(12);
         assertThat(getToolNames(result)).contains("run_tests");
     }
 
@@ -139,7 +140,7 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(8);
+        assertThat(result.tools()).hasSize(12);
         assertThat(getToolNames(result)).contains("parallel_explore");
     }
 
@@ -181,7 +182,7 @@ class BuiltInToolProviderTest {
 
         Set<String> toolNames = getToolNames(result);
         // 7 base + 20 backlog (10 task + 5 document + 5 milestone)
-        assertThat(result.tools()).hasSize(27);
+        assertThat(result.tools()).hasSize(31);
         assertThat(toolNames).contains(
                 "backlog_task_create", "backlog_task_list", "backlog_task_search",
                 "backlog_task_view", "backlog_task_edit", "backlog_task_complete", "backlog_task_archive",
@@ -215,7 +216,7 @@ class BuiltInToolProviderTest {
 
         Set<String> toolNames = getToolNames(result);
         // 7 base + 9 PSI tools
-        assertThat(result.tools()).hasSize(16);
+        assertThat(result.tools()).hasSize(20);
         assertThat(toolNames).contains(
                 "find_symbols", "document_symbols", "find_references",
                 "find_definition", "find_implementations",
@@ -310,8 +311,8 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        // 7 base + 1 run_tests + 1 parallel_explore + 20 backlog + 9 PSI = 38
-        assertThat(result.tools()).hasSize(38);
+        // 11 base + 1 run_tests + 1 parallel_explore + 20 backlog + 9 PSI = 42
+        assertThat(result.tools()).hasSize(42);
     }
 
     // --- Disabled tools filtering in provideTools() ---
@@ -324,7 +325,7 @@ class BuiltInToolProviderTest {
         ToolProviderResult result = provider.provideTools(request);
 
         Set<String> toolNames = getToolNames(result);
-        assertThat(result.tools()).hasSize(5);
+        assertThat(result.tools()).hasSize(9);
         assertThat(toolNames).doesNotContain("read_file", "write_file");
         assertThat(toolNames).contains("edit_file", "list_files", "search_files", "run_command", "fetch_page");
     }
@@ -336,7 +337,7 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(7);
+        assertThat(result.tools()).hasSize(11);
     }
 
     @Test
@@ -346,7 +347,7 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(7);
+        assertThat(result.tools()).hasSize(11);
     }
 
     @Test
@@ -356,14 +357,15 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(7);
+        assertThat(result.tools()).hasSize(11);
     }
 
     @Test
     void provideTools_disableAllTools_returnsEmpty() {
         when(stateService.getDisabledAgentTools()).thenReturn(List.of(
                 "read_file", "write_file", "edit_file", "list_files",
-                "search_files", "run_command", "fetch_page"
+                "search_files", "run_command", "fetch_page",
+                "github_issue", "github_list_issues", "github_pull_request", "github_comment"
         ));
         BuiltInToolProvider provider = createProvider();
 
@@ -412,7 +414,7 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(result.tools()).hasSize(7);
+        assertThat(result.tools()).hasSize(11);
         assertThat(getToolNames(result)).containsExactlyInAnyOrderElementsOf(BASE_TOOLS);
         for (ToolSpecification spec : result.tools().keySet()) {
             assertThat(spec.description()).isEqualTo(BuiltInToolDescriptions.defaultOf(spec.name()));

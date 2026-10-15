@@ -131,6 +131,48 @@ public class BuiltInToolProvider implements ToolProvider {
                 new FetchPageToolExecutor()
         );
 
+        GitHubToolExecutor githubExecutor = new GitHubToolExecutor();
+        tools.put(ToolSpecification.builder()
+                .name("github_issue")
+                .description(BuiltInToolDescriptions.effective("github_issue"))
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("repo", "Repository in owner/name format")
+                        .addIntegerProperty("number", "Issue or pull request number")
+                        .required("repo", "number")
+                        .build())
+                .build(), githubExecutor);
+
+        tools.put(ToolSpecification.builder()
+                .name("github_list_issues")
+                .description(BuiltInToolDescriptions.effective("github_list_issues"))
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("repo", "Repository in owner/name format")
+                        .addStringProperty("label", "Optional label to filter open issues")
+                        .required("repo")
+                        .build())
+                .build(), githubExecutor);
+
+        tools.put(ToolSpecification.builder()
+                .name("github_pull_request")
+                .description(BuiltInToolDescriptions.effective("github_pull_request"))
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("repo", "Repository in owner/name format")
+                        .addIntegerProperty("number", "Issue or pull request number")
+                        .required("repo", "number")
+                        .build())
+                .build(), githubExecutor);
+
+        tools.put(ToolSpecification.builder()
+                .name("github_comment")
+                .description(BuiltInToolDescriptions.effective("github_comment"))
+                .parameters(JsonObjectSchema.builder()
+                        .addStringProperty("repo", "Repository in owner/name format")
+                        .addIntegerProperty("number", "Issue or pull request number")
+                        .addStringProperty("body", "Comment text in Markdown")
+                        .required("repo", "number", "body")
+                        .build())
+                .build(), githubExecutor);
+
         // run_tests — only when test execution is enabled
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getTestExecutionEnabled())) {
             tools.put(

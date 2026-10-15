@@ -111,6 +111,11 @@ public final class BuiltInToolDescriptions {
                         "Useful for reading documentation, API references, and web pages. " +
                         "Large pages are truncated to 100K characters.");
 
+        map.put("github_issue", "Read a GitHub issue's title, state, labels, and description.");
+        map.put("github_list_issues", "List a repository's open GitHub issues, optionally filtered by label.");
+        map.put("github_pull_request", "Read a GitHub pull request's title, state, description, and changed files.");
+        map.put("github_comment", "Post a Markdown comment on a GitHub issue or pull request. Always requires developer approval.");
+
         // --- Optional feature tools ---
         map.put("run_tests",
                 "Run tests in the project. Auto-detects build system (Gradle/Maven/npm/etc.) " +
