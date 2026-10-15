@@ -19,8 +19,52 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
+    private final DefaultListModel<FavoriteEntry> favoriteEntries = new DefaultListModel<>();
+
+    private record FavoriteEntry(String provider, String model) {
+        @Override
+        public String toString() {
+            return provider + " — " + model;
+        }
+    }
+
+    public Map<String, List<String>> getFavoriteModels() {
+        Map<String, List<String>> favorites = new LinkedHashMap<>();
+        for (int i = 0; i < favoriteEntries.size(); i++) {
+            FavoriteEntry entry = favoriteEntries.get(i);
+            favorites.computeIfAbsent(entry.provider(), key -> new ArrayList<>()).add(entry.model());
+        }
+        return favorites;
+    }
+
+    public void setFavoriteModels(Map<String, List<String>> favorites) {
+        favoriteEntries.clear();
+        favorites.forEach((provider, models) -> models.forEach(model ->
+                favoriteEntries.addElement(new FavoriteEntry(provider, model))));
+    }
+
+    private JPanel createFavoritesPanel() {
+        JPanel favoritesPanel = new JPanel(new BorderLayout(5, 5));
+        favoritesPanel.setBorder(BorderFactory.createTitledBorder("Favorite models"));
+        JList<FavoriteEntry> list = new JList<>(favoriteEntries);
+        list.setVisibleRowCount(4);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JButton remove = new JButton("Remove selected favorite");
+        remove.setEnabled(false);
+        list.addListSelectionListener(e -> remove.setEnabled(list.getSelectedIndex() >= 0));
+        remove.addActionListener(e -> {
+            int index = list.getSelectedIndex();
+            if (index >= 0) favoriteEntries.remove(index);
+        });
+        favoritesPanel.add(new JLabel("Use the star beside a model in the chat window to add favorites."), BorderLayout.NORTH);
+        favoritesPanel.add(new JScrollPane(list), BorderLayout.CENTER);
+        favoritesPanel.add(remove, BorderLayout.SOUTH);
+        return favoritesPanel;
+    }
 
     /**
      * Preferred width of text/password fields, expressed in columns. Keeps a long stored
@@ -226,6 +270,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final List<JComponent> awsBearerTokenComponents = new ArrayList<>();
 
     public LLMProvidersComponent() {
+        setFavoriteModels(stateService.getFavoriteModels());
         awsAuthModeComboBox.setSelectedItem(stateService.getAwsBedrockAuthMode());
         addListeners();
     }
@@ -250,6 +295,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         stack.add(createResponsePanel(), gbc);
         gbc.gridy++;
         stack.add(createProviderTabs(), gbc);
+        gbc.gridy++;
+        stack.add(createFavoritesPanel(), gbc);
         gbc.gridy++;
         stack.add(createVersionPanel(), gbc);
 

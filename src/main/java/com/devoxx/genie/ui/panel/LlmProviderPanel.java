@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,7 +57,19 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     @Getter
     private final JPanel contentPanel = new JPanel();
     @Getter
-    private final ComboBox<ModelProvider> modelProviderComboBox = new ComboBox<>();
+    private final ComboBox<ModelProvider> modelProviderComboBox = new ComboBox<>() {
+        @Override
+        public void setSelectedItem(Object item) {
+            // The null row is a menu action, never an execution provider. Keep the
+            // actual provider selected so existing submission listeners remain valid.
+            if (item == null && isInitializationComplete && !isUpdatingModelNames
+                    && getItemCount() > 0 && getItemAt(0) == null) {
+                SwingUtilities.invokeLater(LlmProviderPanel.this::showFavorites);
+                return;
+            }
+            super.setSelectedItem(item);
+        }
+    };
     @Getter
     private final FilteringComboBox<LanguageModel> modelNameComboBox = new FilteringComboBox<>(
             model -> model.getDisplayName() != null ? model.getDisplayName() : model.getModelName(),
@@ -69,6 +82,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     private boolean isUpdatingPersonas = false;
 
     private JButton refreshButton;
+    private final JButton favoriteButton = new JButton("☆");
 
     private String lastSelectedProvider = null;
     private String lastSelectedLanguageModel = null;
@@ -108,7 +122,18 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 : project.getLocationHash();
 
         // Set consistent renderers and fonts for both combo boxes
-        modelProviderComboBox.setRenderer(new ModelProviderRenderer());
+        ModelProviderRenderer providerRenderer = new ModelProviderRenderer();
+        modelProviderComboBox.setRenderer((list, provider, index, selected, focused) -> {
+            if (provider != null || index < 0) {
+                return providerRenderer.getListCellRendererComponent(list, provider, index, selected, focused);
+            }
+            JLabel label = new JLabel("★ Favorites");
+            label.setOpaque(true);
+            label.setFont(DevoxxGenieFontsUtil.getDropdownFont());
+            label.setBackground(selected ? list.getSelectionBackground() : list.getBackground());
+            label.setForeground(selected ? list.getSelectionForeground() : list.getForeground());
+            return label;
+        });
         modelNameComboBox.setRenderer(new ModelInfoRenderer());
         
         // Set the font for the combo boxes themselves
@@ -126,6 +151,10 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
         JPanel modelPanel = new JPanel(new BorderLayout());
         modelPanel.add(modelNameComboBox, BorderLayout.CENTER);
+        favoriteButton.setToolTipText("Add selected model to favorites");
+        favoriteButton.setEnabled(false);
+        favoriteButton.addActionListener(e -> toggleFavorite());
+        modelPanel.add(favoriteButton, BorderLayout.EAST);
         toolPanel.add(modelPanel);
 
         // Persona dropdown — only visible when "Show personas" is enabled in Prompts settings
@@ -210,6 +239,134 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
                 .forEach(modelProviderComboBox::addItem);
+        updateFavoritesEntry();
+    }
+
+    private void updateFavoritesEntry() {
+        boolean wasUpdating = isUpdatingModelNames;
+        isUpdatingModelNames = true;
+        try {
+            boolean hasEntry = modelProviderComboBox.getItemCount() > 0
+                    && modelProviderComboBox.getItemAt(0) == null;
+            boolean hasFavorites = !DevoxxGenieStateService.getInstance().getFavoriteModels().isEmpty();
+            if (hasFavorites && !hasEntry) {
+                modelProviderComboBox.insertItemAt(null, 0);
+            } else if (!hasFavorites && hasEntry) {
+                modelProviderComboBox.removeItemAt(0);
+            }
+            modelProviderComboBox.setVisible(modelProviderComboBox.getItemCount() > 1);
+        } finally {
+            isUpdatingModelNames = wasUpdating;
+        }
+        revalidate();
+        repaint();
+    }
+
+    private void updateFavoriteButton() {
+        LanguageModel model = (LanguageModel) modelNameComboBox.getSelectedItem();
+        boolean valid = model != null && model.getProvider() != null && model.getModelName() != null;
+        favoriteButton.setEnabled(valid);
+        boolean favorite = valid && DevoxxGenieStateService.getInstance().getFavoriteModels()
+                .getOrDefault(model.getProvider().name(), Collections.emptyList()).contains(model.getModelName());
+        favoriteButton.setText(favorite ? "★" : "☆");
+        favoriteButton.setToolTipText(favorite ? "Remove selected model from favorites" : "Add selected model to favorites");
+    }
+
+    private void toggleFavorite() {
+        LanguageModel model = (LanguageModel) modelNameComboBox.getSelectedItem();
+        if (model == null || model.getProvider() == null || model.getModelName() == null) return;
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        Map<String, List<String>> favorites = state.getFavoriteModels();
+        List<String> names = favorites.computeIfAbsent(model.getProvider().name(), key -> new ArrayList<>());
+        if (!names.remove(model.getModelName())) names.add(model.getModelName());
+        if (names.isEmpty()) favorites.remove(model.getProvider().name());
+        state.setFavoriteModels(favorites);
+        updateFavoritesEntry();
+        updateFavoriteButton();
+    }
+
+    private boolean isProviderAvailable(ModelProvider provider) {
+        for (int i = 0; i < modelProviderComboBox.getItemCount(); i++) {
+            if (modelProviderComboBox.getItemAt(i) == provider) return true;
+        }
+        return false;
+    }
+
+    private void showFavorites() {
+        if (!modelProviderComboBox.isShowing()) return;
+        JPopupMenu menu = new JPopupMenu();
+        DevoxxGenieStateService.getInstance().getFavoriteModels().forEach((providerName, names) -> {
+            ModelProvider provider;
+            try {
+                provider = ModelProvider.valueOf(providerName);
+            } catch (IllegalArgumentException e) {
+                provider = null;
+            }
+            ModelProvider favoriteProvider = provider;
+            List<JMenuItem> items = new ArrayList<>();
+            for (String name : names) {
+                JMenuItem item = new JMenuItem(providerName + " — " + name + " (unavailable)");
+                item.setEnabled(false);
+                items.add(item);
+                menu.add(item);
+            }
+            if (favoriteProvider == null || !isProviderAvailable(favoriteProvider)) return;
+            for (int i = 0; i < names.size(); i++) {
+                items.get(i).setText(providerName + " — " + names.get(i) + " (checking…)");
+            }
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                List<LanguageModel> models;
+                try {
+                    models = ChatModelFactoryProvider.getFactoryByProvider(favoriteProvider.name())
+                            .map(ChatModelFactory::getModels).orElse(Collections.emptyList());
+                } catch (Exception e) {
+                    log.debug("Cannot load favorite models for {}", providerName, e);
+                    models = Collections.emptyList();
+                }
+                List<LanguageModel> available = new ArrayList<>(models);
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    for (int i = 0; i < names.size(); i++) {
+                        String name = names.get(i);
+                        JMenuItem item = items.get(i);
+                        boolean found = available.stream().anyMatch(model -> name.equals(model.getModelName()));
+                        item.setText(providerName + " — " + name + (found ? "" : " (unavailable)"));
+                        item.setEnabled(found && isProviderAvailable(favoriteProvider));
+                        item.addActionListener(e -> selectFavorite(favoriteProvider, name));
+                    }
+                    menu.pack();
+                });
+            });
+        });
+        if (menu.getComponentCount() == 0) {
+            JMenuItem empty = new JMenuItem("No favorite models");
+            empty.setEnabled(false);
+            menu.add(empty);
+        }
+        menu.show(modelProviderComboBox, 0, modelProviderComboBox.getHeight());
+    }
+
+    private void selectFavorite(ModelProvider provider, String name) {
+        if (!isProviderAvailable(provider)) return;
+        boolean wasUpdating = isUpdatingModelNames;
+        isUpdatingModelNames = true;
+        try {
+            modelProviderComboBox.setSelectedItem(provider);
+        } finally {
+            isUpdatingModelNames = wasUpdating;
+        }
+        DevoxxGenieStateService.getInstance().setSelectedProvider(stateKey, provider.getName());
+        int generation = modelComboGeneration.get() + 1;
+        updateModelNamesComboBox(provider.getName(), () -> {
+            if (generation != modelComboGeneration.get()) return;
+            for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
+                if (name.equals(modelNameComboBox.getItemAt(i).getModelName())) {
+                    modelNameComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+            persistSelectedModel();
+            updateFavoriteButton();
+        });
     }
 
     /**
@@ -370,11 +527,12 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 if (models.isEmpty()) {
                     hideModelNameComboBox();
                 } else {
-                    modelNameComboBox.setVisible(true);
                     List<LanguageModel> sorted = new ArrayList<>(models);
                     sorted.sort(Comparator.naturalOrder());
                     sorted.forEach(modelNameComboBox::addItem);
                 }
+                modelNameComboBox.setVisible(modelNameComboBox.getItemCount() > 1);
+                updateFavoriteButton();
                 modelNameComboBox.setRenderer(new ModelInfoRenderer());
                 modelNameComboBox.revalidate();
                 modelNameComboBox.repaint();
@@ -404,7 +562,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         if (lastSelectedProvider != null) {
             for (int i = 0; i < modelProviderComboBox.getItemCount(); i++) {
                 ModelProvider provider = modelProviderComboBox.getItemAt(i);
-                if (provider.getName().equals(lastSelectedProvider)) {
+                if (provider != null && provider.getName().equals(lastSelectedProvider)) {
                     modelProviderComboBox.setSelectedIndex(i);
                     // Model loading is asynchronous, so restore the previously selected
                     // language model only once the combo has been repopulated.
@@ -449,6 +607,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             }
         } finally {
             isUpdatingModelNames = wasUpdating;
+            updateFavoriteButton();
         }
     }
 
@@ -476,7 +635,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         LanguageModel restored = synthesizePersistedModel(provider, lastSelectedLanguageModel);
         modelNameComboBox.addItem(restored);
         modelNameComboBox.setSelectedItem(restored);
-        modelNameComboBox.setVisible(true);
+        modelNameComboBox.setVisible(modelNameComboBox.getItemCount() > 1);
     }
 
     /**
@@ -521,6 +680,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             LanguageModel restored = synthesizePersistedModel(provider, previous.getModelName());
             modelNameComboBox.addItem(restored);
             modelNameComboBox.setSelectedItem(restored);
+            modelNameComboBox.setVisible(modelNameComboBox.getItemCount() > 1);
         }
     }
 
@@ -528,7 +688,10 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * Set the last selected LLM provider or show default.
      */
     public void setLastSelectedProvider() {
-        ModelProvider modelProvider = modelProviderComboBox.getItemAt(0);
+        int firstProvider = modelProviderComboBox.getItemCount() > 0
+                && modelProviderComboBox.getItemAt(0) == null ? 1 : 0;
+        ModelProvider modelProvider = firstProvider < modelProviderComboBox.getItemCount()
+                ? modelProviderComboBox.getItemAt(firstProvider) : null;
         if (modelProvider != null) {
             DevoxxGenieStateService.getInstance().setSelectedProvider(stateKey, modelProvider.getName());
             updateModelNamesComboBox(modelProvider.getName());
@@ -601,6 +764,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * When a model is selected for the Exo provider, start preparing the instance in the background.
      */
     private void handleModelNameSelectionChange(@NotNull ActionEvent e) {
+        updateFavoriteButton();
         if (!e.getActionCommand().equals(Constant.COMBO_BOX_CHANGED) || !isInitializationComplete || isUpdatingModelNames) return;
 
         ModelProvider provider = (ModelProvider) modelProviderComboBox.getSelectedItem();
