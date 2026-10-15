@@ -1,7 +1,8 @@
 package com.devoxx.genie.ui.settings.copyproject;
 
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.AddEditRemovePanel;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
@@ -23,12 +25,15 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
     private final JCheckBox excludeJavadocCheckBox;
     private final JCheckBox useGitIgnoreCheckBox;
 
-    public CopyProjectSettingsComponent() {
-        DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+    private final Project project;
+
+    public CopyProjectSettingsComponent(Project project) {
+        this.project = project;
+        ProjectScanSettingsService settings = ProjectScanSettingsService.getInstance(project);
         useGitIgnoreCheckBox = new JCheckBox("Use .gitignore", settings.getUseGitIgnore());
-        excludedDirectoriesPanel = new ExcludedDirectoriesPanel(settings.getExcludedDirectories());
-        excludedFilesPanel = new ExcludedFilesPanel(settings.getExcludedFiles());  // Initialize the new panel
-        includedFileExtensionsPanel = new IncludedFileExtensionsPanel(settings.getIncludedFileExtensions());
+        excludedDirectoriesPanel = new ExcludedDirectoriesPanel(new ArrayList<>(settings.getExcludedDirectories()));
+        excludedFilesPanel = new ExcludedFilesPanel(new ArrayList<>(settings.getExcludedFiles()));  // Initialize the new panel
+        includedFileExtensionsPanel = new IncludedFileExtensionsPanel(new ArrayList<>(settings.getIncludedFileExtensions()));
         excludeJavadocCheckBox = new JCheckBox("Exclude Javadoc", settings.getExcludeJavaDoc());
     }
 
@@ -51,6 +56,7 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
 
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.add(new JBLabel("Scan & Copy settings for project: " + project.getName()));
         contentPanel.add(excludedDirectoriesPanel);
         contentPanel.add(excludedFilesPanel);
 
@@ -77,6 +83,14 @@ public class CopyProjectSettingsComponent extends AbstractSettingsComponent {
         panel.setPreferredSize(new Dimension(400, 500));
 
         return panel;
+    }
+
+    public void reset(ProjectScanSettingsService settings) {
+        excludedDirectoriesPanel.setData(new ArrayList<>(settings.getExcludedDirectories()));
+        excludedFilesPanel.setData(new ArrayList<>(settings.getExcludedFiles()));
+        includedFileExtensionsPanel.setData(new ArrayList<>(settings.getIncludedFileExtensions()));
+        useGitIgnoreCheckBox.setSelected(Boolean.TRUE.equals(settings.getUseGitIgnore()));
+        excludeJavadocCheckBox.setSelected(Boolean.TRUE.equals(settings.getExcludeJavaDoc()));
     }
 
     public List<String> getExcludedDirectories() {

@@ -1,6 +1,6 @@
 package com.devoxx.genie.action;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -34,10 +34,10 @@ public class ExcludeDirectoryAction extends AnAction {
         String directoryPath = selectedDir.getPath();
 
         // Access the state service
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+        ProjectScanSettingsService stateService = ProjectScanSettingsService.getInstance(project);
 
         // Get current excluded directories
-        List<String> excludedDirectories = stateService.getExcludedDirectories();
+        List<String> excludedDirectories = new java.util.ArrayList<>(stateService.getExcludedDirectories());
 
         // Check if already excluded
         if (excludedDirectories.contains(directoryPath)) {

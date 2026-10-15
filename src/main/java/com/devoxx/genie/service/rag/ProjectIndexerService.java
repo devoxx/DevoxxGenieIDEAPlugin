@@ -6,7 +6,7 @@ import com.devoxx.genie.service.projectscanner.ProjectScannerService;
 import com.devoxx.genie.service.rag.manifest.IndexManifest;
 import com.devoxx.genie.service.rag.manifest.IndexManifestService;
 import com.devoxx.genie.service.rag.manifest.InMemoryIndexManifest;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
 import com.intellij.ide.util.DelegatingProgressIndicator;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
@@ -211,7 +211,7 @@ public final class ProjectIndexerService {
 
         // RAG-specific directory exclusion (task-220). Layered on top of the project-scanner
         // exclusion — users can keep project-context broad while keeping RAG narrow.
-        List<String> ragExcluded = DevoxxGenieStateService.getInstance().getRagExcludedDirectories();
+        List<String> ragExcluded = ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories();
         log.info("RAG indexing start: basePath='{}', files scanned={}, RAG exclusion entries={}",
                 basePath, filesToProcess.size(), ragExcluded);
         if (ragExcluded != null && !ragExcluded.isEmpty()) {
@@ -353,7 +353,7 @@ public final class ProjectIndexerService {
         if (files.isEmpty()) return;
         chromaEmbeddingService.init(project);
         this.manifest = IndexManifestService.getInstance().forProject(project);
-        List<String> ragExcluded = DevoxxGenieStateService.getInstance().getRagExcludedDirectories();
+        List<String> ragExcluded = ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories();
         String basePath = project.getBasePath();
         Path projectBasePath = basePath != null ? Path.of(basePath) : null;
         try {
