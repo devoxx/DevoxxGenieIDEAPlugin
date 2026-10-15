@@ -27,9 +27,10 @@ For all cloud providers, available models are **automatically fetched** from the
 9. [Kimi](#kimi)
 10. [GLM](#glm)
 11. [OpenRouter](#openrouter)
-12. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
-13. [Azure OpenAI](#azure-openai)
-14. [Amazon Bedrock](#amazon-bedrock)
+12. [Requesty](#requesty)
+13. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
+14. [Azure OpenAI](#azure-openai)
+15. [Amazon Bedrock](#amazon-bedrock)
 
 ## OpenAI
 
@@ -333,6 +334,37 @@ Google provides the Gemini family of models through Google AI Studio.
 - Pay-as-you-go pricing
 
 *Check [OpenRouter's pricing page](https://openrouter.ai/pricing) for current rates.*
+
+## Requesty
+
+[Requesty](https://requesty.ai/) is an OpenAI-compatible router that gives you one API key for models from OpenAI, Anthropic, Google, Mistral, DeepSeek and many other vendors.
+
+DevoxxGenie talks to `https://router.requesty.ai/v1` and populates the model list from the Requesty catalog (`/v1/models/managed` and `/v1/models`), so every chat model available on your account shows up in the plugin.
+
+### Setup
+
+1. Create an account at [Requesty](https://app.requesty.ai/)
+2. Generate an API key at [app.requesty.ai/api-keys](https://app.requesty.ai/api-keys)
+3. In DevoxxGenie settings, enable "Requesty" and paste your API key
+4. Select a model from the list
+
+### Configuration
+
+- **API Key**: Your Requesty API key
+- **Model**: Model ids are either a Requesty managed policy such as `claude-sonnet-4-5`, or the `vendor/model` form such as `openai/gpt-4o-mini` or `anthropic/claude-sonnet-4-5`
+- **Parameters**: Temperature, Top P
+
+### Advantages
+
+- Single API key for many vendors
+- Per-model pricing and context window come straight from the Requesty catalog
+- Pay-as-you-go pricing
+
+:::note EU region
+Requesty also runs an EU endpoint at `https://router.eu.requesty.ai/v1`. DevoxxGenie currently uses the global endpoint; see the [Requesty docs](https://docs.requesty.ai) for region details.
+:::
+
+*Check the [Requesty model list](https://requesty.ai/models) for current rates.*
 
 ## Cloudflare AI Gateway
 

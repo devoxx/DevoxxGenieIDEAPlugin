@@ -407,6 +407,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case GLM -> state.isGlmEnabled();
                     case Nvidia -> state.isNvidiaEnabled();
                     case Cloudflare -> state.isCloudflareEnabled();
+                    case Requesty -> state.isRequestyEnabled();
                     case AzureOpenAI -> state.isAzureOpenAIEnabled();
                     case Bedrock -> state.isAwsEnabled();
                     case CLIRunners -> false;
@@ -639,6 +640,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                         case GLM -> state.isGlmEnabled();
                         case Nvidia -> state.isNvidiaEnabled();
                         case Cloudflare -> state.isCloudflareEnabled();
+                        case Requesty -> state.isRequestyEnabled();
                         case AzureOpenAI -> state.isAzureOpenAIEnabled();
                         case Bedrock -> state.isAwsEnabled();
                         case CLIRunners -> false;

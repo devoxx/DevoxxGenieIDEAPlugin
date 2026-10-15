@@ -2,6 +2,7 @@ package com.devoxx.genie.service.models;
 
 import com.devoxx.genie.chatmodel.cloud.cloudflare.CloudflareChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.requesty.RequestyChatModelFactory;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.models.ModelConfig;
@@ -1254,6 +1255,7 @@ public final class LLMModelRegistryService {
 
         getOpenRouterModels(modelsCopy);
         getCloudflareModels(modelsCopy);
+        getRequestyModels(modelsCopy);
 
         return new ArrayList<>(modelsCopy.values());
     }
@@ -1276,6 +1278,16 @@ public final class LLMModelRegistryService {
         if (apiKey != null && !apiKey.isBlank() && accountId != null && !accountId.isBlank()) {
             new CloudflareChatModelFactory().getModels().forEach(model ->
                 modelsCopy.put(ModelProvider.Cloudflare.getName() + ":" + model.getModelName(), model));
+        }
+    }
+
+    private static void getRequestyModels(Map<String, LanguageModel> modelsCopy) {
+        // Add Requesty models if API key exists
+        RequestyChatModelFactory requestyChatModelFactory = new RequestyChatModelFactory();
+        String apiKey = requestyChatModelFactory.getApiKey(ModelProvider.Requesty);
+        if (apiKey != null && !apiKey.isEmpty()) {
+            requestyChatModelFactory.getModels().forEach(model ->
+                modelsCopy.put(ModelProvider.Requesty.getName() + ":" + model.getModelName(), model));
         }
     }
 

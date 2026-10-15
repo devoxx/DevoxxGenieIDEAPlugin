@@ -69,6 +69,8 @@ public interface DevoxxGenieSettingsService {
 
     String getCloudflareKey();
 
+    String getRequestyKey();
+
     String getCloudflareAccountId();
 
     String getCloudflareGatewayName();
@@ -186,6 +188,8 @@ public interface DevoxxGenieSettingsService {
     void setCustomOpenAIApiKey(String key);
 
     void setCloudflareKey(String key);
+
+    void setRequestyKey(String key);
 
     void setCloudflareAccountId(String accountId);
 
