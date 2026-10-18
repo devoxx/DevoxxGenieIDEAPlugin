@@ -1,6 +1,8 @@
 package com.devoxx.genie.ui.settings.rag;
 
 import com.devoxx.genie.service.rag.ProjectIndexerService;
+import com.devoxx.genie.service.rag.SemanticSearchService;
+import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.RagValidatorService;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
@@ -47,6 +49,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     private static final int INSET_VALUE = 5;
     private static final String RAG_SETTINGS_SECTION_TITLE = "Retrieval-augmented Generation (RAG) settings";
+
+    private final JBTextField testQueryField = new JBTextField();
+    private final JButton testQueryButton = new JButton("Test query");
+    private final JTextArea testQueryResults = new JTextArea(7, 40);
+    private final JProgressBar testQueryProgress = new JProgressBar();
 
     private JProgressBar progressBar;
     private JLabel progressLabel;
@@ -171,9 +178,83 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addIndexedProjectsSection(panel, gbc);
         addStartIndexButton(panel, gbc);
         addProgressSection(panel, gbc);
+        addTestQuerySection(panel, gbc);
         addValidationSection(panel, gbc);
 
         return panel;
+    }
+
+    private void addTestQuerySection(JPanel panel, GridBagConstraints gbc) {
+        addSection(panel, gbc, "Test semantic search");
+        addHelpText(panel, gbc, "Search the current project's index using saved RAG settings. Apply setting changes before testing.");
+        JPanel queryRow = new JPanel(new BorderLayout(5, 0));
+        queryRow.add(testQueryField, BorderLayout.CENTER);
+        queryRow.add(testQueryButton, BorderLayout.EAST);
+        addSettingRow(panel, gbc, "Test query", queryRow);
+        testQueryResults.setEditable(false);
+        testQueryResults.setLineWrap(true);
+        testQueryResults.setWrapStyleWord(true);
+        testQueryProgress.setIndeterminate(true);
+        testQueryProgress.setVisible(false);
+        JPanel output = new JPanel(new BorderLayout(0, 5));
+        output.add(testQueryProgress, BorderLayout.NORTH);
+        output.add(new JScrollPane(testQueryResults), BorderLayout.CENTER);
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        panel.add(output, gbc);
+        gbc.gridy++;
+        testQueryButton.addActionListener(e -> runTestQuery());
+        testQueryField.addActionListener(e -> {
+            if (testQueryButton.isEnabled()) runTestQuery();
+        });
+    }
+
+    private void runTestQuery() {
+        String query = testQueryField.getText().trim();
+        if (query.isEmpty()) {
+            testQueryResults.setText("Enter a query to search the project index.");
+            return;
+        }
+        testQueryButton.setEnabled(false);
+        testQueryProgress.setVisible(true);
+        testQueryResults.setText("Searching the project index...");
+        new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() {
+                List<SearchResult> matches = SemanticSearchService.getInstance().search(project, query);
+                if (matches.isEmpty()) return "No matches found. Check that this project is indexed and review the minimum score.";
+                StringBuilder text = new StringBuilder();
+                for (SearchResult match : matches) {
+                    text.append(String.format(java.util.Locale.ROOT, "Score: %.4f  %s%n",
+                            match.score(), match.filePath()));
+                    String content = match.content();
+                    if (content != null) {
+                        text.append(content, 0, Math.min(content.length(), 500));
+                        if (content.length() > 500) text.append("...");
+                    }
+                    text.append("\n\n");
+                }
+                return text.toString();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    testQueryResults.setText(get());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    testQueryResults.setText("Search interrupted.");
+                } catch (java.util.concurrent.ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    testQueryResults.setText("Search failed: " +
+                            (cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()));
+                } finally {
+                    testQueryProgress.setVisible(false);
+                    testQueryButton.setEnabled(true);
+                    testQueryResults.setCaretPosition(0);
+                }
+            }
+        }.execute();
     }
 
     private @NotNull GridBagConstraints createDefaultGbc() {
