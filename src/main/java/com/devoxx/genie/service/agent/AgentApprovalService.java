@@ -82,12 +82,12 @@ public class AgentApprovalService {
                                           @Nullable String blacklistedPattern) {
         // Auto-approve in headless mode (tests, CI/CD)
         if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
-            return true;
+            return !"github_comment".equals(toolName);
         }
 
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        if (!requiresDialog(stateService, blacklistedPattern)) {
+        if (!"github_comment".equals(toolName) && !requiresDialog(stateService, blacklistedPattern)) {
             return true;
         }
 
@@ -229,7 +229,7 @@ public class AgentApprovalService {
             // The checkbox is not shown for blacklisted commands: disabling write approval
             // would not stop the blacklist from forcing this dialog, so offering it here
             // would be misleading.
-            return blacklistedPattern == null && dontAskAgainCheckbox.isSelected();
+            return blacklistedPattern == null && !"github_comment".equals(toolName) && dontAskAgainCheckbox.isSelected();
         }
 
         @Override
@@ -267,7 +267,7 @@ public class AgentApprovalService {
             JPanel bottomPanel = new JPanel(new BorderLayout());
             bottomPanel.setBorder(JBUI.Borders.emptyTop(8));
 
-            if (blacklistedPattern == null) {
+            if (blacklistedPattern == null && !"github_comment".equals(toolName)) {
                 bottomPanel.add(dontAskAgainCheckbox, BorderLayout.NORTH);
             }
 
