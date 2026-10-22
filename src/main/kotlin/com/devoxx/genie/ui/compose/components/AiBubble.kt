@@ -8,11 +8,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -37,6 +42,7 @@ import dev.snipme.highlights.model.SyntaxThemes
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 /**
  * Compact token formatter for the metadata row, mirroring WindowContextFormatterUtil
@@ -265,38 +271,86 @@ fun ThinkingBubble(
     }
 }
 
+/**
+ * Minimum height to reserve for a finished AI bubble, given the size it was last measured
+ * at. Text height depends on width, so a cached height is only valid at the same width;
+ * any other width reserves nothing and lets the bubble take its natural height.
+ */
+internal fun reservedMinHeight(cachedSize: IntSize?, availableWidth: Int): Int =
+    if (cachedSize != null && cachedSize.width == availableWidth) cachedSize.height else 0
+
+private const val HEIGHT_RESERVATION_WINDOW_MS = 500L
+
+/**
+ * One-shot height reservation for a bubble that (re-)enters composition. While its Markdown
+ * is still rendering the bubble is held at the cached height; as soon as the content reaches
+ * that height, or the window expires, the bubble follows its natural height for the rest of
+ * its lifetime. Holding it any longer would freeze transient heights — e.g. the Markdown
+ * text-size animation mid-way through a resize — and leave the bubble stuck tall.
+ */
+internal class BubbleHeightReservation {
+    private var caughtUp = false
+    private var expired by mutableStateOf(false)
+
+    fun expire() {
+        expired = true
+    }
+
+    fun heightFor(naturalHeight: Int, availableWidth: Int, cachedSize: IntSize?): Int {
+        if (caughtUp || expired) return naturalHeight
+        val reserved = reservedMinHeight(cachedSize, availableWidth)
+        if (naturalHeight >= reserved) {
+            caughtUp = true
+            return naturalHeight
+        }
+        return reserved
+    }
+}
+
 @Composable
 fun AiBubble(
     message: MessageUiModel,
     modifier: Modifier = Modifier,
     onRetryClick: (String) -> Unit = {},
     onOpenAgentSettings: () -> Unit = {},
-    cachedHeight: Dp = Dp.Unspecified,
-    onMeasured: (Dp) -> Unit = {},
+    cachedSize: IntSize? = null,
+    onMeasured: (IntSize) -> Unit = {},
 ) {
     val colors = DevoxxGenieThemeAccessor.colors
     val shape = RoundedCornerShape(8.dp)
-    val density = LocalDensity.current
+    val reservation = remember { BubbleHeightReservation() }
+    LaunchedEffect(reservation) {
+        delay(HEIGHT_RESERVATION_WINDOW_MS)
+        reservation.expire()
+    }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            // Reserve the bubble's last-known height on the very first measurement after a
-            // recycled item re-enters the viewport. The Markdown renderer reports a tiny
-            // height for its first frame and grows once parsing/highlighting completes; for
-            // a finished response that one-frame jump, when the bubble is the topmost
-            // visible item, makes LazyColumn re-pin its top edge and the viewport snaps to
-            // the start of the message. Pre-sizing to the cached height removes the jump.
-            .then(if (cachedHeight != Dp.Unspecified) Modifier.heightIn(min = cachedHeight) else Modifier)
-            // Cache the stable height only for finished responses; a streaming bubble grows
+            // Cache the stable size only for finished responses; a streaming bubble grows
             // legitimately and must not be frozen.
             .then(
                 if (!message.isStreaming) {
                     Modifier.onSizeChanged { size ->
-                        if (size.height > 0) onMeasured(with(density) { size.height.toDp() })
+                        if (size.height > 0) onMeasured(size)
                     }
                 } else Modifier
             )
+            // Reserve the bubble's last-known height right after a recycled item re-enters
+            // the viewport. The Markdown renderer reports a tiny height for its first frame
+            // and grows once parsing/highlighting completes; for a finished response that
+            // jump, when the bubble is the topmost visible item, makes LazyColumn re-pin its
+            // top edge and the viewport snaps to the start of the message. The content is
+            // always measured at its natural height and the reservation is released once it
+            // catches up, so resizes and later height changes are never frozen
+            // (see BubbleHeightReservation).
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                val height = reservation
+                    .heightFor(placeable.height, constraints.maxWidth, cachedSize)
+                    .coerceIn(constraints.minHeight, constraints.maxHeight)
+                layout(placeable.width, height) { placeable.place(0, 0) }
+            }
             .padding(vertical = 4.dp)
             .border(1.dp, DevoxxBlue, shape)
             .background(colors.assistantBubbleBackground, shape)
