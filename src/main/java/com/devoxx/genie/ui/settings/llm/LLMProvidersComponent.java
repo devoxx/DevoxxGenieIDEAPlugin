@@ -36,6 +36,11 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private static final int HINT_WRAP_COLUMNS = 60;
 
     @Getter
+    private final JTextField modelCatalogUrlField = new JTextField(stateService.getModelCatalogUrl());
+    @Getter
+    private final JButton refreshModelsButton = new JButton("Refresh models");
+
+    @Getter
     private final JTextField projectVersion = new JTextField(PropertiesService.getInstance().getVersion());
     @Getter
     private final JTextField ollamaModelUrlField = new JTextField(stateService.getOllamaModelUrl());
@@ -249,6 +254,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
 
         stack.add(createResponsePanel(), gbc);
         gbc.gridy++;
+        stack.add(createModelCatalogPanel(), gbc);
+        gbc.gridy++;
         stack.add(createProviderTabs(), gbc);
         gbc.gridy++;
         stack.add(createVersionPanel(), gbc);
@@ -260,6 +267,16 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         boundTextFieldWidths(panel);
 
         return panel;
+    }
+
+    private @NotNull JPanel createModelCatalogPanel() {
+        JPanel catalog = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+        addSection(catalog, gbc, "Model catalog");
+        addSettingRow(catalog, gbc, "Model catalog URL", modelCatalogUrlField);
+        addSettingRow(catalog, gbc, "", refreshModelsButton);
+        addHintText(catalog, gbc, "Refresh saves this URL and updates model lists. Leave blank to use bundled models.");
+        return catalog;
     }
 
     /**
