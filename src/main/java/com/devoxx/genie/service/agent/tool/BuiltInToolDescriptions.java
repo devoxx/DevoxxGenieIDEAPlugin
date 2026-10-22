@@ -106,9 +106,11 @@ public final class BuiltInToolDescriptions {
         map.put("run_command",
                 "Execute a terminal command in the project directory. Has a 30-second timeout.");
         map.put("fetch_page",
-                "Fetch a web page by URL and return its readable text content. " +
-                        "HTML tags, CSS, and JavaScript are stripped. " +
+                "Fetch a web page by URL and return its content. " +
+                        "HTML is converted to Markdown, keeping headings, code blocks, tables and links; " +
+                        "text, JSON and XML are returned as-is. " +
                         "Useful for reading documentation, API references, and web pages. " +
+                        "A redirect to another host is reported instead of followed. " +
                         "Large pages are truncated to 100K characters.");
 
         // --- Optional feature tools ---
