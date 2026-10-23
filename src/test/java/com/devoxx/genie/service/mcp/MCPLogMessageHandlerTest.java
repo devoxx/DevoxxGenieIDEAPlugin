@@ -10,8 +10,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.util.messages.MessageBus;
 import dev.langchain4j.mcp.client.logging.McpLogLevel;
 import dev.langchain4j.mcp.client.logging.McpLogMessage;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,8 +63,7 @@ class MCPLogMessageHandlerTest {
     }
 
     private McpLogMessage createLogMessage(McpLogLevel level, String text) {
-        JsonNode data = new TextNode(text);
-        return new McpLogMessage(level, "test-logger", data);
+        return new McpLogMessage(level, "test-logger", text);
     }
 
     @Test
