@@ -7,9 +7,9 @@ plugins {
     // Kotlin 2.2.20 matches the stdlib bundled in IntelliJ 2025.3, the minimum supported IDE.
     // Do NOT bump beyond the bundled stdlib of the lowest supported IDE line: the plugin runs
     // on the IDE-provided stdlib (see binaryIncompatibleRuntimeJarPatterns below).
-    kotlin("jvm") version "2.4.20"
-    kotlin("plugin.lombok") version "2.4.20"
-    kotlin("plugin.compose") version "2.4.20"
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.lombok") version "2.4.21"
+    kotlin("plugin.compose") version "2.4.21"
     id("org.jetbrains.intellij.platform") version "2.13.1"
     jacoco
 }
@@ -266,14 +266,14 @@ dependencies {
     // 2024-11-05 HTTP+SSE transport with no replacement. MCP servers are reached over stdio or
     // Streamable HTTP only; the HTTP_SSE transport type is kept as an alias for HTTP so that
     // persisted configurations still load. SSE-only servers (issue #1151) are not supported.
-    val lg4j_version = "1.20.0"
-    val lg4j_beta_version = "1.20.0-beta30"
-    val awsSdkVersion = "2.55.1"
+    val lg4j_version = "1.22.0"
+    val lg4j_beta_version = "1.22.0-beta32"
+    val awsSdkVersion = "2.57.3"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.4.0"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
-    val commonmarkVersion = "0.30.0"
+    val commonmarkVersion = "0.31.0"
     val jsoupVersion = "1.23.2"
     // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
@@ -284,18 +284,18 @@ dependencies {
     // coroutines fork bundled in IJ 2025.3.3, crashing the code-highlighter's awaitDispose
     // with NoSuchMethodError when a streamed code block is disposed (e.g. after an MCP call).
     val markdownRendererVersion = "0.38.1"
-    val nettyVersion = "4.2.18.Final"
+    val nettyVersion = "4.2.19.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
-    val logbackVersion = "1.6.3"
+    val logbackVersion = "1.6.5"
     val gitignoreReaderVersion = "2.0.0"
     val junitJupiterVersion = "6.1.3"
     val junitPlatformVersion = "6.1.3"
     val lombokVersion = "1.18.48"
-    val mockitoVersion = "5.23.0"
+    val mockitoVersion = "5.24.0"
     val mockitoInlineVersion = "5.2.0"
     val assertjVersion = "3.27.7"
-    val mockwebserverVersion = "5.5.0"
+    val mockwebserverVersion = "5.5.1"
     val dotenvVersion = "5.2.2"
     val opentest4jVersion = "1.3.0"
 
