@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent;
 
+import com.devoxx.genie.service.agent.codemode.CodeModeToolProvider;
 import com.devoxx.genie.service.agent.tool.BuiltInToolProvider;
 import com.devoxx.genie.service.agent.tool.CompositeToolProvider;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
@@ -99,12 +100,16 @@ public class AgentToolProviderFactory {
         ToolProvider approvedProvider = new AgentApprovalProvider(
                 compositeProvider, project, autoApproveReadOnly);
 
+        CodeModeToolProvider codeModeProvider = new CodeModeToolProvider(approvedProvider);
+
         // Wrap with loop tracker
         int maxToolCalls = settings.getAgentMaxToolCalls() != null
                 ? settings.getAgentMaxToolCalls()
                 : 25;
 
-        AgentLoopTracker tracker = new AgentLoopTracker(approvedProvider, maxToolCalls, project);
+        AgentLoopTracker tracker = new AgentLoopTracker(codeModeProvider, maxToolCalls, project);
+        codeModeProvider.trackNestedCallsWith(tracker);
+        tracker.registerChild(codeModeProvider);
 
         // Register the parallel explore executor as a cancellable child so user cancellation
         // propagates to any running sub-agents
