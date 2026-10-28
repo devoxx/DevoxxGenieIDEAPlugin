@@ -70,7 +70,17 @@
     <change-notes><![CDATA[
                 <h2>v1.15.0</h2>
         <UL>
-                    <LI>fix(test): dispose platform fixtures to stop nested temp-dir leak</LI>
+                    <LI>feat(chat): <b>favorite models</b>: star a model to add it to a Favorites entry that spans every provider; provider/model dropdowns hide while they hold a single entry (#1327)</LI>
+                    <LI>feat(settings): <b>Scan &amp; Copy settings are now per project</b>, including RAG directory exclusions; new projects start from the current global values (#1329)</LI>
+                    <LI>feat(agent): <b>fetch_page returns Markdown</b> (headings, code blocks, tables, links) and caps size, redirects and local addresses (#1339)</LI>
+                    <LI>feat(models): <b>Claude 5 family</b>: Fable 5.1, Opus 5.5, Opus 5, Sonnet 5 and Sonnet 5.5 for Anthropic and Bedrock, without temperature where it is rejected (#1310, #1313)</LI>
+                    <LI>fix(agent): the user's task is <b>no longer evicted from memory</b> during long agent and sub-agent tool loops (#1308)</LI>
+                    <LI>fix(ollama): <b>Ollama models show up</b> even when the /api/show context probe fails or returns an empty body (#1324)</LI>
+                    <LI>fix(bedrock): <b>Bearer Token auth works</b>, and Claude Opus 4.7+ no longer returns HTTP 400 on temperature (#1306)</LI>
+                    <LI>fix(cli/acp): attached images reach CLI/ACP runners, and follow-up prompts no longer fail after an image (#1284)</LI>
+                    <LI>fix(ui): answer bubbles no longer keep empty space after a resize (#1333)</LI>
+                    <LI>change(mcp): migrated to the langchain4j 1.20+ MCP client with protocol auto-negotiation; HTTP_SSE configs now run as HTTP, and <b>SSE-only servers are no longer supported</b> (#1301)</LI>
+                    <LI>deps: langchain4j 1.18.1 → 1.22.0, AWS SDK BOM 2.55.1, Gradle 9.8.2 and more (#1298, #1302, #1351)</LI>
                 </UL>
 <h2>v1.14.2</h2>
         <UL>
