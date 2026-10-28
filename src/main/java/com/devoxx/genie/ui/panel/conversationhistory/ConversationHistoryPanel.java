@@ -7,6 +7,8 @@ import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.NotificationUtil;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
+import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationAction;
@@ -470,6 +472,16 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
             ChatMemoryManager.getInstance().restoreConversationByKey(memoryKey, conversation);
         } else {
             ChatMemoryManager.getInstance().restoreConversation(project, conversation);
+        }
+        refreshCompactButtons();
+    }
+
+    /** The restored history decides whether this tab's Compact button has anything to summarize. */
+    private void refreshCompactButtons() {
+        for (DevoxxGenieToolWindowContent twc : ConversationTabRegistry.getInstance().getContentsForProject(project)) {
+            if (tabId == null || tabId.equals(twc.getTabId())) {
+                twc.getSubmitPanel().getActionButtonsPanel().refreshCompactButton();
+            }
         }
     }
 
