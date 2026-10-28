@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -405,12 +406,17 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
 
             // Reload asynchronously (getModels() may hit the network) and re-enable the
             // button once the combo has been repopulated.
-            updateModelNamesComboBox(selectedProvider.getName(), () -> refreshButton.setEnabled(true));
+            LanguageModel previous = (LanguageModel) modelNameComboBox.getSelectedItem();
+            updateModelNamesComboBox(selectedProvider.getName(), () -> {
+                reselectAfterRefresh(previous);
+                refreshButton.setEnabled(true);
+            });
         });
     }
 
     private void refreshCloudModels(@NonNull ModelProvider selectedProvider) {
         refreshButton.setEnabled(false);
+        LanguageModel previous = (LanguageModel) modelNameComboBox.getSelectedItem();
 
         // Capture the "before" model names off the EDT: getModels() may hit the network
         // (e.g. Custom OpenAI probes its /models endpoint) and must never block the UI.
@@ -427,11 +433,66 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 // Reload the combo asynchronously; re-enable the button and report the
                 // diff once the (now-cached) models have been populated.
                 updateModelNamesComboBox(selectedProvider.getName(), () -> {
+                    reselectAfterRefresh(previous);
                     refreshButton.setEnabled(true);
                     notifyModelChanges(selectedProvider, beforeNames);
                 });
             });
         });
+    }
+
+    /**
+     * Keep the model that was selected before a refresh. When the provider no longer offers it,
+     * select one of the provider's favorites instead of whatever sorts first, and persist the
+     * result so the stored provider/model pair stays consistent.
+     */
+    private void reselectAfterRefresh(@Nullable LanguageModel previous) {
+        boolean wasUpdating = isUpdatingModelNames;
+        isUpdatingModelNames = true;
+        try {
+            reselectModel(previous);
+            LanguageModel selected = (LanguageModel) modelNameComboBox.getSelectedItem();
+            if (selected == null || previous == null
+                    || !Objects.equals(selected.getModelName(), previous.getModelName())) {
+                selectFavoriteModel();
+            }
+        } finally {
+            isUpdatingModelNames = wasUpdating;
+            updateFavoriteButton();
+        }
+        // An empty list (e.g. Ollama not running) must not wipe the persisted model.
+        if (modelNameComboBox.getItemCount() > 0) {
+            persistSelectedModel();
+        }
+    }
+
+    /**
+     * Select the first favorite of the current provider that the model combo offers.
+     *
+     * @return {@code true} when a favorite was selected
+     */
+    private boolean selectFavoriteModel() {
+        ModelProvider provider = (ModelProvider) modelProviderComboBox.getSelectedItem();
+        if (provider == null) {
+            return false;
+        }
+        boolean wasUpdating = isUpdatingModelNames;
+        isUpdatingModelNames = true;
+        try {
+            for (String favorite : DevoxxGenieStateService.getInstance().getFavoriteModels()
+                    .getOrDefault(provider.name(), Collections.emptyList())) {
+                for (int i = 0; i < modelNameComboBox.getItemCount(); i++) {
+                    if (favorite.equals(modelNameComboBox.getItemAt(i).getModelName())) {
+                        modelNameComboBox.setSelectedIndex(i);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } finally {
+            isUpdatingModelNames = wasUpdating;
+            updateFavoriteButton();
+        }
     }
 
     private void notifyModelChanges(@NonNull ModelProvider selectedProvider,
@@ -580,6 +641,10 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      */
     public void restoreLastSelectedLanguageModel() {
         if (lastSelectedLanguageModel == null || lastSelectedLanguageModel.isBlank()) {
+            // Nothing persisted yet for this tab: start on one of the provider's favorites.
+            if (selectFavoriteModel()) {
+                persistSelectedModel();
+            }
             return;
         }
         boolean wasUpdating = isUpdatingModelNames;
@@ -602,8 +667,8 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                 // The provider returned a healthy model list that does not contain the persisted
                 // name: the saved model belongs to another provider (stale/corrupted state, e.g.
                 // an Anthropic model persisted under the Ollama key) or was removed. Fall back to
-                // the first available model and persist it so the inconsistent state heals.
-                fallBackToFirstAvailableModel();
+                // a favorite (or the first available model) and persist it so the state heals.
+                fallBackToFavoriteOrFirstModel();
             }
         } finally {
             isUpdatingModelNames = wasUpdating;
@@ -612,14 +677,14 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     }
 
     /**
-     * Select the first model of the freshly fetched list and persist it, replacing a persisted
-     * model name that the current provider does not offer.
+     * Select one of the provider's favorites, or else the first model of the freshly fetched
+     * list, and persist it, replacing a persisted model name the current provider does not offer.
      */
-    private void fallBackToFirstAvailableModel() {
-        modelNameComboBox.setSelectedIndex(0);
-        LanguageModel first = modelNameComboBox.getItemAt(0);
-        lastSelectedLanguageModel = first.getModelName();
-        DevoxxGenieStateService.getInstance().setSelectedLanguageModel(stateKey, first.getModelName());
+    private void fallBackToFavoriteOrFirstModel() {
+        if (!selectFavoriteModel()) {
+            modelNameComboBox.setSelectedIndex(0);
+        }
+        persistSelectedModel();
     }
 
     /**
@@ -797,8 +862,11 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             // Once the combo is repopulated, persist the resulting model together with the
             // provider: persisting only the provider would leave the previous provider's model
             // in state, which a later restart restores as a foreign model (e.g. an Anthropic
-            // model under Ollama).
-            updateModelNamesComboBox(modelProvider.getName(), this::persistSelectedModel);
+            // model under Ollama). A favorite of the new provider is preferred over its first model.
+            updateModelNamesComboBox(modelProvider.getName(), () -> {
+                selectFavoriteModel();
+                persistSelectedModel();
+            });
         }
     }
 
