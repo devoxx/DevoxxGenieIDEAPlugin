@@ -14,6 +14,8 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.testFramework.LightPlatformTestCase;
+import com.intellij.testFramework.EdtTestUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -114,6 +116,15 @@ public class PromptExecutionServiceTest extends LightPlatformTestCase {
                 return null;
             }).when(mockApplication).invokeLater(any());
         }
+    }
+
+    /**
+     * MockitoJUnitRunner never calls the JUnit 3 tearDown(); without this the platform fixture
+     * leaks and nests every later platform test's temp directory one level deeper.
+     */
+    @After
+    public void tearDown() throws Exception {
+        EdtTestUtil.runInEdtAndWait(() -> super.tearDown());
     }
 
     @Test

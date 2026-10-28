@@ -9,6 +9,8 @@ import com.devoxx.genie.service.prompt.strategy.NonStreamingPromptStrategy;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.message.UserMessage;
+import com.intellij.testFramework.EdtTestUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,6 +91,15 @@ public class PromptMessageFlowIntegrationTest extends AbstractLightPlatformTestC
             .userPrompt("Test prompt")
             .editorInfo(editorInfo)
             .build();
+    }
+
+    /**
+     * MockitoJUnitRunner never calls the JUnit 3 tearDown(); without this the platform fixture
+     * leaks and nests every later platform test's temp directory one level deeper.
+     */
+    @After
+    public void tearDown() throws Exception {
+        EdtTestUtil.runInEdtAndWait(() -> super.tearDown());
     }
 
     @Test
