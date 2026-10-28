@@ -14,6 +14,9 @@ import com.devoxx.genie.service.spec.SpecTaskRunnerService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.devoxx.genie.ui.window.DevoxxGenieToolWindowContent;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.TokenCalculationService;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
+import com.devoxx.genie.service.prompt.memory.ConversationCompactionService;
 import com.devoxx.genie.ui.component.button.AddFilesToContextButton;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.component.ContextPopupMenu;
@@ -24,6 +27,7 @@ import com.devoxx.genie.ui.listener.GlowingListener;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.util.WindowContextFormatterUtil;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -33,6 +37,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
+import dev.langchain4j.data.message.ChatMessage;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
@@ -130,6 +135,7 @@ public class ActionButtonsPanel extends JPanel
 
         // Apply initial button visibility based on settings
         controller.updateButtonVisibility();
+        refreshCompactButton();
     }
 
     private void setupUI() {
@@ -161,16 +167,61 @@ public class ActionButtonsPanel extends JPanel
         addFileBtn = new AddFilesToContextButton(project, this::addFileToConversationContext, this::showFilePickerPopup);
         addProjectBtn = createActionButton(AddProjectIcon, ADD_ENTIRE_PROJECT_TO_PROMPT_CONTEXT, this::handleProjectContext);
         calcTokenCostBtn = createActionButton(CalculateIcon, CALCULATE_TOKEN_COST_TOOLTIP, e -> controller.calculateTokensAndCost());
-        compactBtn = new JButton("Compact");
-        compactBtn.setToolTipText("Summarize earlier conversation history using the selected model");
-        compactBtn.addActionListener(e -> {
-            if (!controller.isPromptRunning()) {
-                String draft = promptInputArea.getText();
-                promptInputArea.setText("/compact");
-                onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
-                promptInputArea.setText(draft);
-            }
+        compactBtn = createActionButton("Compact", AllIcons.Actions.Collapseall, COMPACT_TOOLTIP,
+                e -> {
+                    if (!controller.isPromptRunning()) {
+                        String draft = promptInputArea.getText();
+                        promptInputArea.setText("/compact");
+                        onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
+                        promptInputArea.setText(draft);
+                    }
+                });
+        compactBtn.setEnabled(false);
+    }
+
+    /**
+     * Enables Compact only when the model-facing history has something to summarize, and
+     * shows how much of the context window that history occupies in the tooltip.
+     */
+    public void refreshCompactButton() {
+        if (compactBtn == null) {
+            return;
+        }
+        String memoryKey = devoxxGenieToolWindowContent.getMemoryKey();
+        int contextWindow = conversationMaxTokens;
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            List<ChatMessage> history = compactableHistory(memoryKey);
+            String reason = ConversationCompactionService.nothingToCompactReason(history);
+            String tooltip = reason != null
+                    ? reason
+                    : compactTooltip(TokenCalculationService.estimateChatTokens(history), contextWindow);
+            ApplicationManager.getApplication().invokeLater(() -> {
+                // A running prompt owns the button; enableButtons() refreshes it afterwards.
+                if (controller.isPromptRunning()) {
+                    return;
+                }
+                compactBtn.setEnabled(reason == null);
+                compactBtn.setToolTipText(tooltip);
+            });
         });
+    }
+
+    private static List<ChatMessage> compactableHistory(String memoryKey) {
+        ChatMemoryService memory = ChatMemoryService.getInstance();
+        try {
+            return memory.hasMemory(memoryKey) ? memory.getMessagesByKey(memoryKey) : List.of();
+        } catch (RuntimeException e) {
+            // Tab memory was removed between the check and the read.
+            return List.of();
+        }
+    }
+
+    private static String compactTooltip(int historyTokens, int contextWindow) {
+        String usage = WindowContextFormatterUtil.format(historyTokens, "tokens").trim();
+        if (contextWindow > 0) {
+            usage += String.format(" (%d%% of context window)", Math.round(historyTokens * 100.0 / contextWindow));
+        }
+        return "<html>" + COMPACT_TOOLTIP + "<br>History ≈ " + usage + "</html>";
     }
 
     /** Adds a picked file to the chat panel's persistent context for the active tab. */
@@ -273,6 +324,7 @@ public class ActionButtonsPanel extends JPanel
     public void setConversationContextMax(int maxTokens) {
         this.conversationMaxTokens = maxTokens;
         ApplicationManager.getApplication().invokeLater(this::refreshConversationContext);
+        refreshCompactButton();
     }
 
     /**
@@ -291,6 +343,7 @@ public class ActionButtonsPanel extends JPanel
     public void resetConversationContext() {
         this.conversationUsedTokens = 0;
         ApplicationManager.getApplication().invokeLater(this::refreshConversationContext);
+        refreshCompactButton();
     }
 
     private void refreshConversationContext() {
@@ -391,7 +444,7 @@ public class ActionButtonsPanel extends JPanel
             submitBtn.setToolTipText(SUBMIT_PROMPT_TOOLTIP);
             queueBtn.setVisible(false);
             steerBtn.setVisible(false);
-            compactBtn.setEnabled(true);
+            refreshCompactButton();
             promptInputArea.setEnabled(true);
             // Stop the submit glow (and its Swing timer) on every execution-end path:
             // enableButtons() is reached on completion, error and user stop via
@@ -594,7 +647,11 @@ public class ActionButtonsPanel extends JPanel
         addFileBtn.setEnabled(enabled);
         addProjectBtn.setEnabled(enabled);
         calcTokenCostBtn.setEnabled(enabled);
-        compactBtn.setEnabled(enabled);
+        if (enabled) {
+            refreshCompactButton();
+        } else {
+            compactBtn.setEnabled(false);
+        }
         
         // Update visual state
         if (!enabled) {

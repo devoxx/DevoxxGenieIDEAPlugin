@@ -10,6 +10,7 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.function.BooleanSupplier;
 
 /** Summarizes model-facing history without touching the persisted conversation or its UI messages. */
 public final class ConversationCompactionService {
+    static final String SUMMARY_PREFIX = "Conversation summary:\n";
     private static final String SUMMARY_INSTRUCTIONS = """
             Summarize this conversation so another model can continue the work.
             Preserve the user's goals and constraints, decisions and their reasons, file paths,
@@ -34,6 +36,10 @@ public final class ConversationCompactionService {
             return "Nothing to compact yet.";
         }
         List<ChatMessage> snapshot = new ArrayList<>(memory.getMessagesByKey(context.getMemoryKey()));
+        String nothingToCompact = nothingToCompactReason(snapshot);
+        if (nothingToCompact != null) {
+            return nothingToCompact;
+        }
         // Preserve the entire latest user turn, including intermediate tool calls and results.
         int latestUser = -1;
         for (int i = snapshot.size() - 1; i >= 0; i--) {
@@ -75,7 +81,7 @@ public final class ConversationCompactionService {
         if (summary == null || summary.isBlank()) {
             throw new IllegalStateException("The model returned an empty summary; history was kept.");
         }
-        replacement.add(UserMessage.from("Conversation summary:\n" + summary));
+        replacement.add(UserMessage.from(SUMMARY_PREFIX + summary));
         snapshot.subList(latestUser, snapshot.size()).stream()
                 .filter(message -> !(message instanceof SystemMessage)).forEach(replacement::add);
         int after = TokenCalculationService.estimateChatTokens(replacement);
@@ -91,6 +97,36 @@ public final class ConversationCompactionService {
         }
         return "Conversation compacted: approximately " + before + " → " + after
                 + " text tokens. Full saved history is preserved.";
+    }
+
+    /**
+     * Compaction keeps the latest exchange and summarizes the rest, so it needs at least two
+     * exchanges. A previous summary is not an exchange: re-summarizing it alone gains nothing.
+     *
+     * @return why the history cannot be compacted, or null when it can
+     */
+    public static @Nullable String nothingToCompactReason(List<ChatMessage> messages) {
+        boolean hasSummary = false;
+        int exchanges = 0;
+        for (ChatMessage message : messages) {
+            if (message instanceof UserMessage user) {
+                if (isSummary(user)) {
+                    hasSummary = true;
+                } else {
+                    exchanges++;
+                }
+            }
+        }
+        if (exchanges >= 2) {
+            return null;
+        }
+        return hasSummary
+                ? "Nothing new to compact since the last summary."
+                : "Nothing to compact yet: compaction needs at least two exchanges.";
+    }
+
+    private static boolean isSummary(UserMessage message) {
+        return message.hasSingleText() && message.singleText().startsWith(SUMMARY_PREFIX);
     }
 
     public static void autoCompact(ChatMessageContext context, PromptOutputPanel panel, BooleanSupplier cancelled) {
