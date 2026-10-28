@@ -5,6 +5,7 @@ import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.projectscanner.FileScanner;
 import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.devoxx.genie.service.models.LLMModelRegistryService;
 import com.devoxx.genie.service.ProjectContentService;
@@ -58,7 +59,9 @@ public class AddDirectoryAction extends DumbAwareAction {
         List<VirtualFile> filesToAdd = new ArrayList<>();
         DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
-        addFilesRecursively(project, tabId, directory, fileListManager, filesToAdd, settings);
+        FileScanner scanner = new FileScanner(project);
+        scanner.initGitignoreParser(project, directory);
+        addFilesRecursively(project, tabId, directory, fileListManager, filesToAdd, scanner);
 
         if (!filesToAdd.isEmpty()) {
             fileListManager.addFiles(project, tabId, filesToAdd);
@@ -89,14 +92,14 @@ public class AddDirectoryAction extends DumbAwareAction {
     }
 
     private void addFilesRecursively(Project project, String tabId, @NotNull VirtualFile directory, FileListManager fileListManager,
-                                     List<VirtualFile> filesToAdd, DevoxxGenieSettingsService settings) {
+                                     List<VirtualFile> filesToAdd, FileScanner scanner) {
         VirtualFile[] children = directory.getChildren();
         for (VirtualFile child : children) {
             if (child.isDirectory()) {
-                if (!settings.getExcludedDirectories().contains(child.getName())) {
-                    addFilesRecursively(project, tabId, child, fileListManager, filesToAdd, settings);
+                if (!scanner.shouldExcludeDirectory(child)) {
+                    addFilesRecursively(project, tabId, child, fileListManager, filesToAdd, scanner);
                 }
-            } else if (shouldIncludeFile(child, settings) && !fileListManager.contains(project, tabId, child)) {
+            } else if (scanner.shouldIncludeFile(child) && !fileListManager.contains(project, tabId, child)) {
                 filesToAdd.add(child);
             }
         }
@@ -128,11 +131,6 @@ public class AddDirectoryAction extends DumbAwareAction {
 
             NotificationUtil.sendNotification(project, notificationMessage.toString());
         });
-    }
-
-    private boolean shouldIncludeFile(@NotNull VirtualFile file, @NotNull DevoxxGenieSettingsService settings) {
-        String extension = file.getExtension();
-        return extension != null && settings.getIncludedFileExtensions().contains(extension.toLowerCase());
     }
 
     @Override

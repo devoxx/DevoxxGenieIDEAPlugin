@@ -37,6 +37,12 @@ public class ProjectScannerService {
         this.tokenCalculator = new TokenCalculator();
     }
 
+    private ProjectScannerService(Project project) {
+        this.fileScanner = new FileScanner(project);
+        this.contentExtractor = new ContentExtractor(project);
+        this.tokenCalculator = new TokenCalculator();
+    }
+
     public static ProjectScannerService getInstance() {
         return ApplicationManager.getApplication().getService(ProjectScannerService.class);
     }
@@ -64,6 +70,15 @@ public class ProjectScannerService {
                                          int windowContextMaxTokens,
                                          boolean isTokenCalculation) {
 
+        // Each operation owns its scanner, gitignore parser and counters, even across projects.
+        return new ProjectScannerService(project).scanProjectInternal(
+                project, startDirectory, windowContextMaxTokens, isTokenCalculation);
+    }
+
+    private ScanContentResult scanProjectInternal(Project project,
+                                                  VirtualFile startDirectory,
+                                                  int windowContextMaxTokens,
+                                                  boolean isTokenCalculation) {
         // Always get the correct ProjectFileIndex for this project
         ProjectFileIndex projectFileIndex = getProjectFileIndex(project);
         log.debug("Scanning project: {} with directory: {}", project.getName(),

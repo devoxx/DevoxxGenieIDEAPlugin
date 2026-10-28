@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.copyproject;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -10,7 +11,13 @@ import javax.swing.*;
 public class CopyProjectSettingsConfigurable implements Configurable {
 
     private CopyProjectSettingsComponent copyProjectSettingsComponent;
-    private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
+    private final Project project;
+    private final ProjectScanSettingsService stateService;
+
+    public CopyProjectSettingsConfigurable(Project project) {
+        this.project = project;
+        this.stateService = ProjectScanSettingsService.getInstance(project);
+    }
 
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
@@ -21,7 +28,7 @@ public class CopyProjectSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        copyProjectSettingsComponent = new CopyProjectSettingsComponent();
+        copyProjectSettingsComponent = new CopyProjectSettingsComponent(project);
         return copyProjectSettingsComponent.createPanelWithHelp();
     }
 
@@ -36,11 +43,18 @@ public class CopyProjectSettingsConfigurable implements Configurable {
 
     @Override
     public void apply() {
-        stateService.setExcludedDirectories(copyProjectSettingsComponent.getExcludedDirectories());
-        stateService.setExcludedFiles(copyProjectSettingsComponent.getExcludedFiles());  // Save excluded files
-        stateService.setIncludedFileExtensions(copyProjectSettingsComponent.getIncludedFileExtensions());
+        stateService.setExcludedDirectories(new java.util.ArrayList<>(copyProjectSettingsComponent.getExcludedDirectories()));
+        stateService.setExcludedFiles(new java.util.ArrayList<>(copyProjectSettingsComponent.getExcludedFiles()));  // Save excluded files
+        stateService.setIncludedFileExtensions(new java.util.ArrayList<>(copyProjectSettingsComponent.getIncludedFileExtensions()));
         stateService.setExcludeJavaDoc(copyProjectSettingsComponent.getExcludeJavadoc());
         stateService.setUseGitIgnore(copyProjectSettingsComponent.getUseGitIgnore());
+    }
+
+    @Override
+    public void reset() {
+        if (copyProjectSettingsComponent != null) {
+            copyProjectSettingsComponent.reset(stateService);
+        }
     }
 
     @Override

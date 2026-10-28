@@ -6,6 +6,7 @@ import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
 import com.devoxx.genie.ui.settings.rag.table.ButtonEditor;
 import com.devoxx.genie.ui.settings.rag.table.ButtonRenderer;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -91,7 +92,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         this.validationPanel = new JPanel();
         this.validationHandler = new RAGSettingsHandler(project, validationPanel, this);
         this.ragExcludedDirsPanel = new RagExcludedDirectoriesPanel(
-                project, stateService.getRagExcludedDirectories());
+                project, new java.util.ArrayList<>(ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories()));
 
         initializeComponents();
         addListeners();
@@ -226,7 +227,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                 "\"where do we discuss X?\" at the cost of one extra LLM call per RAG search.");
         addSettingRow(panel, gbc, "Number of variants", leftAligned(queryExpansionVariantsSpinner));
 
-        // RAG-specific directory exclusion (task-220) — layered on top of the global
+        // RAG-specific directory exclusion (task-220) — layered on top of the project
         // "Scan & Copy Project" list so users can keep project context broad while keeping
         // RAG narrow.
         gbc.gridwidth = 2;

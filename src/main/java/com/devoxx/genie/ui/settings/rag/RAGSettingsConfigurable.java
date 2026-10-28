@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.rag;
 
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -59,7 +60,7 @@ public class RAGSettingsConfigurable implements Configurable {
         int storedN = stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN();
         isModified |= ragSettingsComponent.getQueryExpansionVariantsSpinner().getNumber() != storedN;
         isModified |= !ragSettingsComponent.getRagExcludedDirsPanel().getData()
-                .equals(stateService.getRagExcludedDirectories());
+                .equals(ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories());
 
         return isModified;
     }
@@ -80,7 +81,7 @@ public class RAGSettingsConfigurable implements Configurable {
         stateService.setIndexerMaxResults(ragSettingsComponent.getMaxResultsSpinner().getNumber());
         stateService.setRagQueryExpansionEnabled(ragSettingsComponent.getQueryExpansionCheckBox().isSelected());
         stateService.setRagQueryExpansionN(ragSettingsComponent.getQueryExpansionVariantsSpinner().getNumber());
-        stateService.setRagExcludedDirectories(
+        ProjectScanSettingsService.getInstance(project).setRagExcludedDirectories(
                 new java.util.ArrayList<>(ragSettingsComponent.getRagExcludedDirsPanel().getData()));
 
         // Re-arm the feature-enablement analytics snapshot (task-209).
@@ -108,6 +109,6 @@ public class RAGSettingsConfigurable implements Configurable {
         ragSettingsComponent.getQueryExpansionVariantsSpinner().setNumber(
                 stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN());
         ragSettingsComponent.getRagExcludedDirsPanel().setData(
-                new java.util.ArrayList<>(stateService.getRagExcludedDirectories()));
+                new java.util.ArrayList<>(ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories()));
     }
 }
