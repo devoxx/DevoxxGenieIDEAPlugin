@@ -68,7 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h2>v1.14.2</h2>
+                <h2>v1.15.0</h2>
+        <UL>
+                    <LI>fix(test): dispose platform fixtures to stop nested temp-dir leak</LI>
+                </UL>
+<h2>v1.14.2</h2>
         <UL>
                     <LI>fix(ui): the <b>Activity Log no longer freezes the IDE</b> after a busy agent or MCP session — rows are fixed-height single-line previews with plain text instead of variable-height HTML cells, and updates arrive as one bulk change rather than one per entry (#1279)</LI>
                     <LI>fix(ui): the log <b>only scrolls to the tail when you are already at the bottom</b>, so scrolling up to read an entry no longer yanks you back on the next log line (#1279)</LI>
