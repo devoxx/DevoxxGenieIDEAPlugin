@@ -35,7 +35,9 @@ final class CodeModeToolDescription {
     private static final String INTRODUCTION = """
             Run JavaScript that calls several tools in one step and returns only what you print. \
             Prefer it over separate tool calls when a task needs many calls whose raw results you do not need \
-            to read: reading many files, checking every reference of a symbol, filtering large search results.
+            to read: reading many files, checking every reference of a symbol, filtering large search results. \
+            Do the looping, matching and counting in JavaScript and print only the answer. \
+            Do not wrap a single tool call in run_script just to print its result; call that tool directly.
             - The code runs as the body of an async function in a sandboxed QuickJS runtime: \
             no Node.js, no require or import, no timers, no file system, no network.
             - Call a tool with `await tools.<name>({ ...arguments })`, passing the same arguments the tool \
