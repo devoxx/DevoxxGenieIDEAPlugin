@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.agent.codemode;
 
 import com.devoxx.genie.service.agent.AgentLoopTracker;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import io.roastedroot.quickjs4j.core.Builtins;
 import io.roastedroot.quickjs4j.core.Engine;
 import io.roastedroot.quickjs4j.core.GuestException;
@@ -15,8 +16,6 @@ import run.endive.wasm.types.MemoryLimits;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -33,12 +32,6 @@ final class CodeModeScriptRun {
 
     private static final long WATCHDOG_INTERVAL_MILLIS = 50;
 
-    private static final ScheduledExecutorService WATCHDOG = Executors.newSingleThreadScheduledExecutor(task -> {
-        var thread = new Thread(task, "DevoxxGenie-code-mode-watchdog");
-        thread.setDaemon(true);
-        return thread;
-    });
-
     private static final String PRELUDE = """
             const __output = [];
             const __render = (value) => typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -53,22 +46,14 @@ final class CodeModeScriptRun {
                   return undefined;
                 }
                 return async (args) => {
-                  const raw = __host.call(name, JSON.stringify(args === undefined ? {} : args));
-                  const trimmed = raw.trimStart();
-                  if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
-                    return raw;
-                  }
-                  try {
-                    return JSON.parse(raw);
-                  } catch (notJson) {
-                    return raw;
-                  }
+                  return __host.call(name, JSON.stringify(args === undefined ? {} : args));
                 };
               }
             });
             """;
 
     private static final String SCRIPT = """
+            let __error = "";
             try {
               const __result = await (async () => {
             %s
@@ -77,9 +62,9 @@ final class CodeModeScriptRun {
                 text(__result);
               }
             } catch (error) {
-              text("Error: the script threw " + __describe(error));
+              __error = "Error: the script threw " + __describe(error) + "\\n";
             }
-            __host.finish(__output.join("\\n"));
+            __host.finish(__error + __output.join("\\n"));
             """;
 
     private final String code;
@@ -145,6 +130,9 @@ final class CodeModeScriptRun {
             return execute(engine, compiled);
         } catch (IllegalArgumentException e) {
             return "Error: the script could not run: " + guestErrorOf(e.getMessage());
+        } catch (LinkageError e) {
+            log.warn("Code mode JavaScript runtime is unavailable", e);
+            return "Error: the JavaScript runtime is unavailable: " + e.getMessage();
         } catch (RuntimeException e) {
             log.warn("Code mode script failed inside the JavaScript runtime", e);
             return this.stopReason.get() != null
@@ -182,7 +170,7 @@ final class CodeModeScriptRun {
             this.scriptThread = Thread.currentThread();
         }
         resumeScriptClock();
-        var watchdog = WATCHDOG.scheduleAtFixedRate(this::stopWhenOverBudget,
+        var watchdog = AppExecutorUtil.getAppScheduledExecutorService().scheduleWithFixedDelay(this::stopWhenOverBudget,
                 WATCHDOG_INTERVAL_MILLIS, WATCHDOG_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
         try {
             engine.exec(compiled);

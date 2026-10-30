@@ -225,7 +225,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addFullWidthRow(contentPanel, gbc, spinnerRow);
         addHelpText(contentPanel, gbc,
                 "Maximum number of tool calls the LLM can make per prompt. " +
-                "Prevents infinite loops. The LLM will provide its best answer when the limit is reached.");
+                "Prevents infinite loops. The LLM will provide its best answer when the limit is reached. " +
+                "With code mode on, run_script counts as one call; see Experimental.");
 
         // --- Experimental ---
         addSection(contentPanel, gbc, "Experimental");

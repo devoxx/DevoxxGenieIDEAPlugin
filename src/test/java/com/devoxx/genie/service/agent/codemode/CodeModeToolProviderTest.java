@@ -68,10 +68,19 @@ class CodeModeToolProviderTest {
     }
 
     @Test
-    void aToolResultThatIsJsonComesBackAsAnObject() {
+    void aToolResultThatIsJsonComesBackAsTheRawString() {
         var provider = new CodeModeToolProvider(singleTool("stats", (request, memoryId) -> "{\"todos\": 2}"), SCRIPT_CAP);
 
-        assertThat(runScript(provider, "const stats = await tools.stats({}); return stats.todos + 1;")).isEqualTo("3");
+        assertThat(runScript(provider, "const r = await tools.stats({}); return typeof r + ' ' + (JSON.parse(r).todos === 2);"))
+                .isEqualTo("string true");
+    }
+
+    @Test
+    void readingAJsonFileKeepsItsExactText() {
+        var json = "{\n  \"a\": 1\n}";
+        var provider = new CodeModeToolProvider(singleTool("read_file", (request, memoryId) -> json), SCRIPT_CAP);
+
+        assertThat(runScript(provider, "const r = await tools.read_file({ path: 'package.json' }); text(r);")).isEqualTo(json);
     }
 
     @Test
@@ -266,7 +275,8 @@ class CodeModeToolProviderTest {
     @Test
     void aThrownErrorIsReportedWithItsMessageAndKeepsEarlierOutput() {
         assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "text('before'); throw new Error('boom');"))
-                .startsWith("before\nError: the script threw Error: boom");
+                .startsWith("Error: the script threw Error: boom")
+                .contains("before");
     }
 
     @Test

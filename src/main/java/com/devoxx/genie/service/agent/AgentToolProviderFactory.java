@@ -157,7 +157,7 @@ public class AgentToolProviderFactory {
         try {
             warmUp.run();
         } catch (Throwable e) {
-            log.debug("Code mode warm-up failed", e);
+            log.warn("Code mode warm-up failed", e);
         }
     }
 
