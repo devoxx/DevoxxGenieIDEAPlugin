@@ -812,7 +812,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     /** Experimental run_script ("code mode") toggle, nested as the last Built-in Tools row. */
     private void addCodeModeSubSection(JPanel panel, GridBagConstraints gbc) {
-        addFullWidthRow(panel, gbc, codeModeCheckbox);
+        addFullWidthRow(panel, gbc, buildToolRow(codeModeCheckbox, "run_script"));
         codeModeCheckbox.addItemListener(e -> maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected()));
         maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected());
 
@@ -1019,7 +1019,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             return;
         }
         ToolDescriptionEditorDialog dialog = new ToolDescriptionEditorDialog(
-                toolName, defaultDescription, pendingDescriptionOverrides.get(toolName));
+                toolName, defaultDescription, pendingDescriptionOverrides.get(toolName), editorNoteOf(toolName));
         if (!dialog.showAndGet()) {
             return;
         }
@@ -1030,6 +1030,16 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             pendingDescriptionOverrides.put(toolName, override);
         }
         refreshToolDescriptionUi(toolName);
+    }
+
+    /** Extra guidance for tools whose description is a template rather than plain text. */
+    private static @Nullable String editorNoteOf(@NotNull String toolName) {
+        if (!"run_script".equals(toolName)) {
+            return null;
+        }
+        return "<b>" + BuiltInToolDescriptions.MAX_SCRIPT_TOOL_CALLS_PLACEHOLDER + "</b> and <b>"
+                + BuiltInToolDescriptions.SCRIPT_TIME_BUDGET_PLACEHOLDER + "</b> are replaced with the current "
+                + "limits. The list of callable tools is generated on each prompt and added after this text.";
     }
 
     /** Re-syncs one tool row's "custom description" marker and tooltip with the pending state. */

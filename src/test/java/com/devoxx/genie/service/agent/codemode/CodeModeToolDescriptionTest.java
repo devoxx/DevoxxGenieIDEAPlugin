@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.codemode;
 
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.model.chat.request.json.JsonArraySchema;
 import dev.langchain4j.model.chat.request.json.JsonEnumSchema;
@@ -7,8 +8,12 @@ import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 class CodeModeToolDescriptionTest {
 
@@ -81,5 +86,21 @@ class CodeModeToolDescriptionTest {
         assertThat(CodeModeToolDescription.render(tools, 30, 100))
                 .contains("run_script itself counts as one tool call; the tool calls inside one script are limited to 100.")
                 .doesNotContain("counts toward the tool call limit");
+    }
+
+    @Test
+    void aUserOverrideReplacesTheIntroductionButKeepsLimitsAndTheToolList() {
+        var tools = List.of(ToolSpecification.builder().name("list_files").description("List files.").build());
+        var state = mock(DevoxxGenieStateService.class);
+        when(state.getToolDescriptionOverrides()).thenReturn(Map.of("run_script",
+                "Batch calls. At most {max_script_tool_calls} calls, {script_time_budget_seconds}s of JavaScript."));
+
+        try (var stateService = mockStatic(DevoxxGenieStateService.class)) {
+            stateService.when(DevoxxGenieStateService::getInstance).thenReturn(state);
+
+            assertThat(CodeModeToolDescription.render(tools, 30, 100)).isEqualTo(
+                    "Batch calls. At most 100 calls, 30s of JavaScript.\n\n"
+                            + "Callable tools:\ntools.list_files(args: {}) - List files.");
+        }
     }
 }

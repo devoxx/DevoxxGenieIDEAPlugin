@@ -26,6 +26,7 @@ public class ToolDescriptionEditorDialog extends DialogWrapper {
 
     private final String defaultDescription;
     private final JBTextArea descriptionArea;
+    private final String note;
 
     /**
      * @param toolName          the tool being edited, e.g. {@code edit_file}
@@ -35,8 +36,19 @@ public class ToolDescriptionEditorDialog extends DialogWrapper {
     public ToolDescriptionEditorDialog(@NotNull String toolName,
                                        @NotNull String defaultDescription,
                                        @Nullable String currentOverride) {
+        this(toolName, defaultDescription, currentOverride, null);
+    }
+
+    /**
+     * @param note extra tool-specific guidance shown under the introduction (HTML allowed), or {@code null}
+     */
+    public ToolDescriptionEditorDialog(@NotNull String toolName,
+                                       @NotNull String defaultDescription,
+                                       @Nullable String currentOverride,
+                                       @Nullable String note) {
         super(true);
         this.defaultDescription = defaultDescription;
+        this.note = note;
         this.descriptionArea = new JBTextArea(currentOverride != null ? currentOverride : defaultDescription);
         setTitle("Edit Tool Description: " + toolName);
         setOKButtonText("Save");
@@ -50,7 +62,8 @@ public class ToolDescriptionEditorDialog extends DialogWrapper {
 
         JBLabel intro = new JBLabel("<html>This text is sent to the LLM as the tool's description — "
                 + "it is what the model weighs when choosing between tools. Use it to say when this "
-                + "tool should be used, or to steer the model toward a different one.</html>");
+                + "tool should be used, or to steer the model toward a different one."
+                + (note != null ? "<br><br>" + note : "") + "</html>");
         panel.add(intro, BorderLayout.NORTH);
 
         descriptionArea.setLineWrap(true);

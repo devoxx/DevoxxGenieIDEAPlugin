@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.codemode;
 
+import com.devoxx.genie.service.agent.tool.BuiltInToolDescriptions;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -32,31 +34,7 @@ final class CodeModeToolDescription {
 
     private static final Pattern SENTENCE_END = Pattern.compile("(?<=[.!?])\\s");
 
-    private static final String INTRODUCTION = """
-            Run JavaScript that calls several tools in one step and returns only what you print. \
-            Prefer it over separate tool calls when a task needs many calls whose raw results you do not need \
-            to read: reading many files, checking every reference of a symbol, filtering large search results. \
-            Do the looping, matching and counting in JavaScript and print only the answer. \
-            Do not wrap a single tool call in run_script just to print its result; call that tool directly.
-            - The code runs as the body of an async function in a sandboxed QuickJS runtime: \
-            no Node.js, no require or import, no timers, no file system, no network.
-            - Call a tool with `await tools.<name>({ ...arguments })`, passing the same arguments the tool \
-            takes when called directly.
-            - Tool calls run one at a time, so Promise.all does not make them faster.
-            - The runtime is standard modern JavaScript (QuickJS).
-            - A tool returns the same plain text it returns when called directly, usually not JSON; \
-            call JSON.parse yourself only when a tool returns JSON. \
-            A failed call returns a string starting with "Error:" instead of throwing.
-            - Every call still goes through the user's approval rules. run_script itself counts as one tool call; \
-            the tool calls inside one script are limited to %d.
-            - Only values passed to `text(value)` or `console.log(...)`, or returned from the script, are shown to you. \
-            Print the filtered result, not raw tool output.
-            - `ALL_TOOLS` lists every callable tool as { name, description }.
-            - A script is stopped after %d seconds of JavaScript run time; time spent inside tool calls \
-            does not count.
-
-            Callable tools:
-            """;
+    private static final String TOOL_LIST_HEADING = "\n\nCallable tools:\n";
 
     private CodeModeToolDescription() {
     }
@@ -66,7 +44,20 @@ final class CodeModeToolDescription {
         var signatures = tools.stream()
                 .map(CodeModeToolDescription::signatureOf)
                 .collect(Collectors.joining("\n"));
-        return INTRODUCTION.formatted(maxScriptToolCalls, scriptTimeBudgetSeconds) + signatures;
+        return introductionOf(scriptTimeBudgetSeconds, maxScriptToolCalls) + TOOL_LIST_HEADING + signatures;
+    }
+
+    /**
+     * The editable part of the description: the user's override from Settings, or the shipped text,
+     * with the limits filled in. Plain replacement rather than String.format, so a stray % in an
+     * override can never break tool registration.
+     */
+    private static @NotNull String introductionOf(long scriptTimeBudgetSeconds, int maxScriptToolCalls) {
+        var template = Objects.requireNonNull(BuiltInToolDescriptions.effective(CodeModeToolProvider.RUN_SCRIPT_TOOL_NAME));
+        return template
+                .replace(BuiltInToolDescriptions.MAX_SCRIPT_TOOL_CALLS_PLACEHOLDER, String.valueOf(maxScriptToolCalls))
+                .replace(BuiltInToolDescriptions.SCRIPT_TIME_BUDGET_PLACEHOLDER, String.valueOf(scriptTimeBudgetSeconds))
+                .strip();
     }
 
     static @NotNull String catalogJsonOf(@NotNull List<ToolSpecification> tools) {
