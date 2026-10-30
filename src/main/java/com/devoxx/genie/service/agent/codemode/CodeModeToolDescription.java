@@ -41,7 +41,9 @@ final class CodeModeToolDescription {
             - Call a tool with `await tools.<name>({ ...arguments })`, passing the same arguments the tool \
             takes when called directly.
             - Tool calls run one at a time, so Promise.all does not make them faster.
-            - A tool returns its result as a string; call JSON.parse yourself when a tool returns JSON. \
+            - The runtime is standard modern JavaScript (QuickJS).
+            - A tool returns the same plain text it returns when called directly, usually not JSON; \
+            call JSON.parse yourself only when a tool returns JSON. \
             A failed call returns a string starting with "Error:" instead of throwing.
             - Every call still goes through the user's approval rules. run_script itself counts as one tool call; \
             the tool calls inside one script are limited to %d.
