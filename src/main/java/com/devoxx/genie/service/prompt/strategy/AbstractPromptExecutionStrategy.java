@@ -268,6 +268,18 @@ public abstract class AbstractPromptExecutionStrategy implements PromptExecution
                       .append("</conversation_history>\n\n");
         }
         
+        // The full project snapshot (added via the toolbar button) lives in the system
+        // prompt for model-based providers. CLI/ACP runners flatten memory to plain text
+        // and skip the system message, so the snapshot is sent explicitly — once per
+        // request, instead of once per historical turn as it used to ride inside every
+        // user message.
+        String projectContext = context.getProjectContext();
+        if (projectContext != null && !projectContext.isEmpty()) {
+            fullPrompt.append("<project_context>\n")
+                      .append(projectContext)
+                      .append("\n</project_context>\n\n");
+        }
+
         // Add file context if present (for ACP/CLI runners that need plain text)
         String filesContext = context.getFilesContext();
         if (filesContext != null && !filesContext.isEmpty()) {

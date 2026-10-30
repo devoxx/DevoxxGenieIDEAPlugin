@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.devoxx.genie.model.Constant.MARKDOWN;
 
@@ -111,10 +112,89 @@ public class ChatMemoryManager {
                     log.debug("Added system message to memory");
                     publishSystemPromptToActivityLog(context.getProject(), systemPrompt);
                 }
+            } else {
+                // Memory already holds a conversation (next turn, restored conversation,
+                // or the user added/removed the full project context mid-conversation).
+                // Keep the system message in sync with the current context. Best-effort:
+                // a sync failure must never break the prompt.
+                try {
+                    syncSystemMessageIfNeeded(context);
+                } catch (Exception e) {
+                    log.warn("Failed to sync the system message for memory key {}", memoryKey, e);
+                }
             }
         } catch (Exception e) {
             throw new MemoryException("Failed to prepare memory", e);
         }
+    }
+
+    /**
+     * Keeps the conversation's system message in sync with the current context when
+     * memory is not empty:
+     * <ul>
+     *   <li>Restored conversations carry only flat user/AI pairs and no system message;
+     *       one is installed so the persona, DEVOXXGENIE.md, CLAUDE.md/AGENTS.md and the
+     *       tool instructions are not silently lost.</li>
+     *   <li>The full project context the user added (or removed) mid-conversation is
+     *       installed in (or removed from) the system prompt, which is where that
+     *       snapshot lives exactly once.</li>
+     * </ul>
+     * OpenAI o1 models never get a system message — they carry the system prompt (and
+     * the project context) inside every user message instead.
+     */
+    private void syncSystemMessageIfNeeded(@NotNull ChatMessageContext context) {
+        String memoryKey = context.getMemoryKey();
+        if (!shouldIncludeSystemMessage(context)) {
+            return;
+        }
+
+        List<ChatMessage> messages = chatMemoryService.getMessagesByKey(memoryKey);
+        if (messages.isEmpty()) {
+            return;
+        }
+
+        Optional<SystemMessage> existing = SystemMessage.findFirst(messages);
+        if (existing.isEmpty()) {
+            log.debug("No system message in memory for key {}; installing one for the next request", memoryKey);
+            installSystemMessage(memoryKey, buildSystemPrompt(context));
+            return;
+        }
+
+        boolean hasProjectSection = existing.get().text().contains(PROJECT_FILES_CONTEXT_TAG);
+        boolean projectContextActive = isProjectContextActive(context.getProjectContext());
+        if (hasProjectSection != projectContextActive) {
+            log.debug("System message out of sync with the project context for key {}; updating it", memoryKey);
+            installSystemMessage(memoryKey, buildSystemPrompt(context));
+        }
+    }
+
+    /**
+     * Installs {@code systemPrompt} as the conversation's system message, keeping it in
+     * the first position providers require. The window memory's {@code add()} appends a
+     * new SystemMessage to the tail when no system message exists — and moves a
+     * replacement to the tail even when one does — so the message list is rewritten via
+     * {@code set()} instead of going through {@code add()}.
+     */
+    private void installSystemMessage(@NotNull String memoryKey, @NotNull String systemPrompt) {
+        ChatMemory memory = chatMemoryService.get(memoryKey);
+        if (memory == null) {
+            log.warn("Cannot install the system message: no memory for key {}", memoryKey);
+            return;
+        }
+
+        List<ChatMessage> messages = new ArrayList<>(chatMemoryService.getMessagesByKey(memoryKey));
+        SystemMessage systemMessage = SystemMessage.from(systemPrompt);
+        for (int i = 0; i < messages.size(); i++) {
+            if (messages.get(i) instanceof SystemMessage) {
+                messages.set(i, systemMessage);
+                memory.set(messages);
+                log.debug("Replaced system message in memory for key: {}", memoryKey);
+                return;
+            }
+        }
+        messages.add(0, systemMessage);
+        memory.set(messages);
+        log.debug("Inserted system message at index 0 in memory for key: {}", memoryKey);
     }
 
     /**
@@ -397,7 +477,7 @@ public class ChatMemoryManager {
      * @return The complete system prompt
      */
     private String buildSystemPrompt(@NotNull ChatMessageContext context) {
-        String prompt = buildAugmentedSystemPrompt(context.getProject(), context.getMemoryKey());
+        String prompt = buildAugmentedSystemPrompt(context.getProject(), context.getMemoryKey(), context.getProjectContext());
         // task-209 analytics signal — mirrors the gate used inside buildAugmentedSystemPrompt.
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
             String md = readDevoxxGenieMdFile(context.getProject());
@@ -439,13 +519,21 @@ public class ChatMemoryManager {
         return buildAugmentedSystemPrompt(project, null);
     }
 
+    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project, @Nullable String memoryKey) {
+        return buildAugmentedSystemPrompt(project, memoryKey, null);
+    }
+
     /**
      * Builds the augmented system prompt for a specific tab. The {@code memoryKey}
      * (projectHash-tabId) selects the tab's active persona when the personas feature is
      * enabled; {@code null} falls back to the default persona (or the plain system prompt
-     * when personas are disabled).
+     * when personas are disabled). {@code projectContext} is the full project content
+     * snapshot the user added to the conversation; when non-null it is included once, in
+     * a {@link #PROJECT_FILES_CONTEXT_TAG} section.
      */
-    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project, @Nullable String memoryKey) {
+    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project,
+                                                             @Nullable String memoryKey,
+                                                             @Nullable String projectContext) {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         String systemPrompt = resolveBaseSystemPrompt(state, memoryKey) + MARKDOWN;
         String projectPath = project.getBasePath();
@@ -496,11 +584,35 @@ public class ChatMemoryManager {
                     """;
         }
 
+        systemPrompt += getProjectFilesContextSection(projectContext);
         systemPrompt += getDevoxxGenieMdSection(project, state);
         systemPrompt += getClaudeOrAgentsMdSection(project, state);
         systemPrompt += getSkillsSection(project, state);
 
         return TemplateVariableEscaper.escape(systemPrompt);
+    }
+
+    /**
+     * Tag wrapping the full project content snapshot in the system prompt. Deliberately
+     * distinct from the {@code <ProjectContext>} tag, which DEVOXXGENIE.md / CLAUDE.md /
+     * AGENTS.md content already uses.
+     */
+    static final String PROJECT_FILES_CONTEXT_TAG = "<ProjectFilesContext>";
+
+    /**
+     * The full project content snapshot the user explicitly added to the conversation.
+     * Delivered once via the system prompt — the same text is also attached to every
+     * user message for OpenAI o1 models, which have no system message.
+     */
+    public static @NotNull String getProjectFilesContextSection(@Nullable String projectContext) {
+        if (!isProjectContextActive(projectContext)) {
+            return "";
+        }
+        return "\n" + PROJECT_FILES_CONTEXT_TAG + "\n" + projectContext + "\n</ProjectFilesContext>\n";
+    }
+
+    private static boolean isProjectContextActive(@Nullable String projectContext) {
+        return projectContext != null && !projectContext.isBlank();
     }
 
     /**

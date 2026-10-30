@@ -91,21 +91,27 @@ public class ChatMessageContextUtil {
 
         // First handle any existing project context
         if (projectContext != null && isProjectContextAdded) {
-            // If the full project is added as context, set it and ignore any attached files
-            chatMessageContext.setFilesContext(projectContext);
+            // The full project snapshot no longer rides in every user message: it is
+            // delivered once via the system prompt (see ChatMemoryManager), which the
+            // chat-memory classes replace in place. The old behavior re-sent — and
+            // re-stored in chat memory — the whole project on every single prompt.
+            // Attached files and editor selection stay ignored while the full project
+            // is active, as before.
+            chatMessageContext.setProjectContext(projectContext);
             // task-209 analytics signal — no content, only a boolean flag
             chatMessageContext.setProjectContextFullUsed(true);
-        } else {
-            // Attach the editor selection (or open file) BEFORE collecting the attached files,
-            // otherwise it only reaches the LLM on the next prompt (issue #1320).
-            Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
-            if (selectedTextEditor != null) {
-                addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
-            }
-
-            // We don't include separate added files to the context if the full project is already included
-            processAttachedFiles(chatMessageContext);
+            return;
         }
+
+        // Attach the editor selection (or open file) BEFORE collecting the attached files,
+        // otherwise it only reaches the LLM on the next prompt (issue #1320).
+        Editor selectedTextEditor = editorFileButtonManager.getSelectedTextEditor();
+        if (selectedTextEditor != null) {
+            addDefaultEditorInfoToMessageContext(selectedTextEditor, chatMessageContext);
+        }
+
+        // We don't include separate added files to the context if the full project is already included
+        processAttachedFiles(chatMessageContext);
     }
 
     /**
