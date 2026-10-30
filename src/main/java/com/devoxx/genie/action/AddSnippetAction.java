@@ -32,6 +32,8 @@ public class AddSnippetAction extends DumbAwareAction {
     public static final Key<Integer> SELECTION_END_KEY = Key.create("SELECTION_END");
     public static final Key<Integer> SELECTION_START_LINE_KEY = Key.create("SELECTION_START_LINE");
     public static final Key<Integer> SELECTION_END_LINE_KEY = Key.create("SELECTION_END_LINE");
+    // Marks the editor file DevoxxGenie attached on its own (current selection / open file), as opposed to user-added files
+    public static final Key<Boolean> AUTO_ATTACHED_KEY = Key.create("AUTO_ATTACHED");
 
     // We use an unknown file type to represent code snippets
     private final FileType fileType =

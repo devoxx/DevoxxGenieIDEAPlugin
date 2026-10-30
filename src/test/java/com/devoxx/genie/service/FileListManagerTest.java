@@ -389,4 +389,22 @@ class FileListManagerTest extends AbstractLightPlatformTestCase {
                     realFile.getUserData(SELECTION_END_LINE_KEY));
         }
     }
+
+    @Test
+    void testRemoveFileAndRefreshRebuildsObserversWithRemainingFiles() {
+        try (MockedStatic<ImageUtil> imageUtilMock = Mockito.mockStatic(ImageUtil.class)) {
+            VirtualFile mockFile2 = mock(VirtualFile.class);
+            imageUtilMock.when(() -> ImageUtil.isImageFile(any())).thenReturn(false);
+            fileListManager.addFile(mockProject, mockFile);
+            fileListManager.addFile(mockProject, mockFile2);
+
+            fileListManager.removeFileAndRefresh(mockProject, null, mockFile);
+
+            assertEquals(List.of(mockFile2), fileListManager.getFiles(mockProject));
+            org.mockito.InOrder inOrder = inOrder(mockObserver);
+            inOrder.verify(mockObserver).allFilesRemoved();
+            inOrder.verify(mockObserver).filesAdded(List.of(mockFile2));
+            verify(mockFile).putUserData(AUTO_ATTACHED_KEY, null);
+        }
+    }
 }
