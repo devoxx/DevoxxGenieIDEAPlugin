@@ -11,7 +11,6 @@ import dev.langchain4j.service.tool.ToolExecutor;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.service.tool.ToolProviderRequest;
 import dev.langchain4j.service.tool.ToolProviderResult;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -24,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.devoxx.genie.service.agent.codemode.CodeModeToolProvider.RUN_SCRIPT_TOOL_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 
 class CodeModeToolProviderTest {
@@ -37,11 +35,6 @@ class CodeModeToolProviderTest {
     private final List<String> readPaths = new CopyOnWriteArrayList<>();
 
     private final ToolProviderRequest providerRequest = mock(ToolProviderRequest.class);
-
-    @BeforeAll
-    static void requireTheV8Runtime() {
-        assumeTrue(CodeModeScriptRun.isRuntimeAvailable(), "Javet V8 native library is not available on this platform");
-    }
 
     @Test
     void provideToolsAddsRunScriptNextToTheDelegatedTools() {
@@ -87,7 +80,7 @@ class CodeModeToolProviderTest {
     }
 
     @Test
-    void onlyTheToolCallsInsideAScriptAreCountedByTheLoopTracker() {
+    void aScriptCountsAsOneToolCallPlusTheToolCallsInsideIt() {
         var tracker = trackedCodeMode(10);
 
         var output = runScriptThrough(tracker, """
@@ -97,12 +90,21 @@ class CodeModeToolProviderTest {
                 """);
 
         assertThat(output).isEqualTo("read two files");
-        assertThat(tracker.getCallCount()).isEqualTo(2);
+        assertThat(tracker.getCallCount()).isEqualTo(3);
+    }
+
+    @Test
+    void scriptsWithoutToolCallsStillReachTheLoopLimit() {
+        var tracker = trackedCodeMode(2);
+        runScriptThrough(tracker, "return 1;");
+        runScriptThrough(tracker, "return 2;");
+
+        assertThat(runScriptThrough(tracker, "return 3;")).startsWith("Error: Agent loop limit reached (2 tool calls)");
     }
 
     @Test
     void nestedCallsBeyondTheLoopLimitReturnTheLimitErrorToTheScript() {
-        var tracker = trackedCodeMode(1);
+        var tracker = trackedCodeMode(2);
 
         var output = runScriptThrough(tracker, """
                 await tools.read_file({ path: "A.java" });
@@ -115,12 +117,12 @@ class CodeModeToolProviderTest {
 
     @Test
     void runScriptIsRefusedOnceTheLoopLimitIsReached() {
-        var tracker = trackedCodeMode(1);
+        var tracker = trackedCodeMode(2);
         runScriptThrough(tracker, "await tools.read_file({ path: 'A.java' });");
 
         var output = runScriptThrough(tracker, "text(await tools.read_file({ path: 'B.java' }));");
 
-        assertThat(output).startsWith("Error: Agent loop limit reached (1 tool calls)");
+        assertThat(output).startsWith("Error: Agent loop limit reached (2 tool calls)");
         assertThat(this.readPaths).containsExactly("A.java");
     }
 
@@ -169,6 +171,35 @@ class CodeModeToolProviderTest {
     }
 
     @Test
+    void aRunCancelledBeforeItStartsNeverRunsTheScript() {
+        var run = new CodeModeScriptRun("while (true) {}", "[]", (toolName, argumentsJson) -> "ok", Duration.ofMinutes(1));
+        run.cancel();
+
+        assertThat(run.run()).isEqualTo(AgentLoopTracker.CANCELLED_MESSAGE);
+    }
+
+    @Test
+    void aScriptThatUsesTooMuchMemoryFailsWithoutCrashing() {
+        var output = runScript(new CodeModeToolProvider(fileTools()),
+                "const chunks = []; while (true) chunks.push(new Array(1e5).fill(Math.random()));");
+
+        assertThat(output).startsWith("Error:").containsIgnoringCase("out of memory");
+    }
+
+    @Test
+    void aToolThatReturnsNullGivesTheScriptAnEmptyString() {
+        var provider = new CodeModeToolProvider(singleTool("nothing", (request, memoryId) -> null));
+
+        assertThat(runScript(provider, "return JSON.stringify(await tools.nothing({}));")).isEqualTo("\"\"");
+    }
+
+    @Test
+    void aScriptAwaitingAPromiseThatNeverSettlesIsReported() {
+        assertThat(runScript(new CodeModeToolProvider(fileTools()), "await new Promise(() => {});"))
+                .isEqualTo("Error: the script never finished: it awaited a promise that never settles.");
+    }
+
+    @Test
     void aSyntaxErrorIsReportedAsAnError() {
         assertThat(runScript(new CodeModeToolProvider(fileTools()), "const = ;"))
                 .startsWith("Error: the script could not run");
@@ -212,8 +243,8 @@ class CodeModeToolProviderTest {
     @Test
     void theScriptHasNoNodeFileSystemOrNetworkGlobals() {
         assertThat(runScript(new CodeModeToolProvider(fileTools()),
-                "return [typeof require, typeof process, typeof fetch, typeof XMLHttpRequest].join(',');"))
-                .isEqualTo("undefined,undefined,undefined,undefined");
+                "return [typeof require, typeof process, typeof fetch, typeof XMLHttpRequest, typeof setTimeout].join(',');"))
+                .isEqualTo("undefined,undefined,undefined,undefined,undefined");
     }
 
     @Test

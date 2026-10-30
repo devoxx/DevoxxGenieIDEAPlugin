@@ -68,55 +68,10 @@ public class AgentLoopTracker implements ToolProvider {
         ToolProviderResult.Builder builder = ToolProviderResult.builder();
 
         for (AiServiceTool tool : result.aiServiceTools()) {
-            ToolExecutor original = tool.toolExecutor();
-            ToolExecutor wrapped = original instanceof OrchestratingToolExecutor
-                    ? guarded(original)
-                    : tracked(original);
-            builder.add(tool.toBuilder().toolExecutor(wrapped).build());
+            builder.add(tool.toBuilder().toolExecutor(tracked(tool.toolExecutor())).build());
         }
 
         return builder.build();
-    }
-
-    private @NotNull ToolExecutor guarded(@NotNull ToolExecutor orchestrator) {
-        return new ToolExecutor() {
-            @Override
-            public String execute(ToolExecutionRequest toolRequest, Object memoryId) {
-                String refusal = orchestrationRefusal();
-                return refusal != null ? refusal : orchestrate(() -> orchestrator.execute(toolRequest, memoryId));
-            }
-
-            @Override
-            public ToolExecutionResult executeWithContext(ToolExecutionRequest toolRequest, InvocationContext context) {
-                String refusal = orchestrationRefusal();
-                if (refusal != null) {
-                    return ToolExecutionResult.builder().resultText(refusal).build();
-                }
-                try {
-                    return orchestrator.executeWithContext(toolRequest, context);
-                } catch (RuntimeException e) {
-                    return ToolExecutionResult.builder().resultText("Error: " + e.getMessage()).build();
-                }
-            }
-        };
-    }
-
-    private @Nullable String orchestrationRefusal() {
-        if (cancelled.get()) {
-            return CANCELLED_MESSAGE;
-        }
-        if (callCount.get() >= maxToolCalls) {
-            return loopLimitMessage();
-        }
-        return null;
-    }
-
-    private static String orchestrate(@NotNull ToolInvoker invoker) {
-        try {
-            return invoker.invoke();
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
-        }
     }
 
     private String loopLimitMessage() {
@@ -298,9 +253,6 @@ public class AgentLoopTracker implements ToolProvider {
      */
     public interface Cancellable {
         void cancel();
-    }
-
-    public interface OrchestratingToolExecutor extends ToolExecutor {
     }
 
     public boolean isCancelled() {

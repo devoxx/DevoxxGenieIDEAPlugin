@@ -63,9 +63,6 @@ public class CodeModeToolProvider implements ToolProvider, AgentLoopTracker.Canc
             log.warn("Code mode skipped: another provider already exposes a '{}' tool", RUN_SCRIPT_TOOL_NAME);
             return delegated;
         }
-        if (!CodeModeScriptRun.isRuntimeAvailable()) {
-            return delegated;
-        }
         var callableTools = callableToolsOf(delegated);
         return ToolProviderResult.builder()
                 .addAll(delegated.aiServiceTools())
@@ -162,7 +159,7 @@ public class CodeModeToolProvider implements ToolProvider, AgentLoopTracker.Canc
     private record CallableTool(ToolSpecification specification, ToolExecutor executor) {
     }
 
-    private final class RunScriptExecutor implements AgentLoopTracker.OrchestratingToolExecutor {
+    private final class RunScriptExecutor implements ToolExecutor {
 
         private final Map<String, CallableTool> callableTools;
 

@@ -36,10 +36,11 @@ final class CodeModeToolDescription {
             Run JavaScript that calls several tools in one step and returns only what you print. \
             Prefer it over separate tool calls when a task needs many calls whose raw results you do not need \
             to read: reading many files, checking every reference of a symbol, filtering large search results.
-            - The code runs as the body of an async function in a sandboxed V8 isolate: \
-            no Node.js, no require or import, no file system, no network.
+            - The code runs as the body of an async function in a sandboxed QuickJS runtime: \
+            no Node.js, no require or import, no timers, no file system, no network.
             - Call a tool with `await tools.<name>({ ...arguments })`, passing the same arguments the tool \
             takes when called directly.
+            - Tool calls run one at a time, so Promise.all does not make them faster.
             - A tool returns a string, or a parsed object when its result is JSON. A failed call returns a \
             string starting with "Error:" instead of throwing.
             - Every call still goes through the user's approval rules and counts toward the tool call limit.
