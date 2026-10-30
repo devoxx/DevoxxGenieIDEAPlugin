@@ -268,7 +268,7 @@ dependencies {
     // persisted configurations still load. SSE-only servers (issue #1151) are not supported.
     val lg4j_version = "1.22.0"
     val lg4j_beta_version = "1.22.0-beta32"
-    val awsSdkVersion = "2.57.3"
+    val awsSdkVersion = "2.57.4"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.53.4.0"
     val dockerJavaVersion = "3.7.1"
@@ -287,7 +287,7 @@ dependencies {
     val nettyVersion = "4.2.19.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
-    val logbackVersion = "1.6.5"
+    val logbackVersion = "1.6.6"
     val gitignoreReaderVersion = "2.0.0"
     val junitJupiterVersion = "6.1.3"
     val junitPlatformVersion = "6.1.3"
