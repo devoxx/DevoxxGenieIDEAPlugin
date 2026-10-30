@@ -43,6 +43,10 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             new JBCheckBox("Enable agent mode", stateService.getAgentModeEnabled());
     private final JBIntSpinner maxToolCallsSpinner =
             new JBIntSpinner(stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS, 1, AGENT_MAX_TOOL_CALLS_UPPER_BOUND);
+    private final JBCheckBox codeModeCheckbox =
+            new JBCheckBox("Code mode: let the agent batch tool calls in a JavaScript run_script tool", Boolean.TRUE.equals(stateService.getCodeModeEnabled()));
+    private final JBIntSpinner maxScriptToolCallsSpinner =
+            new JBIntSpinner(stateService.getAgentMaxScriptToolCalls() != null ? stateService.getAgentMaxScriptToolCalls() : AGENT_MAX_SCRIPT_TOOL_CALLS, 1, 1000);
     private final JBCheckBox autoApproveReadOnlyCheckbox =
             new JBCheckBox("Auto-approve read-only tools (read_file, list_files, search_files, fetch_page)", stateService.getAgentAutoApproveReadOnly());
     private final JBCheckBox writeApprovalRequiredCheckbox =
@@ -222,6 +226,22 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "Maximum number of tool calls the LLM can make per prompt. " +
                 "Prevents infinite loops. The LLM will provide its best answer when the limit is reached.");
+
+        // --- Experimental ---
+        addSection(contentPanel, gbc, "Experimental");
+
+        addFullWidthRow(contentPanel, gbc, codeModeCheckbox);
+        codeModeCheckbox.addItemListener(e -> maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected()));
+        maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected());
+
+        JPanel scriptSpinnerRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        scriptSpinnerRow.add(new JBLabel("Max tool calls per script:"));
+        scriptSpinnerRow.add(maxScriptToolCallsSpinner);
+        addFullWidthRow(contentPanel, gbc, scriptSpinnerRow);
+        addHelpText(contentPanel, gbc,
+                "Adds a run_script tool that runs a short sandboxed JavaScript program calling several tools in one step " +
+                "and returning only what it prints. run_script counts as one tool call; the calls inside it count toward " +
+                "the per-script limit instead. Experimental: results vary by model.");
 
         // --- Approval ---
         addSection(contentPanel, gbc, "Approval");
@@ -1094,6 +1114,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return enableAgentModeCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentModeEnabled())
                 || maxToolCallsSpinner.getNumber() != (state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS)
+                || codeModeCheckbox.isSelected() != Boolean.TRUE.equals(state.getCodeModeEnabled())
+                || maxScriptToolCallsSpinner.getNumber() != (state.getAgentMaxScriptToolCalls() != null ? state.getAgentMaxScriptToolCalls() : AGENT_MAX_SCRIPT_TOOL_CALLS)
                 || autoApproveReadOnlyCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly())
                 || writeApprovalRequiredCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentWriteApprovalRequired())
                 || showChangedFilesCheckbox.isSelected() != Boolean.TRUE.equals(state.getAgentShowChangedFiles())
@@ -1140,6 +1162,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     public void apply() {
         stateService.setAgentModeEnabled(enableAgentModeCheckbox.isSelected());
         stateService.setAgentMaxToolCalls(maxToolCallsSpinner.getNumber());
+        stateService.setCodeModeEnabled(codeModeCheckbox.isSelected());
+        stateService.setAgentMaxScriptToolCalls(maxScriptToolCallsSpinner.getNumber());
         stateService.setAgentAutoApproveReadOnly(autoApproveReadOnlyCheckbox.isSelected());
         stateService.setAgentWriteApprovalRequired(writeApprovalRequiredCheckbox.isSelected());
         stateService.setAgentShowChangedFiles(showChangedFilesCheckbox.isSelected());
@@ -1185,6 +1209,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         enableAgentModeCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentModeEnabled()));
         maxToolCallsSpinner.setNumber(state.getAgentMaxToolCalls() != null ? state.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS);
+        codeModeCheckbox.setSelected(Boolean.TRUE.equals(state.getCodeModeEnabled()));
+        maxScriptToolCallsSpinner.setNumber(state.getAgentMaxScriptToolCalls() != null ? state.getAgentMaxScriptToolCalls() : AGENT_MAX_SCRIPT_TOOL_CALLS);
+        maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected());
         autoApproveReadOnlyCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentAutoApproveReadOnly()));
         writeApprovalRequiredCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentWriteApprovalRequired()));
         showChangedFilesCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentShowChangedFiles()));
