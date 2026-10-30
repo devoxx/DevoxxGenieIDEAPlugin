@@ -38,7 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
+import static com.devoxx.genie.action.AddSnippetAction.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -446,8 +446,8 @@ class MessageCreationServiceTest {
             String result = messageCreationService.createAttachedFilesContext(mockProject, files);
 
             assertNotNull(result);
-            assertTrue(result.contains("File: "));
-            assertTrue(result.contains("Code Snippet: Selected snippet content"));
+            assertTrue(result.contains("Filename: Unknown.file"));
+            assertTrue(result.contains("<SelectedCode>\nSelected snippet content\n</SelectedCode>"));
         }
     }
 
@@ -809,6 +809,128 @@ class MessageCreationServiceTest {
             when(mockStateService.getRagEnabled()).thenReturn(true);
             when(mockStateService.getAgentModeEnabled()).thenReturn(false);
             assertFalse(MessageCreationService.shouldInjectPassiveRagContext("more?"));
+        }
+    }
+
+    // ---- Issue #1320: editor selection must reach the LLM ----
+
+    @Test
+    void selectedTextIsSentEvenWhenUseFileInEditorIsOff() {
+        when(mockChatMessageContext.getFilesContext()).thenReturn(null);
+        when(mockChatMessageContext.getEditorInfo()).thenReturn(mockEditorInfo);
+        when(mockEditorInfo.getSelectedText()).thenReturn("return ActionUpdateThread.EDT;");
+        when(mockEditorInfo.getSelectedFiles()).thenReturn(null);
+
+        try (MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ChatMessageContextUtil> chatMessageContextUtilMockedStatic = Mockito.mockStatic(ChatMessageContextUtil.class);
+             MockedStatic<FileListManager> fileListManagerMockedStatic = Mockito.mockStatic(FileListManager.class)) {
+
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            chatMessageContextUtilMockedStatic.when(() -> ChatMessageContextUtil.isOpenAIo1Model(any())).thenReturn(false);
+            fileListManagerMockedStatic.when(FileListManager::getInstance).thenReturn(mockFileListManager);
+
+            when(mockStateService.getUseFileInEditor()).thenReturn(false);
+            when(mockStateService.getRagEnabled()).thenReturn(false);
+            when(mockFileListManager.getImageFiles(any(Project.class), any())).thenReturn(Collections.emptyList());
+
+            ArgumentCaptor<UserMessage> messageCaptor = ArgumentCaptor.forClass(UserMessage.class);
+            doNothing().when(mockChatMessageContext).setUserMessage(messageCaptor.capture());
+
+            messageCreationService.addUserMessageToContext(mockChatMessageContext);
+
+            assertTrue(messageCaptor.getValue().singleText().contains("return ActionUpdateThread.EDT;"),
+                    "an explicit editor selection must not be gated by the 'include open file' setting");
+        }
+    }
+
+    @Test
+    void attachedFileWithSelectionSendsPathLinesAndSelectionButOmitsLargeFile() {
+        String largeFile = "// filler line to make the file large\n".repeat(1000);
+
+        String result = renderAttachedJavaFileWithSelection(largeFile, true, false);
+
+        assertTrue(result.contains("Filename: /project/src/AbstractChatFontSizeAction.java"));
+        assertTrue(result.contains("<SelectedCode lines=\"33-36\">"), "line numbers must be 1-based");
+        assertTrue(result.contains("return ActionUpdateThread.EDT;"));
+        assertFalse(result.contains("filler line"), "large auto-attached files must not be sent in full");
+        assertTrue(result.contains("not included"), "the LLM should be told the full file was omitted");
+    }
+
+    @Test
+    void attachedFileWithSelectionIncludesSmallFullFile() {
+        String smallFile = "class Small {\n    return ActionUpdateThread.EDT;\n}\n";
+
+        String result = renderAttachedJavaFileWithSelection(smallFile, true, false);
+
+        assertTrue(result.contains("<SelectedCode lines=\"33-36\">"));
+        assertTrue(result.contains("class Small {"), "small files are sent in full for surrounding context");
+    }
+
+    @Test
+    void attachedFileWithSelectionIncludesLargeFileWhenUseFileInEditorIsOn() {
+        String largeFile = "// filler line to make the file large\n".repeat(1000);
+
+        String result = renderAttachedJavaFileWithSelection(largeFile, true, true);
+
+        assertTrue(result.contains("<SelectedCode lines=\"33-36\">"));
+        assertTrue(result.contains("filler line"));
+    }
+
+    @Test
+    void userAttachedFileWithSelectionIsAlwaysSentInFull() {
+        String largeFile = "// filler line to make the file large\n".repeat(1000);
+
+        String result = renderAttachedJavaFileWithSelection(largeFile, false, false);
+
+        assertTrue(result.contains("<SelectedCode lines=\"33-36\">"));
+        assertTrue(result.contains("filler line"), "a file the user attached explicitly is sent in full");
+    }
+
+    @Test
+    void selectionIsFramedAsTheFocusAndPlacedAfterTheReferenceFile() {
+        String smallFile = "class Small {\n    return ActionUpdateThread.EDT;\n}\n";
+
+        String result = renderAttachedJavaFileWithSelection(smallFile, true, false);
+
+        int fullFileAt = result.indexOf("class Small {");
+        int selectionBlockAt = result.indexOf("<SelectedCode");
+        assertTrue(fullFileAt >= 0 && selectionBlockAt > fullFileAt,
+                "the selection must come after the reference file, closest to the user prompt");
+        assertTrue(result.contains("for reference only"), "the full file must be marked as background context");
+        assertTrue(result.contains("refers to this selection"),
+                "the LLM must be told that 'this code' means the selection, not the whole file");
+    }
+
+    private String renderAttachedJavaFileWithSelection(String documentText, boolean autoAttached, boolean useFileInEditor) {
+        try (MockedStatic<FileDocumentManager> fileDocumentManagerMockedStatic = Mockito.mockStatic(FileDocumentManager.class);
+             MockedStatic<ApplicationManager> applicationManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class);
+             MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+
+            fileDocumentManagerMockedStatic.when(FileDocumentManager::getInstance).thenReturn(mockFileDocumentManager);
+            com.intellij.openapi.application.Application mockAppManager = mock(com.intellij.openapi.application.Application.class);
+            applicationManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(mockAppManager);
+            doAnswer(invocation -> {
+                Runnable runnable = invocation.getArgument(0);
+                runnable.run();
+                return null;
+            }).when(mockAppManager).runReadAction(any(Runnable.class));
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(mockStateService);
+            when(mockStateService.getUseFileInEditor()).thenReturn(useFileInEditor);
+
+            com.intellij.openapi.fileTypes.FileType javaType = mock(com.intellij.openapi.fileTypes.FileType.class);
+            when(javaType.getName()).thenReturn("JAVA");
+            when(mockVirtualFile.getFileType()).thenReturn(javaType);
+            when(mockVirtualFile.getName()).thenReturn("AbstractChatFontSizeAction.java");
+            when(mockVirtualFile.getCanonicalPath()).thenReturn("/project/src/AbstractChatFontSizeAction.java");
+            when(mockVirtualFile.getUserData(SELECTED_TEXT_KEY)).thenReturn("return ActionUpdateThread.EDT;");
+            when(mockVirtualFile.getUserData(SELECTION_START_LINE_KEY)).thenReturn(32);
+            when(mockVirtualFile.getUserData(SELECTION_END_LINE_KEY)).thenReturn(35);
+            when(mockVirtualFile.getUserData(AUTO_ATTACHED_KEY)).thenReturn(autoAttached);
+            when(mockFileDocumentManager.getDocument(mockVirtualFile)).thenReturn(mockDocument);
+            when(mockDocument.getText()).thenReturn(documentText);
+            when(mockDocument.getLineCount()).thenReturn((int) documentText.lines().count());
+
+            return messageCreationService.createAttachedFilesContext(mockProject, List.of(mockVirtualFile));
         }
     }
 }

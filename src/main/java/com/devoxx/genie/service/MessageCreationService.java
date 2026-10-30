@@ -31,7 +31,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.devoxx.genie.action.AddSnippetAction.SELECTED_TEXT_KEY;
+import static com.devoxx.genie.action.AddSnippetAction.*;
 
 /**
  * The message creation service for user and system messages.
@@ -146,6 +146,9 @@ public class MessageCreationService {
      *  retrieval. This keeps the prompt-cache hot for chatty back-and-forth and saves an
      *  Ollama embedding call per follow-up. */
     static final int RAG_MIN_QUERY_LENGTH = 15;
+
+    /** An auto-attached editor file with a selection is sent in full only up to this size (~2K tokens). */
+    static final int MAX_FULL_FILE_CHARS_WITH_SELECTION = 8_000;
 
     private void constructUserMessageWithCombinedContext(@NotNull ChatMessageContext chatMessageContext) {
         log.debug("Constructing user message with combined context");
@@ -343,14 +346,13 @@ public class MessageCreationService {
      */
     private @NotNull String getEditorContentOrSelectedText(@NotNull ChatMessageContext chatMessageContext) {
         EditorInfo editorInfo = chatMessageContext.getEditorInfo();
-        if (editorInfo == null ||
-            Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
+        if (editorInfo == null) {
             return "";
         }
 
         StringBuilder contentBuilder = new StringBuilder();
 
-        // Add selected text if present
+        // An explicit selection is always sent; the "include open file" setting only governs whole files (#1320)
         if (editorInfo.getSelectedText() != null && !editorInfo.getSelectedText().isEmpty()) {
             contentBuilder.append("<SelectedText>\n")
                     .append(editorInfo.getSelectedText())
@@ -359,7 +361,8 @@ public class MessageCreationService {
 
         // Add content of selected files
         List<VirtualFile> selectedFiles = editorInfo.getSelectedFiles();
-        if (selectedFiles != null && !selectedFiles.isEmpty()) {
+        if (selectedFiles != null && !selectedFiles.isEmpty() &&
+            !Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
             contentBuilder.append("<FileContents>\n");
             for (VirtualFile file : selectedFiles) {
                 contentBuilder.append("File: ").append(file.getCanonicalPath()).append("\n")
@@ -394,9 +397,9 @@ public class MessageCreationService {
 
         for (VirtualFile file : files) {
             ApplicationManager.getApplication().runReadAction(() -> {
-                if (file.getFileType().getName().equals("UNKNOWN")) {
-                    userPromptContext.append("File: ").append(file.getCanonicalPath()).append("\n");
-                    userPromptContext.append("Code Snippet: ").append(file.getUserData(SELECTED_TEXT_KEY)).append("\n");
+                String selectedText = file.getUserData(SELECTED_TEXT_KEY);
+                if (selectedText != null && !selectedText.isEmpty()) {
+                    appendSelectionContext(userPromptContext, file, selectedText, fileDocumentManager);
                 } else {
                     Document document = fileDocumentManager.getDocument(file);
                     if (document != null) {
@@ -412,6 +415,60 @@ public class MessageCreationService {
 
         return userPromptContext.toString();
     }
+
+    /**
+     * Render a file that carries an editor selection. The full file (when sent) comes first and is marked
+     * as reference, the selection comes last with an explicit note that it is what the user is asking about;
+     * otherwise models tend to explain the whole file (#1320). The full file is added only when it is small,
+     * when the "include open file" setting is on, or when the user attached the file explicitly.
+     */
+    private void appendSelectionContext(@NotNull StringBuilder userPromptContext,
+                                        @NotNull VirtualFile file,
+                                        @NotNull String selectedText,
+                                        @NotNull FileDocumentManager fileDocumentManager) {
+        VirtualFile originalFile = file.getUserData(ORIGINAL_FILE_KEY);
+        VirtualFile sourceFile = originalFile != null ? originalFile : file;
+        String path = sourceFile.getCanonicalPath() != null ? sourceFile.getCanonicalPath() : sourceFile.getName();
+
+        userPromptContext.append("Filename: ").append(path).append("\n");
+        appendReferenceFileContent(userPromptContext, file, selectedText, fileDocumentManager);
+
+        Integer startLine = file.getUserData(SELECTION_START_LINE_KEY);
+        Integer endLine = file.getUserData(SELECTION_END_LINE_KEY);
+        String lines = startLine != null && endLine != null ? (startLine + 1) + "-" + (endLine + 1) : null;
+
+        userPromptContext.append(lines != null ? "<SelectedCode lines=\"" + lines + "\">\n" : "<SelectedCode>\n")
+                .append(selectedText).append("\n</SelectedCode>\n")
+                .append("The user selected the code above in the editor")
+                .append(lines != null ? " (lines " + lines + " of " + sourceFile.getName() + ")" : "")
+                .append(". \"This code\", \"this method\" or \"the selection\" in the user prompt refers to this selection,")
+                .append(" not to the whole file; focus your answer on it.\n");
+    }
+
+    private void appendReferenceFileContent(@NotNull StringBuilder userPromptContext,
+                                            @NotNull VirtualFile file,
+                                            @NotNull String selectedText,
+                                            @NotNull FileDocumentManager fileDocumentManager) {
+        // A code snippet (AddSnippetAction) is a standalone LightVirtualFile: only the snippet is sent
+        if (file.getFileType().getName().equals("UNKNOWN")) {
+            return;
+        }
+        Document document = fileDocumentManager.getDocument(file);
+        if (document == null) {
+            return;
+        }
+        String content = document.getText();
+        if (content.equals(selectedText)) {
+            return;
+        }
+        boolean autoAttached = Boolean.TRUE.equals(file.getUserData(AUTO_ATTACHED_KEY));
+        if (!autoAttached ||
+            content.length() <= MAX_FULL_FILE_CHARS_WITH_SELECTION ||
+            Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseFileInEditor())) {
+            userPromptContext.append("Full file content (for reference only):\n").append(content).append("\n");
+        } else {
+            userPromptContext.append("(Full file not included: ").append(document.getLineCount())
+                    .append(" lines. Read it from the path above if more context is needed.)\n");
+        }
+    }
 }
-
-
