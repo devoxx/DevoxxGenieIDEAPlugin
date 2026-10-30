@@ -44,7 +44,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner maxToolCallsSpinner =
             new JBIntSpinner(stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : AGENT_MAX_TOOL_CALLS, 1, AGENT_MAX_TOOL_CALLS_UPPER_BOUND);
     private final JBCheckBox codeModeCheckbox =
-            new JBCheckBox("Code mode: let the agent batch tool calls in a JavaScript run_script tool", Boolean.TRUE.equals(stateService.getCodeModeEnabled()));
+            new JBCheckBox("run_script - (Experimental) Batch several tool calls in one sandboxed JavaScript step", Boolean.TRUE.equals(stateService.getCodeModeEnabled()));
     private final JBIntSpinner maxScriptToolCallsSpinner =
             new JBIntSpinner(stateService.getAgentMaxScriptToolCalls() != null ? stateService.getAgentMaxScriptToolCalls() : AGENT_MAX_SCRIPT_TOOL_CALLS, 1, 1000);
     private final JBCheckBox autoApproveReadOnlyCheckbox =
@@ -209,6 +209,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             }
         }
 
+        addCodeModeSubSection(contentPanel, gbc);
+
         addHelpText(contentPanel, gbc,
                 "Uncheck tools to prevent them from being available to the agent. " +
                 "This does not affect the run_tests, parallel_explore, or backlog tools which have their own toggles above/below. " +
@@ -226,23 +228,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "Maximum number of tool calls the LLM can make per prompt. " +
                 "Prevents infinite loops. The LLM will provide its best answer when the limit is reached. " +
-                "With code mode on, run_script counts as one call; see Experimental.");
-
-        // --- Experimental ---
-        addSection(contentPanel, gbc, "Experimental");
-
-        addFullWidthRow(contentPanel, gbc, codeModeCheckbox);
-        codeModeCheckbox.addItemListener(e -> maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected()));
-        maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected());
-
-        JPanel scriptSpinnerRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        scriptSpinnerRow.add(new JBLabel("Max tool calls per script:"));
-        scriptSpinnerRow.add(maxScriptToolCallsSpinner);
-        addFullWidthRow(contentPanel, gbc, scriptSpinnerRow);
-        addHelpText(contentPanel, gbc,
-                "Adds a run_script tool that runs a short sandboxed JavaScript program calling several tools in one step " +
-                "and returning only what it prints. run_script counts as one tool call; the calls inside it count toward " +
-                "the per-script limit instead. Experimental: results vary by model.");
+                "When run_script is enabled, each script counts as one call; see Built-in Tools.");
 
         // --- Approval ---
         addSection(contentPanel, gbc, "Approval");
@@ -822,6 +808,34 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
             return this;
         }
+    }
+
+    /** Experimental run_script ("code mode") toggle, nested as the last Built-in Tools row. */
+    private void addCodeModeSubSection(JPanel panel, GridBagConstraints gbc) {
+        addFullWidthRow(panel, gbc, codeModeCheckbox);
+        codeModeCheckbox.addItemListener(e -> maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected()));
+        maxScriptToolCallsSpinner.setEnabled(codeModeCheckbox.isSelected());
+
+        addHelpText(panel, gbc,
+                "Lets the agent write a short JavaScript program that calls other tools as tools.read_file({...}), " +
+                "loops or filters over their results, and returns only what it prints. Batching many lookups into " +
+                "one step saves round trips and tokens. Scripts run in a sandboxed QuickJS engine with no file, " +
+                "network or process access of their own: every call inside a script goes through the same tool " +
+                "toggles and approval rules as a direct call. Each script has a 30-second JavaScript time budget " +
+                "and a 128 MB memory cap. Off by default; works best with strong coding models.");
+
+        // Same left-indent (25px) as help text so the spinner nests under the run_script checkbox.
+        Insets savedInsets = gbc.insets;
+        gbc.insets = new Insets(2, 25, 2, 5);
+        JPanel scriptSpinnerRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        scriptSpinnerRow.add(new JBLabel("Max tool calls per script:"));
+        scriptSpinnerRow.add(maxScriptToolCallsSpinner);
+        addFullWidthRow(panel, gbc, scriptSpinnerRow);
+        gbc.insets = savedInsets;
+
+        addHelpText(panel, gbc,
+                "run_script counts as one call toward \"Max tool calls per prompt\"; the tool calls inside one " +
+                "script count toward this limit instead.");
     }
 
     private void addCommandExecutionEnvironmentSubSection(JPanel panel, GridBagConstraints gbc) {
