@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.codemode;
 
+import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.tool.ToolArgumentParser;
 import com.google.gson.JsonObject;
@@ -20,12 +21,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.devoxx.genie.service.agent.codemode.CodeModeToolProvider.RUN_SCRIPT_TOOL_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 class CodeModeToolProviderTest {
+
+    private static final int SCRIPT_CAP = Constant.AGENT_MAX_SCRIPT_TOOL_CALLS;
 
     private static final Map<String, String> FILES = Map.of(
             "A.java", "class A {}\n// TODO rename A",
@@ -38,7 +43,7 @@ class CodeModeToolProviderTest {
 
     @Test
     void provideToolsAddsRunScriptNextToTheDelegatedTools() {
-        var result = new CodeModeToolProvider(fileTools()).provideTools(this.providerRequest);
+        var result = new CodeModeToolProvider(fileTools(), SCRIPT_CAP).provideTools(this.providerRequest);
 
         assertThat(result.aiServiceTools()).extracting(tool -> tool.name())
                 .containsExactly("read_file", "list_files", RUN_SCRIPT_TOOL_NAME);
@@ -49,7 +54,7 @@ class CodeModeToolProviderTest {
 
     @Test
     void aScriptCallsSeveralToolsAndReturnsOnlyWhatItPrints() {
-        var output = runScript(new CodeModeToolProvider(fileTools()), """
+        var output = runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), """
                 const files = await tools.list_files({});
                 for (const path of files.split("\\n")) {
                   const content = await tools.read_file({ path });
@@ -63,14 +68,14 @@ class CodeModeToolProviderTest {
 
     @Test
     void aToolResultThatIsJsonComesBackAsAnObject() {
-        var provider = new CodeModeToolProvider(singleTool("stats", (request, memoryId) -> "{\"todos\": 2}"));
+        var provider = new CodeModeToolProvider(singleTool("stats", (request, memoryId) -> "{\"todos\": 2}"), SCRIPT_CAP);
 
         assertThat(runScript(provider, "const stats = await tools.stats({}); return stats.todos + 1;")).isEqualTo("3");
     }
 
     @Test
     void theExecuteWithContextPathRunsNestedToolsThroughExecuteWithContext() {
-        var runScript = new CodeModeToolProvider(fileTools()).provideTools(this.providerRequest)
+        var runScript = new CodeModeToolProvider(fileTools(), SCRIPT_CAP).provideTools(this.providerRequest)
                 .toolExecutorByName(RUN_SCRIPT_TOOL_NAME);
         var context = InvocationContext.builder().chatMemoryId("memory").build();
 
@@ -80,17 +85,22 @@ class CodeModeToolProviderTest {
     }
 
     @Test
-    void aScriptCountsAsOneToolCallPlusTheToolCallsInsideIt() {
-        var tracker = trackedCodeMode(10);
+    void aScriptCountsAsOneToolCallNoMatterHowManyToolsItCalls() {
+        var tracker = trackedCodeMode(3);
 
         var output = runScriptThrough(tracker, """
-                await tools.read_file({ path: "A.java" });
-                await tools.read_file({ path: "B.java" });
-                text("read two files");
+                for (const path of ["A.java", "B.java", "A.java", "B.java", "A.java"]) {
+                  await tools.read_file({ path });
+                }
+                text("read five files");
                 """);
 
-        assertThat(output).isEqualTo("read two files");
-        assertThat(tracker.getCallCount()).isEqualTo(3);
+        assertThat(output).isEqualTo("read five files");
+        assertThat(this.readPaths).hasSize(5);
+        assertThat(tracker.getCallCount()).isEqualTo(1);
+        assertThat(runScriptThrough(tracker, "return 2;")).isEqualTo("2");
+        assertThat(runScriptThrough(tracker, "return 3;")).isEqualTo("3");
+        assertThat(runScriptThrough(tracker, "return 4;")).startsWith("Error: Agent loop limit reached (3 tool calls)");
     }
 
     @Test
@@ -103,27 +113,74 @@ class CodeModeToolProviderTest {
     }
 
     @Test
-    void nestedCallsBeyondTheLoopLimitReturnTheLimitErrorToTheScript() {
-        var tracker = trackedCodeMode(2);
+    void nestedCallsBeyondThePerScriptLimitReturnTheLimitErrorToTheScript() {
+        var tracker = trackedCodeMode(10, 2);
 
         var output = runScriptThrough(tracker, """
-                await tools.read_file({ path: "A.java" });
-                text(await tools.read_file({ path: "B.java" }));
+                for (const path of ["B.java", "B.java", "B.java"]) {
+                  text(await tools.read_file({ path }));
+                }
                 """);
 
-        assertThat(output).contains("Agent loop limit reached");
-        assertThat(this.readPaths).containsExactly("A.java");
+        assertThat(output.lines().toList()).hasSize(3);
+        assertThat(output.lines().skip(2).findFirst().orElseThrow()).isEqualTo(
+                "Error: this script reached its limit of 2 tool calls. "
+                        + "Return what you have, or continue in another run_script call.");
+        assertThat(this.readPaths).hasSize(2);
+    }
+
+    @Test
+    void thePerScriptLimitResetsForEachRun() {
+        var tracker = trackedCodeMode(10, 2);
+        var script = """
+                text(await tools.read_file({ path: "A.java" }));
+                text(await tools.read_file({ path: "B.java" }));
+                """;
+
+        assertThat(runScriptThrough(tracker, script)).doesNotContain("Error:");
+        assertThat(runScriptThrough(tracker, script)).doesNotContain("Error:");
+    }
+
+    @Test
+    void nestedCallsStillShortCircuitAfterCancel() {
+        var secondRan = new AtomicBoolean();
+        var holder = new AtomicReference<AgentLoopTracker>();
+        var codeMode = new CodeModeToolProvider(request -> ToolProviderResult.builder()
+                .add(ToolSpecification.builder().name("cancel_it").description("Cancels.").build(),
+                        (ToolExecutor) (r, m) -> {
+                            holder.get().cancel();
+                            return "cancelled";
+                        })
+                .add(ToolSpecification.builder().name("second").description("Second.").build(),
+                        (ToolExecutor) (r, m) -> {
+                            secondRan.set(true);
+                            return "ran";
+                        })
+                .build(), SCRIPT_CAP);
+        var tracker = new AgentLoopTracker(codeMode, 10);
+        holder.set(tracker);
+        codeMode.trackNestedCallsWith(tracker);
+        tracker.registerChild(codeMode);
+
+        var output = runScriptThrough(tracker, """
+                await tools.cancel_it({});
+                text(await tools.second({}));
+                """);
+
+        assertThat(output).isEqualTo(AgentLoopTracker.CANCELLED_MESSAGE);
+        assertThat(secondRan).isFalse();
     }
 
     @Test
     void runScriptIsRefusedOnceTheLoopLimitIsReached() {
         var tracker = trackedCodeMode(2);
         runScriptThrough(tracker, "await tools.read_file({ path: 'A.java' });");
+        runScriptThrough(tracker, "await tools.read_file({ path: 'A.java' });");
 
         var output = runScriptThrough(tracker, "text(await tools.read_file({ path: 'B.java' }));");
 
         assertThat(output).startsWith("Error: Agent loop limit reached (2 tool calls)");
-        assertThat(this.readPaths).containsExactly("A.java");
+        assertThat(this.readPaths).containsExactly("A.java", "A.java");
     }
 
     @Test
@@ -138,7 +195,7 @@ class CodeModeToolProviderTest {
 
     @Test
     void anInfiniteLoopIsStoppedOnceTheScriptTimeBudgetIsUsed() {
-        var provider = new CodeModeToolProvider(fileTools(), Duration.ofMillis(300));
+        var provider = new CodeModeToolProvider(fileTools(), Duration.ofMillis(300), SCRIPT_CAP);
 
         assertThat(runScript(provider, "while (true) {}"))
                 .startsWith("Error: the script was stopped after");
@@ -149,7 +206,7 @@ class CodeModeToolProviderTest {
         var provider = new CodeModeToolProvider(singleTool("slow", (request, memoryId) -> {
             sleep(600);
             return "finished";
-        }), Duration.ofMillis(300));
+        }), Duration.ofMillis(300), SCRIPT_CAP);
 
         assertThat(runScript(provider, "return await tools.slow({});")).isEqualTo("finished");
     }
@@ -160,7 +217,7 @@ class CodeModeToolProviderTest {
         var provider = new CodeModeToolProvider(singleTool("started", (request, memoryId) -> {
             scriptStarted.countDown();
             return "ok";
-        }), Duration.ofMinutes(1));
+        }), Duration.ofMinutes(1), SCRIPT_CAP);
 
         var output = CompletableFuture.supplyAsync(
                 () -> runScript(provider, "await tools.started({}); while (true) {}"));
@@ -172,7 +229,7 @@ class CodeModeToolProviderTest {
 
     @Test
     void aRunCancelledBeforeItStartsNeverRunsTheScript() {
-        var run = new CodeModeScriptRun("while (true) {}", "[]", (toolName, argumentsJson) -> "ok", Duration.ofMinutes(1));
+        var run = new CodeModeScriptRun("while (true) {}", "[]", (toolName, argumentsJson) -> "ok", Duration.ofMinutes(1), SCRIPT_CAP);
         run.cancel();
 
         assertThat(run.run()).isEqualTo(AgentLoopTracker.CANCELLED_MESSAGE);
@@ -180,7 +237,7 @@ class CodeModeToolProviderTest {
 
     @Test
     void aScriptThatUsesTooMuchMemoryFailsWithoutCrashing() {
-        var output = runScript(new CodeModeToolProvider(fileTools()),
+        var output = runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP),
                 "const chunks = []; while (true) chunks.push(new Array(1e5).fill(Math.random()));");
 
         assertThat(output).startsWith("Error:").containsIgnoringCase("out of memory");
@@ -188,44 +245,44 @@ class CodeModeToolProviderTest {
 
     @Test
     void aToolThatReturnsNullGivesTheScriptAnEmptyString() {
-        var provider = new CodeModeToolProvider(singleTool("nothing", (request, memoryId) -> null));
+        var provider = new CodeModeToolProvider(singleTool("nothing", (request, memoryId) -> null), SCRIPT_CAP);
 
         assertThat(runScript(provider, "return JSON.stringify(await tools.nothing({}));")).isEqualTo("\"\"");
     }
 
     @Test
     void aScriptAwaitingAPromiseThatNeverSettlesIsReported() {
-        assertThat(runScript(new CodeModeToolProvider(fileTools()), "await new Promise(() => {});"))
+        assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "await new Promise(() => {});"))
                 .isEqualTo("Error: the script never finished: it awaited a promise that never settles.");
     }
 
     @Test
     void aSyntaxErrorIsReportedAsAnError() {
-        assertThat(runScript(new CodeModeToolProvider(fileTools()), "const = ;"))
+        assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "const = ;"))
                 .startsWith("Error: the script could not run");
     }
 
     @Test
     void aThrownErrorIsReportedWithItsMessageAndKeepsEarlierOutput() {
-        assertThat(runScript(new CodeModeToolProvider(fileTools()), "text('before'); throw new Error('boom');"))
+        assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "text('before'); throw new Error('boom');"))
                 .startsWith("before\nError: the script threw Error: boom");
     }
 
     @Test
     void callingAnUnknownToolReturnsAnErrorStringToTheScript() {
-        assertThat(runScript(new CodeModeToolProvider(fileTools()), "return await tools.delete_everything({});"))
+        assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "return await tools.delete_everything({});"))
                 .isEqualTo("Error: unknown tool 'delete_everything'. Check ALL_TOOLS for the callable tool names.");
     }
 
     @Test
     void aScriptWithoutOutputExplainsHowToReturnValues() {
-        assertThat(runScript(new CodeModeToolProvider(fileTools()), "await tools.list_files({});"))
+        assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "await tools.list_files({});"))
                 .startsWith("The script finished without output.");
     }
 
     @Test
     void outputLongerThanTheLimitIsTruncated() {
-        var output = runScript(new CodeModeToolProvider(fileTools()), "return 'x'.repeat(50000);");
+        var output = runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "return 'x'.repeat(50000);");
 
         assertThat(output).hasSizeLessThan(CodeModeScriptRun.MAX_OUTPUT_LENGTH + 100)
                 .endsWith("(output truncated at 20000 characters; print less)");
@@ -233,7 +290,7 @@ class CodeModeToolProviderTest {
 
     @Test
     void aMissingCodeArgumentIsRejected() {
-        var runScript = new CodeModeToolProvider(fileTools()).provideTools(this.providerRequest)
+        var runScript = new CodeModeToolProvider(fileTools(), SCRIPT_CAP).provideTools(this.providerRequest)
                 .toolExecutorByName(RUN_SCRIPT_TOOL_NAME);
 
         assertThat(runScript.execute(ToolExecutionRequest.builder().name(RUN_SCRIPT_TOOL_NAME).arguments("{}").build(), null))
@@ -242,14 +299,14 @@ class CodeModeToolProviderTest {
 
     @Test
     void theScriptHasNoNodeFileSystemOrNetworkGlobals() {
-        assertThat(runScript(new CodeModeToolProvider(fileTools()),
+        assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP),
                 "return [typeof require, typeof process, typeof fetch, typeof XMLHttpRequest, typeof setTimeout].join(',');"))
                 .isEqualTo("undefined,undefined,undefined,undefined,undefined");
     }
 
     @Test
     void consoleLogIsCapturedLikeText() {
-        assertThat(runScript(new CodeModeToolProvider(fileTools()), "console.log('files:', 3, { ok: true });"))
+        assertThat(runScript(new CodeModeToolProvider(fileTools(), SCRIPT_CAP), "console.log('files:', 3, { ok: true });"))
                 .isEqualTo("files: 3 {\n  \"ok\": true\n}");
     }
 
@@ -260,7 +317,11 @@ class CodeModeToolProviderTest {
     }
 
     private AgentLoopTracker trackedCodeMode(int maxToolCalls) {
-        var codeMode = new CodeModeToolProvider(fileTools());
+        return trackedCodeMode(maxToolCalls, SCRIPT_CAP);
+    }
+
+    private AgentLoopTracker trackedCodeMode(int maxToolCalls, int maxScriptToolCalls) {
+        var codeMode = new CodeModeToolProvider(fileTools(), maxScriptToolCalls);
         var tracker = new AgentLoopTracker(codeMode, maxToolCalls);
         codeMode.trackNestedCallsWith(tracker);
         tracker.registerChild(codeMode);

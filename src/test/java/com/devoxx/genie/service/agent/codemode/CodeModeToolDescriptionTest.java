@@ -69,8 +69,17 @@ class CodeModeToolDescriptionTest {
     void renderStatesTheScriptTimeBudgetAndListsTheCallableTools() {
         var tools = List.of(ToolSpecification.builder().name("list_files").description("List files.").build());
 
-        assertThat(CodeModeToolDescription.render(tools, 30))
+        assertThat(CodeModeToolDescription.render(tools, 30, 100))
                 .contains("stopped after 30 seconds")
                 .endsWith("Callable tools:\ntools.list_files(args: {}) - List files.");
+    }
+
+    @Test
+    void theDescriptionStatesThePerScriptLimit() {
+        var tools = List.of(ToolSpecification.builder().name("list_files").description("List files.").build());
+
+        assertThat(CodeModeToolDescription.render(tools, 30, 100))
+                .contains("run_script itself counts as one tool call; the tool calls inside one script are limited to 100.")
+                .doesNotContain("counts toward the tool call limit");
     }
 }

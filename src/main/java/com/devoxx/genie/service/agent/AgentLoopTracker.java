@@ -80,6 +80,10 @@ public class AgentLoopTracker implements ToolProvider {
     }
 
     public @NotNull ToolExecutor tracked(@NotNull ToolExecutor original) {
+        return wrap(original, true);
+    }
+
+    private @NotNull ToolExecutor wrap(@NotNull ToolExecutor original, boolean countsTowardLimit) {
         // Override executeWithContext (not just the legacy execute) so the new
         // langchain4j tool contract is honoured. Some executors — notably the
         // langchain4j-skills tools backing activate_skill — implement
@@ -90,7 +94,7 @@ public class AgentLoopTracker implements ToolProvider {
         return new ToolExecutor() {
             @Override
             public String execute(ToolExecutionRequest toolRequest, Object memoryId) {
-                return track(toolRequest,
+                return track(toolRequest, countsTowardLimit,
                         () -> original.execute(toolRequest, memoryId));
             }
 
@@ -98,7 +102,7 @@ public class AgentLoopTracker implements ToolProvider {
             public ToolExecutionResult executeWithContext(ToolExecutionRequest toolRequest, InvocationContext context) {
                 // Short-circuit results (cancel / loop-limit) are returned as plain text.
                 ToolExecutionResult[] delegated = new ToolExecutionResult[1];
-                String text = track(toolRequest, () -> {
+                String text = track(toolRequest, countsTowardLimit, () -> {
                     ToolExecutionResult result = original.executeWithContext(toolRequest, context);
                     delegated[0] = result;
                     return resultText(result);
@@ -115,23 +119,33 @@ public class AgentLoopTracker implements ToolProvider {
     }
 
     /**
+     * Like {@link #tracked} for tool calls made inside a {@code run_script} script: they honour
+     * cancellation and are logged, but do not count toward the loop limit (the script has its own cap).
+     */
+    public @NotNull ToolExecutor trackedNested(@NotNull ToolExecutor original) {
+        return wrap(original, false);
+    }
+
+    /**
      * Shared tracking logic for both the legacy {@link ToolExecutor#execute} and the
      * new {@link ToolExecutor#executeWithContext} paths. Enforces cancellation and the
      * loop limit, publishes debug events and converts thrown exceptions into an error
      * string so the LLM can wrap up gracefully.
      *
      * @param toolRequest the incoming tool request (for name/arguments)
+     * @param countsTowardLimit whether this call increments and is checked against the loop limit
      * @param invoker     performs the actual delegated execution and returns its text result
      * @return the tool result text, or a short-circuit / error message
      */
-    private String track(@NotNull ToolExecutionRequest toolRequest, @NotNull ToolInvoker invoker) {
+    private String track(@NotNull ToolExecutionRequest toolRequest, boolean countsTowardLimit,
+                         @NotNull ToolInvoker invoker) {
         if (cancelled.get()) {
             log.debug("Tool call '{}' skipped — agent cancelled", toolRequest.name());
             return CANCELLED_MESSAGE;
         }
 
-        int count = callCount.incrementAndGet();
-        if (count > maxToolCalls) {
+        int count = countsTowardLimit ? callCount.incrementAndGet() : callCount.get();
+        if (countsTowardLimit && count > maxToolCalls) {
             String errorMsg = loopLimitMessage();
             publishLogEvent(AgentType.LOOP_LIMIT, toolRequest.name(), toolRequest.arguments(), errorMsg, count);
             return errorMsg;

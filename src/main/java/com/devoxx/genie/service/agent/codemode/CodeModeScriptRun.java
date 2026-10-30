@@ -90,6 +90,10 @@ final class CodeModeScriptRun {
 
     private final Duration scriptTimeBudget;
 
+    private final int maxToolCalls;
+
+    private int toolCallCount;
+
     private final AtomicReference<StopReason> stopReason = new AtomicReference<>();
 
     private final AtomicReference<String> output = new AtomicReference<>();
@@ -109,11 +113,13 @@ final class CodeModeScriptRun {
     CodeModeScriptRun(@NotNull String code,
                       @NotNull String toolCatalogJson,
                       @NotNull NestedToolCaller nestedToolCaller,
-                      @NotNull Duration scriptTimeBudget) {
+                      @NotNull Duration scriptTimeBudget,
+                      int maxToolCalls) {
         this.code = Objects.requireNonNull(code, "The script code can not be null");
         this.toolCatalogJson = Objects.requireNonNull(toolCatalogJson, "The tool catalog can not be null");
         this.nestedToolCaller = Objects.requireNonNull(nestedToolCaller, "The nested tool caller can not be null");
         this.scriptTimeBudget = Objects.requireNonNull(scriptTimeBudget, "The script time budget can not be null");
+        this.maxToolCalls = maxToolCalls;
     }
 
     @NotNull String run() {
@@ -196,6 +202,10 @@ final class CodeModeScriptRun {
         try {
             if (this.stopReason.get() != null) {
                 return stoppedMessage();
+            }
+            if (++this.toolCallCount > this.maxToolCalls) {
+                return "Error: this script reached its limit of " + this.maxToolCalls
+                        + " tool calls. Return what you have, or continue in another run_script call.";
             }
             var result = this.nestedToolCaller.call(String.valueOf(toolName),
                     Objects.requireNonNullElse(argumentsJson, "{}"));

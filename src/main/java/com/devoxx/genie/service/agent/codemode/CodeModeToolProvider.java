@@ -38,22 +38,25 @@ public class CodeModeToolProvider implements ToolProvider, AgentLoopTracker.Canc
 
     private final Duration scriptTimeBudget;
 
+    private final int maxScriptToolCalls;
+
     private final Set<CodeModeScriptRun> activeRuns = ConcurrentHashMap.newKeySet();
 
     private volatile UnaryOperator<ToolExecutor> nestedCallTracking = UnaryOperator.identity();
 
-    public CodeModeToolProvider(@NotNull ToolProvider delegate) {
-        this(delegate, DEFAULT_SCRIPT_TIME_BUDGET);
+    public CodeModeToolProvider(@NotNull ToolProvider delegate, int maxScriptToolCalls) {
+        this(delegate, DEFAULT_SCRIPT_TIME_BUDGET, maxScriptToolCalls);
     }
 
-    CodeModeToolProvider(@NotNull ToolProvider delegate, @NotNull Duration scriptTimeBudget) {
+    CodeModeToolProvider(@NotNull ToolProvider delegate, @NotNull Duration scriptTimeBudget, int maxScriptToolCalls) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate tool provider can not be null");
         this.scriptTimeBudget = Objects.requireNonNull(scriptTimeBudget, "The script time budget can not be null");
+        this.maxScriptToolCalls = maxScriptToolCalls;
     }
 
     public void trackNestedCallsWith(@NotNull AgentLoopTracker tracker) {
         Objects.requireNonNull(tracker, "The tracker can not be null");
-        this.nestedCallTracking = tracker::tracked;
+        this.nestedCallTracking = tracker::trackedNested;
     }
 
     @Override
@@ -89,7 +92,7 @@ public class CodeModeToolProvider implements ToolProvider, AgentLoopTracker.Canc
         return ToolSpecification.builder()
                 .name(RUN_SCRIPT_TOOL_NAME)
                 .description(CodeModeToolDescription.render(specificationsOf(callableTools),
-                        this.scriptTimeBudget.toSeconds()))
+                        this.scriptTimeBudget.toSeconds(), this.maxScriptToolCalls))
                 .parameters(JsonObjectSchema.builder()
                         .addStringProperty(CODE_ARGUMENT,
                                 "JavaScript source: the body of an async function. "
@@ -114,7 +117,8 @@ public class CodeModeToolProvider implements ToolProvider, AgentLoopTracker.Canc
                 code,
                 CodeModeToolDescription.catalogJsonOf(specificationsOf(callableTools)),
                 (toolName, argumentsJson) -> callNestedTool(toolName, argumentsJson, callableTools, invocation),
-                this.scriptTimeBudget);
+                this.scriptTimeBudget,
+                this.maxScriptToolCalls);
         this.activeRuns.add(run);
         try {
             return run.run();

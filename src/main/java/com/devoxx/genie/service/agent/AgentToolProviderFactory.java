@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent;
 
+import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.service.agent.codemode.CodeModeToolProvider;
 import com.devoxx.genie.service.agent.tool.BuiltInToolProvider;
 import com.devoxx.genie.service.agent.tool.CompositeToolProvider;
@@ -100,10 +101,7 @@ public class AgentToolProviderFactory {
         ToolProvider approvedProvider = new AgentApprovalProvider(
                 compositeProvider, project, autoApproveReadOnly);
 
-        // run_script is opt-in (issue #1352) while it is tested across models and machines
-        CodeModeToolProvider codeModeProvider = Boolean.TRUE.equals(settings.getCodeModeEnabled())
-                ? new CodeModeToolProvider(approvedProvider)
-                : null;
+        CodeModeToolProvider codeModeProvider = new CodeModeToolProvider(approvedProvider, Constant.AGENT_MAX_SCRIPT_TOOL_CALLS);
 
         // Wrap with loop tracker
         int maxToolCalls = settings.getAgentMaxToolCalls() != null

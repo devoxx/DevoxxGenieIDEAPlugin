@@ -43,7 +43,8 @@ final class CodeModeToolDescription {
             - Tool calls run one at a time, so Promise.all does not make them faster.
             - A tool returns a string, or a parsed object when its result is JSON. A failed call returns a \
             string starting with "Error:" instead of throwing.
-            - Every call still goes through the user's approval rules and counts toward the tool call limit.
+            - Every call still goes through the user's approval rules. run_script itself counts as one tool call; \
+            the tool calls inside one script are limited to %d.
             - Only values passed to `text(value)` or `console.log(...)`, or returned from the script, are shown to you. \
             Print the filtered result, not raw tool output.
             - `ALL_TOOLS` lists every callable tool as { name, description }.
@@ -56,11 +57,12 @@ final class CodeModeToolDescription {
     private CodeModeToolDescription() {
     }
 
-    static @NotNull String render(@NotNull List<ToolSpecification> tools, long scriptTimeBudgetSeconds) {
+    static @NotNull String render(@NotNull List<ToolSpecification> tools, long scriptTimeBudgetSeconds,
+                                int maxScriptToolCalls) {
         var signatures = tools.stream()
                 .map(CodeModeToolDescription::signatureOf)
                 .collect(Collectors.joining("\n"));
-        return INTRODUCTION.formatted(scriptTimeBudgetSeconds) + signatures;
+        return INTRODUCTION.formatted(maxScriptToolCalls, scriptTimeBudgetSeconds) + signatures;
     }
 
     static @NotNull String catalogJsonOf(@NotNull List<ToolSpecification> tools) {
