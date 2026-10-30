@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.15.1 - 2026-10-30
+
+A bug-fix release: the editor selection reaches the LLM on the prompt it was made for, and the agent's `run_command` tool can no longer hang on commands that never exit or wait for input.
+
+### Fixed
+- fix(context): **the editor selection is sent on the same turn, and user-attached files no longer vanish**. The selection was attached *after* the attached-file list was collected, so it arrived one prompt late or not at all. It is now attached first. An explicit selection is always sent; *Include currently open file* now only governs whole files. A file with a selection is sent as the full file (marked *for reference only*) followed by a `<SelectedCode lines="X-Y">` block, with a note that "this code / this method" refers to the selection. Auto-attached files are sent in full only up to 8,000 characters or when the setting is on; otherwise the LLM gets the path to read more. Files you attach yourself are always sent in full. Since #942, every prompt also cleared all non-image attachments; now only the previously auto-attached editor file is replaced. *Add snippet* uses the same format (#1320, #1361)
+- fix(agent): **`run_command` timeouts fire for long-running and interactive commands**. Output was read until the stream closed and only then was the timeout checked, so commands that don't exit (`npm run dev`, `./gradlew bootRun`, `cmd &`) or that wait for input hung the agent forever. Output is now read on a background thread so the timeout runs while the command is alive; stdin comes from the null device, so commands reading input get end-of-input instead of waiting; child processes are killed on timeout as well as the shell; and if a background child keeps the output open after the shell exits, the output read so far is returned after a 1 s grace period (#1317, #1318)
+
+### Dependencies
+- chore(deps): upgrade AWS SDK BOM 2.57.3 → 2.57.4 and logback-classic 1.6.5 → 1.6.6 (#1360)
+
+### Documentation
+- docs(blog): announce DevoxxGenie 1.15.0 (#1358)
+
+### Contributors
+- @stephanj
+- @omarmahamid
+
 ## v1.15.0 - 2026-10-28
 
 A community release: most of this version came from contributors outside the core team, including two features a Codex agent wrote live on stage during the Devoxx Belgium 2026 opening keynote. The headlines are **favorite models**, **per-project Scan & Copy settings**, a **`fetch_page` that returns real Markdown**, **Claude 5 model support**, and the move to the **langchain4j 1.20+ MCP client**.

@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+                <h2>v1.15.1</h2>
+        <UL>
+                    <LI>fix(context): the <b>editor selection is sent on the same turn</b> and framed as the focus; user-attached files no longer disappear after each prompt (#1361)</LI>
+                    <LI>fix(agent): <b>run_command timeouts now fire</b> for long-running and interactive commands, and child processes are killed on timeout (#1318)</LI>
+                </UL>
                 <h2>v1.15.0</h2>
         <UL>
                     <LI>feat(chat): <b>favorite models</b>: star a model to add it to a Favorites entry that spans every provider; provider/model dropdowns hide while they hold a single entry (#1327)</LI>
