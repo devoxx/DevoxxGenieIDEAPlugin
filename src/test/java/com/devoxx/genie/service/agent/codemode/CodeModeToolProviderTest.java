@@ -371,4 +371,9 @@ class CodeModeToolProviderTest {
             Thread.currentThread().interrupt();
         }
     }
+
+    @Test
+    void warmUpRunsWithoutTools() {
+        CodeModeToolProvider.warmUp();
+    }
 }

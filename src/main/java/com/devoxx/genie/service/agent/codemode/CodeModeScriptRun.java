@@ -122,6 +122,14 @@ final class CodeModeScriptRun {
         this.maxToolCalls = maxToolCalls;
     }
 
+    /**
+     * Builds one engine and runs a no-op script, so the WebAssembly runtime is loaded
+     * before the first real {@code run_script} call.
+     */
+    static void warmUp() {
+        new CodeModeScriptRun("", "[]", (toolName, argumentsJson) -> "", Duration.ofSeconds(30), 1).run();
+    }
+
     @NotNull String run() {
         if (this.stopReason.get() != null) {
             return stoppedMessage();

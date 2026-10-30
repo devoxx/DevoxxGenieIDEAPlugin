@@ -54,6 +54,11 @@ public class CodeModeToolProvider implements ToolProvider, AgentLoopTracker.Canc
         this.maxScriptToolCalls = maxScriptToolCalls;
     }
 
+    /** Loads the JavaScript runtime ahead of the first {@code run_script} call. */
+    public static void warmUp() {
+        CodeModeScriptRun.warmUp();
+    }
+
     public void trackNestedCallsWith(@NotNull AgentLoopTracker tracker) {
         Objects.requireNonNull(tracker, "The tracker can not be null");
         this.nestedCallTracking = tracker::trackedNested;
