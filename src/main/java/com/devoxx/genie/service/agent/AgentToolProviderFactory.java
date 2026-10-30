@@ -140,7 +140,13 @@ public class AgentToolProviderFactory {
      */
     static void warmUpOnce(@NotNull Runnable warmUp) {
         if (WARM_UP_SUBMITTED.compareAndSet(false, true)) {
-            ApplicationManager.getApplication().executeOnPooledThread(() -> runWarmUpSafely(warmUp));
+            try {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> runWarmUpSafely(warmUp));
+            } catch (Throwable e) {
+                // Never fatal for building the provider chain; allow a later prompt to retry.
+                WARM_UP_SUBMITTED.set(false);
+                log.debug("Could not submit code mode warm-up", e);
+            }
         }
     }
 

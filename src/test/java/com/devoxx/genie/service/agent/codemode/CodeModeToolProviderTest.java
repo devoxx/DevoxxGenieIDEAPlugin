@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.devoxx.genie.service.agent.codemode.CodeModeToolProvider.RUN_SCRIPT_TOOL_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 
 class CodeModeToolProviderTest {
@@ -374,6 +375,6 @@ class CodeModeToolProviderTest {
 
     @Test
     void warmUpRunsWithoutTools() {
-        CodeModeToolProvider.warmUp();
+        assertThatCode(CodeModeToolProvider::warmUp).doesNotThrowAnyException();
     }
 }

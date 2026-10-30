@@ -125,9 +125,15 @@ final class CodeModeScriptRun {
     /**
      * Builds one engine and runs a no-op script, so the WebAssembly runtime is loaded
      * before the first real {@code run_script} call.
+     *
+     * @throws IllegalStateException when the runtime could not run the script ({@link #run()} reports
+     *                               failures as an "Error:" result instead of throwing)
      */
     static void warmUp() {
-        new CodeModeScriptRun("", "[]", (toolName, argumentsJson) -> "", Duration.ofSeconds(30), 1).run();
+        String result = new CodeModeScriptRun("", "[]", (toolName, argumentsJson) -> "", Duration.ofSeconds(30), 1).run();
+        if (result.startsWith("Error:")) {
+            throw new IllegalStateException("Code mode warm-up failed: " + result);
+        }
     }
 
     @NotNull String run() {
