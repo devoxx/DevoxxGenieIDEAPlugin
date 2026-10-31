@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.agent;
 
 import com.devoxx.genie.model.mcp.MCPSettings;
+import com.devoxx.genie.service.agent.codemode.CodeModeToolProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -83,6 +84,42 @@ class AgentToolProviderFactoryTest {
 
             ToolProvider result = AgentToolProviderFactory.createToolProvider(project);
             assertThat(result).isNotNull();
+        }
+    }
+
+    @Test
+    void createToolProvider_codeModeNotOptedIn_leavesRunScriptOut() {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+
+            when(stateService.getAgentModeEnabled()).thenReturn(true);
+            when(stateService.getCodeModeEnabled()).thenReturn(null);
+            when(stateService.getMcpEnabled()).thenReturn(false);
+            when(stateService.getMcpSettings()).thenReturn(new MCPSettings());
+
+            ToolProvider result = AgentToolProviderFactory.createToolProvider(project);
+
+            assertThat(result).extracting("delegate").isInstanceOf(AgentApprovalProvider.class);
+        }
+    }
+
+    @Test
+    void createToolProvider_codeModeOptedIn_addsRunScript() {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+
+            when(stateService.getAgentModeEnabled()).thenReturn(true);
+            when(stateService.getCodeModeEnabled()).thenReturn(true);
+            when(stateService.getMcpEnabled()).thenReturn(false);
+            when(stateService.getMcpSettings()).thenReturn(new MCPSettings());
+
+            ToolProvider result = AgentToolProviderFactory.createToolProvider(project);
+
+            assertThat(result).extracting("delegate").isInstanceOf(CodeModeToolProvider.class);
         }
     }
 }

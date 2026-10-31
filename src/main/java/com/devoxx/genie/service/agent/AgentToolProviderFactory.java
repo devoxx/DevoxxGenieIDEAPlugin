@@ -100,16 +100,22 @@ public class AgentToolProviderFactory {
         ToolProvider approvedProvider = new AgentApprovalProvider(
                 compositeProvider, project, autoApproveReadOnly);
 
-        CodeModeToolProvider codeModeProvider = new CodeModeToolProvider(approvedProvider);
+        // run_script is opt-in (issue #1352) while it is tested across models and machines
+        CodeModeToolProvider codeModeProvider = Boolean.TRUE.equals(settings.getCodeModeEnabled())
+                ? new CodeModeToolProvider(approvedProvider)
+                : null;
 
         // Wrap with loop tracker
         int maxToolCalls = settings.getAgentMaxToolCalls() != null
                 ? settings.getAgentMaxToolCalls()
                 : 25;
 
-        AgentLoopTracker tracker = new AgentLoopTracker(codeModeProvider, maxToolCalls, project);
-        codeModeProvider.trackNestedCallsWith(tracker);
-        tracker.registerChild(codeModeProvider);
+        AgentLoopTracker tracker = new AgentLoopTracker(
+                codeModeProvider != null ? codeModeProvider : approvedProvider, maxToolCalls, project);
+        if (codeModeProvider != null) {
+            codeModeProvider.trackNestedCallsWith(tracker);
+            tracker.registerChild(codeModeProvider);
+        }
 
         // Register the parallel explore executor as a cancellable child so user cancellation
         // propagates to any running sub-agents

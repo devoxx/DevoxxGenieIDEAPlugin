@@ -458,6 +458,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // PSI (Program Structure Interface) tools
     private Boolean psiToolsEnabled = true;
 
+    /**
+     * Whether agent mode offers the run_script tool, which runs a JavaScript snippet that
+     * batches tool calls in one step (issue #1352). Opt-in while it is tested across models
+     * and machines.
+     */
+    private Boolean codeModeEnabled = false;
+
     // Parallel exploration (sub-agent) settings
     private Boolean parallelExploreEnabled = true;
     private Integer subAgentMaxToolCalls = SUB_AGENT_MAX_TOOL_CALLS;
