@@ -230,6 +230,105 @@ public class LocalChatModelFactoryTest extends BasePlatformTestCase {
         assertTrue(testFactory.providerChecked);
     }
 
+    /**
+     * The model-listing call (fetchModels) is the authoritative "provider is running" signal.
+     * When it succeeds but every per-model build fails (e.g. Ollama's /api/show context lookup
+     * errors for all models), the provider must still be reported as running so the UI does not
+     * hide the model list and show a misleading "provider is not running" notification.
+     */
+    @Test
+    public void testGetModelsProviderRunningWhenAllModelBuildsFail() {
+        TestLocalChatModelFactory allFailFactory = new TestLocalChatModelFactory(false) {
+            @Override
+            protected LanguageModel buildLanguageModel(Object model) throws IOException {
+                throw new IOException("context lookup failed for " + model);
+            }
+        };
+
+        List<LanguageModel> result = allFailFactory.getModels();
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        // fetchModels() succeeded, so the provider IS running even though no model details loaded.
+        assertTrue(allFailFactory.providerRunning);
+        assertTrue(allFailFactory.providerChecked);
+    }
+
+    /**
+     * A provider that was down on the last probe (e.g. Ollama not started yet) must be
+     * re-probed once the re-check interval has elapsed, instead of staying stuck on the
+     * stale "not running" state for the whole IDE session.
+     */
+    @Test
+    public void testGetModelsRechecksProviderThatWasPreviouslyDown() throws Exception {
+        FlakyFactory flaky = new FlakyFactory();
+
+        // First probe: provider is down.
+        List<LanguageModel> first = flaky.getModels();
+        assertTrue(first.isEmpty());
+        assertFalse(flaky.providerRunning);
+
+        // Within the re-check interval the stale "not running" state is kept (no re-probe).
+        List<LanguageModel> second = flaky.getModels();
+        assertTrue(second.isEmpty());
+        assertFalse(flaky.providerRunning);
+
+        // The provider has since been started and the re-check interval has elapsed.
+        flaky.down = false;
+        Field lastCheck = LocalChatModelFactory.class.getDeclaredField("lastNotRunningCheck");
+        lastCheck.setAccessible(true);
+        lastCheck.setLong(flaky, System.currentTimeMillis() - 20_000L);
+
+        List<LanguageModel> third = flaky.getModels();
+        assertEquals(2, third.size()); // model2 still fails to build
+        assertTrue(flaky.providerRunning);
+    }
+
+    /**
+     * A per-model build that throws a RuntimeException (e.g. the NPE Ollama's /api/show
+     * empty-body response used to cause) must not abort the whole fetch: the other models
+     * are still listed and the provider is still reported as running.
+     */
+    @Test
+    public void testGetModelsSurvivesRuntimeExceptionInModelBuild() {
+        TestLocalChatModelFactory npeFactory = new TestLocalChatModelFactory(false) {
+            @Override
+            protected LanguageModel buildLanguageModel(Object model) throws IOException {
+                if (model.equals("model1")) {
+                    throw new NullPointerException("simulated /api/show empty body");
+                }
+                return super.buildLanguageModel(model);
+            }
+        };
+
+        List<LanguageModel> result = npeFactory.getModels();
+
+        // model1 (NPE) and model2 (IOException) are dropped, model3 survives.
+        assertEquals(1, result.size());
+        assertEquals("model3", result.get(0).getModelName());
+        assertTrue(npeFactory.providerRunning);
+        assertTrue(npeFactory.providerChecked);
+    }
+
+    /**
+     * A factory whose listing endpoint is down until {@code down} is cleared.
+     */
+    private static class FlakyFactory extends TestLocalChatModelFactory {
+        private volatile boolean down = true;
+
+        FlakyFactory() {
+            super(false);
+        }
+
+        @Override
+        protected Object[] fetchModels() throws IOException {
+            if (down) {
+                throw new IOException("connection refused");
+            }
+            return super.fetchModels();
+        }
+    }
+
     @Test
     public void testGetModelsWithNotificationWhenProviderNotRunning() {
         // Set up a factory in non-running state

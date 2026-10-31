@@ -1,5 +1,62 @@
 # Changelog
 
+## v1.15.1 - 2026-10-30
+
+A bug-fix release: the editor selection reaches the LLM on the prompt it was made for, and the agent's `run_command` tool can no longer hang on commands that never exit or wait for input.
+
+### Fixed
+- fix(context): **the editor selection is sent on the same turn, and user-attached files no longer vanish**. The selection was attached *after* the attached-file list was collected, so it arrived one prompt late or not at all. It is now attached first. An explicit selection is always sent; *Include currently open file* now only governs whole files. A file with a selection is sent as the full file (marked *for reference only*) followed by a `<SelectedCode lines="X-Y">` block, with a note that "this code / this method" refers to the selection. Auto-attached files are sent in full only up to 8,000 characters or when the setting is on; otherwise the LLM gets the path to read more. Files you attach yourself are always sent in full. Since #942, every prompt also cleared all non-image attachments; now only the previously auto-attached editor file is replaced. *Add snippet* uses the same format (#1320, #1361)
+- fix(agent): **`run_command` timeouts fire for long-running and interactive commands**. Output was read until the stream closed and only then was the timeout checked, so commands that don't exit (`npm run dev`, `./gradlew bootRun`, `cmd &`) or that wait for input hung the agent forever. Output is now read on a background thread so the timeout runs while the command is alive; stdin comes from the null device, so commands reading input get end-of-input instead of waiting; child processes are killed on timeout as well as the shell; and if a background child keeps the output open after the shell exits, the output read so far is returned after a 1 s grace period (#1317, #1318)
+
+### Dependencies
+- chore(deps): upgrade AWS SDK BOM 2.57.3 → 2.57.4 and logback-classic 1.6.5 → 1.6.6 (#1360)
+
+### Documentation
+- docs(blog): announce DevoxxGenie 1.15.0 (#1358)
+
+### Contributors
+- @stephanj
+- @omarmahamid
+
+## v1.15.0 - 2026-10-28
+
+A community release: most of this version came from contributors outside the core team, including two features a Codex agent wrote live on stage during the Devoxx Belgium 2026 opening keynote. The headlines are **favorite models**, **per-project Scan & Copy settings**, a **`fetch_page` that returns real Markdown**, **Claude 5 model support**, and the move to the **langchain4j 1.20+ MCP client**.
+
+### Added
+- feat(chat): **favorite models and less dropdown clutter**. A star next to the model dropdown marks the selected model as a favorite, and a new *Favorites* entry lists the favorites from every provider and switches to the one you choose. Availability is checked in the background, and a favorite whose provider no longer offers that model stays visible but disabled. Favorites are stored as provider + model-name pairs, survive a restart, and can be removed from the LLM settings page (with Apply/Reset). The provider and model dropdowns are also hidden while they hold only one entry and reappear when there is a choice. Written live by a Codex agent during the Devoxx Belgium 2026 keynote (#1077, #1322, #1327)
+- feat(settings): **Scan & Copy settings per project**. Included file extensions, excluded folders and files, `.gitignore` handling and the RAG directory exclusions used to be shared by every project. They are now stored per project in the project's workspace file. A project without its own settings starts from a copy of the current global values, so nothing changes until you edit a project. The settings page names the project it edits, and project scanning, *Copy project*, *Add project to prompt*, the token count and RAG indexing all use the settings of the project they run in. Scanner state is now kept per operation, and project-less scanners read the global settings on every call instead of a snapshot taken at construction. Also written live during the keynote (#287, #1329)
+- feat(agent): **`fetch_page` returns Markdown and limits what it fetches**. It used to return `Jsoup.parse(body).text()`, which flattened a Docusaurus page into a single line, dropped line breaks from code samples, turned tables into a run of words and lost every link URL. HTML is now converted to Markdown (`HtmlToMarkdown`): headings, fenced code blocks with their language, tables, lists and absolute links are kept, while scripts, styles, `nav`/`aside`/`footer` and hidden elements are dropped, and `main` is used when the page has one. Text, JSON, XML and JS pass through using the declared charset, and binary content is described rather than decoded. The fetch is also bounded: a 10 MB / 60 s cap; same-host redirects only (a cross-host redirect is handed back to the model as a new URL); URLs that are too long, contain credentials, have dot-less hosts, or resolve to loopback/link-local addresses (e.g. `169.254.169.254`) are rejected; and pages are cached for 15 minutes (#1338, #1339)
+- feat(models): **Claude 5 family**: Claude Fable 5.1, Opus 5.5, Opus 5, Sonnet 5 and Sonnet 5.5 added to `models.json` for both Anthropic and Bedrock. The Anthropic provider no longer sends `temperature` to Claude models that reject it, using a new shared `ClaudeModels` rule that Bedrock also uses (#1309, #1310, #1312, #1313)
+
+### Fixed
+- fix(agent): **the user's task is no longer evicted from memory during a long tool loop**. `MessageWindowChatMemory` evicts the oldest non-system message first, and every tool call adds two messages, so a long agent run could push the original prompt out of the window and keep calling the LLM without it. Sub-agents hit this after only 5 tool calls. A new `TaskPreservingMessageWindowChatMemory` evicts the oldest *finished* tool call and its results instead while the loop is still running, then returns to normal eviction once the final answer arrives. It is used by both `ChatMemoryService` and `SubAgentRunner` (#1307, #1308)
+- fix(ollama): **Ollama models show up even when the `/api/show` probe fails**. Three bugs combined to leave the model list empty and report "LLM provider is not running" while `/api/tags` was succeeding. First, "provider running" depended on at least one per-model context probe succeeding. Second, a single model answering `/api/show` with HTTP 200 and an empty body (e.g. `gemma3n:e4b`) threw an NPE that aborted the whole fetch. Third, the probe used the shared retrying HTTP client, so it could take around 90 s per model. Now a successful listing call is enough to mark the provider as running, a failed probe falls back to a 4096-token context, and per-model failures skip only that model. The probe uses a fail-fast client (3 s connect / 5 s read, no retries), and a provider previously found down is re-probed after 15 s instead of staying "not running" for the rest of the session (#1331, #1324)
+- fix(bedrock): **Bearer Token auth works, and Claude Opus 4.7+ no longer returns HTTP 400**. In `BEARER_TOKEN` mode the AWS SDK still picked SigV4, because it comes first in Bedrock's auth-scheme list, and failed with *"Unable to load credentials from any of the providers in the chain"*. `httpBearerAuth` is now forced on the runtime, async-runtime and control-plane clients. Separately, `temperature` is no longer sent to Opus 4.7/4.8, Opus 5/5.5, Sonnet 5, Fable and Mythos, which reject it (#1305, #1306)
+- fix(ui): **answer bubbles no longer keep empty space after a resize** (#1332, #1333)
+- fix(cli/acp): **attached images reach CLI and ACP runners, and follow-up prompts keep working afterwards**. Images were silently dropped because runners only receive plain text. History replay also called `UserMessage.singleText()`, which throws on the multimodal message an image turn leaves in memory, so every prompt after an image failed (#1280, #1282, #1284)
+
+### Changed
+- feat(mcp): **migrated to the langchain4j 1.20 MCP client**. langchain4j 1.19 removed the legacy 2024-11-05 HTTP+SSE transport with no replacement, so the earlier 1.18.1 pin is gone. Instead, `HTTP_SSE` is now a legacy alias for `HTTP` (Streamable HTTP with the subsidiary SSE channel), so existing configurations still load and are re-saved as HTTP when edited, and new servers choose STDIO or HTTP. **SSE-only MCP servers (#1151) are no longer supported.** The protocol version is no longer pinned: the client auto-detects 2026-07-28 and falls back to 2025-11-25, with detection bounded by your configured timeout. *Test Connection* in settings now goes through the same transport builders as real execution (#1298, #1301)
+- refactor(mcp): stop using the `McpLogMessage` JsonNode API that langchain4j 1.20 deprecated. As a side effect, object and array log payloads now show as JSON text instead of an empty string (#1350)
+- chore: remove a JVM crash log that was committed by accident and ignore `*.log` files (#1319)
+
+### Tests
+- fix(test): **platform fixtures are disposed, stopping a nested temp-dir leak**. JUnit 5 and `MockitoJUnitRunner` never call `LightPlatformTestCase.tearDown()`, so about 45 platform tests leaked their fixture and nested every later test's temp dir one level deeper, until `setUp()` failed with *"File name too long"*. This caused three order-dependent failures (e.g. `BedrockModelFactoryTest`, `OpenRouterChatModelFactoryTest`). `tearDown()` is now an EDT-wrapped `@AfterEach`, skipped when `setUp()` never ran (#1357)
+
+### Documentation
+- docs: add the Groma architecture map (`groma/`: actors, externals, flows, containers and components) and Groma agent instructions in `AGENTS.md`/`CLAUDE.md` (#1335)
+
+### Dependencies
+- chore(deps): upgrade langchain4j 1.18.1 → 1.20.0 → **1.22.0**, AWS SDK BOM 2.54.16 → 2.55.1, commonmark 0.30.0 → 0.31.0, Netty 4.2.17 → 4.2.19.Final, Logback 1.6.3 → 1.6.5, Mockito 5.23.0 → 5.24.0, mockwebserver 5.5.0 → 5.5.1, jsoup 1.23.1 → 1.23.2, sqlite-jdbc 3.53.2.1 → 3.53.4.0, Lombok 1.18.46 → 1.18.48, Kotlin plugins 2.4.10 → 2.4.21 and Gradle wrapper 9.6.1 → 9.8.2 (#1298, #1302, #1351)
+- chore(deps): bump docs toolchain: body-parser 1.20.6 → 1.20.9, brace-expansion 1.1.18 → 1.1.21, browserslist 4.28.6 → 4.28.9, colord 2.9.3 → 2.10.0, compression 1.8.1 → 1.8.2, fast-uri 3.1.5 → 3.1.9, follow-redirects 1.16.0 → 1.16.1, image-size 2.0.2 → 2.0.4, joi 17.13.3 → 17.13.8, js-yaml 4.3.1 → 4.3.2, launch-editor 2.14.1 → 2.14.2, proxy-addr 2.0.7 → 2.0.8, qs 6.15.2 → 6.15.4, shell-quote 1.10.0 → 1.12.0, source-map-js 1.2.1 → 1.2.2, plus baseline-browser-mapping, http-proxy-middleware, postcss-selector-parser and svgo (#1287, #1290, #1292–#1295, #1297, #1299, #1304, #1336, #1341, #1343–#1349, #1354–#1356)
+
+### Contributors
+- @omarmahamid
+- @MrLesk
+- @SamyNassiem
+- @dliubarskyi
+- @stephanj
+
 ## v1.14.2 - 2026-08-26
 
 A patch release for one freeze: the Activity Log tool window could lock up the IDE after a busy agent or MCP session, and the cost was paid by every window in the IDE, not just the log.

@@ -57,7 +57,7 @@ public class DevoxxGenieGenerator {
         this.indicator = indicator;
         
         // Initialize components
-        this.fileScanner = new FileScanner();
+        this.fileScanner = new FileScanner(project);
         this.contentGenerator = new ContentGenerator();
         this.treeGenerator = new ProjectTreeGenerator(fileScanner);
         this.fileManager = new FileManager();

@@ -1,8 +1,7 @@
 package com.devoxx.genie.service.projectscanner;
 
 import com.devoxx.genie.model.ScanContentResult;
-import com.devoxx.genie.service.DevoxxGenieSettingsService;
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -36,6 +35,15 @@ public class FileScanner {
     private static final String GITIGNORE = ".gitignore";
 
     private GitIgnoreFileSet gitIgnoreFileSet;
+    private final ProjectScanSettingsService settings;
+
+    public FileScanner() {
+        this.settings = ProjectScanSettingsService.followingGlobal();
+    }
+
+    public FileScanner(@NotNull Project project) {
+        this.settings = ProjectScanSettingsService.getInstance(project);
+    }
 
     @Getter
     private final List<Path> includedFiles = new ArrayList<>();
@@ -233,7 +241,6 @@ public class FileScanner {
         }
         
         // Check if file is excluded by settings or gitignore
-        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
         List<String> excludedFiles = settings.getExcludedFiles();
         if (!excludedFiles.isEmpty() && excludedFiles.contains(file.getName())) {
             return "file explicitly excluded in settings";
@@ -355,11 +362,11 @@ public class FileScanner {
             return false;
         }
 
-        List<String> excludedDirectories = DevoxxGenieStateService.getInstance().getExcludedDirectories();
+        List<String> excludedDirectories = settings.getExcludedDirectories();
 
         // Add null check for excludedDirectories
         if (excludedDirectories == null || excludedDirectories.isEmpty()) {
-            return false; // If excludedDirectories is null or empty, don't exclude any directories
+            return shouldExcludeFile(file); // .gitignore still applies without explicit exclusions
         }
 
         // Check if the directory name or path is in the excluded list
@@ -375,7 +382,6 @@ public class FileScanner {
      * @return true if the file should be excluded
      */
     public boolean shouldExcludeFile(@NotNull VirtualFile file) {
-        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
         List<String> excludedFiles = settings.getExcludedFiles();
 
@@ -400,7 +406,6 @@ public class FileScanner {
     }
 
     public boolean shouldIncludeFile(@NotNull VirtualFile file) {
-        DevoxxGenieSettingsService settings = DevoxxGenieStateService.getInstance();
 
         // First check if file should be excluded
         if (shouldExcludeFile(file)) {

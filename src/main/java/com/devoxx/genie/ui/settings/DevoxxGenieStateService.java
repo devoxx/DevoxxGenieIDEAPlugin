@@ -114,6 +114,31 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     );
 
     private List<LanguageModel> languageModels = new ArrayList<>();
+    // Persist identity only: catalog metadata can change between refreshes.
+    private Map<String, List<String>> favoriteModels = new LinkedHashMap<>();
+
+    public Map<String, List<String>> getFavoriteModels() {
+        Map<String, List<String>> copy = new LinkedHashMap<>();
+        if (favoriteModels != null) {
+            favoriteModels.forEach((provider, models) -> {
+                if (provider != null && models != null) {
+                    copy.put(provider, new ArrayList<>(models));
+                }
+            });
+        }
+        return copy;
+    }
+
+    public void setFavoriteModels(Map<String, List<String>> favorites) {
+        favoriteModels = new LinkedHashMap<>();
+        if (favorites != null) {
+            favorites.forEach((provider, models) -> {
+                if (provider != null && models != null && !models.isEmpty()) {
+                    favoriteModels.put(provider, new ArrayList<>(new LinkedHashSet<>(models)));
+                }
+            });
+        }
+    }
 
     private Boolean useFileInEditor = false;
 

@@ -23,7 +23,7 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `read_file` | Read the contents of a file in the project |
 | `list_files` | List files and directories (with optional recursion) |
 | `search_files` | Search for regex patterns across project files |
-| `fetch_page` | Fetch a web page by URL and return its readable text content (HTML/CSS/JS stripped) |
+| `fetch_page` | Fetch a web page by URL and return its content as Markdown (headings, code blocks, tables and links kept) |
 
 ### PSI Tools (Code Intelligence)
 

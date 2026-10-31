@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.projectscanner;
 
-import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,6 +12,16 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 public class ContentExtractor {
+    private final ProjectScanSettingsService settings;
+
+    public ContentExtractor() {
+        settings = ProjectScanSettingsService.followingGlobal();
+    }
+
+    public ContentExtractor(@NotNull Project project) {
+        settings = ProjectScanSettingsService.getInstance(project);
+    }
+
 
     /**
      * Extracts the content of a file and formats it for inclusion in the project scan.
@@ -60,7 +71,7 @@ public class ContentExtractor {
     }
 
     private String processFileContent(String content) {
-        if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getExcludeJavaDoc())) {
+        if (Boolean.TRUE.equals(settings.getExcludeJavaDoc())) {
             return removeJavadoc(content);
         }
         return content;

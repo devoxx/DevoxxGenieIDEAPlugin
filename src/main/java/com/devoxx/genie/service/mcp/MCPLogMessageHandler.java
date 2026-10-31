@@ -35,7 +35,8 @@ public class MCPLogMessageHandler implements McpLogMessageHandler {
 
         // Format the message with protocol direction markers (< for incoming, > for outgoing)
         // Maintain the same format as the previous implementation for compatibility
-        String formattedMessage = formatLogMessage(message.data().asText());
+        Object data = message.dataAsObject();
+        String formattedMessage = formatLogMessage(data instanceof String text ? text : message.dataAsJson());
         
         // Log at the appropriate level based on the MCP log level
         logAtLevel(message.level(), formattedMessage);

@@ -58,7 +58,8 @@ public class LLMProvidersConfigurable implements Configurable {
     public boolean isModified() {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
-        boolean isModified = false;
+        boolean isModified = !stateService.getFavoriteModels().equals(llmSettingsComponent.getFavoriteModels());
+
 
         isModified |= !stateService.getStreamMode().equals(llmSettingsComponent.getStreamModeCheckBox().isSelected());
         isModified |= Boolean.TRUE.equals(stateService.getShowThinkingEnabled())
@@ -170,6 +171,8 @@ public class LLMProvidersConfigurable implements Configurable {
         boolean isModified = isModified();
 
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        settings.setFavoriteModels(llmSettingsComponent.getFavoriteModels());
+
 
         settings.setStreamMode(llmSettingsComponent.getStreamModeCheckBox().isSelected());
         settings.setShowThinkingEnabled(llmSettingsComponent.getShowThinkingCheckBox().isSelected());
@@ -428,6 +431,7 @@ public class LLMProvidersConfigurable implements Configurable {
     @Override
     public void reset() {
         DevoxxGenieStateService settings = DevoxxGenieStateService.getInstance();
+        llmSettingsComponent.setFavoriteModels(settings.getFavoriteModels());
 
         llmSettingsComponent.getStreamModeCheckBox().setSelected(settings.getStreamMode());
         llmSettingsComponent.getShowThinkingCheckBox().setSelected(Boolean.TRUE.equals(settings.getShowThinkingEnabled()));

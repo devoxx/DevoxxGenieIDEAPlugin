@@ -12,11 +12,15 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Duration;
 
 public class OllamaChatModelFactory extends LocalChatModelFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OllamaChatModelFactory.class);
 
     public OllamaChatModelFactory() {
         super(ModelProvider.Ollama);
@@ -91,7 +95,17 @@ public class OllamaChatModelFactory extends LocalChatModelFactory {
     @Override
     protected LanguageModel buildLanguageModel(Object model) throws IOException {
         OllamaModelEntryDTO ollamaModel = (OllamaModelEntryDTO) model;
-        int contextWindow = OllamaApiService.getModelContext(ollamaModel.getName());
+        // The /api/show context probe is best-effort: when it fails (model not loaded,
+        // slow endpoint, non-2xx) the model must still be listed, with the default
+        // context window, instead of being dropped from the model list.
+        int contextWindow;
+        try {
+            contextWindow = OllamaApiService.getModelContext(ollamaModel.getName());
+        } catch (IOException e) {
+            LOG.warn("Failed to fetch context window for model '{}', falling back to the default of {} tokens",
+                    ollamaModel.getName(), OllamaApiService.DEFAULT_CONTEXT_LENGTH, e);
+            contextWindow = OllamaApiService.DEFAULT_CONTEXT_LENGTH;
+        }
         return LanguageModel.builder()
                 .provider(modelProvider)
                 .modelName(ollamaModel.getName())

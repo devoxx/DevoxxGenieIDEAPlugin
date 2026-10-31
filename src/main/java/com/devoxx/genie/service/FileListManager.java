@@ -123,6 +123,19 @@ public final class FileListManager {
         clearSelectionMetadata(file);
     }
 
+    /**
+     * Remove a file programmatically and rebuild the observers' view. Unlike {@link #removeFile},
+     * which is called by the UI after it already removed the entry itself.
+     */
+    public void removeFileAndRefresh(@NotNull Project project, String tabId, VirtualFile file) {
+        removeFile(project, tabId, file);
+        notifyAllObservers(project, tabId);
+        List<VirtualFile> remaining = getFiles(project, tabId);
+        if (!remaining.isEmpty()) {
+            notifyObserversOfBatchAdd(project, tabId, remaining);
+        }
+    }
+
     public @NotNull List<VirtualFile> getFiles(@NotNull Project project) {
         return getFiles(project, null);
     }
@@ -282,6 +295,7 @@ public final class FileListManager {
         file.putUserData(SELECTION_END_KEY, null);
         file.putUserData(SELECTION_START_LINE_KEY, null);
         file.putUserData(SELECTION_END_LINE_KEY, null);
+        file.putUserData(AUTO_ATTACHED_KEY, null);
     }
 
     private void notifyObservers(@NotNull Project project, String tabId, VirtualFile file) {

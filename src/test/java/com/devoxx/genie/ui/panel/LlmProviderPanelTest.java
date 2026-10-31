@@ -22,6 +22,7 @@ import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -739,5 +740,113 @@ class LlmProviderPanelTest {
         assertThat(restored.getProvider()).isEqualTo(ModelProvider.Ollama);
         assertThat(restored.getModelName()).isEqualTo("llama3");
         assertThat(restored.getInputMaxTokens()).isZero();
+    }
+
+    private static LanguageModel ollamaModel(String name) {
+        return LanguageModel.builder().provider(ModelProvider.Ollama).modelName(name).displayName(name).build();
+    }
+
+    private ChatModelFactory ollamaFactory(List<LanguageModel> models) {
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(models);
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("Ollama"))
+                .thenReturn(Optional.of(factory));
+        return factory;
+    }
+
+    private static void clickRefresh(LlmProviderPanel panel) throws Exception {
+        java.lang.reflect.Method refresh = LlmProviderPanel.class.getDeclaredMethod("refreshModels");
+        refresh.setAccessible(true);
+        refresh.invoke(panel);
+    }
+
+    private static String selectedModelName(LlmProviderPanel panel) {
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        return selected != null ? selected.getModelName() : null;
+    }
+
+    @Test
+    void refreshKeepsTheCurrentlySelectedModel() throws Exception {
+        // Refreshing the Ollama models repopulated the combo and silently selected its first entry,
+        // dropping the user's model (starred or not).
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("Ollama");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("charlie");
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.Ollama));
+        ollamaFactory(List.of(ollamaModel("alpha"), ollamaModel("bravo"), ollamaModel("charlie")));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        assertThat(selectedModelName(panel)).isEqualTo("charlie");
+
+        clickRefresh(panel);
+
+        assertThat(selectedModelName(panel)).isEqualTo("charlie");
+    }
+
+    @Test
+    void refreshSelectsAFavoriteWhenTheSelectedModelDisappeared() throws Exception {
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("Ollama");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("bravo");
+        when(stateService.getFavoriteModels()).thenReturn(Map.of("Ollama", List.of("charlie")));
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.Ollama));
+        ChatModelFactory factory = ollamaFactory(
+                List.of(ollamaModel("alpha"), ollamaModel("bravo"), ollamaModel("charlie")));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        assertThat(selectedModelName(panel)).isEqualTo("bravo");
+
+        // "bravo" was removed from Ollama in the meantime.
+        when(factory.getModels()).thenReturn(List.of(ollamaModel("alpha"), ollamaModel("charlie")));
+        clickRefresh(panel);
+
+        assertThat(selectedModelName(panel)).isEqualTo("charlie");
+        verify(stateService).setSelectedLanguageModel("test-hash", "charlie");
+    }
+
+    @Test
+    void restoreSelectsAFavoriteWhenNoModelWasPersisted() {
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("Ollama");
+        when(stateService.getFavoriteModels()).thenReturn(Map.of("Ollama", List.of("charlie")));
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.Ollama));
+        ollamaFactory(List.of(ollamaModel("alpha"), ollamaModel("bravo"), ollamaModel("charlie")));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        assertThat(selectedModelName(panel)).isEqualTo("charlie");
+    }
+
+    @Test
+    void restoreFallsBackToAFavoriteRatherThanTheFirstModel() {
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("Ollama");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("removed-model");
+        when(stateService.getFavoriteModels()).thenReturn(Map.of("Ollama", List.of("missing", "bravo")));
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.Ollama));
+        ollamaFactory(List.of(ollamaModel("alpha"), ollamaModel("bravo"), ollamaModel("charlie")));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        assertThat(selectedModelName(panel)).isEqualTo("bravo");
+        verify(stateService).setSelectedLanguageModel("test-hash", "bravo");
+    }
+
+    @Test
+    void switchingProviderSelectsThatProvidersFavorite() {
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("Ollama");
+        when(stateService.getFavoriteModels()).thenReturn(Map.of("OpenAI", List.of("gpt-4")));
+        when(llmProviderService.getAvailableModelProviders())
+                .thenReturn(List.of(ModelProvider.Ollama, ModelProvider.OpenAI));
+        ollamaFactory(List.of(ollamaModel("alpha")));
+        ChatModelFactory openAi = mock(ChatModelFactory.class);
+        when(openAi.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenAI).modelName("gpt-3.5").displayName("GPT-3.5").build(),
+                LanguageModel.builder().provider(ModelProvider.OpenAI).modelName("gpt-4").displayName("GPT-4").build(),
+                LanguageModel.builder().provider(ModelProvider.OpenAI).modelName("gpt-5").displayName("GPT-5").build()));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenAI"))
+                .thenReturn(Optional.of(openAi));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        panel.getModelProviderComboBox().setSelectedItem(ModelProvider.OpenAI);
+
+        assertThat(selectedModelName(panel)).isEqualTo("gpt-4");
+        verify(stateService).setSelectedLanguageModel("test-hash", "gpt-4");
     }
 }
