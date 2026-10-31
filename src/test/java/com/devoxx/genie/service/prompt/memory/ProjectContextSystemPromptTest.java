@@ -1,14 +1,18 @@
 package com.devoxx.genie.service.prompt.memory;
 
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.MessageCreationService;
+import com.devoxx.genie.service.activity.ActivityLoggingMessage;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
@@ -24,8 +28,14 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -47,6 +57,9 @@ class ProjectContextSystemPromptTest {
     private static final String MEMORY_KEY = PROJECT_HASH + "-" + TAB_ID;
     private static final String MARKER = "UNIQUE-PROJECT-MARKER";
     private static final String PROJECT_TEXT = "Project Context:\n" + MARKER + " src/Main.java: public class Main {}";
+    /** Two distinct snapshots, simulating a remove + re-add after the project changed. */
+    private static final String SNAPSHOT_A = "Project Context:\nSNAPSHOT-A src/Main.java: public class Main {}";
+    private static final String SNAPSHOT_B = "Project Context:\nSNAPSHOT-B src/Main.java: public class Main { int addedField; }";
 
     private MockedStatic<ApplicationManager> applicationManagerMock;
 
@@ -54,6 +67,8 @@ class ProjectContextSystemPromptTest {
     private ChatMemoryService chatMemoryService;
     private ChatMemoryManager chatMemoryManager;
     private MessageCreationService messageCreationService;
+    private MessageBus messageBus;
+    private ActivityLoggingMessage activityLogPublisher;
 
     @BeforeEach
     void setUp() {
@@ -77,6 +92,12 @@ class ProjectContextSystemPromptTest {
         when(application.getService(ChatMemoryService.class)).thenReturn(chatMemoryService);
         when(application.getService(MessageCreationService.class)).thenReturn(messageCreationService);
         when(application.getService(DevoxxGenieStateService.class)).thenReturn(stateService);
+
+        // Stubbed message bus so publishSystemPromptToActivityLog can be verified
+        messageBus = mock(MessageBus.class);
+        activityLogPublisher = mock(ActivityLoggingMessage.class);
+        when(application.getMessageBus()).thenReturn(messageBus);
+        when(messageBus.syncPublisher(AppTopics.ACTIVITY_LOG_MSG)).thenReturn(activityLogPublisher);
 
         // ChatMemoryManager's constructor resolves ChatMemoryService, so build it after the stub
         chatMemoryManager = new ChatMemoryManager();
@@ -123,7 +144,7 @@ class ProjectContextSystemPromptTest {
         runTurn("first question", "first answer", false);
         SystemMessage before = (SystemMessage) chatMemoryService.getMessagesByKey(MEMORY_KEY).get(0);
         assertThat(before.text())
-                .doesNotContain("<ProjectFilesContext>");
+                .doesNotContain("<ProjectFilesContext");
 
         runTurn("second question", "second answer", true);
 
@@ -132,7 +153,7 @@ class ProjectContextSystemPromptTest {
         SystemMessage updated = (SystemMessage) messages.get(0);
         assertThat(updated.text())
                 .as("the updated system message must stay at index 0 and carry the snapshot")
-                .contains("<ProjectFilesContext>")
+                .contains("<ProjectFilesContext")
                 .contains(MARKER);
         assertThat(messageText(messages.get(1)))
                 .as("the earlier user turn must be untouched")
@@ -151,8 +172,37 @@ class ProjectContextSystemPromptTest {
         List<ChatMessage> messages = chatMemoryService.getMessagesByKey(MEMORY_KEY);
         SystemMessage after = (SystemMessage) messages.get(0);
         assertThat(after.text())
-                .doesNotContain("<ProjectFilesContext>")
+                .doesNotContain("<ProjectFilesContext")
                 .doesNotContain(MARKER);
+    }
+
+    @Test
+    void systemMessageIsRewrittenWhenTheSnapshotChangesBetweenTurns() {
+        // The presence check alone can't see this: after a remove + re-add the
+        // <ProjectFilesContext> section is present on both turns, only its content
+        // (and its hash) changes — e.g. the user edited files or switched to a model
+        // with a different context window before re-adding the project.
+        runTurn("first question", "first answer", SNAPSHOT_A);
+        SystemMessage afterA = (SystemMessage) chatMemoryService.getMessagesByKey(MEMORY_KEY).get(0);
+        assertThat(afterA.text())
+                .contains("<ProjectFilesContext")
+                .contains("SNAPSHOT-A")
+                .doesNotContain("SNAPSHOT-B");
+
+        runTurn("second question", "second answer", SNAPSHOT_B);
+
+        List<ChatMessage> messages = chatMemoryService.getMessagesByKey(MEMORY_KEY);
+        SystemMessage afterB = (SystemMessage) messages.get(0);
+        assertThat(afterB.text())
+                .as("the system message must carry the new snapshot, not the stale one")
+                .contains("SNAPSHOT-B")
+                .doesNotContain("SNAPSHOT-A");
+        long copies = messages.stream()
+                .filter(message -> messageText(message).contains("SNAPSHOT-B"))
+                .count();
+        assertThat(copies)
+                .as("the refreshed snapshot still lives in exactly one message")
+                .isEqualTo(1);
     }
 
     @Test
@@ -174,10 +224,55 @@ class ProjectContextSystemPromptTest {
         SystemMessage installed = (SystemMessage) messages.get(0);
         assertThat(installed.text())
                 .as("the installed system message (at index 0) picks up the active project context at once")
-                .contains("<ProjectFilesContext>")
+                .contains("<ProjectFilesContext")
                 .contains(MARKER);
         assertThat(messages.get(1)).isEqualTo(UserMessage.from("old question"));
         assertThat(messages.get(2)).isEqualTo(AiMessage.from("old answer"));
+
+        // The install for a restored conversation must reach the Logs panel, exactly
+        // like the first install on a fresh conversation does.
+        verify(activityLogPublisher, atLeastOnce()).onActivityMessage(argThat(message ->
+                AgentType.SYSTEM_PROMPT == message.getAgentType()
+                        && message.getResult() != null
+                        && message.getResult().contains(MARKER)));
+    }
+
+    // ---------------------------------------------------------------------
+    // Activity log: every system-prompt rewrite must be published, so the
+    // Logs panel always shows the prompt the model actually received
+    // ---------------------------------------------------------------------
+
+    @Test
+    void midConversationSystemPromptRewriteIsPublishedToActivityLog() {
+        runTurn("first question", "first answer", false);
+        // the first install (empty-memory branch of prepareMemory) already published;
+        // only the mid-conversation rewrite is under test here
+        reset(activityLogPublisher);
+
+        // turn 2: the user adds the project mid-conversation — the sync path
+        // rewrites the system message
+        runTurn("second question", "second answer", true);
+
+        verify(activityLogPublisher, times(1)).onActivityMessage(argThat(message ->
+                AgentType.SYSTEM_PROMPT == message.getAgentType()
+                        && message.getResult() != null
+                        && message.getResult().contains(MARKER)));
+    }
+
+    @Test
+    void unchangedSnapshotDoesNotRewriteOrRepublishSystemPrompt() {
+        // Same snapshot on turn 2: the hash matches, so the system message must be
+        // left alone — no rewrite, no publish (this is what keeps the provider's
+        // prompt cache warm).
+        runTurn("first question", "first answer", true);
+        reset(activityLogPublisher);
+
+        runTurn("second question", "second answer", true);
+
+        verifyNoInteractions(activityLogPublisher);
+        List<ChatMessage> messages = chatMemoryService.getMessagesByKey(MEMORY_KEY);
+        SystemMessage system = (SystemMessage) messages.get(0);
+        assertThat(system.text()).contains(MARKER);
     }
 
     // ---------------------------------------------------------------------
@@ -187,13 +282,13 @@ class ProjectContextSystemPromptTest {
     @Test
     void systemPromptContainsProjectSectionOnlyWhenProjectContextActive() {
         assertThat(ChatMemoryManager.buildAugmentedSystemPrompt(project, null))
-                .doesNotContain("<ProjectFilesContext>");
+                .doesNotContain("<ProjectFilesContext");
         assertThat(ChatMemoryManager.buildAugmentedSystemPrompt(project, null, "   "))
-                .doesNotContain("<ProjectFilesContext>");
+                .doesNotContain("<ProjectFilesContext");
 
         String withProject = ChatMemoryManager.buildAugmentedSystemPrompt(project, null, PROJECT_TEXT);
         assertThat(withProject)
-                .contains("<ProjectFilesContext>")
+                .contains("<ProjectFilesContext")
                 .contains(MARKER)
                 .contains("</ProjectFilesContext>");
     }
@@ -217,7 +312,7 @@ class ProjectContextSystemPromptTest {
 
         assertThat(context.getUserMessage().singleText())
                 .contains("<SystemPrompt>")
-                .contains("<ProjectFilesContext>")
+                .contains("<ProjectFilesContext")
                 .contains(MARKER);
     }
 
@@ -231,7 +326,7 @@ class ProjectContextSystemPromptTest {
         assertThat(context.getUserMessage().singleText())
                 .as("for model-based providers the snapshot belongs to the system prompt only")
                 .doesNotContain(MARKER)
-                .doesNotContain("<ProjectFilesContext>");
+                .doesNotContain("<ProjectFilesContext");
     }
 
     // ---------------------------------------------------------------------
@@ -240,9 +335,13 @@ class ProjectContextSystemPromptTest {
 
     /** One full turn: prepare memory, build + store the user message, store the AI reply. */
     private void runTurn(String userPrompt, String aiReply, boolean projectContextActive) {
+        runTurn(userPrompt, aiReply, projectContextActive ? PROJECT_TEXT : null);
+    }
+
+    private void runTurn(String userPrompt, String aiReply, String projectContext) {
         ChatMessageContext context = newContext(userPrompt);
-        if (projectContextActive) {
-            context.setProjectContext(PROJECT_TEXT);
+        if (projectContext != null) {
+            context.setProjectContext(projectContext);
         }
         chatMemoryManager.prepareMemory(context);
         messageCreationService.addUserMessageToContext(context);
