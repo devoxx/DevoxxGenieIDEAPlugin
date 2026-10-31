@@ -1,7 +1,6 @@
 package com.devoxx.genie.service.agent;
 
 import com.devoxx.genie.model.mcp.MCPSettings;
-import com.devoxx.genie.service.agent.codemode.CodeModeToolProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;

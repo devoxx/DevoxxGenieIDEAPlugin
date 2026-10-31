@@ -102,10 +102,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner subAgentTimeoutSpinner =
             new JBIntSpinner(stateService.getSubAgentTimeoutSeconds() != null ? stateService.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS, 10, 600);
 
-    // Code mode (run_script) settings
-    private final JBCheckBox enableCodeModeCheckbox =
-            new JBCheckBox("Enable code mode (experimental)", Boolean.TRUE.equals(stateService.getCodeModeEnabled()));
-
     // Web search tool settings
     private final JBCheckBox enableWebSearchToolCheckbox =
             new JBCheckBox("web_search - Uses the web search engines defined in the Web Search settings page",
@@ -340,15 +336,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         // Build initial rows from saved configs (or default parallelism)
         initAgentConfigRows();
-
-        // --- Code Mode ---
-        addSection(contentPanel, gbc, "Code Mode");
-
-        addFullWidthRow(contentPanel, gbc, enableCodeModeCheckbox);
-        addHelpText(contentPanel, gbc,
-                "When enabled, the agent gets a 'run_script' tool that runs a short JavaScript snippet " +
-                "calling several tools in one step and returning only what it prints. Calls inside a script " +
-                "go through the same approvals and tool call limit.");
 
         // --- Debug ---
         addSection(contentPanel, gbc, "Debug");
@@ -1155,7 +1142,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 || !Objects.equals(getComboText(agentShellField), state.getAgentShell() != null ? state.getAgentShell() : "")
                 || enablePsiToolsCheckbox.isSelected() != Boolean.TRUE.equals(state.getPsiToolsEnabled())
                 || enableParallelExploreCheckbox.isSelected() != Boolean.TRUE.equals(state.getParallelExploreEnabled())
-                || enableCodeModeCheckbox.isSelected() != Boolean.TRUE.equals(state.getCodeModeEnabled())
                 || subAgentMaxToolCallsSpinner.getNumber() != (state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS)
                 || subAgentTimeoutSpinner.getNumber() != (state.getSubAgentTimeoutSeconds() != null ? state.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS)
                 || !Objects.equals(getSelectedProviderName(), state.getSubAgentModelProvider() != null ? state.getSubAgentModelProvider() : "")
@@ -1203,7 +1189,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         stateService.setAgentShell(getComboText(agentShellField));
         stateService.setPsiToolsEnabled(enablePsiToolsCheckbox.isSelected());
         stateService.setParallelExploreEnabled(enableParallelExploreCheckbox.isSelected());
-        stateService.setCodeModeEnabled(enableCodeModeCheckbox.isSelected());
         stateService.setSubAgentMaxToolCalls(subAgentMaxToolCallsSpinner.getNumber());
         stateService.setSubAgentTimeoutSeconds(subAgentTimeoutSpinner.getNumber());
         stateService.setSubAgentModelProvider(getSelectedProviderName());
@@ -1253,7 +1238,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         agentShellField.setSelectedItem(state.getAgentShell() != null ? state.getAgentShell() : "");
         enablePsiToolsCheckbox.setSelected(Boolean.TRUE.equals(state.getPsiToolsEnabled()));
         enableParallelExploreCheckbox.setSelected(Boolean.TRUE.equals(state.getParallelExploreEnabled()));
-        enableCodeModeCheckbox.setSelected(Boolean.TRUE.equals(state.getCodeModeEnabled()));
         subAgentMaxToolCallsSpinner.setNumber(state.getSubAgentMaxToolCalls() != null ? state.getSubAgentMaxToolCalls() : SUB_AGENT_MAX_TOOL_CALLS);
         subAgentTimeoutSpinner.setNumber(state.getSubAgentTimeoutSeconds() != null ? state.getSubAgentTimeoutSeconds() : SUB_AGENT_TIMEOUT_SECONDS);
 
