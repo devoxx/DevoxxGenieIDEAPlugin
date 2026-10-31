@@ -5,6 +5,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import com.devoxx.genie.model.request.SemanticFile;
 import com.devoxx.genie.service.mcp.MCPService;
+import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
 import com.devoxx.genie.service.rag.RAGEventPublisher;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.SemanticSearchService;
@@ -166,6 +167,15 @@ public class MessageCreationService {
                 systemPrompt = persona.getPrompt();
             }
             stringBuilder.append("<SystemPrompt>").append(systemPrompt).append("</SystemPrompt>\n\n");
+
+            // OpenAI o1 models have no system message, so the full project snapshot the
+            // user added (normally delivered once via the system prompt) must travel
+            // with every user message instead — the same way o1 already receives the
+            // base system prompt above.
+            if (chatMessageContext.getProjectContext() != null
+                    && !chatMessageContext.getProjectContext().isBlank()) {
+                stringBuilder.append(ChatMemoryManager.getProjectFilesContextSection(chatMessageContext.getProjectContext()));
+            }
         }
 
         // NOTE: DEVOXXGENIE.md and CLAUDE.md/AGENTS.md content is now included in the system prompt
