@@ -158,6 +158,17 @@ class BuiltInToolDescriptionsTest {
     }
 
     @Test
+    void runScript_isOverridableAndItsDefaultCarriesTheLimitPlaceholders() {
+        assertThat(BuiltInToolDescriptions.defaultOf("run_script"))
+                .contains(BuiltInToolDescriptions.MAX_SCRIPT_TOOL_CALLS_PLACEHOLDER)
+                .contains(BuiltInToolDescriptions.SCRIPT_TIME_BUDGET_PLACEHOLDER)
+                .doesNotContain("Callable tools:");
+
+        overrides.put("run_script", "Batch tool calls in JavaScript.");
+        assertThat(BuiltInToolDescriptions.effective("run_script")).isEqualTo("Batch tool calls in JavaScript.");
+    }
+
+    @Test
     void toolNames_isImmutable() {
         assertThat(BuiltInToolDescriptions.toolNames())
                 .isUnmodifiable();

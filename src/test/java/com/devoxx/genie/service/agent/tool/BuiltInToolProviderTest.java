@@ -453,7 +453,8 @@ class BuiltInToolProviderTest {
 
         ToolProviderResult result = provider.provideTools(request);
 
-        assertThat(BuiltInToolDescriptions.toolNames())
+        // run_script is registered by CodeModeToolProvider, not by this provider.
+        assertThat(BuiltInToolDescriptions.toolNames().stream().filter(name -> !"run_script".equals(name)))
                 .containsExactlyInAnyOrderElementsOf(getToolNames(result));
         for (ToolSpecification spec : result.tools().keySet()) {
             assertThat(spec.description())

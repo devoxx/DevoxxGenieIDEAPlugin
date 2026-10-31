@@ -289,6 +289,7 @@ dependencies {
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.6.6"
     val gitignoreReaderVersion = "2.0.0"
+    val quickJs4jVersion = "0.1.1"
     val junitJupiterVersion = "6.1.3"
     val junitPlatformVersion = "6.1.3"
     val lombokVersion = "1.18.48"
@@ -360,6 +361,8 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     // GitIgnore Reader
     implementation("nl.basjes.gitignore:gitignore-reader:$gitignoreReaderVersion")
+
+    implementation("io.roastedroot:quickjs4j:$quickJs4jVersion")
     // TDG
     implementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
     implementation("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")

@@ -89,6 +89,7 @@ public class Constant {
 
     // Agent mode settings
     public static final int AGENT_MAX_TOOL_CALLS = 50;
+    public static final int AGENT_MAX_SCRIPT_TOOL_CALLS = 100;
     /**
      * Upper bound for the agent max tool-calls spinner (issue #1163). Large codebases
      * regularly need more research/implementation iterations than the previous cap of 100
