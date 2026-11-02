@@ -27,7 +27,7 @@ import Head from '@docusaurus/Head';
           "name": "Does DevoxxGenie send my code to the cloud?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Only to the LLM provider you explicitly configure. If you use a cloud provider like OpenAI or Anthropic, your prompts (which may include code) are sent to that provider's API under their privacy policy. If you use a local model via Ollama or LM Studio, nothing leaves your machine. DevoxxGenie itself does not collect or transmit your code."
+            "text": "Cloud model requests include the prompts and code you provide. Local inference can stay on your machine, but optional web search, remote MCP servers and external runners can contact other services. Anonymous analytics requires consent acknowledgement and excludes prompts and code. Conversation history is stored locally."
           }
         },
         {
@@ -91,7 +91,7 @@ import Head from '@docusaurus/Head';
           "name": "Which IntelliJ versions does DevoxxGenie support?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "DevoxxGenie requires IntelliJ IDEA 2023.3.4 or later. It works with IntelliJ IDEA Community and Ultimate editions, as well as other JetBrains IDEs built on the IntelliJ platform (like PyCharm, GoLand, WebStorm)."
+            "text": "DevoxxGenie requires IntelliJ IDEA 2025.3.3 or later. It works with IntelliJ IDEA Community and Ultimate editions, as well as other JetBrains IDEs built on the IntelliJ platform (like PyCharm, GoLand, WebStorm)."
           }
         },
         {
@@ -117,16 +117,16 @@ Yes, DevoxxGenie itself is completely free and open source. It uses a **BYOK (Br
 
 ### Does DevoxxGenie send my code to the cloud?
 
-Only to the LLM provider **you** explicitly configure:
+Model requests go to the provider **you** configure:
 
 - **Cloud providers** (OpenAI, Anthropic, etc.): your prompts, which may include code, are sent to that provider's API under their own privacy policy.
-- **Local providers** (Ollama, LM Studio, etc.): nothing leaves your machine. The model runs locally.
+- **Local providers** (Ollama, LM Studio, etc.): inference can stay local when you configure a service on your machine.
 
-DevoxxGenie itself does not collect, store, or transmit your code.
+Optional Web Search, remote MCP servers, and external runners may still communicate with other services. Conversation history is stored locally, and consent-gated anonymous analytics excludes prompts and code. See [Privacy and analytics](../configuration/privacy-and-analytics.md) for the controls and data categories.
 
 ### Which IntelliJ versions are supported?
 
-DevoxxGenie requires **IntelliJ IDEA 2023.3.4 or later**. It works with the Community and Ultimate editions, and with other JetBrains IDEs on the IntelliJ platform (PyCharm, GoLand, WebStorm, etc.).
+DevoxxGenie requires **IntelliJ IDEA 2025.3.3 or later**. It works with the Community and Ultimate editions, and with other JetBrains IDEs on the IntelliJ platform (PyCharm, GoLand, WebStorm, etc.).
 
 ### Does DevoxxGenie work offline?
 

@@ -14,7 +14,7 @@ This guide will help you install the DevoxxGenie plugin in your IntelliJ IDEA en
 
 Before installing DevoxxGenie, ensure you have the following:
 
-- **IntelliJ IDEA**: Version 2023.3.4 or later
+- **IntelliJ IDEA**: Version 2025.3.3 (build 253.31033) or later
 - **Java**: JDK 17 or later
 
 ## Installation Methods
@@ -63,7 +63,7 @@ If you don't see the DevoxxGenie icon after installation:
 
 If you encounter compatibility issues:
 
-1. Verify your IntelliJ IDEA version is 2023.3.4 or later
+1. Verify your IntelliJ IDEA version is 2025.3.3 or later
 2. Check if your Java version is JDK 17 or later
 3. Check the plugin description for any specific compatibility notes
 

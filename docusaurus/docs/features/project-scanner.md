@@ -80,17 +80,16 @@ To configure how Project Scanner works:
 - **Exclude Directories**: Specify directories to exclude (e.g., build, target, .git)
 - **Use .gitignore**: Automatically exclude files listed in your .gitignore
 
-#### Content Filtering
+#### Content filtering
 
-- **Remove JavaDocs**: Option to strip JavaDoc comments to reduce token count
-- **Max File Size**: Set a limit for file sizes to include
-- **Line Limit**: Set a maximum number of lines per file
+- **Excluded files**: Exclude individual filenames or file patterns
+- **Exclude Javadoc**: Strip JavaDoc comments to reduce token count
 
-#### Project-Wide Settings
+The Scan & Copy settings page does not offer maximum file-size, line-count, scan-depth, file-count, or token-limit controls. Reduce context by narrowing the selected files, extensions, and exclusions.
 
-- **Scan Depth**: Set how deep in the directory tree to scan
-- **File Limit**: Set a maximum number of files to include
-- **Token Limit**: Set a maximum token count for the entire context
+#### Per-project settings
+
+Scan & Copy preferences are stored per project in its workspace settings. A project without saved preferences starts with a copy of the existing global values; later changes apply to that project rather than every open project. These preferences are also used for project copying, token calculations, and RAG indexing. RAG directory exclusions are project-specific too.
 
 ## Token Management
 
@@ -219,8 +218,8 @@ If you exceed the token limit:
 If scanning is slow:
 
 1. Exclude more directories
-2. Set a lower file size limit
-3. Reduce scan depth
+2. Exclude generated code and large files
+3. Scan a specific directory instead of the whole project
 4. Use more specific inclusion patterns
 
 #### Irrelevant Code Included

@@ -45,25 +45,29 @@ src/main/java/com/devoxx/genie/
 The `chatmodel` package contains implementations for different LLM providers. To add a new provider:
 
 1. Create a new package under `chatmodel/cloud/` or `chatmodel/local/`
-2. Implement a factory class that extends `ChatModelFactory`
+2. Implement a factory class that implements `ChatModelFactory`
 3. Register the factory in `ChatModelFactoryProvider`
 4. Add UI components to configure the provider in settings
 
-Example factory class:
+A provider factory must implement these current signatures (provider-specific bodies are omitted):
 
 ```java
-public class NewProviderChatModelFactory implements ChatModelFactory {
+import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.model.CustomChatModel;
+import com.devoxx.genie.model.LanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
+import java.util.List;
+
+public abstract class NewProviderChatModelFactory implements ChatModelFactory {
     @Override
-    public ChatLanguageModel createChatModel(ChatModel model) {
-        // Implementation...
-    }
-    
+    public abstract ChatModel createChatModel(CustomChatModel model);
+
     @Override
-    public List<ChatModel> getModels() {
-        // Return available models...
-    }
+    public abstract List<LanguageModel> getModels();
 }
 ```
+
+`ChatModel` and `StreamingChatModel` are LangChain4j interfaces; `CustomChatModel` holds the plugin's request configuration, and `LanguageModel` describes a selectable model. Override `createStreamingChatModel(CustomChatModel model)` when the provider supports streaming; its default implementation returns `null`.
 
 ### Prompt Execution
 
@@ -117,7 +121,7 @@ Example test class:
 public class ChatPromptExecutorTest {
     
     @Mock
-    private ChatLanguageModel chatLanguageModel;
+    private ChatModel chatModel;
     
     @InjectMocks
     private ChatPromptExecutor executor;

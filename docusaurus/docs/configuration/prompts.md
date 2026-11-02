@@ -1,19 +1,19 @@
 ---
 sidebar_position: 2
-title: Prompts Configuration
+title: System Prompt and Personas Configuration
 description: Configure the system prompt, keyboard shortcuts, and DEVOXXGENIE.md settings in DevoxxGenie to customize how the LLM responds to your queries.
 keywords: [devoxxgenie, prompts, system prompt, keyboard shortcuts, configuration, intellij plugin, llm settings]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
-# Prompts Configuration
+# System Prompt and Personas Configuration
 
 DevoxxGenie allows you to configure the system prompt, keyboard shortcuts, and project description file. Slash commands (like `/test`, `/explain`) are now managed separately under **Commands** — see the [Commands](../features/commands.md) page.
 
 ## Accessing Prompt Settings
 
 1. Open IntelliJ IDEA settings
-2. Navigate to `Tools` > `DevoxxGenie` > `Prompts`
+2. Navigate to `Tools` > `DevoxxGenie` > `System Prompt & Personas`
 
 ## System Prompt
 
@@ -21,7 +21,7 @@ The system prompt sets the initial context and instructions for the LLM. You can
 
 ### Editing the System Prompt
 
-1. In the Prompts settings, locate the "System Prompt" text area
+1. In the System Prompt & Personas settings, locate the "System Prompt" text area
 2. Modify the text to include specific instructions, context, or preferences
 3. Click `Apply` to save changes
 
@@ -42,13 +42,26 @@ You are an AI programming assistant for Java development. You help with coding t
 5. Prefer modern Java patterns and APIs (Java 11+)
 ```
 
+## Personas
+
+Personas are named system prompts you can select in the chat window. Enable **Show personas** under **Settings → Tools → DevoxxGenie → System Prompt & Personas** to display the selector; it is hidden by default.
+
+The built-in personas are **Developer** (the default), **Reviewer**, **Architect**, and **Test Engineer**. Use **Add**, **Edit**, or **Remove** to customize the list, **Restore** to restore the built-in personas, and **Default persona** to choose the initial selection. Apply your changes to save them.
+
+- A persona **replaces**, rather than appends to, the base system prompt. Project instruction files and other context are still added separately.
+- Selection is per chat tab. Choose a persona before starting a new conversation: an ongoing conversation keeps the persona it started with.
+- Tab selections are runtime-only. After an IDE restart, tabs start with the configured default persona again.
+- Turn off **Show personas** to use the normal system prompt without persona selection.
+
+See [Chat Interface](../features/chat-interface.md) for the model selector and conversation controls.
+
 ## Keyboard Shortcuts
 
 You can configure keyboard shortcuts for submitting prompts.
 
 ### Setting Up Shortcuts
 
-1. In the Prompts settings, locate the "Keyboard Shortcuts" section
+1. In the System Prompt & Personas settings, locate the "Keyboard Shortcuts" section
 2. Define your preferred keystroke combinations
 3. Click `Apply` to save
 
@@ -59,7 +72,7 @@ You can configure keyboard shortcuts for submitting prompts.
 
 ## DEVOXXGENIE.md File
 
-From the Prompts settings, you can generate a DEVOXXGENIE.md file for your project. This file is automatically included in the system prompt and gives the LLM context about your project.
+From the System Prompt & Personas settings, you can generate a DEVOXXGENIE.md file for your project. This file is automatically included in the system prompt and gives the LLM context about your project.
 
 ### Generating DEVOXXGENIE.md
 

@@ -16,9 +16,13 @@ DevoxxGenie integrates three best-in-class open-source security scanners as **LL
 
 | Scanner | What it detects | Install |
 |---------|----------------|---------|
-| **Gitleaks** | Hardcoded secrets, API keys, tokens and passwords in source code and git history | `brew install gitleaks` |
+| **Gitleaks** | Hardcoded secrets, API keys, tokens and passwords in the current project files | `brew install gitleaks` |
 | **OpenGrep** | SAST (Static Application Security Testing) issues — injection flaws, insecure patterns, misconfigurations | `brew install opengrep` |
 | **Trivy** | SCA (Software Composition Analysis) — known CVEs in project dependencies | `brew install trivy` |
+
+:::warning Git history is not scanned
+The plugin runs Gitleaks with `--no-git`. It checks current files, not previous commits. A clean scan does not prove that Git history contains no secrets. Run a separate history scan when you need that assurance.
+:::
 
 Each scanner must be installed on your system. DevoxxGenie does **not** bundle or auto-download the binaries.
 

@@ -54,6 +54,7 @@ Supported cloud providers:
 - [Kimi](cloud-models.md#kimi)
 - [GLM](cloud-models.md#glm) (Zhipu AI)
 - [OpenRouter](cloud-models.md#openrouter)
+- [NVIDIA](cloud-models.md#nvidia) (NIM-hosted models through an OpenAI-compatible API)
 - [Cloudflare AI Gateway](cloud-models.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
 - [Azure OpenAI](cloud-models.md#azure-openai)
 - [Amazon Bedrock](cloud-models.md#amazon-bedrock)
@@ -64,6 +65,8 @@ You can select and configure LLM providers in two ways:
 
 1. **From the DevoxxGenie Panel**: Use the dropdown in the top-right corner of the DevoxxGenie window
 2. **From Settings**: Go to Settings > Tools > DevoxxGenie
+
+Save frequently used models with the star next to the chat model selector. The cross-provider **Favorites** entry lets you switch directly to a saved model. See [Favorite models](../features/chat-interface.md#favorite-models).
 
 ## Provider Comparison
 

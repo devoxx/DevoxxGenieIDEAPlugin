@@ -19,21 +19,24 @@ Define tasks as structured markdown specs with acceptance criteria, and let the 
 - **Backlog.md Integration**: Tasks are stored as version-controlled markdown files with YAML frontmatter
 - **Task List & Kanban Board**: Browse tasks in a tree view or manage them visually on a drag-and-drop Kanban board with archive-by-drag support
 - **Implement with Agent**: One-click task implementation — the agent reads the spec, makes code changes, and checks off acceptance criteria as it works
-- **17 Built-in Backlog Tools**: Create, edit, search, and complete tasks, documents, and milestones programmatically during agent execution
+- **20 Built-in Backlog Tools**: Create, edit, search, and complete tasks, documents, and milestones programmatically during agent execution
 
 ### Multi-Provider LLM Support
 
 Connect to a wide range of LLM providers:
 
-- **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Jan, and custom OpenAI-compatible providers
-- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, Kimi, GLM (Zhipu AI), OpenRouter, Cloudflare AI Gateway, Azure OpenAI, and Amazon Bedrock
+- **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Jan, Nativ, Exo, and custom OpenAI-compatible providers
+- **Cloud Providers**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, Kimi, GLM (Zhipu AI), NVIDIA, OpenRouter, Cloudflare AI Gateway, Azure OpenAI, and Amazon Bedrock
 
 ### Chat Interface
 
 - **Streaming responses**: See each token as it's received from the LLM in real-time
 - **Code highlighting**: Proper syntax highlighting for code blocks in responses
 - **Chat memory**: Configurable conversation history to maintain context
-- **Context files**: Add files and code snippets to the chat context
+- **Context files**: Add files and code snippets to the chat context; explicit attachments persist across prompts
+- **Queue and steer**: Queue independent follow-ups or steer a running agent task; see [Queue and steer](chat-interface.md#queue-and-steer-a-running-task)
+- **Personas**: Choose a named system prompt for new conversations; see [Personas](../configuration/prompts.md#personas)
+- **Favorites and reasoning**: [Favorite models](chat-interface.md#favorite-models) across providers and optionally [Show Thinking](chat-interface.md#show-thinking)
 
 ### Code Completion
 
@@ -55,7 +58,7 @@ Connect to a wide range of LLM providers:
 - **Commands**: Built-in and custom slash commands (`/test`, `/explain`, `/review`, `/find`, etc.) with `$ARGUMENT` placeholder support
 - **Skills**: LLM-activated `SKILL.md` capabilities loaded from disk (compatible with `.claude/skills` and `.agents/skills`); requires Agent Mode
 - **MCP Support**: Model Context Protocol servers for extended agent-like capabilities, with a built-in Marketplace for discovering servers
-- **Agent Mode** *(v0.9.4+)*: Enable agent mode for autonomous codebase exploration using read-only tools. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider
+- **Agent Mode** *(v0.9.4+)*: Enable agent mode to explore, edit, run commands and test code using configurable tools and approval controls. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider
 - **Command Blacklist**: Guard the agent's `run_command` tool against destructive shell commands (`git reset --hard`, `rm -rf`, ...) — matched commands either force the approval dialog or are blocked outright, even when write approvals are auto-approved
 - **Web Search**: Augment LLM knowledge with web search results from Google or Tavily
 - **Token Cost Calculator**: Calculate token usage and cost before sending prompts
@@ -91,13 +94,16 @@ Connect to a wide range of LLM providers:
 
 DevoxxGenie also includes experimental features that are being developed and refined:
 
-- **Test Driven Generation (TDG)**: Write tests and generate implementation code
+- **[Docker Agentic Platform preview](docker-agentic-platform.md)**: Configure the external `ap` CLI, browse agents/sessions, and launch runs from a dedicated tab. APIs and behavior may change.
 
 ## Feature Details
 
 For detailed information about specific features, check out the dedicated pages:
 
 - [Spec-driven Development](spec-driven-development.md)
+- [SDD Agent Loop](sdd-agent-loop.md)
+- [Project Scanner](project-scanner.md)
+- [Event Automations](event-automations.md)
 - [Chat Interface](chat-interface.md)
 - [MCP Support](mcp_expanded.md)
 - [Agent Mode](agent-mode.md)
@@ -109,3 +115,6 @@ For detailed information about specific features, check out the dedicated pages:
 - [Security Scanning](security-scanning.md)
 - [Chat Memory](chat-memory.md)
 - [Inline Completion](inline-completion.md)
+- [Docker Agentic Platform preview](docker-agentic-platform.md)
+- [Privacy and analytics](../configuration/privacy-and-analytics.md)
+- [Debug and Activity Log](../configuration/debugging.md)

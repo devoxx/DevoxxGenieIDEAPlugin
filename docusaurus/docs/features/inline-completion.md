@@ -27,7 +27,7 @@ This results in more contextually relevant suggestions that understand the broad
 
 ### IntelliJ IDEA Version
 
-Inline completion requires **IntelliJ IDEA 2024.3+**. The feature uses the new debounced inline completion API available in these versions.
+The current DevoxxGenie plugin, including inline completion, requires **IntelliJ IDEA 2025.3.3+** (build **253.31033** or newer). Earlier IDE builds are not supported.
 
 ### Supported Providers
 
@@ -104,7 +104,7 @@ LM Studio uses HuggingFace model names (e.g., `starcoder2-3b` instead of `starco
 
 ### 3. Enable Inline Completion
 
-1. Open **Settings** > **Tools** > **DevoxxGenie** > **Completion**
+1. Open **Settings** > **Tools** > **DevoxxGenie** > **Inline Completion**
 2. Select your provider from the **"Fill-in-the-Middle Provider"** dropdown:
    - **None** - Disable inline completion
    - **Ollama** - Use Ollama for completions
@@ -143,7 +143,7 @@ Suggestions are **not** shown when:
 
 ## Configuration
 
-Configure inline completion in **Settings** > **Tools** > **DevoxxGenie** > **Completion**:
+Configure inline completion in **Settings** > **Tools** > **DevoxxGenie** > **Inline Completion**:
 
 | Setting | Description | Default | Range |
 |---------|-------------|---------|-------|
@@ -244,7 +244,7 @@ The model sees both the code before and after your cursor to generate contextual
 
 ### No Suggestions Appearing
 
-1. **Verify the feature is enabled**: Check Settings > DevoxxGenie > Completion (Provider should not be "None")
+1. **Verify the feature is enabled**: Check Settings > DevoxxGenie > Inline Completion (Provider should not be "None")
 2. **Check your provider is running**:
    - Ollama: Run `ollama list` in terminal
    - LM Studio: Check that the Local Server is started in the UI

@@ -64,7 +64,7 @@ The Fonts tab lets you override the default font sizes used in the chat interfac
 
 ## Resetting to Defaults
 
-Each tab respects the global **Reset** action in the settings dialog. Click **Reset** to restore all appearance settings to their defaults.
+The settings dialog's **Reset** action reloads the saved appearance values, discarding pending edits. To restore factory appearance values, use the Appearance page's separate **Reset to Defaults** button. That button applies the defaults immediately.
 
 ## Tips
 

@@ -24,9 +24,9 @@ For each new query, DevoxxGenie sends a portion of this conversation history to 
 
 You can configure the chat memory in DevoxxGenie settings:
 
-1. Go to Settings → Tools → DevoxxGenie → Prompts
+1. Go to Settings → Tools → DevoxxGenie → LLM Settings
 2. Locate the "Chat Memory Size" setting
-3. Set your preferred memory size (default is 10 messages)
+3. Set your preferred memory size (default is **50 messages**; supported range is **1–500**)
 
 ![Chat Memory Settings](/img/chat-memory-settings.png)
 
@@ -35,8 +35,8 @@ You can configure the chat memory in DevoxxGenie settings:
 The optimal memory size depends on your use case:
 
 - **Smaller memory** (5-10 messages): More focused responses, less token usage
-- **Larger memory** (15-20 messages): Better for complex, multi-step conversations
-- **No memory** (0 messages): Each prompt is treated independently (stateless)
+- **Larger memory** (50-100 messages): Better for complex, multi-step conversations
+- **Start fresh**: Create a new conversation when you do not want to reuse previous context. A memory size of `0` is not supported.
 
 Remember that larger memory sizes consume more tokens, which may increase costs when using cloud LLM providers.
 
@@ -115,13 +115,9 @@ The system message persists across all conversations, providing consistent instr
 2. DEVOXXGENIE.md content (if available)
 3. Current project structure information
 
-### Memory Visualization
+### Visible history versus active memory
 
-The chat interface visually represents which messages are in active memory:
-
-1. Messages in memory have a different background shade
-2. The oldest messages (about to be dropped from memory) are slightly faded
-3. Deleted messages are immediately removed from view
+The conversation view and stored history can contain more messages than the active memory window sent to the model. Do not use bubble colors or fading to infer which messages are in that window; configure its size in **LLM Settings**.
 
 ## Best Practices for Chat Memory
 

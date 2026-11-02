@@ -27,9 +27,10 @@ For all cloud providers, available models are **automatically fetched** from the
 9. [Kimi](#kimi)
 10. [GLM](#glm)
 11. [OpenRouter](#openrouter)
-12. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
-13. [Azure OpenAI](#azure-openai)
-14. [Amazon Bedrock](#amazon-bedrock)
+12. [NVIDIA](#nvidia)
+13. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
+14. [Azure OpenAI](#azure-openai)
+15. [Amazon Bedrock](#amazon-bedrock)
 
 ## OpenAI
 
@@ -334,6 +335,21 @@ Google provides the Gemini family of models through Google AI Studio.
 
 *Check [OpenRouter's pricing page](https://openrouter.ai/pricing) for current rates.*
 
+## NVIDIA
+
+DevoxxGenie includes a dedicated **NVIDIA** provider for NIM-hosted models. It uses the OpenAI-compatible endpoint `https://integrate.api.nvidia.com/v1` for both streaming and non-streaming chat.
+
+### Setup
+
+1. Obtain an API key from [NVIDIA Build](https://build.nvidia.com/).
+2. Open the main **Settings → Tools → DevoxxGenie** page and find the cloud-provider settings.
+3. Enable **NVIDIA API Key**, enter the key, and Apply.
+4. Select **NVIDIA** in the chat provider dropdown and choose a model.
+
+The plugin probes NVIDIA's `/models` endpoint to populate the model selector. A successful catalogue is cached until **Refresh models**; if discovery fails or returns no models, it falls back to the plugin's curated model list. Model capabilities and access depend on the selected model and your provider account.
+
+You can [favorite a model](../features/chat-interface.md#favorite-models) for quick access across providers. [Show Thinking](../features/chat-interface.md#show-thinking) only displays reasoning when the model/provider returns it.
+
 ## Cloudflare AI Gateway
 
 [Cloudflare AI Gateway](https://www.cloudflare.com/products/ai-gateway/) is not a model provider itself — it sits **in front of** your existing providers (OpenAI, Anthropic, Google, Workers AI, and [dozens more](https://developers.cloudflare.com/ai-gateway/)) and gives you a single endpoint with caching, rate limiting, spend controls, and per-request analytics.
@@ -438,12 +454,17 @@ Amazon Bedrock is an **optional provider** that must be manually enabled in Devo
 
 1. Create an AWS account
 2. Set up Amazon Bedrock and configure access permissions
-3. In DevoxxGenie settings, select "Amazon Bedrock" as the provider
-4. Enter your Access Key, Secret Key, and Region
+3. On the main **Settings → Tools → DevoxxGenie** page, enable **AWS Bedrock**.
+4. Choose **Authentication Method** and enter the matching credentials below, plus the **AWS region**.
+5. Apply, then select **Bedrock** and a model in the chat window.
 
 ### Configuration
 
-- **AWS Credentials**: Your access and secret keys
+- **Authentication Method**:
+  - **Access Key / Secret Key** (default): enter **AWS Access Key ID** and **AWS Secret Access Key**.
+  - **AWS Profile**: enter **AWS Profile Name**; the SDK resolves credentials for that named profile.
+  - **Bearer Token**: enter **AWS Bearer Token**. This mode uses token authentication rather than the access-key credentials provider.
+- Only fields for the selected authentication method are shown. Changing the mode does not turn a bearer token into an access key; populate the matching field.
 - **Region**: AWS region for Bedrock (supports regional inference with us/eu/apac prefixes)
 - **Model ID**: Specific model identifier
 - **Parameters**: Temperature, Top P

@@ -22,12 +22,14 @@ There are several ways to access the DevoxxGenie settings:
 
 DevoxxGenie's settings are organized into the following categories:
 
-### LLM Providers
+### LLM providers (main DevoxxGenie page)
 
 This is the main settings page where you can:
 
 - Select and configure LLM providers
-- Enter API keys for cloud providers
+- Enter API keys for cloud providers, including NVIDIA
+- Manage [favorite models](../features/chat-interface.md#favorite-models)
+- Enable [Show Thinking](../features/chat-interface.md#show-thinking) for supported reasoning models
 - Configure endpoints for local providers
 - Enable optional providers (Azure OpenAI, Amazon Bedrock)
 
@@ -39,13 +41,15 @@ Configure general settings for LLM interactions:
 - Response format preferences
 - Timeout settings
 - Request parameters
+- Chat memory size (default **50**, range **1–500**); see [Chat Memory](../features/chat-memory.md)
 
-### Prompts
+### System Prompt & Personas
 
 Configure the system prompt and keyboard shortcuts:
 
 - Customize the system prompt that sets LLM behavior
 - Configure keyboard shortcuts for prompt submission
+- Enable and manage [Personas](prompts.md#personas) that replace the base system prompt for new conversations
 - Generate and manage the DEVOXXGENIE.md project description file
 
 See [Prompts Configuration](prompts.md) for details.
@@ -68,6 +72,7 @@ Manage LLM-activated `SKILL.md` capabilities loaded from disk:
 - Enable or disable individual skills
 - Open (and auto-create) any of the six skill directories from the dropdown
 - Reload skills from disk without restarting the IDE
+- Discover downloadable skills through curated repository and directory links
 
 Requires **Agent Mode** to be enabled. See [Skills](../features/skills.md) for details.
 
@@ -97,9 +102,11 @@ Configure web search integration:
 Configure project scanning options:
 
 - Include/exclude file patterns
-- Set depth limits for scanning
-- Configure handling of large files
-- Set up code extraction preferences
+- Exclude specific files and directories
+- Respect `.gitignore` and optionally exclude JavaDoc
+- Save these preferences per project; new projects start from existing global defaults
+
+There are no configurable scan-depth, file-size, line-count, file-count, or token-limit controls on this page.
 
 ### RAG
 
@@ -130,6 +137,27 @@ Configure token usage and cost settings:
 - Set up token usage alerts
 - Configure token calculation preferences
 
+### Analytics
+
+Choose whether to send anonymous usage data and review the payload categories. No analytics is sent before consent acknowledgement or when disabled. See [Privacy and analytics](privacy-and-analytics.md), including the distinction between local inference and other network-enabled features.
+
+### Debug
+
+Enable raw request/response, MCP, or agent logs in the Activity Log. Raw logs can include sensitive conversation text even when likely credentials are masked. See [Debug and Activity Log](debugging.md).
+
+### Docker Agentic Platform (PREVIEW)
+
+Configure the external `ap` CLI path, authentication, and optional Agentic Platform tab. See [Docker Agentic Platform preview](../features/docker-agentic-platform.md) for setup and limitations.
+
+### Other feature settings
+
+- **Agent Mode**: [Built-in tools, approvals, tool descriptions, and parallel exploration](../features/agent-mode.md).
+- **Spec Driven Development**: [Task/spec management](../features/spec-driven-development.md) and [batch agent runs](../features/sdd-agent-loop.md).
+- **Security Scanning**: [Scanner setup and optional finding-to-task creation](../features/security-scanning.md).
+- **CLI/ACP Runners**: [CLI](../features/cli-runners.md) and [ACP](../features/acp-runners.md) executable configuration.
+- **Inline Completion**: [FIM provider, model, and timing controls](../features/inline-completion.md).
+- **Event Automations**: [Event triggers, agent prompts, and confirmation](../features/event-automations.md).
+
 ## Global Settings Options
 
 At the bottom of each settings page, you'll find common actions:
@@ -137,7 +165,7 @@ At the bottom of each settings page, you'll find common actions:
 - **Apply**: Apply changes without closing the settings dialog
 - **OK**: Apply changes and close the settings dialog
 - **Cancel**: Discard changes and close the settings dialog
-- **Reset**: Reset settings to their default values
+- **Reset**: Reload saved settings and discard pending edits; this is not a factory reset. Pages that offer a separate restore/defaults action label it explicitly.
 
 ## Settings Storage
 

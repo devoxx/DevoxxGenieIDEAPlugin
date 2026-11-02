@@ -20,7 +20,7 @@ The new [Skills](skills.md) feature is a separate capability — Skills are LLM-
 
 1. Type a slash command in the input field (e.g., `/explain`)
 2. Optionally add arguments after the command
-3. Press Enter — the command's prompt template is sent to the LLM
+3. Submit the prompt (Shift+Enter by default) — the command's prompt template is sent to the LLM
 
 Commands support a `$ARGUMENT` placeholder that gets replaced with whatever text you type after the command. For example:
 
@@ -48,12 +48,13 @@ DevoxxGenie ships with several built-in commands:
 | `/explain` | Explain the selected code |
 | `/review` | Review the selected code and suggest improvements |
 | `/find` | Search for code in your project using RAG |
+| `/search` | Search the web using the enabled Tavily or Google provider |
 | `/help` | Show available commands |
 | `/init` | Generate a DEVOXXGENIE.md project description file |
 
 ### Using `/find` with RAG
 
-The `/find` command requires RAG to be enabled and activated. When you type `/find authentication flow`, DevoxxGenie performs a semantic search across your indexed codebase and returns the most relevant code snippets.
+The `/find` command requires RAG to be enabled in settings and the project to be indexed. When you type `/find authentication flow`, DevoxxGenie performs a semantic search across your indexed codebase and returns the most relevant code snippets.
 
 If RAG is not configured, you'll see a notification explaining how to set it up.
 
@@ -99,7 +100,7 @@ Click the **Restore** button to reset the command list back to the built-in defa
 
 Commands and the system prompt serve different purposes:
 
-- **System prompt**: Sets the overall context and behavior for the LLM across all conversations. Configured in **Settings** > **Prompts**.
+- **System prompt**: Sets the overall context and behavior for the LLM across all conversations. Configured in **Settings** > **System Prompt & Personas**.
 - **Commands**: Individual slash commands that trigger specific prompt templates for one-off tasks. Configured in **Settings** > **Commands**.
 
 ## Commands vs. Skills
