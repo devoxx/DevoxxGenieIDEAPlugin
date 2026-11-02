@@ -48,6 +48,7 @@ const sidebars = {
         'features/inline-completion',
         'features/security-scanning',
         'features/event-automations',
+        'features/docker-agentic-platform',
       ],
     },
     {
@@ -72,6 +73,8 @@ const sidebars = {
         'configuration/appearance',
         'configuration/token-cost',
         'configuration/devoxxgenie-md',
+        'configuration/privacy-and-analytics',
+        'configuration/debugging',
       ],
     },
     {

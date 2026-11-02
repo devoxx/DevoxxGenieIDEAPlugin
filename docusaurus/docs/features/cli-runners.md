@@ -12,6 +12,8 @@ Instead of using the built-in LLM provider, you can execute spec tasks via **ext
 
 CLI Runners integrate with both [Spec-driven Development](spec-driven-development.md) (single task execution) and the [Agent Loop](sdd-agent-loop.md) (batch task execution).
 
+Attached images are forwarded as file paths for the runner to read, not as native image-content blocks. See [Images with CLI and ACP runners](dnd-images.md#images-with-cli-and-acp-runners) for requirements and limitations.
+
 ## How It Works
 
 Each CLI tool is launched as an external process with your task prompt piped in. A **Backlog MCP config** is auto-generated and passed to the CLI so it can read and update tasks using the same backlog tools as the built-in agent. The output streams live into an IntelliJ **Run** tool window console.

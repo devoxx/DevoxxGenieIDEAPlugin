@@ -12,6 +12,8 @@ ACP (Agent Communication Protocol) Runners let you execute spec tasks via **exte
 
 ACP Runners integrate with both [Spec-driven Development](spec-driven-development.md) (single task execution) and the [Agent Loop](sdd-agent-loop.md) (batch task execution).
 
+Attached images are forwarded as file paths for the runner to read, not as native image-content blocks. See [Images with CLI and ACP runners](dnd-images.md#images-with-cli-and-acp-runners) for requirements and limitations.
+
 ## How It Works
 
 DevoxxGenie spawns the ACP tool as a child process and communicates over stdin/stdout using JSON-RPC 2.0. The protocol begins with a capability handshake, then DevoxxGenie sends task prompts as structured messages and receives streaming responses.

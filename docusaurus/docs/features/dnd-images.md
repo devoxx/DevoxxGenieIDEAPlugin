@@ -26,6 +26,14 @@ This feature works with multimodal LLMs that can process both text and images, s
 - OpenAI GPT-4V and newer
 - Local models like LLaVA (via Ollama)
 
+## Images with CLI and ACP runners
+
+[CLI Runners](cli-runners.md) and [ACP Runners](acp-runners.md) receive text prompts rather than the native provider's image-content blocks. DevoxxGenie includes paths to the attached image files in an `<attached_images>` section and instructs the external agent to read them with its own file-reading tool.
+
+The runner must be able to access those paths and support image reading; forwarding a path is not a guarantee that every CLI/model understands images. Image bytes are not embedded as base64 in this text prompt. Follow-up history preserves the text parts and substitutes image markers rather than replaying unsupported multimodal blocks.
+
+This differs from the [Docker Agentic Platform preview](docker-agentic-platform.md), whose file picker inserts paths into the prompt rather than using the normal chat attachment pipeline.
+
 ## Using Image Drag & Drop
 
 ### Adding Images to Your Prompts

@@ -50,6 +50,17 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 
 As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. The `fetch_page` tool lets the agent read external documentation, API references, or web pages to gather additional context. The **PSI tools** give the agent IDE-level code intelligence — it can find symbol definitions, look up references, navigate to definitions, and discover implementations, all powered by IntelliJ's semantic index rather than text search. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
 
+### Fetching web pages safely
+
+`fetch_page` converts HTML to Markdown while preserving headings, code blocks, tables, and links. Text, JSON, and XML responses remain text; binary content is not returned for the model to read.
+
+- Only HTTP(S) URLs are accepted. URLs with embedded usernames/passwords and hosts resolving to local addresses are rejected, so this tool is not a way to read a localhost development server or private-network endpoint.
+- Up to **10 redirects** are followed on the same host. A redirect to another host returns a notice and destination URL instead of fetching it automatically; the model can make a separate request to that URL.
+- Downloads are capped at **10 MiB** and returned text at **100,000 characters**. A larger text result is marked as truncated.
+- The connection timeout is **15 seconds**, and each fetch request uses a **60-second** timeout. Cached results may be reused.
+
+Use [Debug logging](../configuration/debugging.md) to inspect a rejected URL or unexpected response. Disable the tool in Built-in Tools when you do not want the agent fetching external pages.
+
 ### Per-Tool Enable/Disable
 
 Each built-in tool can be individually enabled or disabled in the **Built-in Tools** section of the Agent settings. Uncheck a tool to prevent the agent from using it. This is useful when you want to:
@@ -316,7 +327,7 @@ When the LLM decides it needs to investigate multiple areas simultaneously, it c
 
 Each sub-agent:
 
-- Has **read-only access** to your project (read_file, list_files, search_files, fetch_page only)
+- Has **read-only access** to your project through `read_file`, `list_files`, and `search_files` only. The exploration sub-agent provider does not expose `fetch_page`, PSI tools, write tools, MCP tools, or Skills.
 - Runs with its own **isolated chat memory** and tool call budget
 - Can use a **different LLM provider/model** than the main agent (e.g., a cheaper/faster model)
 - Returns a **concise markdown summary** of its findings back to the main agent
@@ -479,9 +490,9 @@ Main Agent (your configured LLM)
     |
     |--> parallel_explore(queries: ["query1", "query2", "query3"])
     |         |
-    |         |--> Sub-Agent #1 (read_file, list_files, search_files, fetch_page, PSI tools)
-    |         |--> Sub-Agent #2 (read_file, list_files, search_files, fetch_page, PSI tools)
-    |         |--> Sub-Agent #3 (read_file, list_files, search_files, fetch_page, PSI tools)
+    |         |--> Sub-Agent #1 (read_file, list_files, search_files)
+    |         |--> Sub-Agent #2 (read_file, list_files, search_files)
+    |         |--> Sub-Agent #3 (read_file, list_files, search_files)
     |         |
     |         v
     |    Combined Results (markdown)

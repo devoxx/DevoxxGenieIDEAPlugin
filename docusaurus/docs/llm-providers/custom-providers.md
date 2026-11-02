@@ -50,6 +50,23 @@ You can configure standard LLM parameters:
 - **Max Tokens**: Maximum length of the response
 - **Timeout**: Request timeout in seconds
 
+### Gateway compatibility and usage estimates
+
+The **Custom OpenAI** provider settings on the main **Settings → Tools → DevoxxGenie** page include controls for endpoints that differ from standard defaults:
+
+| Setting | When to use it |
+|---|---|
+| **URL** | Enter the base URL, not a full `/chat/completions` URL; the client appends API paths. |
+| **Model** override | Use an exact model ID when enabled. This skips automatic `/models` discovery, useful for gateways that do not expose that endpoint. |
+| **API Key** | Enable and enter credentials when required by your gateway. |
+| **HTTP 1.1** | Force HTTP/1.1 instead of HTTP/2. |
+| **max_completion_tokens** | Send the output-token limit as `max_completion_tokens` instead of `max_tokens` when the endpoint rejects the latter. |
+| **Omit top_p** | Leave `top_p` out of requests when a model or gateway rejects it. The LLM Settings Top-P value is then ignored for this provider; temperature is still sent. |
+| **Context Window** | Enable and set the real context size for usage bars and token calculations. Without an override, the plugin assumes **4096 tokens**. This is an estimate setting, not enforcement of the server's limit. |
+| **Input Cost / Output Cost** | Set your rates in US dollars per **1,000,000 tokens** for response cost estimates. Zero hides the cost figure; it is not a statement that the provider is free. |
+
+Only enable compatibility overrides your endpoint needs. For unsupported-parameter failures, inspect the sanitized request through [Debug logging](../configuration/debugging.md) rather than guessing which setting to change.
+
 ## Compatible Provider Types
 
 ### Self-Hosted OpenAI-Compatible Servers

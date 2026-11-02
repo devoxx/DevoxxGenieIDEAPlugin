@@ -48,7 +48,7 @@ The Agent Loop works with both the **built-in LLM provider** and **external CLI 
 
 For best results, create a **CLAUDE.md** or **AGENTS.md** file in your project root before running the agent loop. This file gives the LLM agent essential context about your project — build commands, architecture, conventions, and constraints — so it can make better decisions autonomously.
 
-Then open **Settings → DevoxxGenie → Prompts** and make sure the checkbox **"Use CLAUDE.md or AGENTS.md in prompt"** is enabled. When checked, the contents of your instructions file are automatically included in every task prompt sent to the agent.
+Then open **Settings → DevoxxGenie → System Prompt & Personas** and make sure the checkbox **"Use CLAUDE.md or AGENTS.md in prompt"** is enabled. When checked, the contents of your instructions file are automatically included in every task prompt sent to the agent.
 
 :::tip
 Without a CLAUDE.md / AGENTS.md file (or with the setting unchecked), the agent has no project-specific guidance and may make assumptions about your build system, coding style, or project structure that lead to incorrect implementations.

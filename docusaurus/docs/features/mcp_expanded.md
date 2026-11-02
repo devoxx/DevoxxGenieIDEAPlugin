@@ -82,7 +82,7 @@ upgraded to Streamable HTTP.
 1. Click the **+** (Add) button in the MCP settings
 2. Choose a transport type
 3. For **STDIO** servers: enter the command, arguments, and optional environment variables
-4. For **HTTP/HTTP SSE** servers: enter the server URL and optional custom headers
+4. For **HTTP** servers: enter the server URL and optional custom headers
 5. Click **OK**
 
 ### Importing and Exporting Configuration
@@ -180,10 +180,12 @@ DevoxxGenie includes a debugging panel for MCP requests and responses:
 ![MCP Debugging](/img/MCPDebug.jpg)
 
 1. Enable **MCP Logging** in the MCP settings
-2. Open the **DevoxxGenieMCPLogs** tool window from the bottom panel
+2. Open the **Activity Log** tool window (**DevoxxGenieActivityLogs**) and select **Show MCP Only**
 3. Observe the requests sent to and responses received from MCP servers
-4. **Double-click any log entry** to view the full JSON formatted output in a dialog
+4. **Double-click any log entry** to open the full payload in an editor
 5. Use this information to troubleshoot issues or understand how the LLM is using the tools
+
+See [Debug and Activity Log](../configuration/debugging.md) for shared logging controls and sensitive-data precautions.
 
 ## Viewing Available Tools
 

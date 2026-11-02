@@ -60,8 +60,10 @@ DevoxxGenie will validate that Docker, ChromaDB, and Ollama are all available be
 | Setting | Description | Default |
 |---------|-------------|---------|
 | ChromaDB port | Port for the ChromaDB container | `8000` |
-| Max results | Maximum number of relevant documents to retrieve | `5` |
+| Max results | Maximum number of relevant documents to retrieve | `10` |
 | Min score | Minimum similarity score for including a result | `0.7` |
+
+RAG is controlled by the **Enable RAG** setting; there is no separate per-conversation activation toggle.
 
 ## Using RAG
 

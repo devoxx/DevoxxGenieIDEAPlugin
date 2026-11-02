@@ -41,7 +41,7 @@ DevoxxGenie supports two web search providers:
 - AI-native search API designed for LLM integration
 - Specialized for developer-focused searches
 - Requires a Tavily API key
-- Offers various search types (standard, comprehensive, code)
+- Uses the provider's search behavior; the plugin exposes a maximum-result count, not search-type presets
 
 ## Enabling Web Search
 
@@ -69,7 +69,7 @@ To set up web search:
 
 1. Sign up for a [Tavily API key](https://tavily.com/)
 2. Enter your API key in DevoxxGenie settings
-3. Optionally configure search parameters
+3. Enable Tavily as the selected provider and set **Max search results** if needed
 
 ### Enabling for Individual Conversations
 
@@ -154,9 +154,9 @@ In addition to the chat-mode toggle, DevoxxGenie exposes web search as a first-c
 
 1. Open **Settings → DevoxxGenie → Agent Mode**
 2. Under **Built-in Tools**, check **web_search**
-3. Make sure at least one web search provider is configured (Tavily or Google Custom Search) in **Settings → DevoxxGenie → Web Search** — the agent tool reuses those keys
+3. Configure and **enable** a search provider (Tavily or Google Custom Search) in **Settings → DevoxxGenie → Web Search** — the agent tool reuses its credentials and provider-enabled setting. Google also requires a Custom Search Engine ID.
 
-If neither key is configured, the tool returns a descriptive error string and the agent falls back to other tools. No modal dialogs or broken agent loops.
+If no enabled provider has the required credentials, the tool returns a descriptive error string and the agent falls back to other tools. No modal dialogs or broken agent loops.
 
 ### How it works
 
@@ -172,7 +172,7 @@ Found 3 results for "langchain4j ChromaDB 0.6 migration":
 2. ...
 ```
 
-The tool returns raw structured results — title, URL, and snippet — so the agent can reason over sources without an extra summarisation step. Provider selection is automatic: Tavily is preferred when its key is present; Google Custom Search is the fallback.
+The tool returns raw structured results — title, URL, and snippet — so the agent can reason over sources without an extra summarisation step. Provider selection respects the enabled-provider settings: Tavily is used when enabled with a non-empty key; otherwise Google is used when enabled with both a key and Search Engine ID. A stored key alone does not enable a provider. The settings UI makes the provider choices mutually exclusive.
 
 When a search result looks promising, the agent can follow up with the `fetch_page` tool, which fetches the full content of a webpage given a URL — making `web_search` → `fetch_page` a natural two-step pattern for retrieving and reading external documentation.
 
@@ -273,12 +273,7 @@ If you encounter API key problems:
 
 ### Search Settings
 
-Advanced settings available:
-
-- **Result Count**: Number of search results to retrieve
-- **Search Type**: Standard or code-focused (Tavily)
-- **Locale**: Region-specific search results (Google)
-- **Safe Search**: Content filtering level (Google)
+The settings page exposes **Max search results** (1–10), the feature and provider enable switches, API keys, and the Google Custom Search Engine ID. It does not expose search-type, locale, or Safe Search controls.
 
 ### Custom Prompting
 

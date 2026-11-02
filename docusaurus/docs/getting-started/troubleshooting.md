@@ -150,7 +150,7 @@ The DevoxxGenie icon doesn't appear in the IDE after installation.
    - **File** > **Invalidate Caches / Restart...**
    - Select **Invalidate and Restart**
 
-4. **Verify IDE version**: DevoxxGenie requires IntelliJ IDEA 2023.3.4 or later
+4. **Verify IDE version**: DevoxxGenie requires IntelliJ IDEA 2025.3.3 or later
 
 ## Getting Help
 

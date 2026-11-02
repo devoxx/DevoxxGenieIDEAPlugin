@@ -84,12 +84,12 @@ This creates the standard Backlog.md-compatible directory structure in pure Java
 your-project/
 ├── backlog/
 │   ├── config.yml          # Backlog configuration (statuses, task prefix, milestones)
-│   ├── tasks/              # Active task spec files
+│   ├── tasks/              # Task specs, including Done tasks until archived
 │   ├── drafts/             # Draft tasks not yet ready
 │   ├── docs/               # Supporting documents
 │   ├── decisions/          # Decision records
 │   ├── milestones/         # Milestone definitions
-│   ├── completed/          # Completed tasks (moved here automatically)
+│   ├── completed/          # Created for compatibility; completion leaves files in tasks/
 │   └── archive/            # Archived items
 │       ├── tasks/
 │       ├── drafts/
@@ -111,7 +111,7 @@ backlog init
 
 ### Step 3: Create Your First Task
 
-When DevoxxGenie Specs is enabled, 17 backlog tools are automatically available. Just type what you need in natural language in the DevoxxGenie prompt:
+When DevoxxGenie Specs is enabled, 20 backlog tools are automatically available. Just type what you need in natural language in the DevoxxGenie prompt:
 
 > "Create a task to add user authentication with JWT for the REST API, high priority, with acceptance criteria for login endpoint, token generation, and password hashing"
 
@@ -223,9 +223,9 @@ The agent then autonomously implements the task, updating the spec file in real-
 
 ## Backlog Tools (Agent Mode)
 
-When the DevoxxGenie Specs is enabled, DevoxxGenie automatically registers **17 built-in backlog tools** that the LLM agent can use. These tools allow the agent to manage the entire task lifecycle programmatically.
+When the DevoxxGenie Specs is enabled, DevoxxGenie automatically registers **20 built-in backlog tools** that the LLM agent can use. These tools allow the agent to manage the entire task lifecycle programmatically.
 
-### Task Tools (7)
+### Task Tools (10)
 
 | Tool | Description |
 |------|-------------|
@@ -234,8 +234,13 @@ When the DevoxxGenie Specs is enabled, DevoxxGenie automatically registers **17 
 | `backlog_task_search` | Search tasks by title and description with status/priority filters |
 | `backlog_task_view` | View full details of a specific task by ID |
 | `backlog_task_edit` | Edit task metadata, plan, notes, acceptance criteria (check/uncheck), and final summary |
-| `backlog_task_complete` | Mark a task as Done and move it to the completed directory |
+| `backlog_task_complete` | Mark a task as Done; its file stays in `tasks/` until explicitly archived |
 | `backlog_task_archive` | Move a task to the archive directory |
+| `backlog_task_archive_done` | Archive all Done tasks |
+| `backlog_task_unarchive` | Restore a task from the archive to `tasks/` |
+| `backlog_task_list_archived` | List archived tasks |
+
+Completing a task changes its status without moving the file. Archive it separately when you want it removed from the active board.
 
 ### Document Tools (5)
 

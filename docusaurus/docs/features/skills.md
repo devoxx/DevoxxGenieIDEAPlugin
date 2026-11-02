@@ -22,15 +22,15 @@ DevoxxGenie discovers skills from the same directories that Claude Code and othe
 
 Skills are only active when:
 
-1. **Agent Mode is enabled** — go to **Settings** → **Tools** → **DevoxxGenie** → **Agent** and tick **Enable Agent Mode**. If Agent Mode is off, no `activate_skill` tool is exposed to the LLM and skills are inert.
+1. **Agent Mode is enabled** — go to **Settings** → **Tools** → **DevoxxGenie** → **Agent Mode** and tick **Enable Agent Mode**. If Agent Mode is off, no `activate_skill` tool is exposed to the LLM and skills are inert.
 2. **You are using a tool-capable LLM** — Skills are delivered as a tool call (`activate_skill`), so the selected model must support function/tool calling. Most modern cloud models qualify (OpenAI GPT-4o/4.1, Anthropic Claude 3.5+, Google Gemini 1.5+, Mistral, Grok, etc.); for local models pick one advertised as supporting tool use (e.g. Qwen2.5-Coder, Llama 3.1+, GLM-4).
 
 ## How Skills Work
 
-1. On every chat request, DevoxxGenie scans the [six skill directories](#where-to-put-skill-files) and builds a list of available skills.
+1. DevoxxGenie scans the [six skill directories](#where-to-put-skill-files) when the registry is first loaded and caches the available skills. Opening Skills settings or clicking **Reload** refreshes the cache; chat requests reuse it rather than rescanning disk.
 2. A short index of `(name → description)` is injected into the system prompt so the LLM knows what skills exist.
-3. When the LLM decides a skill is relevant, it calls the `activate_skill` tool with the skill name. DevoxxGenie streams the full body of that `SKILL.md` back into the conversation.
-4. The LLM then continues the conversation using the skill's instructions and any resources it references.
+3. When the LLM decides a skill is relevant, it calls the `activate_skill` tool with the skill name. DevoxxGenie returns the full body of that `SKILL.md` as a tool result.
+4. The LLM continues using the instructions. When loaded skills contain supporting resources, the provider also exposes `read_skill_resource` to retrieve their preloaded contents on demand.
 
 The user never types anything special — discovery and activation happen entirely on the model's side.
 
@@ -102,11 +102,25 @@ Open **Settings** → **Tools** → **DevoxxGenie** → **Skills**. The page sho
 
 When more than one source defines the same skill name, only the highest-priority one is listed (the others are skipped with a warning in the IDE log).
 
+## Browse skills online
+
+The Skills settings page includes curated links to discover skill folders:
+
+- [Anthropic Skills](https://github.com/anthropics/skills)
+- [Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills)
+- [Addy Osmani — Agent Skills](https://github.com/addyosmani/agent-skills)
+- [Agent Skills standard](https://agentskills.io)
+- [Claude Code Marketplace](https://github.com/netresearch/claude-code-marketplace)
+- [SkillsMP](https://skillsmp.com)
+- [NVIDIA Build Skills](https://build.nvidia.com/skills)
+
+Download the individual skill folder, including its supporting resources, into one of the six supported directories and click **Reload**. A collection repository may group skills under nested directories: install each skill so that its `SKILL.md` is directly inside `<skills-directory>/<skill-name>/`. Host-specific commands, hooks, or tools referenced by a third-party skill are not automatically installed by copying its Markdown.
+
 ## Creating Your First Skill
 
 1. Open **Settings** → **Tools** → **DevoxxGenie** → **Skills**.
 2. In the **Open Skills Folder** dropdown choose, for example, *project (.devoxxgenie)* and click the button — your file manager opens `<project>/.devoxxgenie/skills/`.
-3. Create a new directory next to that path, e.g. `commit-message-writer/`.
+3. Create a new directory inside that path, e.g. `commit-message-writer/`.
 4. Inside it create `SKILL.md`:
 
    ```markdown
@@ -141,7 +155,7 @@ When more than one source defines the same skill name, only the highest-priority
 
 - **Write descriptions like tool descriptions.** The LLM picks a skill based on its one-line description, so make it concrete and action-oriented (*"Guides a safe refactor workflow"* beats *"Refactoring stuff"*).
 - **Keep the body actionable.** A skill is most useful as a numbered checklist or playbook the model can follow step-by-step.
-- **Reference sibling files.** You can ship resources next to `SKILL.md` (e.g. `checklist.md`, `template.json`) and tell the LLM to read them — Agent Mode's `read_file` tool can pull them in on demand.
+- **Reference sibling files.** You can ship resources next to `SKILL.md` (e.g. `checklist.md`, `template.json`) and tell the LLM to read them — the Skills provider's `read_skill_resource` tool retrieves their preloaded contents. This also works for user-level skills outside the project; the built-in `read_file` tool is restricted to the project. Click **Reload** after editing instructions or resources.
 - **Use project-level `.devoxxgenie/skills/` for team-specific recipes.** Commit them to your repo so every team member with DevoxxGenie installed gets the same agent behaviour.
 - **Disable rather than delete.** When experimenting, untick **Enabled** in the Settings dialog instead of removing the `SKILL.md` file.
 
