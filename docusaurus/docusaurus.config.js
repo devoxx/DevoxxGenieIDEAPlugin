@@ -236,10 +236,6 @@ const config = {
             title: 'Community',
             items: [
               {
-                label: 'Share your Success Story',
-                to: '/success-stories',
-              },
-              {
                 label: 'X (Twitter)',
                 href: 'https://x.com/DevoxxGenie',
               },
