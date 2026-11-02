@@ -4,16 +4,20 @@ title: "Tell Us What You Built: Share Your DevoxxGenie Success Story"
 authors: [stephanj]
 tags: [community, success stories, feedback, roadmap, open source, intellij idea]
 date: 2026-08-10
-description: "The dashboards tell us how many people use DevoxxGenie and which models they pick, but not what they actually ship with it. We built a page to collect your stories."
+description: "The original success-story form has been retired. Share your DevoxxGenie workflows and feedback through GitHub Discussions instead."
 keywords: [devoxxgenie, success story, user feedback, community, testimonials, intellij plugin, ai code assistant, open source]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
 # Tell Us What You Built: Share Your DevoxxGenie Success Story
 
+:::note Update — November 2, 2026
+The dedicated success-story page and embedded form have been retired. This announcement is retained for historical context. For current feedback and workflow discussions, use [GitHub Discussions](https://github.com/devoxx/DevoxxGenieIDEAPlugin/discussions).
+:::
+
 We have a lot of numbers. The [growth curve](/blog/devoxxgenie-growth-milestone) keeps climbing, and the [analytics deep-dive](/blog/devoxxgenie-plugin-analytics) told us which providers and features people actually reach for. What none of that tells us is the interesting part: **what you are building with DevoxxGenie, and what it changed about your day.**
 
-So we made a page for it: **[genie.devoxx.com/success-stories](/success-stories)**.
+The original invitation was to share those experiences through a dedicated form. That collection page is now retired; [GitHub Discussions](https://github.com/devoxx/DevoxxGenieIDEAPlugin/discussions) remains open for feedback.
 
 <!-- truncate -->
 
@@ -39,16 +43,16 @@ Do not overthink it. A few honest paragraphs beat a polished case study. The thi
 
 ## Where stories end up
 
-With your permission, stories may show up on this site, in a blog post, or in the [newsletter](/newsletter). You decide how you are credited: full name and company, first name only, or completely anonymous. Nothing gets published without your explicit consent, and if you would rather your story stay entirely internal to the project, that option is on the form too.
+The original form invited stories for possible publication on the site, blog, or [newsletter](/newsletter), subject to explicit consent and the contributor's choice of credit. That form is no longer available. GitHub Discussions is a public forum: do not include private project details or secrets in feedback there.
 
 ## Not a success story? Still send it
 
-The form is the general DevoxxGenie feedback form, so it works just as well for "here is what is broken" and "here is what I wish it did". Bug reports are still best filed as [GitHub issues](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues), where they can be tracked and fixed, but for the fuzzier stuff (workflow friction, missing features, things that feel wrong), the form is the right place.
+Bug reports are best filed as [GitHub issues](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues), where they can be tracked and fixed. For workflow friction, ideas, or general feedback, start a [GitHub Discussion](https://github.com/devoxx/DevoxxGenieIDEAPlugin/discussions).
 
 ## Take five minutes
 
-**[Share your story here](/success-stories)**
+**[Share feedback on GitHub Discussions](https://github.com/devoxx/DevoxxGenieIDEAPlugin/discussions)**
 
-It is a handful of questions and you can skip anything you would rather not answer. If DevoxxGenie has saved you time, taught you something, or quietly become part of how you work, we would really like to hear about it.
+If DevoxxGenie has saved you time, taught you something, or quietly become part of how you work, we would still like to hear about it through the community channels above.
 
 Thank you. 🙏
