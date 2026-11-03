@@ -33,6 +33,7 @@ import dev.langchain4j.service.tool.ToolProvider;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -233,7 +234,8 @@ public class NonStreamingPromptExecutionService {
             var assistantBuilder = AiServices.builder(Assistant.class)
                     .chatModel(chatModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
-                    .systemMessageProvider(memoryId -> buildToolSystemPrompt(project, chatMessageContext.getMemoryKey()))
+                    .systemMessageProvider(memoryId -> buildToolSystemPrompt(project,
+                            chatMessageContext.getMemoryKey(), chatMessageContext.getProjectContext()))
                     .toolProvider(toolProvider);
             // Issue #1193: turn hallucinated-tool-name / bad-arguments throws into
             // error tool-results so chat memory never ends up with a dangling tool_use.
@@ -289,8 +291,10 @@ public class NonStreamingPromptExecutionService {
         return response;
     }
 
-    private static @NotNull String buildToolSystemPrompt(@NotNull Project project, String memoryKey) {
-        return ChatMemoryManager.buildAugmentedSystemPrompt(project, memoryKey);
+    private static @NotNull String buildToolSystemPrompt(@NotNull Project project,
+                                                         String memoryKey,
+                                                         @Nullable String projectContext) {
+        return ChatMemoryManager.buildAugmentedSystemPrompt(project, memoryKey, projectContext);
     }
 
     private static Assistant buildAssistant(ChatModel chatModel,

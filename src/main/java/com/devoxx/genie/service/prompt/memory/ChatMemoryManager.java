@@ -35,8 +35,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.devoxx.genie.model.Constant.MARKDOWN;
 
@@ -111,10 +118,102 @@ public class ChatMemoryManager {
                     log.debug("Added system message to memory");
                     publishSystemPromptToActivityLog(context.getProject(), systemPrompt);
                 }
+            } else {
+                // Memory already holds a conversation (next turn, restored conversation,
+                // or the user added/removed the full project context mid-conversation).
+                // Keep the system message in sync with the current context. Best-effort:
+                // a sync failure must never break the prompt.
+                try {
+                    syncSystemMessageIfNeeded(context);
+                } catch (Exception e) {
+                    log.warn("Failed to sync the system message for memory key {}", memoryKey, e);
+                }
             }
         } catch (Exception e) {
             throw new MemoryException("Failed to prepare memory", e);
         }
+    }
+
+    /**
+     * Keeps the conversation's system message in sync with the current context when
+     * memory is not empty:
+     * <ul>
+     *   <li>Restored conversations carry only flat user/AI pairs and no system message;
+     *       one is installed so the persona, DEVOXXGENIE.md, CLAUDE.md/AGENTS.md and the
+     *       tool instructions are not silently lost.</li>
+     *   <li>The full project context the user added (or removed) mid-conversation is
+     *       installed in (or removed from) the system prompt, which is where that
+     *       snapshot lives exactly once.</li>
+     * </ul>
+     * The snapshot is compared by content hash (see {@link #projectContextHash}), not by
+     * section presence: a remove + re-add with changed content (files edited, or a model
+     * with a different context window) keeps the section present, so only the hash
+     * reveals the staleness. When nothing changed the system message is left alone, so
+     * the provider's prompt cache stays warm. A rewrite is published to the activity log
+     * exactly like the first install — otherwise the Logs panel keeps showing a prompt
+     * the model no longer uses.
+     * <p>
+     * OpenAI o1 models never get a system message — they carry the system prompt (and
+     * the project context) inside every user message instead.
+     */
+    private void syncSystemMessageIfNeeded(@NotNull ChatMessageContext context) {
+        String memoryKey = context.getMemoryKey();
+        if (!shouldIncludeSystemMessage(context)) {
+            return;
+        }
+
+        List<ChatMessage> messages = chatMemoryService.getMessagesByKey(memoryKey);
+        if (messages.isEmpty()) {
+            return;
+        }
+
+        Optional<SystemMessage> existing = SystemMessage.findFirst(messages);
+        if (existing.isPresent()
+                && Objects.equals(extractProjectContextHash(existing.get().text()),
+                                  projectContextHash(context.getProjectContext()))) {
+            // The installed system message already carries the current snapshot (or its
+            // absence) — leave it alone so the provider's prompt cache stays warm.
+            return;
+        }
+
+        if (existing.isEmpty()) {
+            log.debug("No system message in memory for key {}; installing one for the next request", memoryKey);
+        } else {
+            log.debug("System message out of sync with the project context for key {}; updating it", memoryKey);
+        }
+
+        String systemPrompt = buildSystemPrompt(context);
+        installSystemMessage(memoryKey, systemPrompt);
+        publishSystemPromptToActivityLog(context.getProject(), systemPrompt);
+    }
+
+    /**
+     * Installs {@code systemPrompt} as the conversation's system message, keeping it in
+     * the first position providers require. The window memory's {@code add()} appends a
+     * new SystemMessage to the tail when no system message exists — and moves a
+     * replacement to the tail even when one does — so the message list is rewritten via
+     * {@code set()} instead of going through {@code add()}.
+     */
+    private void installSystemMessage(@NotNull String memoryKey, @NotNull String systemPrompt) {
+        ChatMemory memory = chatMemoryService.get(memoryKey);
+        if (memory == null) {
+            log.warn("Cannot install the system message: no memory for key {}", memoryKey);
+            return;
+        }
+
+        List<ChatMessage> messages = new ArrayList<>(chatMemoryService.getMessagesByKey(memoryKey));
+        SystemMessage systemMessage = SystemMessage.from(systemPrompt);
+        for (int i = 0; i < messages.size(); i++) {
+            if (messages.get(i) instanceof SystemMessage) {
+                messages.set(i, systemMessage);
+                memory.set(messages);
+                log.debug("Replaced system message in memory for key: {}", memoryKey);
+                return;
+            }
+        }
+        messages.add(0, systemMessage);
+        memory.set(messages);
+        log.debug("Inserted system message at index 0 in memory for key: {}", memoryKey);
     }
 
     /**
@@ -397,7 +496,7 @@ public class ChatMemoryManager {
      * @return The complete system prompt
      */
     private String buildSystemPrompt(@NotNull ChatMessageContext context) {
-        String prompt = buildAugmentedSystemPrompt(context.getProject(), context.getMemoryKey());
+        String prompt = buildAugmentedSystemPrompt(context.getProject(), context.getMemoryKey(), context.getProjectContext());
         // task-209 analytics signal — mirrors the gate used inside buildAugmentedSystemPrompt.
         if (Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getUseDevoxxGenieMdInPrompt())) {
             String md = readDevoxxGenieMdFile(context.getProject());
@@ -439,13 +538,21 @@ public class ChatMemoryManager {
         return buildAugmentedSystemPrompt(project, null);
     }
 
+    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project, @Nullable String memoryKey) {
+        return buildAugmentedSystemPrompt(project, memoryKey, null);
+    }
+
     /**
      * Builds the augmented system prompt for a specific tab. The {@code memoryKey}
      * (projectHash-tabId) selects the tab's active persona when the personas feature is
      * enabled; {@code null} falls back to the default persona (or the plain system prompt
-     * when personas are disabled).
+     * when personas are disabled). {@code projectContext} is the full project content
+     * snapshot the user added to the conversation; when non-null it is included once, in
+     * a {@link #PROJECT_FILES_CONTEXT_OPEN} section.
      */
-    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project, @Nullable String memoryKey) {
+    public static @NotNull String buildAugmentedSystemPrompt(@NotNull Project project,
+                                                             @Nullable String memoryKey,
+                                                             @Nullable String projectContext) {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         String systemPrompt = resolveBaseSystemPrompt(state, memoryKey) + MARKDOWN;
         String projectPath = project.getBasePath();
@@ -496,11 +603,71 @@ public class ChatMemoryManager {
                     """;
         }
 
+        systemPrompt += getProjectFilesContextSection(projectContext);
         systemPrompt += getDevoxxGenieMdSection(project, state);
         systemPrompt += getClaudeOrAgentsMdSection(project, state);
         systemPrompt += getSkillsSection(project, state);
 
         return TemplateVariableEscaper.escape(systemPrompt);
+    }
+
+    /**
+     * Open tag wrapping the full project content snapshot in the system prompt.
+     * Deliberately distinct from the {@code <ProjectContext>} tag, which DEVOXXGENIE.md /
+     * CLAUDE.md / AGENTS.md content already uses. The closing tag carries a {@code hash}
+     * attribute (SHA-256 hex of the snapshot), which lets the sync check detect a
+     * remove + re-add with changed content — section presence alone can't.
+     */
+    static final String PROJECT_FILES_CONTEXT_OPEN = "<ProjectFilesContext";
+
+    private static final Pattern PROJECT_FILES_CONTEXT_HASH =
+            Pattern.compile("<ProjectFilesContext hash=\"([0-9a-f]+)\">");
+
+    /**
+     * The full project content snapshot the user explicitly added to the conversation.
+     * Delivered once via the system prompt — the same text is also attached to every
+     * user message for OpenAI o1 models, which have no system message.
+     */
+    public static @NotNull String getProjectFilesContextSection(@Nullable String projectContext) {
+        if (!isProjectContextActive(projectContext)) {
+            return "";
+        }
+        return "\n" + PROJECT_FILES_CONTEXT_OPEN + " hash=\"" + projectContextHash(projectContext) + "\">\n"
+                + projectContext + "\n</ProjectFilesContext>\n";
+    }
+
+    /**
+     * SHA-256 (hex) of the full project snapshot, or {@code null} when no project context
+     * is active. Comparing this hash — instead of the section's mere presence — is what
+     * makes a remove + re-add with changed content refresh the system prompt: add is
+     * null → hash, remove is hash → null, re-add with new content is hash A → hash B.
+     */
+    static @Nullable String projectContextHash(@Nullable String projectContext) {
+        if (!isProjectContextActive(projectContext)) {
+            return null;
+        }
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(md.digest(projectContext.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is mandatory in every JDK, so this is effectively unreachable.
+            // Fall back to a stable hex fingerprint so the sync check still works.
+            log.warn("SHA-256 unavailable; using a length-based project context fingerprint", e);
+            return Integer.toHexString(projectContext.length());
+        }
+    }
+
+    /**
+     * The snapshot hash recorded in the system prompt's {@code <ProjectFilesContext>}
+     * tag, or {@code null} when the section is absent.
+     */
+    private static @Nullable String extractProjectContextHash(@NotNull String systemPrompt) {
+        Matcher matcher = PROJECT_FILES_CONTEXT_HASH.matcher(systemPrompt);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private static boolean isProjectContextActive(@Nullable String projectContext) {
+        return projectContext != null && !projectContext.isBlank();
     }
 
     /**

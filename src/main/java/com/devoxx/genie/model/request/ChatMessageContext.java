@@ -29,6 +29,14 @@ public class ChatMessageContext {
     private UserMessage userMessage;    // The user message
     private AiMessage aiMessage;        // The LLM response message
     private String filesContext;             // The context of the prompt
+    /**
+     * The full project content snapshot, when the user added the entire project to the
+     * conversation via the toolbar button. Delivered to the model exactly once — via the
+     * system prompt (or, for OpenAI o1 models, via the per-message {@code <SystemPrompt>}
+     * block) — instead of being re-embedded into every user message, which re-sent (and
+     * re-stored in chat memory) the project text on every prompt.
+     */
+    private String projectContext;
     private EditorInfo editorInfo;      // The editor info
     private LanguageModel languageModel;
     private ChatModel chatModel;

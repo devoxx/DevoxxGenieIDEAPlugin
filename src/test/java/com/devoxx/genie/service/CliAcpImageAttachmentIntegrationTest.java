@@ -265,8 +265,52 @@ class CliAcpImageAttachmentIntegrationTest {
     }
 
     // ---------------------------------------------------------------------
+    // Full project context for CLI/ACP runners
+    // ---------------------------------------------------------------------
+
+    @Test
+    @DisplayName("full project context reaches CLI/ACP runners once per request, not once per historical turn")
+    void projectContextActive_promptCarriesProjectContextBlockExactlyOnce() {
+        ChatMessageContext first = newContext(TAB_ID, "what does the project do?");
+        first.setProjectContext("Project Context:\nUNIQUE-PROJECT-MARKER");
+        String prompt = strategy.buildPrompt(first);
+
+        assertThat(prompt)
+                .contains("<project_context>")
+                .contains("UNIQUE-PROJECT-MARKER")
+                .contains("</project_context>");
+        assertThat(countOccurrences(prompt, "UNIQUE-PROJECT-MARKER"))
+                .as("the snapshot rides once per request")
+                .isEqualTo(1);
+
+        agentReplies(first, "It is a sample project.");
+
+        ChatMessageContext followUp = newContext(TAB_ID, "and what else?");
+        followUp.setProjectContext("Project Context:\nUNIQUE-PROJECT-MARKER");
+        String prompt2 = strategy.buildPrompt(followUp);
+
+        assertThat(prompt2)
+                .as("history replay keeps the first turn's prompt but must not re-carry the snapshot")
+                .contains("what does the project do?")
+                .contains("<project_context>");
+        assertThat(countOccurrences(prompt2, "UNIQUE-PROJECT-MARKER"))
+                .as("still exactly one copy on the follow-up turn")
+                .isEqualTo(1);
+    }
+
+    // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
+
+    private static int countOccurrences(String haystack, String needle) {
+        int count = 0;
+        int index = 0;
+        while ((index = haystack.indexOf(needle, index)) >= 0) {
+            count++;
+            index += needle.length();
+        }
+        return count;
+    }
 
     private void attachImage(String tabId, String path) throws IOException {
         VirtualFile imageFile = mock(VirtualFile.class);
