@@ -3,23 +3,27 @@ id: TASK-212
 title: Make the RAG embedding model configurable (default to a code-tuned model)
 status: To Do
 assignee: []
-created_date: '2026-05-26 18:00'
-updated_date: '2026-05-26 18:00'
+created_date: 2026-05-26 18:00
+updated_date: '2026-11-03T13:49:00Z'
 labels:
   - enhancement
   - RAG
   - settings
-dependencies: []
+milestone: m-0
+dependencies:
+  - TASK-269
 references:
   - src/main/java/com/devoxx/genie/service/chromadb/ChromaEmbeddingService.java
   - src/main/java/com/devoxx/genie/service/rag/IndexerConstants.java
   - src/main/java/com/devoxx/genie/service/rag/ProjectIndexerService.java
   - src/main/java/com/devoxx/genie/service/rag/manifest/IndexManifest.java
-  - src/main/java/com/devoxx/genie/service/rag/validator/NomicEmbedTextValidator.java
+  - >-
+    src/main/java/com/devoxx/genie/service/rag/validator/NomicEmbedTextValidator.java
   - src/main/java/com/devoxx/genie/ui/settings/DevoxxGenieStateService.java
   - src/main/java/com/devoxx/genie/ui/settings/rag/RAGSettingsComponent.java
-  - 'https://ollama.com/library/nomic-embed-text'
-  - 'https://huggingface.co/nomic-ai/nomic-embed-code'
+  - https://ollama.com/library/nomic-embed-text
+  - https://huggingface.co/nomic-ai/nomic-embed-code
+  - https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/523
 priority: medium
 ---
 
@@ -67,4 +71,8 @@ Implementation sequence suggestion:
 5. Generalize the Nomic validator (rename to `OllamaEmbeddingModelValidator`?). Keep `PULL_NOMIC` action type if other code already references it, or rename the enum value.
 
 Out of scope: cloud-hosted embedders (OpenAI / Voyage / etc.) — Phase 4 if there's demand.
+
+2026-11-03: GitHub #523 brings OpenAI-compatible embedding endpoints into scope as TASK-265, which depends on this task. Design the model-binding fingerprint here so it can be extended to cover provider, output dimension and document prefix, not just the Ollama model name.
+
+2026-11-03: Now depends on TASK-269 (retrieval benchmark). Use the benchmark to pick and justify any recommended code-tuned model in the docs, and to check that making the model configurable doesn't change retrieval for the default nomic-embed-text setup.
 <!-- SECTION:NOTES:END -->
