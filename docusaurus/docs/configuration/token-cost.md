@@ -127,6 +127,8 @@ There is no maximum-file-size, scan-depth, line-count, or token-limit control on
 
 Adding full-project context can consume a large portion of the selected model's budget. Check the scan/token information, include only relevant source, and leave room for the rest of the request. A large context-window label is not a guarantee that the complete project plus conversation will fit.
 
+The project is sent once per request in the system prompt, so follow-up prompts don't accumulate extra copies of it in chat memory. The whole snapshot is still sent (and billed as input tokens) on **every** request while it is active, so remove it once you no longer need it.
+
 ## Best Practices
 
 1. Begin with a small, relevant context and expand only when necessary.

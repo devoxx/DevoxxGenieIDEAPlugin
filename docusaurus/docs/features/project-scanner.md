@@ -119,6 +119,14 @@ When using "Add Project":
 2. Only models that can handle the token count are enabled
 3. Cost estimation is provided for cloud models
 
+### How the Project Is Sent
+
+The project snapshot is sent **once per request, in the system prompt** (inside a `<ProjectFilesContext>` section), not copied into each of your messages. Follow-up prompts in the same conversation don't add more copies of the project to chat memory, so the context window is used by your conversation, not by stale duplicates.
+
+- Removing the project mid-conversation removes the section from the next request; adding it mid-conversation adds it without touching earlier turns.
+- While the full project is active, individually attached files and the editor selection are not sent separately.
+- CLI and ACP runners, which take a flat text prompt, receive the snapshot once per request in a `<project_context>` block.
+
 ## Language-Specific Features
 
 Project Scanner has special handling for different programming languages:

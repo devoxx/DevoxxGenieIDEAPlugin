@@ -3,7 +3,7 @@ sidebar_position: 2
 title: Agent Mode - Autonomous AI Coding in IntelliJ IDEA
 description: DevoxxGenie Agent Mode lets your LLM autonomously explore, edit, and test your codebase using built-in tools, PSI code intelligence, and parallel sub-agents — in IntelliJ IDEA.
 image: /img/devoxxgenie-social-card.jpg
-keywords: [devoxxgenie, agent mode, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution, fetch page, tool control, PSI, code intelligence, find references, find definition, find implementations]
+keywords: [devoxxgenie, agent mode, run_script, code mode, javascript, quickjs, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution, fetch page, tool control, PSI, code intelligence, find references, find definition, find implementations]
 ---
 
 # Agent Mode
@@ -48,6 +48,12 @@ When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** 
 | `run_command` | Execute terminal commands in the project directory (30s timeout) |
 | `run_tests` | Auto-detect build system and run tests with structured results (configurable timeout) |
 
+### Code Mode Tool (Experimental)
+
+| Tool | Description |
+|------|-------------|
+| `run_script` | Run a sandboxed JavaScript snippet that calls several tools and returns only what it prints — see [Batching Tool Calls with `run_script`](#batching-tool-calls-with-run_script-experimental) |
+
 As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. The `fetch_page` tool lets the agent read external documentation, API references, or web pages to gather additional context. The **PSI tools** give the agent IDE-level code intelligence — it can find symbol definitions, look up references, navigate to definitions, and discover implementations, all powered by IntelliJ's semantic index rather than text search. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
 
 ### Fetching web pages safely
@@ -60,6 +66,62 @@ As you chat with the LLM, it decides when to use these tools. For exploration ta
 - The connection timeout is **15 seconds**, and each fetch request uses a **60-second** timeout. Cached results may be reused.
 
 Use [Debug logging](../configuration/debugging.md) to inspect a rejected URL or unexpected response. Disable the tool in Built-in Tools when you do not want the agent fetching external pages.
+
+### Batching Tool Calls with `run_script` (Experimental)
+
+Normally the agent makes **one model round trip per tool call**, and every raw result stays in chat memory. Reading twenty files to answer one question means twenty round trips and twenty full file bodies in the context window, even when the answer is a single line.
+
+`run_script` — also called **code mode** — lets the model write a short JavaScript snippet that calls other tools, loops and filters over their results, and returns **only what it prints**. The raw tool output never enters the conversation; only the script's result does.
+
+```js
+// "Which of our REST controllers don't have a matching test?"
+const listing = await tools.search_files({ pattern: "@RestController", path: "src/main/java" });
+const controllers = listing.split("\n")
+  .map(line => line.match(/([A-Za-z0-9_]+)\.java/))
+  .filter(Boolean)
+  .map(m => m[1]);
+
+const missing = [];
+for (const name of new Set(controllers)) {
+  const hits = await tools.search_files({ pattern: `class ${name}Test`, path: "src/test/java" });
+  if (!hits.includes(`${name}Test`)) missing.push(name);
+}
+text(missing.length ? missing.join("\n") : "Every controller has a test.");
+```
+
+One `run_script` call replaces what would otherwise be a dozen or more separate tool calls, and the model reads a short list instead of every search result.
+
+#### How it works
+
+- **The tool description is the API.** `run_script`'s description lists every tool the agent can currently call as a TypeScript-style signature, e.g. `tools.read_file(args: { path: string })`, with the first sentence of that tool's description. Disabled tools aren't listed. `ALL_TOOLS` gives the same catalog at runtime as `{ name, description }` entries.
+- **The code is the body of an async function.** Call tools with `await tools.<name>({ ...arguments })`, passing the same arguments the tool takes when called directly. Tools return the same plain text they return directly (usually not JSON); a failed call returns a string starting with `Error:` instead of throwing.
+- **Only printed values come back.** `text(value)`, `console.log(...)` and the script's `return` value form the result. Objects are rendered as pretty-printed JSON. Output is capped at **20,000 characters**.
+- **Tool calls run one at a time**, so `Promise.all` won't speed things up.
+
+#### Sandbox and limits
+
+Scripts run in a fresh [QuickJS](https://github.com/roastedroot/quickjs4j) engine for each call. QuickJS is compiled to WebAssembly and then to plain Java bytecode, so nothing native is bundled and it behaves the same on every OS.
+
+| Limit | Value |
+|-------|-------|
+| Node.js, `require`/`import`, `fetch`, timers, file system, network | Not available |
+| Memory | 128 MiB per script; going over returns an error instead of affecting the IDE |
+| Time budget | 30 s of **JavaScript** run time; time spent inside tool calls (including waiting for your approval) doesn't count |
+| Tool calls inside one script | *Max tool calls per script* (default 100) |
+| Output | 20,000 characters |
+| Cancellation | Stopping the prompt stops the running script |
+
+#### Safety: same rules as direct calls
+
+A script can only do what the agent could already do. Every call inside it goes through the **same tool toggles, approval dialogs, command blacklist and Agent Log/activity rows** as a direct call: a `write_file` inside a script still shows its diff for approval, and a disabled tool can't be called. `run_script` itself counts as **one** call toward *Max tool calls per prompt*, so a script with no tool calls inside can't be used to loop past the limit.
+
+#### Enabling it
+
+`run_script` is **off by default**. Enable it in **Settings > Tools > DevoxxGenie > Agent > Built-in Tools** with the *run_script — (Experimental)* checkbox, and adjust **Max tool calls per script** underneath it if needed. Like the other built-in tools, its description can be [edited](#editing-a-tools-description). When it's off, the agent's tool chain is exactly what it was before.
+
+:::tip
+Code mode works best with strong coding models that are good at writing JavaScript. Smaller local models may prefer plain tool calls. The description tells the model not to wrap a *single* tool call in `run_script`, so for one-off lookups it keeps calling tools directly.
+:::
 
 ### Per-Tool Enable/Disable
 
@@ -352,6 +414,8 @@ All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
 | **Command blacklist** | 5 destructive git/rm commands | Shell commands `run_command` may not run unsupervised — see [Command Blacklist](#command-blacklist) |
 | **When a command matches the blacklist** | Ask for approval | Force the approval dialog, or block the command outright |
 | **Show changed files with diffs after an agent run** | Enabled | Lists the files a finished run changed; clicking one opens a diff — see [Reviewing What the Agent Changed](#reviewing-what-the-agent-changed) |
+| **run_script (Experimental)** | Disabled | Lets the agent batch tool calls into one sandboxed JavaScript step — see [Batching Tool Calls with `run_script`](#batching-tool-calls-with-run_script-experimental) |
+| **Max tool calls per script** | 100 | Limit on tool calls inside one `run_script` call; the script itself counts as one call toward *Max tool calls per prompt* |
 | **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
 
 ### PSI Tools Settings
@@ -509,6 +573,7 @@ Agent Mode powers the [Agent Loop](sdd-agent-loop.md), which lets you run multip
 
 - **Start with single agent mode**: For simple questions, single agent mode is often sufficient and faster
 - **Use parallel sub-agents for complex exploration**: When you need to understand multiple unrelated aspects of your codebase
+- **Try `run_script` for wide, shallow lookups**: Checking every reference, reading many small files or filtering large search results is where code mode saves the most round trips and tokens
 - **Use cheaper models for sub-agents**: Sub-agents perform read-only exploration, so smaller models work well
 - **Leverage PSI tools for refactoring**: Before renaming or modifying a method, ask the agent to find all references first — PSI-based search is more reliable than text grep
 - **Let the agent verify its own changes**: With `run_tests` enabled, the agent automatically runs tests after code modifications and iterates on failures

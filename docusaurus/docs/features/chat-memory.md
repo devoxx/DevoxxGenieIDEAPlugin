@@ -69,7 +69,7 @@ Removing messages helps to:
 DevoxxGenie stores conversations separately from the active memory:
 
 1. **Auto-save**: Conversations are automatically saved as you chat
-2. **Restore**: Reload past conversations from the history dropdown
+2. **Restore**: Reload past conversations from the history dropdown. A restored conversation gets the current system prompt (persona, DEVOXXGENIE.md, CLAUDE.md/AGENTS.md and tool instructions) installed before its next prompt
 3. **Search**: Find specific conversations by content or date
 4. **Delete**: Remove old conversations you no longer need
 
@@ -86,6 +86,8 @@ Chat memory uses tokens from the LLM's context window:
    - Starting a new conversation
    - Removing unnecessary messages
    - Switching to a model with a larger context window
+
+If you used **Add Project**, the project snapshot lives in the system prompt, which is kept as a single message at the top of memory and updated in place, so it is never duplicated across turns. See [How the Project Is Sent](project-scanner.md#how-the-project-is-sent).
 
 ## Project-Specific Memory
 
