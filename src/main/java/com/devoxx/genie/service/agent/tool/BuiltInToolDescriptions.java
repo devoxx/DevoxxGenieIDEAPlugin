@@ -25,10 +25,39 @@ import java.util.Set;
  * next prompt without an IDE restart.
  *
  * <p>Scope is deliberately limited to the tools registered by {@link BuiltInToolProvider} and
- * {@link ReadOnlyToolProvider}. MCP and Skills tool descriptions are owned by their servers and
+ * {@link ReadOnlyToolProvider}, plus the experimental {@code run_script} tool (whose description
+ * is a template, see {@link #MAX_SCRIPT_TOOL_CALLS_PLACEHOLDER}). MCP and Skills tool descriptions are owned by their servers and
  * are never rewritten here; an override stored under an unknown name is simply ignored.
  */
 public final class BuiltInToolDescriptions {
+
+    /** Replaced in the run_script description with the per-script tool call limit. */
+    public static final String MAX_SCRIPT_TOOL_CALLS_PLACEHOLDER = "{max_script_tool_calls}";
+    /** Replaced in the run_script description with the script's JavaScript time budget in seconds. */
+    public static final String SCRIPT_TIME_BUDGET_PLACEHOLDER = "{script_time_budget_seconds}";
+
+    private static final String RUN_SCRIPT_INTRODUCTION = """
+            Run JavaScript that calls several tools in one step and returns only what you print. \
+            Prefer it over separate tool calls when a task needs many calls whose raw results you do not need \
+            to read: reading many files, checking every reference of a symbol, filtering large search results. \
+            Do the looping, matching and counting in JavaScript and print only the answer. \
+            Do not wrap a single tool call in run_script just to print its result; call that tool directly.
+            - The code runs as the body of an async function in a sandboxed QuickJS runtime: \
+            no Node.js, no require or import, no timers, no file system, no network.
+            - Call a tool with `await tools.<name>({ ...arguments })`, passing the same arguments the tool \
+            takes when called directly.
+            - Tool calls run one at a time, so Promise.all does not make them faster.
+            - The runtime is standard modern JavaScript (QuickJS).
+            - A tool returns the same plain text it returns when called directly, usually not JSON; \
+            call JSON.parse yourself only when a tool returns JSON. \
+            A failed call returns a string starting with "Error:" instead of throwing.
+            - Every call still goes through the user's approval rules. run_script itself counts as one tool call; \
+            the tool calls inside one script are limited to {max_script_tool_calls}.
+            - Only values passed to `text(value)` or `console.log(...)`, or returned from the script, are shown to you. \
+            Print the filtered result, not raw tool output.
+            - `ALL_TOOLS` lists every callable tool as { name, description }.
+            - A script is stopped after {script_time_budget_seconds} seconds of JavaScript run time; time spent inside tool calls \
+            does not count.""";
 
     private static final Map<String, String> DEFAULTS = buildDefaults();
 
@@ -188,6 +217,11 @@ public final class BuiltInToolDescriptions {
                         "callers can reference a symbol invisibly. Conservatively excludes public members, " +
                         "constructors/main, @Override and any annotated member, and serialization members " +
                         "to keep false positives low. Java only in v1.");
+
+        // --- Code mode (registered by CodeModeToolProvider, not BuiltInToolProvider) ---
+        // Only the introduction is editable: the "Callable tools:" list is generated from the
+        // tools available on each prompt and appended after it.
+        map.put("run_script", RUN_SCRIPT_INTRODUCTION);
 
         return Collections.unmodifiableMap(map);
     }

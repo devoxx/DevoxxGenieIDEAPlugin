@@ -419,6 +419,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Agent mode settings
     private Boolean agentModeEnabled = false;
     private Integer agentMaxToolCalls = AGENT_MAX_TOOL_CALLS;
+    /** Experimental: exposes the run_script tool, which batches tool calls in one JavaScript step. */
+    private Boolean codeModeEnabled = false;
+    private Integer agentMaxScriptToolCalls = AGENT_MAX_SCRIPT_TOOL_CALLS;
     /** Wall-clock cap for an entire agent/MCP conversation; safety net against silent hangs. */
     private Integer agentMaxExecutionTimeSeconds = AGENT_MAX_EXECUTION_SECONDS;
 

@@ -1,11 +1,14 @@
 package com.devoxx.genie.service.agent;
 
+import com.devoxx.genie.model.Constant;
+import com.devoxx.genie.service.agent.codemode.CodeModeToolProvider;
 import com.devoxx.genie.service.agent.tool.BuiltInToolProvider;
 import com.devoxx.genie.service.agent.tool.CompositeToolProvider;
 import com.devoxx.genie.service.mcp.MCPExecutionService;
 import com.devoxx.genie.service.mcp.MCPService;
 import com.devoxx.genie.service.skill.SkillRegistry;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.service.tool.ToolProvider;
 import dev.langchain4j.skills.Skills;
@@ -15,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -24,6 +28,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 public class AgentToolProviderFactory {
+
+    /** The JavaScript runtime takes a while to load, so it is warmed up at most once per JVM. */
+    private static final AtomicBoolean WARM_UP_SUBMITTED = new AtomicBoolean();
 
     private AgentToolProviderFactory() {
     }
@@ -99,12 +106,25 @@ public class AgentToolProviderFactory {
         ToolProvider approvedProvider = new AgentApprovalProvider(
                 compositeProvider, project, autoApproveReadOnly);
 
-        // Wrap with loop tracker
+        // Wrap with loop tracker. run_script is experimental: only when the user opted in does the
+        // tracker wrap the code mode provider, otherwise it wraps the approved provider directly.
         int maxToolCalls = settings.getAgentMaxToolCalls() != null
                 ? settings.getAgentMaxToolCalls()
                 : 25;
 
-        AgentLoopTracker tracker = new AgentLoopTracker(approvedProvider, maxToolCalls, project);
+        AgentLoopTracker tracker;
+        if (Boolean.TRUE.equals(settings.getCodeModeEnabled())) {
+            int maxScriptToolCalls = settings.getAgentMaxScriptToolCalls() != null
+                    ? settings.getAgentMaxScriptToolCalls()
+                    : Constant.AGENT_MAX_SCRIPT_TOOL_CALLS;
+            CodeModeToolProvider codeModeProvider = new CodeModeToolProvider(approvedProvider, maxScriptToolCalls);
+            tracker = new AgentLoopTracker(codeModeProvider, maxToolCalls, project);
+            codeModeProvider.trackNestedCallsWith(tracker);
+            tracker.registerChild(codeModeProvider);
+            warmUpOnce(CodeModeToolProvider::warmUp);
+        } else {
+            tracker = new AgentLoopTracker(approvedProvider, maxToolCalls, project);
+        }
 
         // Register the parallel explore executor as a cancellable child so user cancellation
         // propagates to any running sub-agents
@@ -113,6 +133,32 @@ public class AgentToolProviderFactory {
         }
 
         return tracker;
+    }
+
+    /**
+     * Submits the code mode warm-up to a pooled thread, at most once per JVM.
+     */
+    static void warmUpOnce(@NotNull Runnable warmUp) {
+        if (WARM_UP_SUBMITTED.compareAndSet(false, true)) {
+            try {
+                ApplicationManager.getApplication().executeOnPooledThread(() -> runWarmUpSafely(warmUp));
+            } catch (Throwable e) {
+                // Never fatal for building the provider chain; allow a later prompt to retry.
+                WARM_UP_SUBMITTED.set(false);
+                log.debug("Could not submit code mode warm-up", e);
+            }
+        }
+    }
+
+    /**
+     * A failed warm-up is harmless: the first real script then pays the start-up cost instead.
+     */
+    static void runWarmUpSafely(@NotNull Runnable warmUp) {
+        try {
+            warmUp.run();
+        } catch (Throwable e) {
+            log.warn("Code mode warm-up failed", e);
+        }
     }
 
     /**
