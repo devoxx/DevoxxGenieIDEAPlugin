@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.16.0 - 2026-11-03
+
+A minor release with one experimental headline feature and one long-session fix: **`run_script` ("code mode")** lets the agent batch many tool calls into a single sandboxed JavaScript step, and **"Add Project" context is now sent once, in the system prompt**, instead of being copied into every user message.
+
+### Added
+- feat(agent): **`run_script` batches tool calls in one JavaScript step (experimental, opt-in)**. In agent mode every tool call costs a model round trip, and every raw result stays in chat memory. With *Settings → DevoxxGenie → Agent → Built-in Tools → run_script* enabled, the model can instead write a short async JavaScript snippet that calls other tools as `await tools.read_file({ path })`, loops and filters over their results, and returns only what it prints with `text()` / `console.log`. The tool description lists every callable tool as a TypeScript-style signature, and `ALL_TOOLS` exposes the catalog at runtime. Scripts run in a fresh [quickjs4j](https://github.com/roastedroot/quickjs4j) engine (QuickJS compiled to WebAssembly and then to plain Java bytecode, so no native code): no Node.js, `require`, timers, file system or network; output capped at 20,000 characters; memory capped at 128 MiB; a 30 s JavaScript time budget that excludes time spent inside tool calls (such as waiting on an approval); cancelling the prompt stops the script. Every call inside a script goes through the same tool toggles, approval dialogs and activity rows as a direct call. `run_script` itself counts as one call toward *Max tool calls per prompt*, while the calls inside one script are limited by a new *Max tool calls per script* setting (default 100). Its description is editable like the other built-in tools. Off by default; when disabled the agent tool chain is unchanged (#1352, #1353)
+
+### Fixed
+- fix(memory): **"Add Project" context is sent once, via the system prompt, instead of being copied into every user message**. The full-project snapshot used to be appended to the text of each prompt and stored in chat memory with it, so after *n* prompts the history carried *n* stale copies of the project. Context windows filled far too early, every copy was re-sent (and billed) on each request, and with a large project the second prompt could fail outright with "prompt too long". The snapshot now lives in a single `<ProjectFilesContext>` section of the system prompt, which is updated in place when the project is added or removed mid-conversation. `prepareMemory` now keeps the system message in sync before every prompt, which also fixes **restored conversations running without a system prompt** (persona, DEVOXXGENIE.md, CLAUDE.md/AGENTS.md and tool instructions were silently lost after restoring from history). OpenAI o1 models, which take no system message, get the section in their per-message `<SystemPrompt>` block; the agent/MCP tool loop passes it through on every request; and CLI/ACP runners receive it once per request in a `<project_context>` block (#1363, #1364)
+
+### Dependencies
+- build: add quickjs4j 0.1.1 (~1.2 MB including its WebAssembly runtime); jackson-databind/core move 2.22.1 → 2.22.3 as a result (#1353)
+
+### Documentation
+- docs: align the plugin reference guides with the current UI and fill feature coverage gaps (#1367)
+- docs: refresh token-cost and context-window examples, and update the pricing comparison (#1368, #1369)
+- docs(blog): compare the Matt Pocock and Addy Osmani agent skills, and add settings discovery links (#1366)
+- docs(tips): add tips for the v1.15.0 and v1.15.1 features and fixes (#1362)
+- docs: document `run_script` in Agent Mode, and announce v1.16.0 with a dedicated `run_script` deep-dive post
+
+### Contributors
+- @omarmahamid
+- @SamyNassiem
+- @stephanj
+
 ## v1.15.1 - 2026-10-30
 
 A bug-fix release: the editor selection reaches the LLM on the prompt it was made for, and the agent's `run_command` tool can no longer hang on commands that never exit or wait for input.

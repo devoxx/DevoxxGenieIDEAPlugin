@@ -68,6 +68,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+                <h2>v1.16.0</h2>
+        <UL>
+                    <LI>feat(agent): <b>run_script (experimental)</b>: the agent can batch many tool calls into one sandboxed JavaScript step and return only the filtered result, saving round trips and tokens. Opt in under Agent → Built-in Tools (#1353)</LI>
+                    <LI>fix(memory): <b>"Add Project" context is sent once via the system prompt</b> instead of being copied into every message, so long conversations no longer fill the context window with stale project copies; restored conversations get their system prompt back (#1364)</LI>
+                </UL>
                 <h2>v1.15.1</h2>
         <UL>
                     <LI>fix(context): the <b>editor selection is sent on the same turn</b> and framed as the focus; user-attached files no longer disappear after each prompt (#1361)</LI>
