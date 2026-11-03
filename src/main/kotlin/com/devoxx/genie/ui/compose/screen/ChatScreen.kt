@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
@@ -32,7 +31,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.components.ConversationToolbar
@@ -53,8 +51,11 @@ fun ChatScreen(
     onOpenAgentSettings: () -> Unit = {},
     onOpenLogs: () -> Unit = {},
     isRestoring: Boolean = false,
+    scrollMemory: ChatScrollMemory = remember { ChatScrollMemory() },
 ) {
-    val listState = rememberLazyListState()
+    // Held by the view model (see ChatScrollMemory) so a tab switch, which disposes this
+    // composition, comes back at the same scroll position instead of rebuilding from the top.
+    val listState = scrollMemory.listState
     val coroutineScope = rememberCoroutineScope()
     var previousMessageCount by remember { mutableStateOf(messages.size) }
 
@@ -74,20 +75,20 @@ fun ChatScreen(
     // LazyColumn re-pin the item's top edge, snapping the viewport to the start of the
     // message. Replaying the cached height as a minimum on re-entry keeps the first frame
     // at full size so the anchor is preserved. The width is kept so the height is only
-    // replayed at the width it was measured at. Survives recomposition (not config changes).
-    val aiBubbleSizes = remember { mutableStateMapOf<String, IntSize>() }
+    // replayed at the width it was measured at. Kept in scrollMemory so it survives tab switches.
+    val aiBubbleSizes = scrollMemory.aiBubbleSizes
 
     // Whether the list should follow the growing tail of the last message. Disabled the
     // moment the user scrolls up (see nestedScrollConnection), re-enabled when the user
     // returns to the bottom or a new message is submitted.
-    var autoFollow by remember { mutableStateOf(true) }
+    var autoFollow by scrollMemory::autoFollow
 
     // True when the very end of the conversation is visible. The bottom anchor is the
     // last list item, so "at bottom" means that anchor is laid out and its bottom edge is
     // within the viewport. The tolerance is kept tiny (2px, rounding only): a larger fuzzy
     // window combined with the 1dp anchor would treat a small upward scroll as "still at
     // bottom" and immediately re-enable following, yanking the reader back down.
-    val isAtBottom by remember {
+    val isAtBottom by remember(listState) {
         derivedStateOf {
             val info = listState.layoutInfo
             val last = info.visibleItemsInfo.lastOrNull()
@@ -110,7 +111,7 @@ fun ChatScreen(
     // programmatic animateScrollToItem calls do not. Any upward user scroll stops following
     // so streaming updates can't yank the reader back down. In Compose a scroll that reveals
     // earlier content (finger/content moving down) reports a positive available.y.
-    val nestedScrollConnection = remember {
+    val nestedScrollConnection = remember(scrollMemory) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (available.y > 0.5f) autoFollow = false

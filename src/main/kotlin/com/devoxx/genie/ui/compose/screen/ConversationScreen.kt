@@ -72,6 +72,7 @@ fun ConversationScreen(
                 is ConversationState.Chat -> {
                     ChatScreen(
                         messages = s.messages,
+                        scrollMemory = viewModel.chatScroll,
                         onFileClick = onFileClick,
                         onChangedFileClick = onChangedFileClick,
                         onRetryClick = onRetryClick,

@@ -14,6 +14,7 @@ import com.devoxx.genie.service.blog.BlogPost
 import com.devoxx.genie.service.prompt.response.streaming.ThinkingResponseFormatter
 import com.devoxx.genie.service.skill.SkillRegistry
 import com.devoxx.genie.ui.compose.model.*
+import com.devoxx.genie.ui.compose.screen.ChatScrollMemory
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
@@ -72,6 +73,14 @@ class ConversationViewModel(
             hasMcpServers = loadHasMcpServers(),
         )
     )
+        private set
+
+    /**
+     * Scroll position, AI bubble sizes and tail-following of the current conversation. Lives
+     * here rather than in ChatScreen so it survives the composition being disposed when the
+     * user switches to another tab; replaced whenever the conversation is cleared.
+     */
+    var chatScroll: ChatScrollMemory by mutableStateOf(ChatScrollMemory())
         private set
 
     var isDarkTheme: Boolean by mutableStateOf(
@@ -743,6 +752,7 @@ class ConversationViewModel(
     }
 
     fun clearConversation() {
+        chatScroll = ChatScrollMemory()
         if (restoringConversation.get()) {
             // Mid-restore (or clearing before the first prompt of a new chat):
             // reset to an empty chat so the welcome screen never flashes.
