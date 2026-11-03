@@ -30,6 +30,8 @@ import java.util.Set;
  * <ul>
  *   <li>{@code query <collection> <text> [topN=10]} — embed and search; prints rank/score/path/snippet</li>
  *   <li>{@code list <collection> [substringFilter]} — print distinct file paths in a collection</li>
+ *   <li>{@code benchmark [options]} — measure retrieval quality (recall@k, MRR) for an embedding
+ *       configuration against a question dataset, in memory; see {@link RagBenchmarkCommand}</li>
  * </ul>
  *
  * <p>Env overrides: {@code DEVOXXGENIE_CHROMA_URL} (default {@code http://localhost:8000}),
@@ -50,6 +52,7 @@ public final class RagCli {
         switch (cmd) {
             case "query" -> runQuery(args);
             case "list"  -> runList(args);
+            case "benchmark" -> RagBenchmarkCommand.run(java.util.Arrays.copyOfRange(args, 1, args.length));
             default -> { printUsage(); System.exit(2); }
         }
     }
@@ -180,6 +183,7 @@ public final class RagCli {
                 Usage:
                   ragQuery query <collection> <text> [topN=10]
                   ragQuery list  <collection> [substring]
+                  ragQuery benchmark [options]   (see ./gradlew ragBenchmark --args="--help")
 
                 Env:
                   DEVOXXGENIE_CHROMA_URL   (default http://localhost:8000)

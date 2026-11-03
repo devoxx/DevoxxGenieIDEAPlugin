@@ -143,6 +143,19 @@ tasks.register<JavaExec>("ragQuery") {
     standardInput = System.`in`
 }
 
+// RAG retrieval-quality benchmark (task-269): indexes this repo in memory with the plugin's own
+// chunker and scores recall@k / MRR for an Ollama embedding configuration. Never touches ChromaDB.
+// See src/test/resources/rag-benchmark/README.md. Examples:
+//   ./gradlew ragBenchmark
+//   ./gradlew ragBenchmark --args="--prefix-preset nomic --out build/rag-benchmark/nomic-prefixed.json"
+tasks.register<JavaExec>("ragBenchmark") {
+    group = "verification"
+    description = "Measure RAG retrieval quality for an embedding configuration (see RagBenchmarkCommand)."
+    mainClass.set("com.devoxx.genie.service.rag.cli.RagBenchmarkMain")
+    classpath = sourceSets["test"].runtimeClasspath
+    workingDir = rootDir
+}
+
 // Diagnostic CLI for the web search integration. Exercises Tavily/Google + LLM pipeline
 // without the IntelliJ service layer.
 // Examples:
