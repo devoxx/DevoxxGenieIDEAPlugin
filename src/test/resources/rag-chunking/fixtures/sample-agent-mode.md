@@ -1,0 +1,629 @@
+---
+sidebar_position: 2
+title: Agent Mode - Autonomous AI Coding in IntelliJ IDEA
+description: DevoxxGenie Agent Mode lets your LLM autonomously explore, edit, and test your codebase using built-in tools, PSI code intelligence, and parallel sub-agents — in IntelliJ IDEA.
+image: /img/devoxxgenie-social-card.jpg
+keywords: [devoxxgenie, agent mode, run_script, code mode, javascript, quickjs, sub-agents, parallel explore, codebase exploration, multi-agent, tools, run tests, test execution, fetch page, tool control, PSI, code intelligence, find references, find definition, find implementations]
+---
+
+# Agent Mode
+
+Agent Mode enables the LLM to autonomously explore and modify your codebase using built-in tools. Instead of relying solely on the context you provide, the agent can investigate your project on-demand—reading files, listing directories, searching for patterns, and even making changes to help you develop faster.
+
+![Agent Mode Settings](/img/agent-mode-top.jpg)
+
+## How Agent Mode Works
+
+When Agent Mode is enabled, the LLM gains access to a set of **built-in tools** that allow it to explore and modify your project dynamically:
+
+### Read Tools
+
+| Tool | Description |
+|------|-------------|
+| `read_file` | Read the contents of a file in the project |
+| `list_files` | List files and directories (with optional recursion) |
+| `search_files` | Search for regex patterns across project files |
+| `fetch_page` | Fetch a web page by URL and return its content as Markdown (headings, code blocks, tables and links kept) |
+
+### PSI Tools (Code Intelligence)
+
+| Tool | Description |
+|------|-------------|
+| `find_symbols` | Search for symbol definitions (classes, methods, fields) by name across the project |
+| `document_symbols` | List all symbol definitions in a file with their kind and line numbers |
+| `find_references` | Find all usages of a symbol using semantic reference search |
+| `find_definition` | Navigate from a symbol usage to its definition |
+| `find_implementations` | Find all implementations of an interface, abstract class, or method |
+| `find_callees` | List the methods a given method calls (outgoing edges — the inverse of `find_references`) |
+| `trace_call_chains` | Trace caller→callee (or callee→caller) chains between methods, depth-bounded |
+| `calculate_complexity` | Compute cyclomatic complexity per method and flag methods over a threshold |
+| `find_dead_code` | Report unreferenced symbols as heuristic dead-code *candidates* (require human confirmation) |
+
+### Write Tools
+
+| Tool | Description |
+|------|-------------|
+| `write_file` | Create new files with the specified content |
+| `edit_file` | Modify existing files by replacing text |
+| `run_command` | Execute terminal commands in the project directory (30s timeout) |
+| `run_tests` | Auto-detect build system and run tests with structured results (configurable timeout) |
+
+### Code Mode Tool (Experimental)
+
+| Tool | Description |
+|------|-------------|
+| `run_script` | Run a sandboxed JavaScript snippet that calls several tools and returns only what it prints — see [Batching Tool Calls with `run_script`](#batching-tool-calls-with-run_script-experimental) |
+
+As you chat with the LLM, it decides when to use these tools. For exploration tasks, the agent might search, list, and read files to understand your codebase. The `fetch_page` tool lets the agent read external documentation, API references, or web pages to gather additional context. The **PSI tools** give the agent IDE-level code intelligence — it can find symbol definitions, look up references, navigate to definitions, and discover implementations, all powered by IntelliJ's semantic index rather than text search. For development tasks, it can create new files, edit existing code, run commands, or run tests to verify changes.
+
+### Fetching web pages safely
+
+`fetch_page` converts HTML to Markdown while preserving headings, code blocks, tables, and links. Text, JSON, and XML responses remain text; binary content is not returned for the model to read.
+
+- Only HTTP(S) URLs are accepted. URLs with embedded usernames/passwords and hosts resolving to local addresses are rejected, so this tool is not a way to read a localhost development server or private-network endpoint.
+- Up to **10 redirects** are followed on the same host. A redirect to another host returns a notice and destination URL instead of fetching it automatically; the model can make a separate request to that URL.
+- Downloads are capped at **10 MiB** and returned text at **100,000 characters**. A larger text result is marked as truncated.
+- The connection timeout is **15 seconds**, and each fetch request uses a **60-second** timeout. Cached results may be reused.
+
+Use [Debug logging](../configuration/debugging.md) to inspect a rejected URL or unexpected response. Disable the tool in Built-in Tools when you do not want the agent fetching external pages.
+
+### Batching Tool Calls with `run_script` (Experimental)
+
+Normally the agent makes **one model round trip per tool call**, and every raw result stays in chat memory. Reading twenty files to answer one question means twenty round trips and twenty full file bodies in the context window, even when the answer is a single line.
+
+`run_script` — also called **code mode** — lets the model write a short JavaScript snippet that calls other tools, loops and filters over their results, and returns **only what it prints**. The raw tool output never enters the conversation; only the script's result does.
+
+```js
+// "Which of our REST controllers don't have a matching test?"
+const listing = await tools.search_files({ pattern: "@RestController", path: "src/main/java" });
+const controllers = listing.split("\n")
+  .map(line => line.match(/([A-Za-z0-9_]+)\.java/))
+  .filter(Boolean)
+  .map(m => m[1]);
+
+const missing = [];
+for (const name of new Set(controllers)) {
+  const hits = await tools.search_files({ pattern: `class ${name}Test`, path: "src/test/java" });
+  if (!hits.includes(`${name}Test`)) missing.push(name);
+}
+text(missing.length ? missing.join("\n") : "Every controller has a test.");
+```
+
+One `run_script` call replaces what would otherwise be a dozen or more separate tool calls, and the model reads a short list instead of every search result.
+
+#### How it works
+
+- **The tool description is the API.** `run_script`'s description lists every tool the agent can currently call as a TypeScript-style signature, e.g. `tools.read_file(args: { path: string })`, with the first sentence of that tool's description. Disabled tools aren't listed. `ALL_TOOLS` gives the same catalog at runtime as `{ name, description }` entries.
+- **The code is the body of an async function.** Call tools with `await tools.<name>({ ...arguments })`, passing the same arguments the tool takes when called directly. Tools return the same plain text they return directly (usually not JSON); a failed call returns a string starting with `Error:` instead of throwing.
+- **Only printed values come back.** `text(value)`, `console.log(...)` and the script's `return` value form the result. Objects are rendered as pretty-printed JSON. Output is capped at **20,000 characters**.
+- **Tool calls run one at a time**, so `Promise.all` won't speed things up.
+
+#### Sandbox and limits
+
+Scripts run in a fresh [QuickJS](https://github.com/roastedroot/quickjs4j) engine for each call. QuickJS is compiled to WebAssembly and then to plain Java bytecode, so nothing native is bundled and it behaves the same on every OS.
+
+| Limit | Value |
+|-------|-------|
+| Node.js, `require`/`import`, `fetch`, timers, file system, network | Not available |
+| Memory | 128 MiB per script; going over returns an error instead of affecting the IDE |
+| Time budget | 30 s of **JavaScript** run time; time spent inside tool calls (including waiting for your approval) doesn't count |
+| Tool calls inside one script | *Max tool calls per script* (default 100) |
+| Output | 20,000 characters |
+| Cancellation | Stopping the prompt stops the running script |
+
+#### Safety: same rules as direct calls
+
+A script can only do what the agent could already do. Every call inside it goes through the **same tool toggles, approval dialogs, command blacklist and Agent Log/activity rows** as a direct call: a `write_file` inside a script still shows its diff for approval, and a disabled tool can't be called. `run_script` itself counts as **one** call toward *Max tool calls per prompt*, so a script with no tool calls inside can't be used to loop past the limit.
+
+#### Enabling it
+
+`run_script` is **off by default**. Enable it in **Settings > Tools > DevoxxGenie > Agent > Built-in Tools** with the *run_script — (Experimental)* checkbox, and adjust **Max tool calls per script** underneath it if needed. Like the other built-in tools, its description can be [edited](#editing-a-tools-description). When it's off, the agent's tool chain is exactly what it was before.
+
+:::tip
+Code mode works best with strong coding models that are good at writing JavaScript. Smaller local models may prefer plain tool calls. The description tells the model not to wrap a *single* tool call in `run_script`, so for one-off lookups it keeps calling tools directly.
+:::
+
+### Per-Tool Enable/Disable
+
+Each built-in tool can be individually enabled or disabled in the **Built-in Tools** section of the Agent settings. Uncheck a tool to prevent the agent from using it. This is useful when you want to:
+
+- **Restrict capabilities** — disable `run_command` to prevent terminal access, or `fetch_page` to block web access
+- **Reduce context window usage** — each enabled tool adds its specification to the LLM prompt, consuming tokens. Disabling tools you don't need frees up context for your actual conversation, which is especially important with smaller context window models
+
+The `run_tests`, `parallel_explore`, and backlog tools have their own dedicated toggles in separate settings sections.
+
+### Editing a Tool's Description
+
+Every tool ships with a description that tells the LLM what the tool does and when to reach for it — that description is a large part of how the model decides which tool to call. Click the **pencil button** next to any built-in tool in the Agent settings to rewrite it.
+
+Hovering a tool shows the description currently being sent to the model; the pencil opens it in an editor, and **Reset to Default** puts the shipped wording back. A tool whose description you have changed is marked *custom description* in the settings list. Clearing the text also restores the default, so you can never end up with a tool that has no description at all.
+
+This is the lever for steering the agent without disabling capabilities outright. A common pattern is to combine it with the per-tool checkboxes:
+
+- Uncheck `edit_file`, then edit `run_command`'s description to add *"Use this for all file edits, e.g. via `sed` or `patch`."* — the agent stops reaching for the structured edit tool and works through the shell instead.
+- Add a house rule to `run_command`, such as *"Always use `./gradlew` rather than a global `gradle`."*
+- Make `search_files` the preferred discovery path over `list_files` for a very large repository.
+
+Edits are saved with the rest of the Agent settings and apply from your next prompt onwards — no IDE restart needed. They also apply to the read-only tools handed to [parallel sub-agents](#parallel-sub-agents).
+
+Descriptions are editable for the built-in tools only. Tools provided by [MCP servers](/docs/features/mcp_expanded) and [Skills](/docs/features/skills) keep the descriptions their provider publishes. Tools left on their default keep tracking the shipped wording, so they pick up improvements in future plugin releases automatically.
+
+:::tip Safety
+Write operations require user approval by default, and the approval dialog shows a [diff of the pending change](#reviewing-before-a-write-happens). If you auto-approve writes instead, a finished run still [lists every file it changed](#reviewing-what-the-agent-changed). Terminal commands get an extra layer of protection through the [command blacklist](#command-blacklist).
+:::
+
+### Command Blacklist
+
+`run_command` is the most powerful tool the agent has, and the one most worth constraining. The **command blacklist** lets you list shell commands the agent must never run unsupervised — even when you've auto-approved everything else.
+
+![Command blacklist settings under the run_command tool](/img/agent-command-blacklist.png)
+
+The settings live directly under the `run_command` checkbox in **Built-in Tools**, alongside the shell environment configuration:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Command blacklist** | `git reset --hard`, `git clean -f`, `git push --force`, `git push -f`, `rm -rf` | One pattern per line. Leave empty to disable the check. |
+| **When a command matches the blacklist** | Ask for approval | `Ask for approval` forces the approval dialog; `Block` refuses the command outright. |
+
+**Ask for approval** opens the approval dialog and shows which pattern matched — this happens even if write approvals are disabled or you previously clicked "Don't ask again". A blacklist match always forces the dialog.
+
+**Block** means the command is never executed. The agent receives an error explaining that the command is blocked by user policy, and is instructed not to retry it or attempt variations of it.
+
+#### How matching works
+
+Matching is **token-based** (whitespace-split) and **case-insensitive**, and a pattern may match starting at any position in the command:
+
+| Behaviour | Pattern | Also matches |
+|-----------|---------|--------------|
+| Matches inside compound commands | `git reset --hard` | `cd modules/core && git reset --hard HEAD~3` |
+| Tolerates extra flags between pattern tokens | `git reset --hard` | `git reset -q --hard` |
+| Short-flag clusters are reordered/combined | `rm -rf` | `rm -fr`, `rm -rfv`, `rm -rvf` |
+| `*` acts as a wildcard within a token | `git push --force*` | `git push --force-with-lease` |
+
+Only flag-like tokens (starting with `-`) may be skipped between two matched pattern tokens, so unrelated commands don't trigger false positives — `rm build && grep -rf x` does **not** match `rm -rf`.
+
+:::note Guardrail, not a sandbox
+The blacklist protects against an agent that misunderstood your intent or took a destructive shortcut. It is not a security boundary against a model deliberately trying to evade it. Combine it with per-tool disabling, approval dialogs, and the agent log panel.
+:::
+
+### Reviewing What the Agent Changed
+
+*(v1.13.0+)* When an agent run finishes, its answer is followed by a list of every file it changed, with `+added -removed` line counts. Clicking a file opens an IDE diff of its content **before the run** against its **current state**.
+
+![An agent run listing the three files it changed, each with line counts](/img/agent-changed-files.png)
+
+- **One row per file, not per edit.** A file rewritten five times during a run shows a single cumulative diff.
+- **New files** diff against an empty side.
+- **The right-hand side is live**, so the diff keeps up if you edit the file while it's open.
+- **Snapshots are retained for the last 20 runs**, so older messages in a conversation stay clickable. Files over 1 MB are listed but not diffable.
+
+The switch is **Show changed files with diffs after an agent run**, enabled by default, under **Settings > Tools > DevoxxGenie > Agent > Approval**.
+
+![The "Show changed files with diffs after an agent run" setting](/img/agent-changed-files-setting.png)
+
+### Reviewing Before a Write Happens
+
+*(v1.13.0+)* With **Write tools always require approval** enabled, `write_file` and `edit_file` pause for confirmation — and the dialog shows a diff of the file as it is now against what the tool is about to write, rather than the tool's raw JSON arguments.
+
+![The Approve Agent Tool Execution dialog showing a diff of the file the agent wants to change](/img/agent-approval-diff.png)
+
+It's IntelliJ's own diff viewer, so side-by-side/unified toggling, difference navigation and whitespace policy all work as usual. **Approve** lets the write through; **Deny** stops it and tells the agent the user refused.
+
+Tools with no file change to preview — `run_command`, MCP tools — still show the arguments view, which is the useful thing for a shell command. The same applies when a preview can't be resolved (for example an `edit_file` whose `old_string` matches ambiguously, which the tool would reject anyway).
+
+### Which Review Fits Your Workflow
+
+The two reviews are complementary, and you don't have to choose:
+
+| | Write approvals **on** | Write approvals **off** (auto-approve) |
+|---|---|---|
+| **Before the write** | Diff in the approval dialog, per file, with Approve/Deny | — |
+| **After the run** | Changed-files list under the answer | Changed-files list under the answer |
+
+Approve-as-you-go means nothing lands without you seeing it. Auto-approve plus the post-run list lets the agent work uninterrupted and reviews the result as a whole.
+
+:::note Not covered
+A **cancelled** run produces no change list — the files it already wrote are still changed, so fall back to IntelliJ's Local History. **CLI and ACP runners** are also not covered: their edits don't go through the built-in `edit_file`/`write_file` tools.
+:::
+
+## Getting Started
+
+### 1. Enable Agent Mode
+
+Go to **Settings > Tools > DevoxxGenie > Agent** and enable:
+
+- **Enable Agent Mode** (required)
+
+### 2. Start Chatting
+
+Once enabled, simply ask the LLM questions about your codebase. The agent will automatically use tools when needed to investigate:
+
+- *"How does the database connection work in this project?"*
+- *"Find where the user authentication is implemented"*
+- *"Explain the project structure and main components"*
+
+:::tip
+Agent mode works best for exploratory questions where the LLM needs to discover information across multiple files. For simple questions with provided context, regular chat mode may be more efficient.
+:::
+
+---
+
+## Automated Test Execution
+
+The `run_tests` tool gives the agent the ability to run your project's tests and inspect the results. After modifying code with `write_file` or `edit_file`, the agent automatically runs relevant tests, analyzes any failures, fixes the code, and re-runs until the tests pass.
+
+### Build System Auto-Detection
+
+The tool automatically detects your project's build system by looking for configuration files in the project root:
+
+| Build System | Detected By | Test Command |
+|-------------|-------------|--------------|
+| **Gradle** | `build.gradle` or `build.gradle.kts` | `./gradlew test` |
+| **Maven** | `pom.xml` | `mvn test` |
+| **npm** | `package.json` | `npm test` |
+| **Cargo** | `Cargo.toml` | `cargo test` |
+| **Go** | `go.mod` | `go test ./...` |
+| **Make** | `Makefile` | `make test` |
+
+The agent can also target specific tests (e.g., a single class or method) by passing a `test_target` parameter, which is translated into the appropriate flag for each build system.
+
+### Structured Results
+
+Unlike `run_command`, the `run_tests` tool parses test output and returns structured results to the LLM:
+
+- **Status**: PASSED, FAILED, ERROR, or TIMEOUT
+- **Counts**: tests run, passed, failed, skipped
+- **Failed test names**: extracted from the output for targeted debugging
+- **Raw output**: included on failure so the agent can diagnose the issue
+
+### Custom Test Command
+
+If auto-detection doesn't fit your project, you can set a custom test command in **Settings > Tools > DevoxxGenie > Agent > Test Execution**. Use `{target}` as a placeholder for specific test targets:
+
+```
+./gradlew test --tests "{target}"
+npm run test -- {target}
+```
+
+:::tip Test-Driven Development with Agent Mode
+Ask the agent to write tests first, then implement the code:
+
+*"Write a unit test for a `reverseString` method in StringUtils, then implement the method and run the tests to verify it works."*
+
+The agent will create the test, write the implementation, call `run_tests`, and iterate until everything passes.
+:::
+
+---
+
+## PSI Tools (Code Intelligence)
+
+PSI (Program Structure Interface) tools give the agent access to IntelliJ's semantic code index. Unlike text-based search (`search_files`), PSI tools understand language semantics — imports, type hierarchies, qualified names, and cross-file references. They work across all languages supported by your IDE (Java, Kotlin, Python, JavaScript/TypeScript, Go, Rust, and more).
+
+### Available PSI Tools
+
+#### `find_symbols`
+
+Search for symbol definitions by name across the entire project. Only returns actual declarations (classes, methods, fields), not usages. Supports an optional `kind` filter (`class`, `method`, or `field`).
+
+**Example prompt**: *"Find where the ChatService class is defined"*
+
+#### `document_symbols`
+
+List all symbol definitions in a file with their kind, name, and line number. Shows nesting structure (e.g., methods inside classes). Useful for understanding file structure before reading specific sections.
+
+**Example prompt**: *"Show me the structure of PromptExecutionService.java"*
+
+#### `find_references`
+
+Find all usages of a symbol defined at a given file and line. More accurate than text search because it understands imports, qualified names, and language semantics.
+
+**Example prompt**: *"Find all places where executeQuery is called"*
+
+#### `find_definition`
+
+Navigate from a symbol usage to its definition. Given a file position where a symbol is used, resolves and returns the location where it is defined. Understands imports, inheritance, and cross-file references.
+
+**Example prompt**: *"Go to the definition of the ChatModelFactory interface used in this file"*
+
+#### `find_implementations`
+
+Find all implementations of an interface, abstract class, or abstract method. Useful for understanding the type hierarchy and finding concrete implementations.
+
+**Example prompt**: *"Find all implementations of ChatModelFactory"*
+
+#### `find_callees`
+
+List the methods a given method calls — the **outgoing** edges of the call graph, and the inverse of `find_references`. Each call target is resolved through the semantic index, so overloads and inheritance are understood (more accurate than grepping the method body). Java in v1; other languages return a clear "not supported" message.
+
+**Example prompt**: *"What methods does executeQuery call?"*
+
+#### `trace_call_chains`
+
+Trace call chains from a start method, walking caller→callee or callee→caller edges up to a bounded depth, and return the path(s). Answers "how does execution reach X" or "what chain of calls does X trigger" — questions a single `find_references`/`find_callees` call can't. Bounded in depth (default 5, max 10) and number of paths. Java in v1.
+
+**Example prompt**: *"Trace how a user prompt reaches the streaming executor"*
+
+#### `calculate_complexity`
+
+Compute cyclomatic (McCabe) complexity per Java method by counting decision points (`if`/`for`/`while`/`case`/`catch`/`&&`/`||`/ternary), flagging methods over a configurable threshold (default 10). Useful for finding the riskiest methods to refactor or test.
+
+**Example prompt**: *"Which methods in PromptExecutionService are the most complex?"*
+
+#### `find_dead_code`
+
+Report symbols in a file with zero project-scope references as **heuristic dead-code candidates** — never certainties. Reflection, serialization, dependency injection, and out-of-project callers are invisible to reference search, so every result requires human confirmation. Conservatively excludes public members, constructors/`main`, `@Override` and any annotated member, and serialization members to keep false positives low. Java in v1.
+
+**Example prompt**: *"Are there any unused private methods in this file?"*
+
+### Why PSI Tools Matter
+
+With PSI tools, the agent can navigate your codebase the same way you do in the IDE — jumping to definitions, finding usages, and exploring type hierarchies. This is significantly more accurate than text-based grep for tasks like:
+
+- Understanding how components are wired together
+- Tracing call chains across files
+- Finding all concrete implementations of an interface
+- Identifying where a method is called before refactoring it
+
+### Enabling PSI Tools
+
+PSI tools are **enabled by default**. In **Settings > Tools > DevoxxGenie > Agent > PSI Tools (Code Intelligence)** you can:
+
+- Turn the **master "Enable PSI Tools" toggle** off to disable the entire group at once.
+- Leave the master toggle on and **uncheck individual tools** to hide only specific tools from the agent, while keeping the rest active.
+
+:::tip
+PSI tools are read-only and don't require user approval. They are also available to parallel sub-agents for deeper exploration.
+:::
+
+:::note Polyglot or non-indexed repositories
+PSI tools (including the call-graph tools) operate on IntelliJ's live semantic index, so they are most accurate for languages your IDE indexes — and `find_callees`, `trace_call_chains`, `calculate_complexity`, and `find_dead_code` are Java-only in v1. If you need a cross-language code graph for **polyglot** or **non-indexed** repositories (or a web graph visualization), you can run [CodeGraphContext](https://github.com/CodeGraphContext/CodeGraphContext) as an external MCP server and point DevoxxGenie's [MCP client](mcp_expanded.md) at it — no migration required. For the indexed project itself, the built-in PSI tools are preferred: they ride a live, language-aware index rather than a separately-maintained graph DB.
+:::
+
+---
+
+## Parallel Sub-Agents
+
+**Parallel Sub-Agents** extend Agent Mode by spawning multiple read-only AI assistants that concurrently investigate different aspects of your project. This is especially useful for large codebases where you need to understand multiple components at once.
+
+When the LLM decides it needs to investigate multiple areas simultaneously, it can invoke the `parallel_explore` tool with a list of exploration queries. Each query is assigned to an independent sub-agent that runs in parallel.
+
+Each sub-agent:
+
+- Has **read-only access** to your project through `read_file`, `list_files`, and `search_files` only. The exploration sub-agent provider does not expose `fetch_page`, PSI tools, write tools, MCP tools, or Skills.
+- Runs with its own **isolated chat memory** and tool call budget
+- Can use a **different LLM provider/model** than the main agent (e.g., a cheaper/faster model)
+- Returns a **concise markdown summary** of its findings back to the main agent
+
+The main agent then synthesizes all sub-agent results into a unified response.
+
+## Configuration
+
+All agent settings are in **Settings > Tools > DevoxxGenie > Agent**.
+
+![Agent Mode Parallel Settings](/img/agent-mode-parallel.jpg)
+
+### Agent Mode Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Enable Agent Mode** | Disabled | Enables the agent with full tool access (read, write, and execute) |
+| **Built-in Tools** | All enabled | Per-tool checkboxes to enable/disable individual tools (read_file, write_file, edit_file, list_files, search_files, run_command, fetch_page) |
+| **Tool descriptions** | Shipped defaults | Pencil button per tool — rewrite the description the LLM receives, or reset it to the default. See [Editing a Tool's Description](#editing-a-tools-description) |
+| **Auto-approve read-only tools** | Disabled | Lets `read_file`, `list_files`, `search_files`, `fetch_page` and other read-only tools run without confirmation |
+| **Write tools always require approval** | Enabled | Confirm each write, with a diff of the pending change — see [Reviewing Before a Write Happens](#reviewing-before-a-write-happens) |
+| **Command blacklist** | 5 destructive git/rm commands | Shell commands `run_command` may not run unsupervised — see [Command Blacklist](#command-blacklist) |
+| **When a command matches the blacklist** | Ask for approval | Force the approval dialog, or block the command outright |
+| **Show changed files with diffs after an agent run** | Enabled | Lists the files a finished run changed; clicking one opens a diff — see [Reviewing What the Agent Changed](#reviewing-what-the-agent-changed) |
+| **run_script (Experimental)** | Disabled | Lets the agent batch tool calls into one sandboxed JavaScript step — see [Batching Tool Calls with `run_script`](#batching-tool-calls-with-run_script-experimental) |
+| **Max tool calls per script** | 100 | Limit on tool calls inside one `run_script` call; the script itself counts as one call toward *Max tool calls per prompt* |
+| **Enable Debug Logs** | Disabled | Adds detailed logging of tool arguments and results |
+
+### PSI Tools Settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Enable PSI Tools** | Enabled | Master toggle — enables the entire group of IDE-powered code intelligence tools. Turning this off disables all PSI tools regardless of the per-tool settings below. |
+| ↳ `find_symbols` | Enabled | Search for symbol definitions by name |
+| ↳ `document_symbols` | Enabled | List the symbol structure of a file |
+| ↳ `find_references` | Enabled | Find all usages of a symbol |
+| ↳ `find_definition` | Enabled | Navigate from a usage to its definition |
+| ↳ `find_implementations` | Enabled | Find implementations of an interface or abstract class |
+| ↳ `find_callees` | Enabled | List the methods a given method calls (Java) |
+| ↳ `trace_call_chains` | Enabled | Trace caller/callee call chains between methods (Java) |
+| ↳ `calculate_complexity` | Enabled | Compute cyclomatic complexity of Java methods |
+| ↳ `find_dead_code` | Enabled | Report unreferenced symbols as heuristic dead-code candidates (Java) |
+
+Individual per-tool checkboxes are greyed out when the master toggle is off, so your per-tool preferences are preserved when you re-enable the group.
+
+### Test Execution Settings
+
+| Setting | Default | Range | Description |
+|---------|---------|-------|-------------|
+| **Enable Run Tests tool** | Enabled | On/Off | Enables or disables the `run_tests` tool |
+| **Test timeout** | 300s | 10-600s | Maximum time a test run can take before being stopped |
+| **Custom test command** | *(empty)* | — | Override auto-detected test command. Use `{target}` for specific test targets |
+
+### Parallel Exploration Settings
+
+| Setting | Default | Range | Description |
+|---------|---------|-------|-------------|
+| **Enable Parallel Explore tool** | Enabled | On/Off | Enables or disables the `parallel_explore` tool |
+| **Max tool calls per sub-agent** | 200 | 1-200 | How many file reads/searches each sub-agent can perform |
+| **Sub-agent timeout** | 120s | 10-600s | Maximum time each sub-agent can run before being stopped |
+
+:::note
+The number of concurrent sub-agents is determined by the number of rows in the **Per-Agent Model Overrides** section below (up to 10). There is no separate parallelism spinner — simply add or remove sub-agent rows to control parallelism.
+:::
+
+### Default Sub-Agent Model
+
+You can configure a **default provider and model** for all sub-agents. This is separate from the main agent's model, allowing you to use a cheaper or faster model for exploration tasks.
+
+- **Default sub-agent provider**: Select a provider or choose *"None (Auto-detect)"* to let the plugin choose automatically (tries Ollama first, then OpenAI)
+- **Default sub-agent model**: Select the model to use with the chosen provider
+
+:::tip Cost Optimization
+Using a smaller, faster model (e.g., `gpt-4o-mini`, `qwen2.5:7b`, `gemini-flash`, or `glm-4.7-flash` via Ollama) for sub-agents can significantly reduce costs while maintaining good exploration quality. Sub-agents only need to read and summarize code, not generate complex implementations.
+
+For the **main agent coordinator**, `glm-4.7-flash` via Ollama is a very powerful local option that provides excellent reasoning capabilities for orchestrating tool calls and coordinating sub-agents.
+:::
+
+### Per-Agent Model Overrides
+
+You can dynamically **add and remove sub-agent slots** using the **"+ Add"** and **"-"** buttons. The number of rows directly controls how many sub-agents can run in parallel (from 1 to 10). Each row lets you select a different provider/model, or leave it as *"Use default"* to inherit the default sub-agent model.
+
+- Click **"+ Add"** to add a new sub-agent slot (up to 10)
+- Click **"-"** on any row to remove that sub-agent slot (minimum 1 must remain)
+- Row labels automatically re-number when a row is removed
+
+This enables scenarios like:
+- Sub-agent #1: Uses a powerful model for complex analysis
+- Sub-agent #2: Uses a fast local model for simple file scanning
+- Sub-agent #3: Uses a different cloud provider for cost balancing
+
+## Triggering Parallel Sub-Agents
+
+When Agent Mode is enabled, the **Enable Parallel Explore tool** option (enabled by default) allows the LLM to spawn sub-agents automatically. Here are example prompts that trigger parallel exploration:
+
+- *"Explore this codebase and explain the architecture"*
+- *"Investigate how authentication, database access, and API routing work in this project"*
+- *"Find all REST endpoints, their request/response types, and the service classes they call"*
+- *"Analyze the error handling patterns, logging strategy, and test coverage in this project"*
+
+![Sub-agents prompt example](/img/sub-agents.jpg)
+
+The main agent will spawn parallel sub-agents to investigate different aspects of your codebase, and then synthesize their findings into a unified response:
+
+![Sub-agents response](/img/sub-agents-response.jpg)
+
+:::tip
+The more specific your exploration queries, the better the results. Asking about multiple distinct topics encourages the LLM to spawn parallel sub-agents rather than investigating sequentially.
+:::
+
+## Debugging
+
+### Agent Log Panel
+
+Open the **Agent Log** tool window to see real-time activity from both the main agent and all sub-agents. Each log entry shows:
+
+- **Counter**: `[call#/max]` showing progress against the tool call limit
+- **Sub-agent ID**: `[sub-agent-1:Provider:model]` identifying which sub-agent and its model
+- **Action**: What tool was called and with what arguments
+
+You can also **copy all logs to clipboard** using the toolbar button for sharing or analysis.
+
+### WebView Activity
+
+When agents are running, you'll see real-time activity updates in the chat WebView under the "Agent Activity" section, including:
+
+- Agent/sub-agent start/complete/error events
+- Individual tool calls
+- Color-coded status indicators
+
+## Architecture Overview
+
+### Single Agent Mode
+
+```
+User Prompt
+    |
+    v
+Main Agent (your configured LLM)
+    |
+    |--> read_file, write_file, edit_file
+    |--> list_files, search_files, run_command
+    |--> fetch_page, run_tests
+    |--> find_symbols, document_symbols        ← PSI Tools
+    |--> find_references, find_definition      ← (Code Intelligence)
+    |--> find_implementations                  ←
+    |         |
+    |         v
+    |    Tool Results
+    |
+    v
+Final Response (with context from tools)
+```
+
+### Parallel Sub-Agents Mode
+
+```
+User Prompt
+    |
+    v
+Main Agent (your configured LLM)
+    |
+    |--> parallel_explore(queries: ["query1", "query2", "query3"])
+    |         |
+    |         |--> Sub-Agent #1 (read_file, list_files, search_files)
+    |         |--> Sub-Agent #2 (read_file, list_files, search_files)
+    |         |--> Sub-Agent #3 (read_file, list_files, search_files)
+    |         |
+    |         v
+    |    Combined Results (markdown)
+    |
+    v
+Final Response (synthesized by main agent)
+```
+
+## Batch Task Execution (Agent Loop)
+
+Agent Mode powers the [Agent Loop](sdd-agent-loop.md), which lets you run multiple tasks sequentially in a single batch. Combined with [Spec-driven Development](spec-driven-development.md), you can define structured task specs and have the agent implement them one after another — with dependency ordering, progress tracking, and automatic advancement to the next task.
+
+## Best Practices
+
+- **Start with single agent mode**: For simple questions, single agent mode is often sufficient and faster
+- **Use parallel sub-agents for complex exploration**: When you need to understand multiple unrelated aspects of your codebase
+- **Try `run_script` for wide, shallow lookups**: Checking every reference, reading many small files or filtering large search results is where code mode saves the most round trips and tokens
+- **Use cheaper models for sub-agents**: Sub-agents perform read-only exploration, so smaller models work well
+- **Leverage PSI tools for refactoring**: Before renaming or modifying a method, ask the agent to find all references first — PSI-based search is more reliable than text grep
+- **Let the agent verify its own changes**: With `run_tests` enabled, the agent automatically runs tests after code modifications and iterates on failures
+- **Target specific tests**: For faster feedback, ask the agent to run a specific test class rather than the full suite
+- **Set appropriate timeouts**: Increase the test timeout for large test suites or integration tests, decrease for quick unit tests
+- **Be specific in prompts**: Mentioning multiple distinct topics encourages parallel exploration
+- **Monitor tool call limits**: If sub-agents hit their limit, increase the max tool calls setting
+- **Check the Agent Log**: If results seem incomplete, the Agent Log shows exactly what was investigated
+- **Tune the command blacklist before auto-approving**: If you rely on auto-approval, add the destructive commands specific to your stack (`docker system prune`, `kubectl delete`, `terraform apply`, deployment scripts) to the [command blacklist](#command-blacklist) first
+
+## Troubleshooting
+
+### Agent mode not working
+
+- Ensure **Agent Mode** is enabled in settings
+- Check that the model supports tool/function calling
+- Try asking questions that require exploration (e.g., "Find all files that...")
+
+### Sub-agents not triggering
+
+- Ensure **Enable Parallel Explore tool** is checked
+- Try being more explicit: *"Use sub-agents to explore..."*
+- Ask about multiple distinct topics in one prompt
+
+### Sub-agents timing out
+
+- Increase the **Sub-agent timeout** setting (default: 120s)
+- Reduce the scope of exploration queries
+- Use a faster model for sub-agents
+
+### No model configured
+
+- If you see "No sub-agent model configured", set a default provider in Agent Settings
+- Or enable Ollama/OpenAI for auto-detection to work
+
+### Tests not running or build system not detected
+
+- Ensure **Enable Run Tests tool** is checked in Agent Settings
+- Verify the project has a recognized build file (`build.gradle`, `pom.xml`, `package.json`, etc.) in the project root
+- For non-standard setups, configure a **Custom test command** in Agent Settings
+- On Unix/macOS, if the Gradle wrapper (`gradlew`) isn't executable, the tool will automatically use `bash` to run it
+
+### Test execution timing out
+
+- Increase the **Test timeout** setting (default: 300s)
+- Ask the agent to target specific test classes instead of running all tests
+- Check that your test suite doesn't have hanging tests or infinite loops
+
+### Agent results are incomplete
+
+- Increase **Max tool calls** or **Max tool calls per sub-agent** (default: 200)
+- Make exploration queries more focused
+- Check the Agent Log for errors or limit-reached messages

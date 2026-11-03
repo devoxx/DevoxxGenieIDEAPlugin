@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings;
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.Persona;
+import com.devoxx.genie.model.ProjectScanDefaults;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -386,13 +387,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Setter
     private Boolean useGitIgnore = true;
 
-    private List<String> excludedDirectories = new ArrayList<>(Arrays.asList(
-            "build", ".git", "bin", "out", "target", "node_modules", ".idea"
-    ));
+    private List<String> excludedDirectories = new ArrayList<>(ProjectScanDefaults.EXCLUDED_DIRECTORIES);
 
-    private List<String> includedFileExtensions = new ArrayList<>(Arrays.asList(
-            "java", "kt", "groovy", "scala", "xml", "json", "yaml", "yml", "properties", "txt", "md", "js", "ts", "css", "scss", "html"
-    ));
+    private List<String> includedFileExtensions = new ArrayList<>(ProjectScanDefaults.INCLUDED_FILE_EXTENSIONS);
 
     private Map<String, Double> modelInputCosts = new HashMap<>();
     private Map<String, Double> modelOutputCosts = new HashMap<>();

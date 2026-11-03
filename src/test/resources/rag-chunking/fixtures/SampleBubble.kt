@@ -1,0 +1,118 @@
+package com.devoxx.genie.ui.compose.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
+import com.devoxx.genie.ui.compose.theme.DevoxxOrange
+import com.mikepenz.markdown.compose.Markdown
+import com.mikepenz.markdown.compose.components.markdownComponents
+import com.mikepenz.markdown.model.DefaultMarkdownColors
+import com.mikepenz.markdown.model.DefaultMarkdownTypography
+import dev.snipme.highlights.model.SyntaxThemes
+
+@Composable
+fun UserBubble(
+    promptText: String,
+    modifier: Modifier = Modifier,
+) {
+    if (promptText.isBlank()) return
+
+    val colors = DevoxxGenieThemeAccessor.colors
+    val typography = DevoxxGenieThemeAccessor.typography
+    val shape = RoundedCornerShape(8.dp)
+
+    val textColor = colors.textPrimary
+    val secondaryColor = colors.textSecondary
+    val codeBg = colors.codeBackground
+    val bodySize = typography.bodyFontSize.sp
+    val codeSize = typography.codeFontSize.sp
+
+    // markdown-renderer 0.38+: text colors moved into typography TextStyles;
+    // link styling moved to MarkdownTypography.textLink.
+    val mdColors = DefaultMarkdownColors(
+        text = textColor,
+        codeBackground = codeBg,
+        inlineCodeBackground = codeBg,
+        dividerColor = secondaryColor,
+        tableBackground = Color.Transparent,
+    )
+
+    val baseStyle = TextStyle(fontSize = bodySize, color = textColor)
+    val codeStyle = TextStyle(fontSize = codeSize, fontFamily = FontFamily.Monospace, color = textColor)
+
+    val mdTypography = DefaultMarkdownTypography(
+        h1 = baseStyle.copy(fontSize = typography.bodyPlus(9f).sp, fontWeight = FontWeight.Bold),
+        h2 = baseStyle.copy(fontSize = typography.bodyPlus(7f).sp, fontWeight = FontWeight.Bold),
+        h3 = baseStyle.copy(fontSize = typography.bodyPlus(5f).sp, fontWeight = FontWeight.Bold),
+        h4 = baseStyle.copy(fontSize = typography.bodyPlus(3f).sp, fontWeight = FontWeight.SemiBold),
+        h5 = baseStyle.copy(fontSize = typography.bodyPlus(1f).sp, fontWeight = FontWeight.SemiBold),
+        h6 = baseStyle.copy(fontSize = bodySize, fontWeight = FontWeight.SemiBold),
+        text = baseStyle,
+        code = codeStyle,
+        inlineCode = codeStyle.copy(color = DevoxxOrange),
+        quote = baseStyle.copy(color = secondaryColor),
+        paragraph = baseStyle,
+        ordered = baseStyle,
+        bullet = baseStyle,
+        list = baseStyle,
+        textLink = TextLinkStyles(style = SpanStyle(color = DevoxxOrange)),
+        table = baseStyle,
+    )
+
+    // Immutable, so sharing one instance across the message's code blocks is safe. The mutable
+    // Highlights.Builder is created per block inside computeHighlights instead (TASK-259).
+    val syntaxTheme = remember(colors.isDark) { SyntaxThemes.default(darkMode = colors.isDark) }
+
+    val codeFence: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
+        Box(modifier = Modifier.fillMaxWidth()) {
+            SafeMarkdownHighlightedCodeFence(model.content, model.node, syntaxTheme = syntaxTheme)
+        }
+    }
+
+    val codeBlock: com.mikepenz.markdown.compose.components.MarkdownComponent = { model ->
+        Box(modifier = Modifier.fillMaxWidth()) {
+            SafeMarkdownHighlightedCodeBlock(model.content, model.node, syntaxTheme = syntaxTheme)
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .border(1.dp, DevoxxOrange, shape)
+            .background(colors.userBubbleBackground, shape)
+            .padding(12.dp),
+    ) {
+        SelectionContainer {
+            Markdown(
+                content = promptText,
+                colors = mdColors,
+                typography = mdTypography,
+                components = markdownComponents(
+                    codeBlock = codeBlock,
+                    codeFence = codeFence,
+                ),
+            )
+        }
+
+        // Copy button — mirrors the AI bubble's footer copy button.
+        Spacer(Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            CopyButton(textToCopy = promptText)
+        }
+    }
+}
