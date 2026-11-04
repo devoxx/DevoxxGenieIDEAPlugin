@@ -3,11 +3,11 @@ id: TASK-265
 title: >-
   Support OpenAI-compatible embedding endpoints with query/document prefixes and
   dimension truncation for RAG
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-03T13:24:00Z'
-updated_date: '2026-11-04T17:32:00Z'
+updated_date: '2026-11-04T17:35:00Z'
 labels:
   - enhancement
   - RAG
@@ -150,3 +150,21 @@ Known gap, not fixed: with a prefix-only change, the file watcher records the ne
 
 2026-11-04, tried in a running IDE by the maintainer, who took the blog screenshots: provider dropdown, OpenAI warning and models, Download Embedding Model dialog, Pull button with progress (40.6% on a decimal-comma locale), re-index notice, test search results. Model suggestions are now alphabetical; the model preselected on a provider switch comes from defaultModel(), not list order. Typed prefixes are kept on a model change even when they are exactly nomic's, so they can carry over to a model that doesn't want them; left as is, maintainer can decide. Still not run against real LM Studio, llama.cpp or OpenAI embedding servers.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+RAG can now embed through the providers enabled in the LLM settings: Ollama, Custom OpenAI, OpenAI, LM Studio and llama.cpp, using their existing URLs and keys. A warning appears when code would leave the machine.
+
+- Query and document prefixes, filled in for `nomic-embed-text` and never stored or shown to the LLM.
+- Output dimension: DevoxxGenie truncates and re-normalizes vectors itself.
+- The index fingerprint covers provider, model, dimension and document prefix. Search and the watcher keep using the index's setup; a full index test-embeds through the document profile before wiping. Chunks that fail partway through a run no longer count as indexed.
+- Upgraded nomic installs get one Re-index now notice per project.
+- RagCli and the benchmark can target OpenAI-style endpoints. RAG docs updated, blog post added with five screenshots.
+
+Benchmark (28 questions, 1,458 files, ranked first / top 5 / top 10): no prefixes 14% / 64% / 71%; prefixes 25% / 54% / 82%; prefixes with 256 dimensions 21% / 57% / 61%. Top-5 results get worse with prefixes, and the docs and blog say so. Ollama's `/v1` gave the same scores as native Ollama.
+
+Verified: 3989 tests, 0 failures, 22 skipped; docs build passes. Parts of the UI were tried in a running IDE by the maintainer. Not verified: LM Studio, llama.cpp and OpenAI against real servers. verifyPlugin last ran before the dropdown fix.
+
+Known gaps: query-prefix drift across manifest entries (see notes), typed prefixes carry over on a model change, half the benchmark's answer files miss the 0.7 minimum score, and settings validation still runs on the EDT (TASK-267).
+<!-- SECTION:FINAL_SUMMARY:END -->
