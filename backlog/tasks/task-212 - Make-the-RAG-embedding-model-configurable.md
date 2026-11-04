@@ -1,11 +1,11 @@
 ---
 id: TASK-212
-title: Make the RAG embedding model configurable (default to a code-tuned model)
+title: Make the RAG embedding model configurable
 status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-05-26 18:00
-updated_date: '2026-11-04T13:15:00Z'
+updated_date: '2026-11-04T17:05:00Z'
 labels:
   - enhancement
   - RAG
@@ -116,7 +116,7 @@ This is a small but high-leverage knob: it unlocks a quality dimension the Phase
 - [x] #4 Changing the model in settings notifies the user that the existing index is stale and offers a one-click "Re-index now" action; no automatic re-index happens silently
 - [x] #5 The Ollama model validator is generalized to verify whatever model the user configured (not only the `nomic-embed-text` prefix) and its action/messaging reflects the configured name
 - [x] #6 Unit tests cover: settings round-trip, the model-change-invalidates-manifest behaviour, and the validator working for a non-`nomic` model name
-- [ ] #7 The docusaurus RAG page mentions at least one recommended code-tuned alternative and how to pull it via Ollama
+- [x] #7 The docusaurus RAG page mentions at least one measured alternative to `nomic-embed-text`, with its benchmark results, and how to pull it via Ollama
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -191,4 +191,6 @@ Pre-existing, not fixed here: "Start Indexing" calls indexFiles(force=true) with
 2026-11-04, RAG settings panel. Required RAG Services now sits above Test semantic search; removed the carried-over GridBag weight and the fixed validation height that caused the gap. Test results are now a match list plus a preview (RagSearchResultsPanel). Removed nested scroll panes (validators) and replaced plain JScrollPane with JBScrollPane. Dropdown suggestions extended from ollama.com's embedding list; laya left out because its description reads as a decision model.
 
 Known gap, not fixed: storeSegments still logs and skips chunks that fail mid-run, and the manifest records the chunk count rather than what was stored. The test embed catches a model that can't embed at all, not failures partway through a run. RAG settings validation still runs on the EDT and freezes the panel after opening or Apply; that's TASK-267.
+
+2026-11-04: Maintainer approved rewording AC #7 from a recommended code-tuned alternative to a measured alternative, and dropping "(default to a code-tuned model)" from the title. The default stays nomic-embed-text; bge-m3 is the measured alternative and is not code-tuned. No code-tuned model has been benchmarked yet.
 <!-- SECTION:NOTES:END -->
