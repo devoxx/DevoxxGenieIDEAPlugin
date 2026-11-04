@@ -1,11 +1,11 @@
 ---
 id: TASK-212
 title: Make the RAG embedding model configurable
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: 2026-05-26 18:00
-updated_date: '2026-11-04T17:05:00Z'
+updated_date: '2026-11-04T17:07:00Z'
 labels:
   - enhancement
   - RAG
@@ -194,3 +194,19 @@ Known gap, not fixed: storeSegments still logs and skips chunks that fail mid-ru
 
 2026-11-04: Maintainer approved rewording AC #7 from a recommended code-tuned alternative to a measured alternative, and dropping "(default to a code-tuned model)" from the title. The default stays nomic-embed-text; bge-m3 is the measured alternative and is not code-tuned. No code-tuned model has been benchmarked yet.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The RAG embedding model is now a setting: an editable dropdown of Ollama embedding models in the RAG settings, defaulting to `nomic-embed-text`.
+
+- Each index is bound to the model that built it through an embedding fingerprint on the manifest. Search and the file watcher keep using the index's model; only a full index uses the configured one, and it test-embeds before wiping the old index.
+- Changing the model offers a Re-index now notification and never re-indexes silently.
+- A missing model prompts for an Ollama download before indexing, and `pullModel` now fails on Ollama's HTTP 200 error lines.
+- The validator checks whichever model is configured.
+- RAG settings panel: Required RAG Services sits above Test semantic search, the vertical gap and nested scroll panes are gone, and test results are a match list with a preview.
+
+Benchmark on this repository (1,438 files, 28 questions, ranked first / top 5 / top 10): `nomic-embed-text` 14% / 64% / 71%, `bge-m3` 25% / 50% / 86%. `bge-m3` isn't code-tuned, so AC #7 was reworded to a measured alternative with the maintainer's approval. No code-tuned model has been benchmarked.
+
+Verified: 3945 tests, 0 failures, 22 skipped. Known gaps: chunks that fail partway through a run are still counted as indexed (fixed in TASK-265), and settings validation still runs on the EDT (TASK-267).
+<!-- SECTION:FINAL_SUMMARY:END -->
