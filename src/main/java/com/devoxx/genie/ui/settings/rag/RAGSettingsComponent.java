@@ -4,6 +4,10 @@ import com.devoxx.genie.service.rag.ProjectIndexerService;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.RagValidatorService;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.ui.components.JBScrollPane;
+import com.devoxx.genie.service.rag.embedding.EmbeddingModelInstaller;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
@@ -22,6 +26,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.AddEditRemovePanel;
@@ -52,8 +57,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private static final String RAG_SETTINGS_SECTION_TITLE = "Retrieval-augmented Generation (RAG) settings";
 
     private final JBTextField testQueryField = new JBTextField();
-    private final JButton testQueryButton = new JButton("Test query");
-    private final JTextArea testQueryResults = new JTextArea(7, 40);
+    private final JButton testQueryButton = new JButton("Search");
+    private final RagSearchResultsPanel testQueryResults = new RagSearchResultsPanel();
     private final JProgressBar testQueryProgress = new JProgressBar();
 
     private JProgressBar progressBar;
@@ -67,6 +72,28 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     @Getter
     private final JBIntSpinner maxResultsSpinner = new JBIntSpinner(new UINumericRange(stateService.getIndexerMaxResults(), 1, 50));
+
+    /**
+     * Suggestions only: the combo is editable and accepts any Ollama model name. Listing
+     * installed models would need a network call, which must not happen on the EDT.
+     */
+    static final List<String> SUGGESTED_EMBEDDING_MODELS = List.of(
+            EmbeddingFingerprint.DEFAULT_MODEL_NAME,
+            "nomic-embed-text-v2-moe",
+            "embeddinggemma-2",
+            "embeddinggemma",
+            "qwen3-embedding",
+            "bge-m3",
+            "bge-large",
+            "mxbai-embed-large",
+            "snowflake-arctic-embed",
+            "snowflake-arctic-embed2",
+            "all-minilm",
+            "granite-embedding",
+            "paraphrase-multilingual");
+
+    private final ComboBox<String> embeddingModelComboBox = createEmbeddingModelComboBox(
+            stateService.getRagEmbeddingModelName());
 
     @Getter
     private final JSpinner minScoreField = new JSpinner(new SpinnerNumberModel(stateService.getIndexerMinScore().doubleValue(), 0.0d, 1.0d, 0.01d));
@@ -179,8 +206,15 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addIndexedProjectsSection(panel, gbc);
         addStartIndexButton(panel, gbc);
         addProgressSection(panel, gbc);
-        addTestQuerySection(panel, gbc);
         addValidationSection(panel, gbc);
+        addTestQuerySection(panel, gbc);
+
+        // Takes any spare height, so sections stay at the top instead of spreading apart.
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1.0;
+        panel.add(new JPanel(), gbc);
 
         return panel;
     }
@@ -192,16 +226,16 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         queryRow.add(testQueryField, BorderLayout.CENTER);
         queryRow.add(testQueryButton, BorderLayout.EAST);
         addSettingRow(panel, gbc, "Test query", queryRow);
-        testQueryResults.setEditable(false);
-        testQueryResults.setLineWrap(true);
-        testQueryResults.setWrapStyleWord(true);
         testQueryProgress.setIndeterminate(true);
         testQueryProgress.setVisible(false);
         JPanel output = new JPanel(new BorderLayout(0, 5));
         output.add(testQueryProgress, BorderLayout.NORTH);
-        output.add(new JScrollPane(testQueryResults), BorderLayout.CENTER);
+        output.add(testQueryResults, BorderLayout.CENTER);
         gbc.gridx = 0;
         gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0;
         panel.add(output, gbc);
         gbc.gridy++;
         testQueryButton.addActionListener(e -> runTestQuery());
@@ -213,46 +247,32 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void runTestQuery() {
         String query = testQueryField.getText().trim();
         if (query.isEmpty()) {
-            testQueryResults.setText("Enter a query to search the project index.");
+            testQueryResults.showMessage("Enter a query to search the project index.");
             return;
         }
         testQueryButton.setEnabled(false);
         testQueryProgress.setVisible(true);
-        testQueryResults.setText("Searching the project index...");
-        new SwingWorker<String, Void>() {
+        testQueryResults.showMessage("Searching the project index...");
+        new SwingWorker<List<SearchResult>, Void>() {
             @Override
-            protected String doInBackground() {
-                List<SearchResult> matches = SemanticSearchService.getInstance().search(project, query);
-                if (matches.isEmpty()) return "No matches found. Check that this project is indexed and review the minimum score.";
-                StringBuilder text = new StringBuilder();
-                for (SearchResult match : matches) {
-                    text.append(String.format(java.util.Locale.ROOT, "Score: %.4f  %s%n",
-                            match.score(), match.filePath()));
-                    String content = match.content();
-                    if (content != null) {
-                        text.append(content, 0, Math.min(content.length(), 500));
-                        if (content.length() > 500) text.append("...");
-                    }
-                    text.append("\n\n");
-                }
-                return text.toString();
+            protected List<SearchResult> doInBackground() {
+                return SemanticSearchService.getInstance().search(project, query);
             }
 
             @Override
             protected void done() {
                 try {
-                    testQueryResults.setText(get());
+                    testQueryResults.showResults(query, get(), project.getBasePath());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    testQueryResults.setText("Search interrupted.");
+                    testQueryResults.showMessage("Search interrupted.");
                 } catch (java.util.concurrent.ExecutionException e) {
                     Throwable cause = e.getCause();
-                    testQueryResults.setText("Search failed: " +
+                    testQueryResults.showMessage("Search failed: " +
                             (cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()));
                 } finally {
                     testQueryProgress.setVisible(false);
                     testQueryButton.setEnabled(true);
-                    testQueryResults.setCaretPosition(0);
                 }
             }
         }.execute();
@@ -297,6 +317,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {
         addSection(panel, gbc, RAG_SETTINGS_SECTION_TITLE);
         addSettingRow(panel, gbc, "Chroma DB port", leftAligned(portIndexer));
+        addSettingRow(panel, gbc, "Embedding model", leftAligned(embeddingModelComboBox));
+        addHelpText(panel, gbc, "Ollama model used to embed project files and queries (default " +
+                EmbeddingFingerprint.DEFAULT_MODEL_NAME + "). Pull it with `ollama pull <model>`. " +
+                "Changing it requires a full re-index; until then search keeps using the model " +
+                "the index was built with.");
         addSettingRow(panel, gbc, "Minimum score", leftAligned(minScoreField));
         addHelpText(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
         addSettingRow(panel, gbc, "Maximum results", leftAligned(maxResultsSpinner));
@@ -374,8 +399,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Indexed projects");
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        panel.add(new JScrollPane(collectionsTable), gbc);
+        gbc.weighty = 0;
+        panel.add(new JBScrollPane(collectionsTable), gbc);
         gbc.gridy++;
     }
 
@@ -383,13 +408,9 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Required RAG Services");
         validationHandler.performValidation();
         updateActionButtonState();
-        gbc.fill = GridBagConstraints.BOTH;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-
-        // Set a fixed height for the validationPanel
-        int fixedHeight = 100; // Adjust this value as needed
-        validationPanel.setPreferredSize(new Dimension(validationPanel.getPreferredSize().width, fixedHeight));
+        gbc.weighty = 0;
 
         panel.add(validationPanel, gbc);
         gbc.gridy++;
@@ -424,9 +445,36 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
             return;
         }
         
+        // The model may need downloading, which can take minutes and asks the user first. Done
+        // before the indexing task, off the EDT, with ModalityState.any() so it isn't held back
+        // by the modal Settings dialog.
+        startIndexButton.setEnabled(false);
+        progressLabel.setText("Checking embedding model...");
+        progressLabel.setVisible(true);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            EmbeddingModelInstaller.Result model = EmbeddingModelDownloadPrompt.ensureInstalled(project, panel,
+                    status -> ApplicationManager.getApplication().invokeLater(
+                            () -> progressLabel.setText(status), ModalityState.any()));
+            ApplicationManager.getApplication().invokeLater(() -> {
+                startIndexButton.setEnabled(true);
+                if (project.isDisposed()) {
+                    return;
+                }
+                if (model.ready()) {
+                    updateValidationStatus();
+                    runIndexingTask();
+                } else {
+                    progressLabel.setText(model.problem());
+                    NotificationUtil.sendNotification(project, model.problem());
+                }
+            }, ModalityState.any());
+        });
+    }
+
+    private void runIndexingTask() {
         // Set indexing flag
         isIndexing = true;
-        
+
         // Make sure progress components are visible before starting the indexing process
         setStartButtons(false);
         
@@ -565,11 +613,17 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void updateStartIndexButtonVisibility() {
         ApplicationManager.getApplication().invokeLater(() -> {
             ValidationResult result = RagValidatorService.getInstance().validate();
-            boolean shouldShowButton = enableIndexerCheckBox.isSelected() && result.isValid();
+            boolean shouldShowButton = enableIndexerCheckBox.isSelected() && canStartIndexing(result.statuses());
             startIndexButton.setVisible(shouldShowButton);
             panel.revalidate();
             panel.repaint();
         });
+    }
+
+    /** A missing embedding model doesn't block indexing: Start Indexing offers to download it. */
+    static boolean canStartIndexing(@NotNull List<ValidatorStatus> statuses) {
+        return statuses.stream().allMatch(status ->
+                status.isValid() || status.action() == ValidationActionType.PULL_EMBEDDING_MODEL);
     }
 
     /**
@@ -578,6 +632,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void updateComponentsEnabled() {
         boolean enabled = enableIndexerCheckBox.isSelected();
         portIndexer.setEnabled(enabled);
+        embeddingModelComboBox.setEnabled(enabled);
         maxResultsSpinner.setEnabled(enabled);
         minScoreField.setEnabled(enabled);
         actionButton.setEnabled(enabled);
@@ -585,6 +640,35 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         queryExpansionCheckBox.setEnabled(enabled);
         // Variants spinner is doubly-gated: master switch + the expansion sub-switch.
         queryExpansionVariantsSpinner.setEnabled(enabled && queryExpansionCheckBox.isSelected());
+    }
+
+    static @NotNull ComboBox<String> createEmbeddingModelComboBox(@Nullable String modelName) {
+        ComboBox<String> combo = new ComboBox<>(SUGGESTED_EMBEDDING_MODELS.toArray(String[]::new));
+        combo.setEditable(true);
+        setEmbeddingModelName(combo, modelName);
+        return combo;
+    }
+
+    /** The model name as typed, including text not yet committed with Enter; blank = default. */
+    public @NotNull String getEmbeddingModelName() {
+        return getEmbeddingModelName(embeddingModelComboBox);
+    }
+
+    public void setEmbeddingModelName(@Nullable String modelName) {
+        setEmbeddingModelName(embeddingModelComboBox, modelName);
+    }
+
+    static @NotNull String getEmbeddingModelName(@NotNull ComboBox<String> combo) {
+        Object item = combo.isEditable() ? combo.getEditor().getItem() : combo.getSelectedItem();
+        return EmbeddingFingerprint.ollama(Objects.toString(item, "")).modelName();
+    }
+
+    static void setEmbeddingModelName(@NotNull ComboBox<String> combo, @Nullable String modelName) {
+        String name = EmbeddingFingerprint.ollama(modelName).modelName();
+        // Editable combos accept items outside the model; set the editor too so a custom
+        // name is shown even before the combo commits it.
+        combo.setSelectedItem(name);
+        combo.getEditor().setItem(name);
     }
 
     private void setupTable() {

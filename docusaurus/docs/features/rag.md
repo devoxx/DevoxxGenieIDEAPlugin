@@ -35,20 +35,20 @@ Docker must be installed and running on your machine. RAG uses Docker to run the
 
 DevoxxGenie uses [ChromaDB](https://www.trychroma.com/) (v0.6.2) as the vector database for storing code embeddings. The ChromaDB container is managed automatically via Docker.
 
-### 3. Ollama with nomic-embed-text
+### 3. Ollama with an embedding model
 
-An embedding model is required to generate vector representations of your code. DevoxxGenie uses the `nomic-embed-text` model via Ollama:
+An embedding model is required to generate vector representations of your code. By default DevoxxGenie uses the [`nomic-embed-text`](https://ollama.com/library/nomic-embed-text) model via Ollama:
 
 ```bash
 ollama pull nomic-embed-text
 ```
 
-Make sure Ollama is running before enabling RAG.
+You can pick another Ollama embedding model in the RAG settings; see [Choosing an embedding model](#choosing-an-embedding-model). Make sure Ollama is running before enabling RAG.
 
 ## Setup
 
 1. Ensure Docker is running
-2. Ensure Ollama is running with `nomic-embed-text` pulled
+2. Ensure Ollama is running with your embedding model (default `nomic-embed-text`) pulled
 3. Open **Settings** > **Tools** > **DevoxxGenie** > **RAG**
 4. Configure the settings (see below)
 5. Index your project files
@@ -60,10 +60,32 @@ DevoxxGenie will validate that Docker, ChromaDB, and Ollama are all available be
 | Setting | Description | Default |
 |---------|-------------|---------|
 | ChromaDB port | Port for the ChromaDB container | `8000` |
+| Embedding model | Ollama model used to embed files and queries | `nomic-embed-text` |
 | Max results | Maximum number of relevant documents to retrieve | `10` |
 | Min score | Minimum similarity score for including a result | `0.7` |
 
 RAG is controlled by the **Enable RAG** setting; there is no separate per-conversation activation toggle.
+
+### Choosing an embedding model
+
+The **Embedding model** field suggests common models and accepts any Ollama embedding model name, including tagged names such as `nomic-embed-text:v1.5`. See [Ollama's embedding models](https://ollama.com/search?c=embedding) for what's available.
+
+If the model isn't installed when you start indexing, DevoxxGenie asks whether to download it and starts indexing when the download finishes. If you decline, or the download fails, indexing stops and your existing index isn't changed. The same applies if the model can't create embeddings, for example a chat model. You can also install a model yourself:
+
+```bash
+ollama pull bge-m3
+```
+
+Vectors from different models can't be compared, so **changing the model requires re-indexing the project**. When you apply a new model, DevoxxGenie shows a notification with a **Re-index now** button; nothing is re-indexed automatically. Until you re-index, search keeps using the model the existing index was built with, so RAG keeps working. Re-indexing with a new model replaces the old index completely.
+
+Measured on DevoxxGenie's own repository (1,438 files, 28 questions with a known answer file, `./gradlew ragBenchmark`; indexing times on an Apple Silicon Mac):
+
+| Model | Size | Answer file ranked first | in top 5 | in top 10 | Indexing time |
+|-------|------|--------------------------|----------|-----------|---------------|
+| `nomic-embed-text` (default) | 274 MB | 14% | 64% | 71% | ~2.5 min |
+| [`bge-m3`](https://ollama.com/library/bge-m3) | 1.2 GB | 25% | 50% | 86% | ~6.5 min |
+
+`bge-m3` puts the right file first or in the top 10 more often, but is slower to index and ranks fewer answers in the top 5. Neither is clearly better on every measure; results depend on your code base. The benchmark, and how to write questions for your own code base, is described in `src/test/resources/rag-benchmark/README.md` in the DevoxxGenie repository.
 
 ## Using RAG
 
@@ -123,4 +145,4 @@ These types of queries benefit most from RAG (in either mode):
 ### Ollama Issues
 
 - Verify Ollama is running: `ollama list`
-- Ensure `nomic-embed-text` is pulled: `ollama pull nomic-embed-text`
+- Ensure your embedding model is pulled, e.g. `ollama pull nomic-embed-text` (the validation panel shows which model it checks)

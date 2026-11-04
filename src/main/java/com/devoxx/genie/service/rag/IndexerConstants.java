@@ -19,5 +19,12 @@ public final class IndexerConstants {
     public static final String EMBEDDING_SCHEMA_VERSION_KEY = "embeddingSchemaVersion";
     public static final String CURRENT_EMBEDDING_SCHEMA_VERSION = "v2";
 
+    /**
+     * Stored on every segment: the {@link com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint#id()}
+     * of the embedding setup (provider + model) that produced its vector. Informational; the
+     * manifest is what decides whether a file must be re-embedded.
+     */
+    public static final String EMBEDDING_FINGERPRINT_KEY = "embeddingFingerprint";
+
     private IndexerConstants() {} // Prevent instantiation
 }

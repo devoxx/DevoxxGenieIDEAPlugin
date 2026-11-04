@@ -42,7 +42,7 @@ public final class RAGEventPublisher {
         RAGLogMessage.RAGLogMessageBuilder builder = RAGLogMessage.builder()
                 .projectLocationHash(project != null ? project.getLocationHash() : null)
                 .query(query)
-                .embeddingModel(safeEmbeddingModelName())
+                .embeddingModel(safeEmbeddingModelName(project))
                 .minScore(state != null ? state.getIndexerMinScore() : null)
                 .maxResults(state != null ? state.getIndexerMaxResults() : null)
                 .durationMs(durationMs);
@@ -80,9 +80,13 @@ public final class RAGEventPublisher {
         }
     }
 
-    private static String safeEmbeddingModelName() {
+    /** The model the search actually embedded the query with (the index's, see TASK-212). */
+    private static String safeEmbeddingModelName(@Nullable Project project) {
         try {
-            return ChromaEmbeddingService.EMBEDDING_MODEL_NAME;
+            ChromaEmbeddingService service = ChromaEmbeddingService.getInstance();
+            return project == null
+                    ? service.configuredFingerprint().modelName()
+                    : service.indexFingerprint(project).modelName();
         } catch (Throwable t) {
             return null;
         }

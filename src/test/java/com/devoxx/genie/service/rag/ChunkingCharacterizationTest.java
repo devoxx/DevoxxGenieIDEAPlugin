@@ -11,6 +11,7 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,7 +66,8 @@ class ChunkingCharacterizationTest {
 
         recorder = new RecordingEmbeddingModel();
         when(chroma.getEmbeddingStore()).thenReturn(new InMemoryEmbeddingStore<>());
-        when(chroma.getEmbeddingModel()).thenReturn(recorder);
+        when(chroma.getEmbeddingModel(any())).thenReturn(recorder);
+        when(chroma.configuredFingerprint()).thenReturn(EmbeddingFingerprint.DEFAULT);
         Mockito.doNothing().when(chroma).init(any());
     }
 

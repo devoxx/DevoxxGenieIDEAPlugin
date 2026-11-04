@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.rag.cli;
 
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -42,7 +43,7 @@ public final class RagCli {
 
     private static final String DEFAULT_CHROMA_URL = "http://localhost:8000";
     private static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
-    private static final String DEFAULT_EMBED_MODEL = "nomic-embed-text";
+    private static final String DEFAULT_EMBED_MODEL = EmbeddingFingerprint.DEFAULT_MODEL_NAME;
 
     private RagCli() {}
 
