@@ -2,37 +2,45 @@ package com.devoxx.genie.service.rag.validator;
 
 import com.devoxx.genie.chatmodel.local.ollama.OllamaModelService;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 
-public class NomicEmbedTextValidator implements Validator {
+/**
+ * Checks that the configured RAG embedding model (TASK-212) is installed in Ollama. Matches
+ * the exact model name, treating {@code name} and {@code name:latest} as the same model.
+ */
+public class EmbeddingModelValidator implements Validator {
     private String message;
     private ValidationActionType action = ValidationActionType.OK;
 
     @Override
     public boolean isValid() {
-        String ollamaModelUrl = DevoxxGenieStateService.getInstance().getOllamaModelUrl();
+        action = ValidationActionType.OK;
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        String ollamaModelUrl = state.getOllamaModelUrl();
         if (ollamaModelUrl == null || ollamaModelUrl.isEmpty()) {
             this.message = "Ollama model URL is not set";
             return false;
         }
+        String modelName = EmbeddingFingerprint.ollama(state.getRagEmbeddingModelName()).modelName();
         try {
             OllamaModelEntryDTO[] ollamaModels = OllamaModelService.getInstance().getModels();
             if (ollamaModels == null) {
-                this.message = "Unable to check if Nomic Embed model is present";
+                this.message = "Unable to check if embedding model " + modelName + " is present";
                 return false;
             }
 
             for (OllamaModelEntryDTO model : ollamaModels) {
-                if (model.getName().startsWith("nomic-embed-text")) {
-                    this.message = "Nomic Embed model found";
+                if (model.getName() != null && EmbeddingFingerprint.sameOllamaModel(model.getName(), modelName)) {
+                    this.message = "Embedding model " + modelName + " found";
                     return true;
                 }
             }
-            this.message = "Nomic Embed model not found";
-            this.action = ValidationActionType.PULL_NOMIC;
+            this.message = "Embedding model " + modelName + " not found";
+            this.action = ValidationActionType.PULL_EMBEDDING_MODEL;
             return false;
         } catch (Exception e) {
-            this.message = "Unable to check if Nomic Embed model is present";
+            this.message = "Unable to check if embedding model " + modelName + " is present";
             return false;
         }
     }
@@ -54,6 +62,6 @@ public class NomicEmbedTextValidator implements Validator {
 
     @Override
     public ValidatorType getCommand() {
-        return ValidatorType.NOMIC;
+        return ValidatorType.EMBEDDING_MODEL;
     }
 }

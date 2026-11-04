@@ -3,19 +3,22 @@ id: TASK-216
 title: RAG health & diagnostics panel in the Settings UI
 status: To Do
 assignee: []
-created_date: '2026-05-26 18:00'
-updated_date: '2026-05-26 18:00'
+created_date: 2026-05-26 18:00
+updated_date: '2026-11-03T13:32:00Z'
 labels:
   - enhancement
   - RAG
   - UX
+milestone: m-0
 dependencies: []
 references:
   - src/main/java/com/devoxx/genie/ui/settings/rag/RAGSettingsComponent.java
   - src/main/java/com/devoxx/genie/ui/settings/rag/RAGSettingsConfigurable.java
   - src/main/java/com/devoxx/genie/service/rag/manifest/IndexManifest.java
-  - src/main/java/com/devoxx/genie/service/rag/manifest/IndexManifestService.java
-  - src/main/java/com/devoxx/genie/service/rag/manifest/JsonFileIndexManifest.java
+  - >-
+    src/main/java/com/devoxx/genie/service/rag/manifest/IndexManifestService.java
+  - >-
+    src/main/java/com/devoxx/genie/service/rag/manifest/JsonFileIndexManifest.java
   - src/main/java/com/devoxx/genie/service/rag/RagValidatorService.java
   - src/main/java/com/devoxx/genie/ui/panel/log/AgentMcpLogPanel.java
 priority: low

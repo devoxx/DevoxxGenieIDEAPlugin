@@ -3,6 +3,8 @@ package com.devoxx.genie.service.rag;
 import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
 import com.devoxx.genie.service.projectscanner.ProjectScannerService;
+import com.devoxx.genie.service.rag.chunking.RagChunker;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.service.rag.manifest.IndexManifest;
 import com.devoxx.genie.service.rag.manifest.IndexManifestService;
 import com.devoxx.genie.service.rag.manifest.InMemoryIndexManifest;
@@ -15,12 +17,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import dev.langchain4j.data.document.Document;
-import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.document.splitter.DocumentByLineSplitter;
-import dev.langchain4j.data.document.splitter.DocumentByParagraphSplitter;
-import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -38,6 +35,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.devoxx.genie.service.rag.IndexerConstants.*;
@@ -45,11 +43,6 @@ import static com.devoxx.genie.service.rag.IndexerConstants.*;
 @Slf4j
 @Service
 public final class ProjectIndexerService {
-
-    /** Chunk size in tokens for the recursive splitter. */
-    static final int CHUNK_SIZE_TOKENS = 500;
-    /** Chunk overlap in tokens; non-zero so a symbol straddling a boundary isn't lost. */
-    static final int CHUNK_OVERLAP_TOKENS = 50;
 
     /** Max segments per Ollama {@code embedAll} call. Keeps individual requests small enough
      *  to avoid timeouts while still avoiding the N+1 cost of one-call-per-segment. */
@@ -69,7 +62,8 @@ public final class ProjectIndexerService {
     private final ChromaEmbeddingService chromaEmbeddingService;
     private final ProjectScannerService projectScannerService;
 
-    private DocumentSplitter documentSplitter;
+    /** Splitter selection + low-content filtering, shared with the standalone RAG benchmark. */
+    private final RagChunker chunker = new RagChunker();
 
     /**
      * Source of truth for which files are indexed under the current schema. Defaults to a
@@ -102,49 +96,6 @@ public final class ProjectIndexerService {
 
     public void resetCancellationFlag() {
         cancelIndexing.set(false);
-    }
-
-    /** Cached default (recursive) splitter — used for source code and unknown file types. */
-    private synchronized DocumentSplitter defaultSplitter() {
-        if (documentSplitter == null) {
-            documentSplitter = DocumentSplitters.recursive(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS);
-        }
-        return documentSplitter;
-    }
-
-    /**
-     * Pick a splitter appropriate to the file's content type. Real wins come from honoring
-     * obvious natural boundaries:
-     * <ul>
-     *   <li>Markdown: split on paragraphs first so headers, code blocks, and bullet lists stay
-     *       together when they fit. Falls back to line/word for any single paragraph over the
-     *       chunk-size budget.</li>
-     *   <li>Source code: line splitting respects statement boundaries better than the generic
-     *       recursive separator order does for code (which prefers paragraph breaks, then
-     *       newlines, then sentence punctuation — the last of which is wrong for code).</li>
-     *   <li>Everything else: the default recursive splitter.</li>
-     * </ul>
-     * Per-language AST chunking is Phase 3; this is a cheap, library-only first pass.
-     */
-    DocumentSplitter splitterFor(@NotNull Path path) {
-        String ext = extensionOf(path);
-        return switch (ext) {
-            case "md", "mdx", "markdown" ->
-                    new DocumentByParagraphSplitter(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS,
-                            defaultSplitter());
-            case "java", "kt", "kts", "py", "js", "mjs", "cjs", "ts", "tsx", "jsx",
-                 "go", "rs", "cpp", "cc", "cxx", "hpp", "h", "c", "php", "rb", "scala" ->
-                    new DocumentByLineSplitter(CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS,
-                            defaultSplitter());
-            default -> defaultSplitter();
-        };
-    }
-
-    private static String extensionOf(@NotNull Path path) {
-        String name = path.getFileName().toString();
-        int dot = name.lastIndexOf('.');
-        if (dot < 0 || dot == name.length() - 1) return "";
-        return name.substring(dot + 1).toLowerCase();
     }
 
     @TestOnly
@@ -196,6 +147,17 @@ public final class ProjectIndexerService {
         VirtualFile baseDir = LocalFileSystem.getInstance().findFileByPath(basePath);
         if (baseDir == null) {
             log.debug("Could not find base directory: {}", basePath);
+            return;
+        }
+
+        // A full index always uses the configured embedding setup. If the existing index was
+        // built with another one, its vectors can't be mixed with the new ones (and Chroma
+        // fixes a collection's vector size on first write), so start from an empty index.
+        // Only after the checks above, so an aborted run never leaves the user without an index.
+        EmbeddingFingerprint fingerprint = chromaEmbeddingService.configuredFingerprint();
+        if (!prepareIndexFor(fingerprint)) {
+            SwingUtilities.invokeLater(() -> progressLabel.setText(
+                    "Could not clear the index built with the previous embedding model; see idea.log"));
             return;
         }
 
@@ -283,7 +245,7 @@ public final class ProjectIndexerService {
                         cancelIndexing.set(true);
                     }
                     if (isIndexingCancelled()) return;
-                    indexFile(path, forceReindex);
+                    indexFile(path, forceReindex, fingerprint);
                     int done = processedCount.incrementAndGet();
                     int progress = (int) (((double) done / totalFiles) * 100);
                     String fileName = path.getFileName().toString();
@@ -338,8 +300,53 @@ public final class ProjectIndexerService {
      * future incremental flows (e.g. a {@code BulkFileListener}).
      */
     public void indexFile(Path filePath) {
-        indexFile(filePath, false);
+        indexFile(filePath, false, indexFingerprint());
         manifest.flush();
+    }
+
+    /**
+     * Get the index ready for a full run with {@code target}: when the manifest says the
+     * project was indexed with a different embedding setup, drop every stored vector (Chroma
+     * deletes and recreates the collection) and every manifest entry. Returns {@code false}
+     * when the old vectors could not be dropped, in which case indexing must not proceed.
+     *
+     * @throws IllegalStateException when {@code target} cannot create embeddings (not installed,
+     *                               or a chat model), checked first so the index stays intact
+     */
+    boolean prepareIndexFor(@NotNull EmbeddingFingerprint target) {
+        try {
+            chromaEmbeddingService.getEmbeddingModel(target).embed("embedding model check");
+        } catch (Exception e) {
+            throw new IllegalStateException("Embedding model " + target.modelName()
+                    + " cannot create embeddings (" + e.getMessage() + "). The existing RAG index was not changed.", e);
+        }
+
+        Optional<String> existing = manifest.indexFingerprint();
+        if (existing.isEmpty() || existing.get().equals(target.id())) {
+            return true;
+        }
+        log.info("RAG embedding setup changed from {} to {}; rebuilding the index from scratch",
+                existing.get(), target.id());
+        try {
+            chromaEmbeddingService.getEmbeddingStore().removeAll();
+        } catch (Exception e) {
+            log.error("Could not clear the RAG index built with {}: {}", existing.get(), e.getMessage());
+            return false;
+        }
+        manifest.clear();
+        manifest.flush();
+        return true;
+    }
+
+    /**
+     * The embedding setup the project's current index was built with, falling back to the
+     * configured one for an empty index. Search and incremental re-indexing use this so RAG
+     * keeps working after a model change until the user rebuilds the index.
+     */
+    private @NotNull EmbeddingFingerprint indexFingerprint() {
+        return manifest.indexFingerprint()
+                .map(EmbeddingFingerprint::parse)
+                .orElseGet(chromaEmbeddingService::configuredFingerprint);
     }
 
     /**
@@ -356,6 +363,9 @@ public final class ProjectIndexerService {
         List<String> ragExcluded = ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories();
         String basePath = project.getBasePath();
         Path projectBasePath = basePath != null ? Path.of(basePath) : null;
+        // Keep embedding with the model the index was built with, even if settings now name
+        // another one: mixing two models' vectors in one index would break search.
+        EmbeddingFingerprint fingerprint = indexFingerprint();
         try {
             for (Path file : files) {
                 if (!manifest.isTracked(file)) continue;
@@ -371,7 +381,7 @@ public final class ProjectIndexerService {
                 // Drop any existing chunks for this file before re-embedding, otherwise edits
                 // accumulate stale chunks alongside fresh ones.
                 removeChunksFromStore(file);
-                indexFile(file, true);
+                indexFile(file, true, fingerprint);
             }
         } finally {
             manifest.flush();
@@ -473,16 +483,16 @@ public final class ProjectIndexerService {
         }
     }
 
-    private void indexFile(Path filePath, boolean forceReindex) {
+    private void indexFile(Path filePath, boolean forceReindex, @NotNull EmbeddingFingerprint fingerprint) {
         log.debug("Indexing file: {}", filePath);
         try {
-            if (!forceReindex && manifest.isCurrent(filePath)) {
+            if (!forceReindex && manifest.isCurrent(filePath, fingerprint.id())) {
                 log.debug("File already indexed (content hash matches): {}", filePath);
                 return;
             }
-            int segmentCount = processPath(filePath);
+            int segmentCount = processPath(filePath, fingerprint);
             if (segmentCount > 0) {
-                manifest.markIndexed(filePath, segmentCount);
+                manifest.markIndexed(filePath, segmentCount, fingerprint.id());
                 log.debug("File successfully indexed ({} segments): {}", segmentCount, filePath);
             }
         } catch (Exception e) {
@@ -496,9 +506,9 @@ public final class ProjectIndexerService {
      * roundtrips. Embedding in batches and using {@code addAll} on the store collapses
      * that to {@code ceil(N / EMBEDDING_BATCH_SIZE)} calls and one store write per batch.
      */
-    private void storeSegments(@NotNull List<TextSegment> segments) {
+    private void storeSegments(@NotNull List<TextSegment> segments, @NotNull EmbeddingFingerprint fingerprint) {
         if (segments.isEmpty()) return;
-        EmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel();
+        EmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel(fingerprint);
         for (int from = 0; from < segments.size(); from += EMBEDDING_BATCH_SIZE) {
             int to = Math.min(from + EMBEDDING_BATCH_SIZE, segments.size());
             List<TextSegment> batch = segments.subList(from, to);
@@ -523,7 +533,7 @@ public final class ProjectIndexerService {
     }
 
     /** Returns the number of segments stored for this file (0 if blank / unreadable). */
-    private int processPath(Path path) {
+    private int processPath(Path path, @NotNull EmbeddingFingerprint fingerprint) {
         try {
             log.debug("Processing file: {}", path);
 
@@ -532,31 +542,23 @@ public final class ProjectIndexerService {
                 return 0;
             }
 
-            Document document = Document.from(content);
-            List<TextSegment> rawSegments = splitterFor(path).split(document);
+            List<TextSegment> chunks = chunker.chunk(path, content);
             long lastModified = Files.getLastModifiedTime(path).toMillis();
             long indexedAt = System.currentTimeMillis();
             String absolutePath = path.toAbsolutePath().toString();
 
-            List<TextSegment> segments = new ArrayList<>(rawSegments.size());
-            int dropped = 0;
-            for (TextSegment segment : rawSegments) {
-                if (ChunkQualityFilter.isLowContent(segment.text())) {
-                    dropped++;
-                    continue;
-                }
+            List<TextSegment> segments = new ArrayList<>(chunks.size());
+            for (TextSegment chunk : chunks) {
                 Metadata metadata = new Metadata();
                 metadata.put(FILE_PATH, absolutePath);
                 metadata.put(LAST_MODIFIED, lastModified);
                 metadata.put(INDEXED_AT, indexedAt);
                 metadata.put(EMBEDDING_SCHEMA_VERSION_KEY, CURRENT_EMBEDDING_SCHEMA_VERSION);
-                segments.add(new TextSegment(segment.text(), metadata));
-            }
-            if (dropped > 0) {
-                log.debug("Dropped {} low-content chunk(s) from {}", dropped, path);
+                metadata.put(EMBEDDING_FINGERPRINT_KEY, fingerprint.id());
+                segments.add(new TextSegment(chunk.text(), metadata));
             }
 
-            storeSegments(segments);
+            storeSegments(segments, fingerprint);
             return segments.size();
         } catch (IOException e) {
             log.warn("Error processing file: {}", path);

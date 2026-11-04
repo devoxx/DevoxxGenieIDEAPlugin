@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.rag.cli;
 
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -30,6 +31,8 @@ import java.util.Set;
  * <ul>
  *   <li>{@code query <collection> <text> [topN=10]} — embed and search; prints rank/score/path/snippet</li>
  *   <li>{@code list <collection> [substringFilter]} — print distinct file paths in a collection</li>
+ *   <li>{@code benchmark [options]} — measure retrieval quality (recall@k, MRR) for an embedding
+ *       configuration against a question dataset, in memory; see {@link RagBenchmarkCommand}</li>
  * </ul>
  *
  * <p>Env overrides: {@code DEVOXXGENIE_CHROMA_URL} (default {@code http://localhost:8000}),
@@ -40,7 +43,7 @@ public final class RagCli {
 
     private static final String DEFAULT_CHROMA_URL = "http://localhost:8000";
     private static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
-    private static final String DEFAULT_EMBED_MODEL = "nomic-embed-text";
+    private static final String DEFAULT_EMBED_MODEL = EmbeddingFingerprint.DEFAULT_MODEL_NAME;
 
     private RagCli() {}
 
@@ -50,6 +53,7 @@ public final class RagCli {
         switch (cmd) {
             case "query" -> runQuery(args);
             case "list"  -> runList(args);
+            case "benchmark" -> RagBenchmarkCommand.run(java.util.Arrays.copyOfRange(args, 1, args.length));
             default -> { printUsage(); System.exit(2); }
         }
     }
@@ -180,6 +184,7 @@ public final class RagCli {
                 Usage:
                   ragQuery query <collection> <text> [topN=10]
                   ragQuery list  <collection> [substring]
+                  ragQuery benchmark [options]   (see ./gradlew ragBenchmark --args="--help")
 
                 Env:
                   DEVOXXGENIE_CHROMA_URL   (default http://localhost:8000)

@@ -10,14 +10,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param lastModified   file's {@code lastModifiedTime} in millis when it was indexed (debug-only signal)
  * @param indexedAt      wall-clock time the entry was written
  * @param segmentCount   how many chunks the file was split into
- * @param schemaVersion  embedding schema version under which the file was indexed
+ * @param schemaVersion  embedding schema (storage format) version under which the file was indexed
+ * @param embeddingFingerprint {@link com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint#id()}
+ *                       of the embedding setup that produced the file's vectors; {@code null} for
+ *                       entries written before TASK-212, which were all built with nomic-embed-text
  */
 public record IndexManifestEntry(
         @JsonProperty("contentHash") String contentHash,
         @JsonProperty("lastModified") long lastModified,
         @JsonProperty("indexedAt") long indexedAt,
         @JsonProperty("segmentCount") int segmentCount,
-        @JsonProperty("schemaVersion") String schemaVersion
+        @JsonProperty("schemaVersion") String schemaVersion,
+        @JsonProperty("embeddingFingerprint") String embeddingFingerprint
 ) {
     @JsonCreator
     public IndexManifestEntry {}

@@ -1,0 +1,178 @@
+{
+  "name": "devoxxgenie",
+  "version": 1,
+  "description": "Natural-language questions about the DevoxxGenie plugin repository, each paired with the repo-relative file(s) whose chunks answer it. A question counts as a hit at rank k when any expected file is among the top k retrieved files. Questions deliberately avoid class names where a developer wouldn't know them, so the benchmark measures semantic retrieval rather than keyword overlap.",
+  "excludePaths": [
+    "src/test/resources/rag-chunking/",
+    "src/test/resources/rag-benchmark/"
+  ],
+  "questions": [
+    {
+      "id": "agent-tool-call-limit",
+      "question": "How does the agent stop itself from calling tools forever, and what happens when the maximum is reached?",
+      "expected": ["src/main/java/com/devoxx/genie/service/agent/AgentLoopTracker.java"]
+    },
+    {
+      "id": "parallel-sub-agents",
+      "question": "How can the agent explore several parts of the codebase at the same time using helper agents?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/service/agent/tool/ParallelExploreToolExecutor.java",
+        "src/main/java/com/devoxx/genie/service/agent/SubAgentRunner.java"
+      ]
+    },
+    {
+      "id": "sub-agent-isolation",
+      "question": "Does each sub-agent get its own chat memory and model, and which tools is it allowed to use?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/service/agent/SubAgentRunner.java",
+        "src/main/java/com/devoxx/genie/service/agent/tool/ParallelExploreToolExecutor.java"
+      ]
+    },
+    {
+      "id": "dangerous-shell-commands",
+      "question": "How are dangerous shell commands like git reset --hard blocked even when they are hidden inside a compound command?",
+      "expected": ["src/main/java/com/devoxx/genie/service/agent/CommandBlacklist.java"]
+    },
+    {
+      "id": "auto-approve-read-only",
+      "question": "Which agent tools can run without asking the user for approval?",
+      "expected": ["src/main/java/com/devoxx/genie/service/agent/AgentApprovalProvider.java"]
+    },
+    {
+      "id": "tool-descriptions-sent-to-llm",
+      "question": "Where are the descriptions of the built-in tools that the language model actually sees, and can users override them?",
+      "expected": ["src/main/java/com/devoxx/genie/service/agent/tool/BuiltInToolDescriptions.java"]
+    },
+    {
+      "id": "batch-tool-calls-javascript",
+      "question": "How can the model batch several tool calls into one JavaScript script step?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/service/agent/codemode/CodeModeToolProvider.java",
+        "docusaurus/docs/features/agent-mode.md"
+      ]
+    },
+    {
+      "id": "mid-task-steering",
+      "question": "How can the user send an extra instruction to the agent while it is still working, without breaking pending tool calls?",
+      "expected": ["src/main/java/com/devoxx/genie/service/prompt/steering/SteeringMessageInjector.java"]
+    },
+    {
+      "id": "disable-individual-mcp-tools",
+      "question": "How does the plugin hide MCP server tools that the user switched off in settings?",
+      "expected": ["src/main/java/com/devoxx/genie/service/mcp/FilteredMcpToolProvider.java"]
+    },
+    {
+      "id": "mcp-approval-dialog",
+      "question": "Where is the user asked to approve an MCP tool call before it runs outside agent mode?",
+      "expected": ["src/main/java/com/devoxx/genie/service/mcp/ApprovalRequiredToolProvider.java"]
+    },
+    {
+      "id": "mcp-traffic-logging",
+      "question": "How is the raw JSON-RPC traffic between the plugin and an MCP server captured for the log panel?",
+      "expected": ["src/main/java/com/devoxx/genie/service/mcp/MCPTrafficLogger.java"]
+    },
+    {
+      "id": "register-llm-provider",
+      "question": "Where is each LLM provider mapped to the factory that builds its chat model?",
+      "expected": ["src/main/java/com/devoxx/genie/chatmodel/ChatModelFactoryProvider.java"]
+    },
+    {
+      "id": "custom-openai-models-probe",
+      "question": "How does the custom OpenAI-compatible provider fetch the list of available models without freezing the IDE when the server is down?",
+      "expected": ["src/main/java/com/devoxx/genie/chatmodel/local/customopenai/CustomOpenAIChatModelFactory.java"]
+    },
+    {
+      "id": "rag-query-paraphrase-fusion",
+      "question": "How are results from several paraphrased versions of a search query merged into a single ranking?",
+      "expected": ["src/main/java/com/devoxx/genie/service/rag/QueryExpansionFuser.java"]
+    },
+    {
+      "id": "rag-reindex-on-save",
+      "question": "When I save a file, how does the semantic index get updated automatically, and why doesn't every keystroke trigger it?",
+      "expected": ["src/main/java/com/devoxx/genie/service/rag/watcher/RAGFileWatcher.java"]
+    },
+    {
+      "id": "rag-skip-unchanged-files",
+      "question": "How does indexing know a file is already indexed and skip it, even after a branch switch touched its timestamp?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/service/rag/manifest/IndexManifest.java",
+        "src/main/java/com/devoxx/genie/service/rag/manifest/JsonFileIndexManifest.java"
+      ]
+    },
+    {
+      "id": "rag-drop-noise-chunks",
+      "question": "Why are markdown table separator rows not stored in the vector database?",
+      "expected": ["src/main/java/com/devoxx/genie/service/rag/ChunkQualityFilter.java"]
+    },
+    {
+      "id": "rag-agent-mode-vs-passive",
+      "question": "When RAG is on, when is semantic context injected into the prompt and when is it a tool the agent calls instead?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/service/MessageCreationService.java",
+        "docusaurus/docs/features/rag.md"
+      ]
+    },
+    {
+      "id": "chromadb-docker",
+      "question": "How is the ChromaDB Docker image pulled and its container started with persistent storage?",
+      "expected": ["src/main/java/com/devoxx/genie/service/chromadb/ChromaDockerService.java"]
+    },
+    {
+      "id": "rag-prerequisites-docs",
+      "question": "What do I need to install before I can use RAG, and which embedding model is required?",
+      "expected": ["docusaurus/docs/features/rag.md"]
+    },
+    {
+      "id": "gitignore-nested",
+      "question": "How are files listed in .gitignore, including nested ignore files in subfolders, left out of the project scan?",
+      "expected": ["src/main/java/com/devoxx/genie/service/analyzer/util/GitignoreParser.java"]
+    },
+    {
+      "id": "project-instructions-in-system-prompt",
+      "question": "How do CLAUDE.md or AGENTS.md instructions from the project root end up in the system prompt?",
+      "expected": ["src/main/java/com/devoxx/genie/service/prompt/memory/ChatMemoryManager.java"]
+    },
+    {
+      "id": "init-command",
+      "question": "What does the /init command do and how do I generate a project guidance file for the LLM?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/ui/processor/CommandProcessor.java",
+        "docusaurus/docs/configuration/devoxxgenie-md.md"
+      ]
+    },
+    {
+      "id": "web-search-engines",
+      "question": "Which web search engines can be used to ground answers with internet results, and how is one chosen?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/service/prompt/websearch/WebSearchPromptExecutionService.java",
+        "docusaurus/docs/features/web-search.md"
+      ]
+    },
+    {
+      "id": "analytics-privacy",
+      "question": "What usage data does the plugin send, and is any prompt text or code ever included?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/service/analytics/AnalyticsService.java",
+        "docusaurus/docs/configuration/privacy-and-analytics.md"
+      ]
+    },
+    {
+      "id": "inline-completion-backends",
+      "question": "Which local servers can provide fill-in-the-middle code completions while I type in the editor?",
+      "expected": [
+        "src/main/java/com/devoxx/genie/completion/InlineCompletionService.java",
+        "docusaurus/docs/features/inline-completion.md"
+      ]
+    },
+    {
+      "id": "custom-provider-docs",
+      "question": "How do I connect the plugin to my own OpenAI-compatible endpoint with a custom base URL?",
+      "expected": ["docusaurus/docs/llm-providers/custom-providers.md"]
+    },
+    {
+      "id": "skills-docs",
+      "question": "How do I add reusable skills that the assistant can load on demand?",
+      "expected": ["docusaurus/docs/features/skills.md"]
+    }
+  ]
+}

@@ -2,7 +2,6 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.intellij.ui.components.JBPanel;
-import com.intellij.ui.components.JBScrollPane;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -26,16 +25,7 @@ public class ValidatorsPanel extends JBPanel<ValidatorsPanel> {
             validatorsContainer.add(statusPanel);
         }
 
-        JBScrollPane scrollPane = getScrollPane(validatorsContainer);
-
-        add(scrollPane, BorderLayout.CENTER);
-    }
-
-    private static @NotNull JBScrollPane getScrollPane(JPanel validatorsContainer) {
-        JBScrollPane scrollPane = new JBScrollPane(validatorsContainer);
-        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        return scrollPane;
+        // No scroll pane of its own: the rows are few, and the settings page already scrolls.
+        add(validatorsContainer, BorderLayout.CENTER);
     }
 }

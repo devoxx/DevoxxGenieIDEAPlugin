@@ -3,6 +3,8 @@ package com.devoxx.genie.ui.settings;
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.Persona;
+import com.devoxx.genie.model.ProjectScanDefaults;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -153,6 +155,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer indexerPort = 8000;
     private Integer indexerMaxResults = 10;
     private Double indexerMinScore = 0.7;
+    /** Ollama model used for RAG embeddings (TASK-212); blank means the default, nomic-embed-text. */
+    private String ragEmbeddingModelName = EmbeddingFingerprint.DEFAULT_MODEL_NAME;
 
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;
@@ -386,13 +390,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Setter
     private Boolean useGitIgnore = true;
 
-    private List<String> excludedDirectories = new ArrayList<>(Arrays.asList(
-            "build", ".git", "bin", "out", "target", "node_modules", ".idea"
-    ));
+    private List<String> excludedDirectories = new ArrayList<>(ProjectScanDefaults.EXCLUDED_DIRECTORIES);
 
-    private List<String> includedFileExtensions = new ArrayList<>(Arrays.asList(
-            "java", "kt", "groovy", "scala", "xml", "json", "yaml", "yml", "properties", "txt", "md", "js", "ts", "css", "scss", "html"
-    ));
+    private List<String> includedFileExtensions = new ArrayList<>(ProjectScanDefaults.INCLUDED_FILE_EXTENSIONS);
 
     private Map<String, Double> modelInputCosts = new HashMap<>();
     private Map<String, Double> modelOutputCosts = new HashMap<>();
