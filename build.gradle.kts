@@ -268,12 +268,12 @@ dependencies {
     // persisted configurations still load. SSE-only servers (issue #1151) are not supported.
     val lg4j_version = "1.22.0"
     val lg4j_beta_version = "1.22.0-beta32"
-    val awsSdkVersion = "2.57.4"
+    val awsSdkVersion = "2.57.8"
     val retrofitVersion = "3.0.0"
-    val sqliteVersion = "3.53.4.0"
+    val sqliteVersion = "3.54.1.0"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
-    val commonmarkVersion = "0.31.0"
+    val commonmarkVersion = "0.32.0"
     val jsoupVersion = "1.23.2"
     // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
