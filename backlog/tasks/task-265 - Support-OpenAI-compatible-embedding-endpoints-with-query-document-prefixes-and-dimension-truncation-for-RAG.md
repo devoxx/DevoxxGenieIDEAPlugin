@@ -167,4 +167,6 @@ Benchmark (28 questions, 1,458 files, ranked first / top 5 / top 10): no prefixe
 Verified: 3989 tests, 0 failures, 22 skipped; docs build passes. Parts of the UI were tried in a running IDE by the maintainer. Not verified: LM Studio, llama.cpp and OpenAI against real servers. verifyPlugin last ran before the dropdown fix.
 
 Known gaps: query-prefix drift across manifest entries (see notes), typed prefixes carry over on a model change, half the benchmark's answer files miss the 0.7 minimum score, and settings validation still runs on the EDT (TASK-267).
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1380 (stacked on #1379).
 <!-- SECTION:FINAL_SUMMARY:END -->
