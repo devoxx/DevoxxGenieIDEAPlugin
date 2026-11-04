@@ -4,7 +4,6 @@ title: "RAG Embeddings: Choose Your Provider, Model, Prefixes and Size"
 authors: [stephanj]
 tags: [rag, embeddings, ollama, llama.cpp, lm studio, openai, intellij idea, open source]
 date: 2026-11-04
-draft: true
 description: DevoxxGenie's RAG no longer depends on one Ollama model. Pick an embedding provider you've already configured, choose any model, and tune query prefixes and vector size. Here's what changed and what we measured.
 keywords: [devoxxgenie, rag, embeddings, embedding model, nomic-embed-text, ollama, llama.cpp, lm studio, openai compatible, matryoshka, query prefix, intellij plugin]
 ---
@@ -19,8 +18,7 @@ This work started with [issue #523](https://github.com/devoxx/DevoxxGenieIDEAPlu
 
 <!-- truncate -->
 
-<!-- SCREENSHOT 1: full RAG settings panel, showing Embedding provider, Embedding model, Query prefix, Document prefix and Output dimension.
-     Save as docusaurus/static/img/rag-embedding-settings.png, then use: ![The new embedding settings in the RAG panel](/img/rag-embedding-settings.png) -->
+![The new embedding settings in the RAG panel](/img/rag-embedding-settings.png)
 
 ## Use the providers you already have
 
@@ -40,15 +38,13 @@ llama-server -m your-embedding-model.gguf --embeddings --port 8080
 
 If you pick OpenAI, or any provider whose URL isn't on your own machine, DevoxxGenie warns you that your source code will be sent there. Until now RAG stayed on your machine, so we want that choice to be a clear one.
 
-<!-- SCREENSHOT 2: the warning shown after selecting OpenAI as the embedding provider.
-     Save as docusaurus/static/img/rag-embedding-cloud-warning.png, then use: ![The warning shown for a cloud embedding provider](/img/rag-embedding-cloud-warning.png) -->
+![The warning shown for a cloud embedding provider](/img/rag-embedding-cloud-warning.png)
 
 ## Any model, and a safer way to switch
 
 The **Embedding model** field suggests common models and accepts any name. With Ollama, if the model isn't installed, DevoxxGenie asks whether to download it and starts indexing when the download finishes.
 
-<!-- SCREENSHOT 3: the "Download Embedding Model" dialog.
-     Save as docusaurus/static/img/rag-embedding-download.png, then use: ![DevoxxGenie offers to download a missing model](/img/rag-embedding-download.png) -->
+![DevoxxGenie offers to download a missing model](/img/rag-embedding-download.png)
 
 Switching is also safe. Vectors from different models can't be compared, so a new model means a new index, but:
 
@@ -75,7 +71,7 @@ The right file comes first far more often and appears in the top 10 more often, 
 
 ## Shorter vectors
 
-Some models keep working when their vectors are cut short, which is known as Matryoshka truncation. It saves memory and speeds up search. Set **Output dimension** and DevoxxGenie shortens and re-normalizes the vectors itself, so it works even if your server ignores the request.
+Some models keep working when their vectors are cut short, which is known as Matryoshka truncation. It saves memory and speeds up search. Set **Output dimension** and DevoxxGenie shortens and re-normalizes the vectors itself, so your server doesn't need to support it.
 
 It isn't free, though:
 
@@ -93,8 +89,7 @@ While we were in there, we improved the panel itself:
 - **Required RAG Services** now sits above the test search, so you see what's missing first.
 - **Test semantic search** shows a proper list of matches with a score and file name, and a preview of the selected match, instead of one long block of text.
 
-<!-- SCREENSHOT 4: Test semantic search with results: the list of matches and the preview.
-     Save as docusaurus/static/img/rag-test-search-results.png, then use: ![Test search results with a preview](/img/rag-test-search-results.png) -->
+![Test search results with a preview](/img/rag-test-search-results.png)
 
 ## What happens when you upgrade
 
@@ -106,8 +101,7 @@ If you use RAG with `nomic-embed-text`, prefixes turn on for you, and your exist
 
 If you'd rather keep the old behavior, clear both prefix fields.
 
-<!-- SCREENSHOT 5: the one-time "Re-index" notification with its Re-index now button.
-     Save as docusaurus/static/img/rag-reindex-notification.png, then use: ![The one-time re-index notification](/img/rag-reindex-notification.png) -->
+![The one-time re-index notification](/img/rag-reindex-notification.png)
 
 ## Try it
 

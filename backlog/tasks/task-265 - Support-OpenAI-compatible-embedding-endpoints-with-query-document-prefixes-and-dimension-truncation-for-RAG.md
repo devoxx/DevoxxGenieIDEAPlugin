@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T13:24:00Z'
-updated_date: '2026-11-04T14:30:00Z'
+updated_date: '2026-11-04T17:32:00Z'
 labels:
   - enhancement
   - RAG
@@ -122,7 +122,7 @@ A Settings "Test" button that checks these settings end-to-end is tracked as a s
 - [x] #15 The TASK-269 benchmark can also target an OpenAI-compatible endpoint, and the plugin's embedding path reuses the prefix/truncation component built in TASK-269 rather than a second implementation
 - [x] #16 Selecting a cloud provider shows a warning that project source code is sent to that provider during indexing and search
 - [x] #17 For a provider without model download support, a missing or unusable model produces a clear error and leaves the existing index untouched
-- [ ] #18 A blog post announces the new embedding features, with screenshots of the new RAG settings panel
+- [x] #18 A blog post announces the new embedding features, with screenshots of the new RAG settings panel
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -147,4 +147,6 @@ Verification: full suite 3986 tests, 22 skipped, 0 failures; verifyPlugin Compat
 Final verification: full suite 3987 tests, 22 skipped, 0 failures; verifyPlugin Compatible with IU-253 and IU-261. All SemanticSearchService.search callers run off the EDT, so reading the API key there is safe.
 
 Known gap, not fixed: with a prefix-only change, the file watcher records the new query prefix on touched files while other entries keep the old one. Search is fine while the fingerprint matches, but if the model then changes without a re-index, queryPrefix(project) returns whichever entry comes first. Fix by storing the prefix once per manifest.
+
+2026-11-04, tried in a running IDE by the maintainer, who took the blog screenshots: provider dropdown, OpenAI warning and models, Download Embedding Model dialog, Pull button with progress (40.6% on a decimal-comma locale), re-index notice, test search results. Model suggestions are now alphabetical; the model preselected on a provider switch comes from defaultModel(), not list order. Typed prefixes are kept on a model change even when they are exactly nomic's, so they can carry over to a model that doesn't want them; left as is, maintainer can decide. Still not run against real LM Studio, llama.cpp or OpenAI embedding servers.
 <!-- SECTION:NOTES:END -->
