@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: 2026-05-26 18:00
-updated_date: '2026-11-04T17:07:00Z'
+updated_date: '2026-11-04T17:08:00Z'
 labels:
   - enhancement
   - RAG
@@ -209,4 +209,6 @@ The RAG embedding model is now a setting: an editable dropdown of Ollama embeddi
 Benchmark on this repository (1,438 files, 28 questions, ranked first / top 5 / top 10): `nomic-embed-text` 14% / 64% / 71%, `bge-m3` 25% / 50% / 86%. `bge-m3` isn't code-tuned, so AC #7 was reworded to a measured alternative with the maintainer's approval. No code-tuned model has been benchmarked.
 
 Verified: 3945 tests, 0 failures, 22 skipped. Known gaps: chunks that fail partway through a run are still counted as indexed (fixed in TASK-265), and settings validation still runs on the EDT (TASK-267).
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1379 (stacked on #1373).
 <!-- SECTION:FINAL_SUMMARY:END -->
