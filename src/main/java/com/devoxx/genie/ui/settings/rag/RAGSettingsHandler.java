@@ -5,11 +5,13 @@ import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.ChromaDBStatusCallback;
 import com.devoxx.genie.service.chromadb.ChromaDockerService;
 import com.devoxx.genie.service.rag.RagValidatorService;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.service.rag.validator.ValidatorType;
 import com.devoxx.genie.ui.panel.ValidatorsPanel;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -93,14 +95,14 @@ public class RAGSettingsHandler implements ActionListener {
 
         if (status.validatorType() == ValidatorType.CHROMADB) {
             handleChromaDBAction(action);
-        } else if (status.validatorType() == ValidatorType.NOMIC) {
-            handleNomicAction(action);
+        } else if (status.validatorType() == ValidatorType.EMBEDDING_MODEL) {
+            handleEmbeddingModelAction(action);
         }
     }
 
-    private void handleNomicAction(@NotNull ValidationActionType action) {
-        if (action == ValidationActionType.PULL_NOMIC) {
-            pullNomicModel();
+    private void handleEmbeddingModelAction(@NotNull ValidationActionType action) {
+        if (action == ValidationActionType.PULL_EMBEDDING_MODEL) {
+            pullEmbeddingModel();
         }
     }
 
@@ -122,19 +124,22 @@ public class RAGSettingsHandler implements ActionListener {
             } else {
                 handleChromaDBAction(action);
             }
-        } else if (validatorType == ValidatorType.NOMIC) {
-            handleNomicAction(action);
+        } else if (validatorType == ValidatorType.EMBEDDING_MODEL) {
+            handleEmbeddingModelAction(action);
         }
     }
 
-    private void pullNomicModel() {
-        new Task.Backgroundable(project, "Pulling Nomic Embed Model") {
+    /** Pulls the configured RAG embedding model (TASK-212), not a hardcoded one. */
+    private void pullEmbeddingModel() {
+        String modelName = EmbeddingFingerprint.ollama(
+                DevoxxGenieStateService.getInstance().getRagEmbeddingModelName()).modelName();
+        new Task.Backgroundable(project, "Pulling embedding model " + modelName) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 indicator.setIndeterminate(false);
 
                 try {
-                    OllamaModelService.getInstance().pullModel("nomic-embed-text", status -> {
+                    OllamaModelService.getInstance().pullModel(modelName, status -> {
                         if (status.startsWith("Downloading:")) {
                             try {
                                 double progress = Double.parseDouble(status.substring(12, status.length() - 1));
@@ -147,12 +152,12 @@ public class RAGSettingsHandler implements ActionListener {
                     });
 
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        NotificationUtil.sendNotification(project, "Nomic Embed model pulled successfully");
+                        NotificationUtil.sendNotification(project, "Embedding model " + modelName + " pulled successfully");
                         performValidation();
                     }, ModalityState.any());
                 } catch (IOException e) {
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        NotificationUtil.sendNotification(project, "Failed to pull Nomic Embed model: " +
+                        NotificationUtil.sendNotification(project, "Failed to pull embedding model " + modelName + ": " +
                                 e.getMessage());
                         performValidation();
                     }, ModalityState.any());

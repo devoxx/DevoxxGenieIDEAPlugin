@@ -4,6 +4,7 @@ import com.devoxx.genie.service.rag.ProjectIndexerService;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.RagValidatorService;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
@@ -22,6 +23,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.AddEditRemovePanel;
@@ -67,6 +69,16 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     @Getter
     private final JBIntSpinner maxResultsSpinner = new JBIntSpinner(new UINumericRange(stateService.getIndexerMaxResults(), 1, 50));
+
+    /**
+     * Suggestions only: the combo is editable and accepts any Ollama model name. Listing
+     * installed models would need a network call, which must not happen on the EDT.
+     */
+    static final List<String> SUGGESTED_EMBEDDING_MODELS = List.of(
+            EmbeddingFingerprint.DEFAULT_MODEL_NAME, "bge-m3", "mxbai-embed-large", "embeddinggemma");
+
+    private final ComboBox<String> embeddingModelComboBox = createEmbeddingModelComboBox(
+            stateService.getRagEmbeddingModelName());
 
     @Getter
     private final JSpinner minScoreField = new JSpinner(new SpinnerNumberModel(stateService.getIndexerMinScore().doubleValue(), 0.0d, 1.0d, 0.01d));
@@ -297,6 +309,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {
         addSection(panel, gbc, RAG_SETTINGS_SECTION_TITLE);
         addSettingRow(panel, gbc, "Chroma DB port", leftAligned(portIndexer));
+        addSettingRow(panel, gbc, "Embedding model", leftAligned(embeddingModelComboBox));
+        addHelpText(panel, gbc, "Ollama model used to embed project files and queries (default " +
+                EmbeddingFingerprint.DEFAULT_MODEL_NAME + "). Pull it with `ollama pull <model>`. " +
+                "Changing it requires a full re-index; until then search keeps using the model " +
+                "the index was built with.");
         addSettingRow(panel, gbc, "Minimum score", leftAligned(minScoreField));
         addHelpText(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
         addSettingRow(panel, gbc, "Maximum results", leftAligned(maxResultsSpinner));
@@ -578,6 +595,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void updateComponentsEnabled() {
         boolean enabled = enableIndexerCheckBox.isSelected();
         portIndexer.setEnabled(enabled);
+        embeddingModelComboBox.setEnabled(enabled);
         maxResultsSpinner.setEnabled(enabled);
         minScoreField.setEnabled(enabled);
         actionButton.setEnabled(enabled);
@@ -585,6 +603,35 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         queryExpansionCheckBox.setEnabled(enabled);
         // Variants spinner is doubly-gated: master switch + the expansion sub-switch.
         queryExpansionVariantsSpinner.setEnabled(enabled && queryExpansionCheckBox.isSelected());
+    }
+
+    static @NotNull ComboBox<String> createEmbeddingModelComboBox(@Nullable String modelName) {
+        ComboBox<String> combo = new ComboBox<>(SUGGESTED_EMBEDDING_MODELS.toArray(String[]::new));
+        combo.setEditable(true);
+        setEmbeddingModelName(combo, modelName);
+        return combo;
+    }
+
+    /** The model name as typed, including text not yet committed with Enter; blank = default. */
+    public @NotNull String getEmbeddingModelName() {
+        return getEmbeddingModelName(embeddingModelComboBox);
+    }
+
+    public void setEmbeddingModelName(@Nullable String modelName) {
+        setEmbeddingModelName(embeddingModelComboBox, modelName);
+    }
+
+    static @NotNull String getEmbeddingModelName(@NotNull ComboBox<String> combo) {
+        Object item = combo.isEditable() ? combo.getEditor().getItem() : combo.getSelectedItem();
+        return EmbeddingFingerprint.ollama(Objects.toString(item, "")).modelName();
+    }
+
+    static void setEmbeddingModelName(@NotNull ComboBox<String> combo, @Nullable String modelName) {
+        String name = EmbeddingFingerprint.ollama(modelName).modelName();
+        // Editable combos accept items outside the model; set the editor too so a custom
+        // name is shown even before the combo commits it.
+        combo.setSelectedItem(name);
+        combo.getEditor().setItem(name);
     }
 
     private void setupTable() {

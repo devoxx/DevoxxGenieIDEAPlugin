@@ -7,6 +7,7 @@ import com.devoxx.genie.service.rag.benchmark.RagBenchmark;
 import com.devoxx.genie.service.rag.benchmark.RetrievalMetrics;
 import com.devoxx.genie.service.rag.chunking.RagChunker;
 import com.devoxx.genie.service.rag.embedding.EmbeddingProfile;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.service.rag.embedding.ProfiledEmbedder;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +38,7 @@ public final class RagBenchmarkCommand {
 
     static final String DEFAULT_DATASET = "src/test/resources/rag-benchmark/devoxxgenie-questions.json";
     static final String DEFAULT_OLLAMA_URL = "http://localhost:11434";
-    static final String DEFAULT_MODEL = "nomic-embed-text";
+    static final String DEFAULT_MODEL = EmbeddingFingerprint.DEFAULT_MODEL_NAME;
     static final int DEFAULT_TOP_CHUNKS = 50;
     /** A question "passes" in the per-question list when an expected file is in the top 5. */
     static final int PASS_AT = 5;

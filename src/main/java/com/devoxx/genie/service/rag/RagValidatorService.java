@@ -39,7 +39,7 @@ public final class RagValidatorService {
                 new DockerValidator(),
                 new ChromeDBValidator(),
                 new OllamaValidator(),
-                new NomicEmbedTextValidator()
+                new EmbeddingModelValidator()
         );
     }
 

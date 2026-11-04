@@ -12,6 +12,7 @@ import dev.langchain4j.model.output.Response;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import org.junit.jupiter.api.AfterEach;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -83,6 +84,9 @@ class SemanticSearchServiceTest {
 
         when(mockChromaService.getEmbeddingStore()).thenReturn(store);
         when(mockChromaService.getEmbeddingModel()).thenReturn(embeddingModel);
+        when(mockChromaService.getEmbeddingModel(any())).thenReturn(embeddingModel);
+        when(mockChromaService.configuredFingerprint()).thenReturn(EmbeddingFingerprint.DEFAULT);
+        when(mockChromaService.indexFingerprint(any())).thenReturn(EmbeddingFingerprint.DEFAULT);
         // init(Project) is a no-op for the in-memory store.
         Mockito.doNothing().when(mockChromaService).init(any());
 
@@ -195,7 +199,7 @@ class SemanticSearchServiceTest {
         Files.writeString(file, sb.toString());
 
         CountingEmbeddingModel counter = new CountingEmbeddingModel();
-        when(mockChromaService.getEmbeddingModel()).thenReturn(counter);
+        when(mockChromaService.getEmbeddingModel(any())).thenReturn(counter);
 
         new ProjectIndexerService().indexFile(file);
 

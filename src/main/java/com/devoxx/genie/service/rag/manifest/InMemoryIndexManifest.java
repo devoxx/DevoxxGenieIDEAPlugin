@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.rag.manifest;
 
 import com.devoxx.genie.service.rag.IndexerConstants;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -38,11 +40,14 @@ public class InMemoryIndexManifest implements IndexManifest {
     }
 
     @Override
-    public boolean isCurrent(@NotNull Path file) {
+    public boolean isCurrent(@NotNull Path file, @NotNull String fingerprint) {
         String key = file.toAbsolutePath().toString();
         IndexManifestEntry entry = entries.get(key);
         if (entry == null) return false;
         if (!IndexerConstants.CURRENT_EMBEDDING_SCHEMA_VERSION.equals(entry.schemaVersion())) {
+            return false;
+        }
+        if (!fingerprintOf(entry).equals(fingerprint)) {
             return false;
         }
         String currentHash = sha1OrNull(file);
@@ -50,7 +55,7 @@ public class InMemoryIndexManifest implements IndexManifest {
     }
 
     @Override
-    public void markIndexed(@NotNull Path file, int segmentCount) {
+    public void markIndexed(@NotNull Path file, int segmentCount, @NotNull String fingerprint) {
         String key = file.toAbsolutePath().toString();
         String hash = sha1OrNull(file);
         if (hash == null) {
@@ -68,8 +73,29 @@ public class InMemoryIndexManifest implements IndexManifest {
                 lastModified,
                 System.currentTimeMillis(),
                 segmentCount,
-                IndexerConstants.CURRENT_EMBEDDING_SCHEMA_VERSION));
+                IndexerConstants.CURRENT_EMBEDDING_SCHEMA_VERSION,
+                fingerprint));
         onMutated();
+    }
+
+    @Override
+    public void clear() {
+        if (!entries.isEmpty()) {
+            entries.clear();
+            onMutated();
+        }
+    }
+
+    @Override
+    public @NotNull Optional<String> indexFingerprint() {
+        // A full re-index with a different fingerprint clears the manifest first, so all
+        // entries share one fingerprint; any entry is representative.
+        return entries.values().stream().findFirst().map(InMemoryIndexManifest::fingerprintOf);
+    }
+
+    /** Legacy (pre-TASK-212) entries carry no fingerprint; they were built with the default. */
+    private static @NotNull String fingerprintOf(@NotNull IndexManifestEntry entry) {
+        return EmbeddingFingerprint.parse(entry.embeddingFingerprint()).id();
     }
 
     @Override

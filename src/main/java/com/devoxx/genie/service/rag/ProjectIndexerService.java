@@ -4,6 +4,7 @@ import com.devoxx.genie.model.ScanContentResult;
 import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
 import com.devoxx.genie.service.projectscanner.ProjectScannerService;
 import com.devoxx.genie.service.rag.chunking.RagChunker;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.service.rag.manifest.IndexManifest;
 import com.devoxx.genie.service.rag.manifest.IndexManifestService;
 import com.devoxx.genie.service.rag.manifest.InMemoryIndexManifest;
@@ -34,6 +35,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.devoxx.genie.service.rag.IndexerConstants.*;
@@ -148,6 +150,17 @@ public final class ProjectIndexerService {
             return;
         }
 
+        // A full index always uses the configured embedding setup. If the existing index was
+        // built with another one, its vectors can't be mixed with the new ones (and Chroma
+        // fixes a collection's vector size on first write), so start from an empty index.
+        // Only after the checks above, so an aborted run never leaves the user without an index.
+        EmbeddingFingerprint fingerprint = chromaEmbeddingService.configuredFingerprint();
+        if (!prepareIndexFor(fingerprint)) {
+            SwingUtilities.invokeLater(() -> progressLabel.setText(
+                    "Could not clear the index built with the previous embedding model; see idea.log"));
+            return;
+        }
+
         // Phase 1 (scan): run under a scaled sub-indicator so the determinate progress the
         // scanner reports (ProjectScannerService.extractAllFileContents) lands in the 0.0→0.5
         // half of the shared bar instead of sweeping it 0→100% on its own.
@@ -232,7 +245,7 @@ public final class ProjectIndexerService {
                         cancelIndexing.set(true);
                     }
                     if (isIndexingCancelled()) return;
-                    indexFile(path, forceReindex);
+                    indexFile(path, forceReindex, fingerprint);
                     int done = processedCount.incrementAndGet();
                     int progress = (int) (((double) done / totalFiles) * 100);
                     String fileName = path.getFileName().toString();
@@ -287,8 +300,43 @@ public final class ProjectIndexerService {
      * future incremental flows (e.g. a {@code BulkFileListener}).
      */
     public void indexFile(Path filePath) {
-        indexFile(filePath, false);
+        indexFile(filePath, false, indexFingerprint());
         manifest.flush();
+    }
+
+    /**
+     * Get the index ready for a full run with {@code target}: when the manifest says the
+     * project was indexed with a different embedding setup, drop every stored vector (Chroma
+     * deletes and recreates the collection) and every manifest entry. Returns {@code false}
+     * when the old vectors could not be dropped, in which case indexing must not proceed.
+     */
+    boolean prepareIndexFor(@NotNull EmbeddingFingerprint target) {
+        Optional<String> existing = manifest.indexFingerprint();
+        if (existing.isEmpty() || existing.get().equals(target.id())) {
+            return true;
+        }
+        log.info("RAG embedding setup changed from {} to {}; rebuilding the index from scratch",
+                existing.get(), target.id());
+        try {
+            chromaEmbeddingService.getEmbeddingStore().removeAll();
+        } catch (Exception e) {
+            log.error("Could not clear the RAG index built with {}: {}", existing.get(), e.getMessage());
+            return false;
+        }
+        manifest.clear();
+        manifest.flush();
+        return true;
+    }
+
+    /**
+     * The embedding setup the project's current index was built with, falling back to the
+     * configured one for an empty index. Search and incremental re-indexing use this so RAG
+     * keeps working after a model change until the user rebuilds the index.
+     */
+    private @NotNull EmbeddingFingerprint indexFingerprint() {
+        return manifest.indexFingerprint()
+                .map(EmbeddingFingerprint::parse)
+                .orElseGet(chromaEmbeddingService::configuredFingerprint);
     }
 
     /**
@@ -305,6 +353,9 @@ public final class ProjectIndexerService {
         List<String> ragExcluded = ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories();
         String basePath = project.getBasePath();
         Path projectBasePath = basePath != null ? Path.of(basePath) : null;
+        // Keep embedding with the model the index was built with, even if settings now name
+        // another one: mixing two models' vectors in one index would break search.
+        EmbeddingFingerprint fingerprint = indexFingerprint();
         try {
             for (Path file : files) {
                 if (!manifest.isTracked(file)) continue;
@@ -320,7 +371,7 @@ public final class ProjectIndexerService {
                 // Drop any existing chunks for this file before re-embedding, otherwise edits
                 // accumulate stale chunks alongside fresh ones.
                 removeChunksFromStore(file);
-                indexFile(file, true);
+                indexFile(file, true, fingerprint);
             }
         } finally {
             manifest.flush();
@@ -422,16 +473,16 @@ public final class ProjectIndexerService {
         }
     }
 
-    private void indexFile(Path filePath, boolean forceReindex) {
+    private void indexFile(Path filePath, boolean forceReindex, @NotNull EmbeddingFingerprint fingerprint) {
         log.debug("Indexing file: {}", filePath);
         try {
-            if (!forceReindex && manifest.isCurrent(filePath)) {
+            if (!forceReindex && manifest.isCurrent(filePath, fingerprint.id())) {
                 log.debug("File already indexed (content hash matches): {}", filePath);
                 return;
             }
-            int segmentCount = processPath(filePath);
+            int segmentCount = processPath(filePath, fingerprint);
             if (segmentCount > 0) {
-                manifest.markIndexed(filePath, segmentCount);
+                manifest.markIndexed(filePath, segmentCount, fingerprint.id());
                 log.debug("File successfully indexed ({} segments): {}", segmentCount, filePath);
             }
         } catch (Exception e) {
@@ -445,9 +496,9 @@ public final class ProjectIndexerService {
      * roundtrips. Embedding in batches and using {@code addAll} on the store collapses
      * that to {@code ceil(N / EMBEDDING_BATCH_SIZE)} calls and one store write per batch.
      */
-    private void storeSegments(@NotNull List<TextSegment> segments) {
+    private void storeSegments(@NotNull List<TextSegment> segments, @NotNull EmbeddingFingerprint fingerprint) {
         if (segments.isEmpty()) return;
-        EmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel();
+        EmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel(fingerprint);
         for (int from = 0; from < segments.size(); from += EMBEDDING_BATCH_SIZE) {
             int to = Math.min(from + EMBEDDING_BATCH_SIZE, segments.size());
             List<TextSegment> batch = segments.subList(from, to);
@@ -472,7 +523,7 @@ public final class ProjectIndexerService {
     }
 
     /** Returns the number of segments stored for this file (0 if blank / unreadable). */
-    private int processPath(Path path) {
+    private int processPath(Path path, @NotNull EmbeddingFingerprint fingerprint) {
         try {
             log.debug("Processing file: {}", path);
 
@@ -493,10 +544,11 @@ public final class ProjectIndexerService {
                 metadata.put(LAST_MODIFIED, lastModified);
                 metadata.put(INDEXED_AT, indexedAt);
                 metadata.put(EMBEDDING_SCHEMA_VERSION_KEY, CURRENT_EMBEDDING_SCHEMA_VERSION);
+                metadata.put(EMBEDDING_FINGERPRINT_KEY, fingerprint.id());
                 segments.add(new TextSegment(chunk.text(), metadata));
             }
 
-            storeSegments(segments);
+            storeSegments(segments, fingerprint);
             return segments.size();
         } catch (IOException e) {
             log.warn("Error processing file: {}", path);

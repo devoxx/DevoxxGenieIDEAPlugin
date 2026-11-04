@@ -1,5 +1,7 @@
 package com.devoxx.genie.service.chromadb;
 
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.devoxx.genie.service.rag.manifest.IndexManifestService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
@@ -15,11 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @Service
 public final class ChromaEmbeddingService {
-
-    public static final String EMBEDDING_MODEL_NAME = "nomic-embed-text";
 
     private final DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
@@ -32,10 +35,12 @@ public final class ChromaEmbeddingService {
     @Setter
     private EmbeddingModel embeddingModelOverride;
 
-    // Cached embedding model; rebuilt when the Ollama URL or model name changes.
-    private EmbeddingModel cachedEmbeddingModel;
-    private String cachedEmbeddingUrl;
-    private String cachedEmbeddingModelName;
+    /**
+     * Embedding clients keyed by Ollama URL + fingerprint. More than one can be live at once:
+     * after a model change, search keeps querying with the model the index was built with
+     * while a re-index embeds with the newly configured one.
+     */
+    private final Map<String, EmbeddingModel> embeddingModels = new HashMap<>();
 
     @NotNull
     public static ChromaEmbeddingService getInstance() {
@@ -75,27 +80,41 @@ public final class ChromaEmbeddingService {
                       .replaceAll("[^a-z0-9-]", "-");
     }
 
+    /** The embedding setup the settings ask for; a full re-index builds the index with it. */
+    public @NotNull EmbeddingFingerprint configuredFingerprint() {
+        return EmbeddingFingerprint.ollama(stateService.getRagEmbeddingModelName());
+    }
+
     /**
-     * Returns a cached {@link OllamaEmbeddingModel}, rebuilding it only when the configured
-     * Ollama URL or model name changes. The previous implementation built a fresh model
-     * (and underlying HTTP client) on every call, costing a setup + handshake per chunk
-     * during indexing.
+     * The embedding setup the project's existing index was built with, or the configured one
+     * when the project has no index yet. Queries must be embedded with this, so an index keeps
+     * working after the model is changed in settings until the user re-indexes.
      */
-    public synchronized EmbeddingModel getEmbeddingModel() {
+    public @NotNull EmbeddingFingerprint indexFingerprint(@NotNull Project project) {
+        return IndexManifestService.getInstance().forProject(project).indexFingerprint()
+                .map(EmbeddingFingerprint::parse)
+                .orElseGet(this::configuredFingerprint);
+    }
+
+    /** Embedding model for the {@linkplain #configuredFingerprint() configured} setup. */
+    public EmbeddingModel getEmbeddingModel() {
+        return getEmbeddingModel(configuredFingerprint());
+    }
+
+    /**
+     * Returns a cached {@link OllamaEmbeddingModel} for {@code fingerprint}, rebuilding it only
+     * when the configured Ollama URL changes. Building a model per call would cost a client
+     * setup + handshake per chunk during indexing.
+     */
+    public synchronized EmbeddingModel getEmbeddingModel(@NotNull EmbeddingFingerprint fingerprint) {
         if (embeddingModelOverride != null) {
             return embeddingModelOverride;
         }
         String url = stateService.getOllamaModelUrl();
-        if (cachedEmbeddingModel == null
-                || !EMBEDDING_MODEL_NAME.equals(cachedEmbeddingModelName)
-                || url == null || !url.equals(cachedEmbeddingUrl)) {
-            cachedEmbeddingModel = OllamaEmbeddingModel.builder()
-                    .baseUrl(url)
-                    .modelName(EMBEDDING_MODEL_NAME)
-                    .build();
-            cachedEmbeddingUrl = url;
-            cachedEmbeddingModelName = EMBEDDING_MODEL_NAME;
-        }
-        return cachedEmbeddingModel;
+        return embeddingModels.computeIfAbsent(url + "|" + fingerprint.id(),
+                key -> OllamaEmbeddingModel.builder()
+                        .baseUrl(url)
+                        .modelName(fingerprint.modelName())
+                        .build());
     }
 }
