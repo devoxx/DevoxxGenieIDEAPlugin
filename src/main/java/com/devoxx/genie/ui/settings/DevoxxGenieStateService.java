@@ -234,11 +234,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isKimiEnabled = false;
     private boolean isGlmEnabled = false;
     private boolean isNvidiaEnabled = false;
+    private boolean isDemonRouteEnabled = false;
 
     // ============================================================================
     // LEGACY-XML CREDENTIAL LANDING PADS
     // ----------------------------------------------------------------------------
-    // The 19 fields below remain ONLY to receive plaintext credentials from
+    // The 20 fields below remain ONLY to receive plaintext credentials from
     // pre-PasswordSafe versions of DevoxxGenieSettingsPlugin.xml during the first
     // {@link #loadState} call after an upgrade. The migration routine in
     // {@link #migrateCredentialsToPasswordSafe} reads each field via reflection,
@@ -298,6 +299,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String glmKey = "";
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("nvidiaKey")
     private String nvidiaKey = "";
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("demonRouteKey")
+    private String demonRouteKey = "";
     private String azureOpenAIEndpoint = "";
     private String azureOpenAIDeployment = "";
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("azureOpenAIKey")
@@ -1065,6 +1068,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     @Transient @Override public @NotNull String getNvidiaKey()       { return creds().getCredential(CredentialKey.NVIDIA_KEY); }
     @Transient @Override public void          setNvidiaKey(String v) { creds().setCredential(CredentialKey.NVIDIA_KEY, v); }
+
+    @Transient @Override public @NotNull String getDemonRouteKey()       { return creds().getCredential(CredentialKey.DEMONROUTE_KEY); }
+    @Transient @Override public void          setDemonRouteKey(String v) { creds().setCredential(CredentialKey.DEMONROUTE_KEY, v); }
 
     @Transient @Override public @NotNull String getAzureOpenAIKey()       { return creds().getCredential(CredentialKey.AZURE_OPEN_AI_KEY); }
     @Transient @Override public void          setAzureOpenAIKey(String v) { creds().setCredential(CredentialKey.AZURE_OPEN_AI_KEY, v); }

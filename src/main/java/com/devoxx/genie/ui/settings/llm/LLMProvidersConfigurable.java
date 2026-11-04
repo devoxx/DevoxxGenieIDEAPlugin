@@ -78,6 +78,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getKimiApiKeyField(), stateService.getKimiKey());
         isModified |= isFieldModified(llmSettingsComponent.getGlmApiKeyField(), stateService.getGlmKey());
         isModified |= isFieldModified(llmSettingsComponent.getNvidiaApiKeyField(), stateService.getNvidiaKey());
+        isModified |= isFieldModified(llmSettingsComponent.getDemonRouteApiKeyField(), stateService.getDemonRouteKey());
         isModified |= isFieldModified(llmSettingsComponent.getCloudflareApiKeyField(), stateService.getCloudflareKey());
         isModified |= isFieldModified(llmSettingsComponent.getCloudflareAccountIdField(), stateService.getCloudflareAccountId());
         isModified |= isFieldModified(llmSettingsComponent.getCloudflareGatewayNameField(), stateService.getCloudflareGatewayName());
@@ -154,6 +155,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isKimiEnabled() != llmSettingsComponent.getKimiEnabledCheckBox().isSelected();
         isModified |= stateService.isGlmEnabled() != llmSettingsComponent.getGlmEnabledCheckBox().isSelected();
         isModified |= stateService.isNvidiaEnabled() != llmSettingsComponent.getNvidiaEnabledCheckBox().isSelected();
+        isModified |= stateService.isDemonRouteEnabled() != llmSettingsComponent.getDemonRouteEnabledCheckBox().isSelected();
         isModified |= stateService.isCloudflareEnabled() != llmSettingsComponent.getCloudflareEnabledCheckBox().isSelected();
         isModified |= stateService.isCloudflareModelNameEnabled() != llmSettingsComponent.getCloudflareModelNameEnabledCheckBox().isSelected();
         isModified |= stateService.getShowAzureOpenAIFields() != llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected();
@@ -222,6 +224,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setKimiKey(new String(llmSettingsComponent.getKimiApiKeyField().getPassword()));
         settings.setGlmKey(new String(llmSettingsComponent.getGlmApiKeyField().getPassword()));
         settings.setNvidiaKey(new String(llmSettingsComponent.getNvidiaApiKeyField().getPassword()));
+        settings.setDemonRouteKey(new String(llmSettingsComponent.getDemonRouteApiKeyField().getPassword()));
         settings.setCloudflareKey(new String(llmSettingsComponent.getCloudflareApiKeyField().getPassword()));
         settings.setCloudflareAccountId(llmSettingsComponent.getCloudflareAccountIdField().getText());
         settings.setCloudflareGatewayName(llmSettingsComponent.getCloudflareGatewayNameField().getText());
@@ -265,6 +268,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setKimiEnabled(llmSettingsComponent.getKimiEnabledCheckBox().isSelected());
         settings.setGlmEnabled(llmSettingsComponent.getGlmEnabledCheckBox().isSelected());
         settings.setNvidiaEnabled(llmSettingsComponent.getNvidiaEnabledCheckBox().isSelected());
+        settings.setDemonRouteEnabled(llmSettingsComponent.getDemonRouteEnabledCheckBox().isSelected());
         settings.setCloudflareEnabled(llmSettingsComponent.getCloudflareEnabledCheckBox().isSelected());
         settings.setCloudflareModelNameEnabled(llmSettingsComponent.getCloudflareModelNameEnabledCheckBox().isSelected());
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
@@ -300,6 +304,7 @@ public class LLMProvidersConfigurable implements Configurable {
         checkApiKeyProvider(problems, "Kimi", llmSettingsComponent.getKimiEnabledCheckBox(), llmSettingsComponent.getKimiApiKeyField());
         checkApiKeyProvider(problems, "GLM", llmSettingsComponent.getGlmEnabledCheckBox(), llmSettingsComponent.getGlmApiKeyField());
         checkApiKeyProvider(problems, "NVIDIA", llmSettingsComponent.getNvidiaEnabledCheckBox(), llmSettingsComponent.getNvidiaApiKeyField());
+        checkApiKeyProvider(problems, "DemonRoute", llmSettingsComponent.getDemonRouteEnabledCheckBox(), llmSettingsComponent.getDemonRouteApiKeyField());
 
         validateCloudflare(problems);
         validateAzureOpenAI(problems);
@@ -416,6 +421,7 @@ public class LLMProvidersConfigurable implements Configurable {
                 (!settings.getKimiKey().isBlank() && settings.isKimiEnabled()) ||
                 (!settings.getGlmKey().isBlank() && settings.isGlmEnabled()) ||
                 (!settings.getNvidiaKey().isBlank() && settings.isNvidiaEnabled()) ||
+                (!settings.getDemonRouteKey().isBlank() && settings.isDemonRouteEnabled()) ||
                 (!settings.getCloudflareKey().isBlank() && settings.isCloudflareEnabled()) ||
                 (!settings.getCustomOpenAIApiKey().isBlank() && settings.isCustomOpenAIApiKeyEnabled());
     }
@@ -480,6 +486,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getKimiApiKeyField().setText(settings.getKimiKey());
         llmSettingsComponent.getGlmApiKeyField().setText(settings.getGlmKey());
         llmSettingsComponent.getNvidiaApiKeyField().setText(settings.getNvidiaKey());
+        llmSettingsComponent.getDemonRouteApiKeyField().setText(settings.getDemonRouteKey());
         llmSettingsComponent.getCloudflareApiKeyField().setText(settings.getCloudflareKey());
         llmSettingsComponent.getCloudflareAccountIdField().setText(settings.getCloudflareAccountId());
         llmSettingsComponent.getCloudflareGatewayNameField().setText(settings.getCloudflareGatewayName());
@@ -528,6 +535,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getKimiEnabledCheckBox().setSelected(settings.isKimiEnabled());
         llmSettingsComponent.getGlmEnabledCheckBox().setSelected(settings.isGlmEnabled());
         llmSettingsComponent.getNvidiaEnabledCheckBox().setSelected(settings.isNvidiaEnabled());
+        llmSettingsComponent.getDemonRouteEnabledCheckBox().setSelected(settings.isDemonRouteEnabled());
         llmSettingsComponent.getCloudflareEnabledCheckBox().setSelected(settings.isCloudflareEnabled());
         llmSettingsComponent.getCloudflareModelNameEnabledCheckBox().setSelected(settings.isCloudflareModelNameEnabled());
         llmSettingsComponent.getEnableAzureOpenAICheckBox().setSelected(settings.getShowAzureOpenAIFields());

@@ -231,6 +231,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case Kimi -> stateService.isKimiEnabled();
                     case GLM -> stateService.isGlmEnabled();
                     case Nvidia -> stateService.isNvidiaEnabled();
+                    case DemonRoute -> stateService.isDemonRouteEnabled();
                     case Cloudflare -> stateService.isCloudflareEnabled();
                     case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                     case Bedrock -> stateService.isAwsEnabled();

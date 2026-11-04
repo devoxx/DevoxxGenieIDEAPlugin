@@ -65,6 +65,8 @@ public interface DevoxxGenieSettingsService {
 
     String getNvidiaKey();
 
+    String getDemonRouteKey();
+
     String getCustomOpenAIApiKey();
 
     String getCloudflareKey();
@@ -182,6 +184,8 @@ public interface DevoxxGenieSettingsService {
     void setGlmKey(String key);
 
     void setNvidiaKey(String key);
+
+    void setDemonRouteKey(String key);
 
     void setCustomOpenAIApiKey(String key);
 

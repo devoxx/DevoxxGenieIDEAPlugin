@@ -12,6 +12,7 @@ import com.devoxx.genie.chatmodel.cloud.grok.GrokChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.kimi.KimiChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.demonroute.DemonRouteChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.nvidia.NvidiaChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
@@ -86,6 +87,7 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.Kimi, KimiChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.GLM, GLMChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Nvidia, NvidiaChatModelFactory::new);
+        FACTORY_SUPPLIERS.put(ModelProvider.DemonRoute, DemonRouteChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.CLIRunners, CliRunnersChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.ACPRunners, AcpRunnersChatModelFactory::new);
     }

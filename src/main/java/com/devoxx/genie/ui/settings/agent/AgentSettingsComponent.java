@@ -413,6 +413,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case Kimi -> state.isKimiEnabled();
                     case GLM -> state.isGlmEnabled();
                     case Nvidia -> state.isNvidiaEnabled();
+                    case DemonRoute -> state.isDemonRouteEnabled();
                     case Cloudflare -> state.isCloudflareEnabled();
                     case AzureOpenAI -> state.isAzureOpenAIEnabled();
                     case Bedrock -> state.isAwsEnabled();
@@ -645,6 +646,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                         case Kimi -> state.isKimiEnabled();
                         case GLM -> state.isGlmEnabled();
                         case Nvidia -> state.isNvidiaEnabled();
+                        case DemonRoute -> state.isDemonRouteEnabled();
                         case Cloudflare -> state.isCloudflareEnabled();
                         case AzureOpenAI -> state.isAzureOpenAIEnabled();
                         case Bedrock -> state.isAwsEnabled();

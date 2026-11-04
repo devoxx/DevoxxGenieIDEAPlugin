@@ -53,6 +53,7 @@ public final class LLMModelRegistryService {
         addKimiModels();
         addGLMModels();
         addNvidiaModels();
+        addDemonRouteModels();
     }
 
     /**
@@ -125,6 +126,26 @@ public final class LLMModelRegistryService {
         }
 
         this.models = updatedModels;
+    }
+
+    /**
+     * DemonRoute models are normally fetched live from its OpenAI-compatible
+     * {@code /v1/models} endpoint (see DemonRouteChatModelFactory). This single
+     * entry is only the offline fallback so the provider still offers a model
+     * when the endpoint cannot be reached.
+     */
+    private void addDemonRouteModels() {
+        String qwen38ObliteratedAgent = "shoukewei/Qwen3.8-27B-OBLITERATED22-AGENT";
+        models.put(ModelProvider.DemonRoute.getName() + ":" + qwen38ObliteratedAgent,
+                LanguageModel.builder()
+                        .provider(ModelProvider.DemonRoute)
+                        .modelName(qwen38ObliteratedAgent)
+                        .displayName("Qwen3.8 27B Obliterated22 Agent")
+                        .inputCost(0)
+                        .outputCost(0)
+                        .inputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
     }
 
     private void addAnthropicModels() {

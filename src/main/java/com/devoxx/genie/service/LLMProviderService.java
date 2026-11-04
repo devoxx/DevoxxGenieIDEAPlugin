@@ -35,6 +35,7 @@ public class LLMProviderService {
         providerKeyMap.put(Kimi, () -> DevoxxGenieStateService.getInstance().getKimiKey());
         providerKeyMap.put(GLM, () -> DevoxxGenieStateService.getInstance().getGlmKey());
         providerKeyMap.put(Nvidia, () -> DevoxxGenieStateService.getInstance().getNvidiaKey());
+        providerKeyMap.put(DemonRoute, () -> DevoxxGenieStateService.getInstance().getDemonRouteKey());
         providerKeyMap.put(AzureOpenAI, () -> DevoxxGenieStateService.getInstance().getAzureOpenAIKey());
         providerKeyMap.put(Cloudflare, () -> DevoxxGenieStateService.getInstance().getCloudflareKey());
         providerKeyMap.put(Bedrock, () -> switch (Optional.ofNullable(DevoxxGenieStateService.getInstance().getAwsBedrockAuthMode())
@@ -102,6 +103,7 @@ public class LLMProviderService {
                 case Kimi -> stateService.isKimiEnabled();
                 case GLM -> stateService.isGlmEnabled();
                 case Nvidia -> stateService.isNvidiaEnabled();
+                case DemonRoute -> stateService.isDemonRouteEnabled();
                 case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                 case Bedrock -> stateService.isAwsEnabled();
                 case Cloudflare -> stateService.isCloudflareEnabled();

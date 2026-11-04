@@ -72,6 +72,7 @@
         <UL>
                     <LI>feat(agent): <b>run_script (experimental)</b>: the agent can batch many tool calls into one sandboxed JavaScript step and return only the filtered result, saving round trips and tokens. Opt in under Agent → Built-in Tools (#1353)</LI>
                     <LI>fix(memory): <b>"Add Project" context is sent once via the system prompt</b> instead of being copied into every message, so long conversations no longer fill the context window with stale project copies; restored conversations get their system prompt back (#1364)</LI>
+                    <LI>feat(demonroute): add <b>DemonRoute</b> as a cloud LLM provider — OpenAI-compatible endpoint (api.demonroute.com) with the model list fetched live from its /models endpoint (#1340)</LI>
                 </UL>
                 <h2>v1.15.1</h2>
         <UL>

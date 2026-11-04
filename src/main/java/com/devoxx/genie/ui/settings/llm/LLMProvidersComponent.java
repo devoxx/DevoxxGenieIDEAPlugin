@@ -176,6 +176,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField nvidiaApiKeyField = new JPasswordField(stateService.getNvidiaKey());
     @Getter
+    private final JPasswordField demonRouteApiKeyField = new JPasswordField(stateService.getDemonRouteKey());
+    @Getter
     private final JPasswordField cloudflareApiKeyField = new JPasswordField(stateService.getCloudflareKey());
     @Getter
     private final JTextField cloudflareAccountIdField = new JTextField(stateService.getCloudflareAccountId());
@@ -249,6 +251,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox glmEnabledCheckBox = new JCheckBox("", stateService.isGlmEnabled());
     @Getter
     private final JCheckBox nvidiaEnabledCheckBox = new JCheckBox("", stateService.isNvidiaEnabled());
+    @Getter
+    private final JCheckBox demonRouteEnabledCheckBox = new JCheckBox("", stateService.isDemonRouteEnabled());
     @Getter
     private final JCheckBox cloudflareEnabledCheckBox = new JCheckBox("", stateService.isCloudflareEnabled());
     @Getter
@@ -505,6 +509,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(cloudPanel, gbc, "NVIDIA API Key", nvidiaEnabledCheckBox,
                 createTextWithPasswordButton(nvidiaApiKeyField, "https://build.nvidia.com"));
         addHintText(cloudPanel, gbc, "Uses NVIDIA NIM OpenAI-compatible API (integrate.api.nvidia.com); get your key at build.nvidia.com");
+        addProviderSettingRow(cloudPanel, gbc, "DemonRoute API Key", demonRouteEnabledCheckBox,
+                createTextWithPasswordButton(demonRouteApiKeyField, "https://demonroute.com"));
+        addHintText(cloudPanel, gbc, "Uses DemonRoute OpenAI-compatible API (api.demonroute.com); get your key at demonroute.com");
         addProviderSettingRow(cloudPanel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
                 createTextWithPasswordButton(cloudflareApiKeyField, "https://dash.cloudflare.com/profile/api-tokens"));
         addHintText(cloudPanel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
@@ -567,6 +574,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         kimiEnabledCheckBox.addItemListener(e -> updateUrlFieldState(kimiEnabledCheckBox, kimiApiKeyField));
         glmEnabledCheckBox.addItemListener(e -> updateUrlFieldState(glmEnabledCheckBox, glmApiKeyField));
         nvidiaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nvidiaEnabledCheckBox, nvidiaApiKeyField));
+        demonRouteEnabledCheckBox.addItemListener(e -> updateUrlFieldState(demonRouteEnabledCheckBox, demonRouteApiKeyField));
         cloudflareEnabledCheckBox.addItemListener(e -> updateUrlFieldState(cloudflareEnabledCheckBox, cloudflareApiKeyField));
         cloudflareModelNameEnabledCheckBox.addItemListener(e -> updateUrlFieldState(cloudflareModelNameEnabledCheckBox, cloudflareModelNameField));
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));

@@ -25,6 +25,7 @@ public enum CredentialKey {
     KIMI_KEY             ("kimiKey"),
     GLM_KEY              ("glmKey"),
     NVIDIA_KEY           ("nvidiaKey"),
+    DEMONROUTE_KEY       ("demonRouteKey"),
     CLOUDFLARE_KEY       ("cloudflareKey"),
     AZURE_OPEN_AI_KEY    ("azureOpenAIKey"),
     AWS_ACCESS_KEY_ID    ("awsAccessKeyId"),
