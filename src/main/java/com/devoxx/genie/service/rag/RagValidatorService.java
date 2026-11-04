@@ -1,6 +1,8 @@
 package com.devoxx.genie.service.rag;
 
+import com.devoxx.genie.service.rag.embedding.EmbeddingProvider;
 import com.devoxx.genie.service.rag.validator.*;
+import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import org.jetbrains.annotations.NotNull;
@@ -35,12 +37,17 @@ public final class RagValidatorService {
     }
 
     private List<Validator> createValidators() {
-        return List.of(
-                new DockerValidator(),
-                new ChromeDBValidator(),
-                new OllamaValidator(),
-                new EmbeddingModelValidator()
-        );
+        List<Validator> validators = new ArrayList<>(List.of(new DockerValidator(), new ChromeDBValidator()));
+        validators.addAll(embeddingValidators(
+                EmbeddingProvider.fromId(DevoxxGenieStateService.getInstance().getRagEmbeddingProvider())));
+        return validators;
+    }
+
+    /** The Ollama checks only apply to Ollama; they must not block RAG on any other provider. */
+    static @NotNull List<Validator> embeddingValidators(@NotNull EmbeddingProvider provider) {
+        return provider == EmbeddingProvider.OLLAMA
+                ? List.of(new OllamaValidator(), new EmbeddingModelValidator())
+                : List.of(new EmbeddingProviderValidator());
     }
 
     private String getStatusMessage(@NotNull Validator validator, boolean isValid) {

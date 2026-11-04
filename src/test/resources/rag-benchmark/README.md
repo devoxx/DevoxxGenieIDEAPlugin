@@ -16,11 +16,14 @@ Only Ollama is needed.
 ```bash
 export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
 
-# Baseline: nomic-embed-text, no prefixes (the plugin's current setup)
+# nomic-embed-text, no prefixes (the plugin's setup before prefixes became the default)
 ./gradlew ragBenchmark --args="--out build/rag-benchmark/nomic-no-prefix.json"
 
-# nomic's recommended prefixes
+# nomic's recommended prefixes (the plugin's default)
 ./gradlew ragBenchmark --args="--prefix-preset nomic --out build/rag-benchmark/nomic-prefixed.json"
+
+# An OpenAI-compatible endpoint instead of Ollama, such as llama.cpp
+DEVOXXGENIE_EMBED_URL=http://localhost:8080/v1 ./gradlew ragBenchmark --args="--model my-model"
 
 # Another model, vectors truncated to 256 dimensions
 ./gradlew ragBenchmark --args="--model bge-m3 --dimension 256"
@@ -40,6 +43,8 @@ repository embeds every indexable file and takes a few minutes. The same command
 | --- | --- | --- |
 | `--model` | `DEVOXXGENIE_EMBED_MODEL` | `nomic-embed-text` |
 | `--ollama-url` | `DEVOXXGENIE_OLLAMA_URL` | `http://localhost:11434` |
+| `--embed-url` | `DEVOXXGENIE_EMBED_URL` | none; OpenAI-compatible endpoint used instead of Ollama |
+| | `DEVOXXGENIE_EMBED_API_KEY` | none |
 | `--query-prefix` | `DEVOXXGENIE_EMBED_QUERY_PREFIX` | none |
 | `--doc-prefix` | `DEVOXXGENIE_EMBED_DOC_PREFIX` | none |
 | `--prefix-preset` (`none`, `nomic`) | | none; explicit prefixes win |

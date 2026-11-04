@@ -5,9 +5,16 @@ import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.RagValidatorService;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.JBIntSpinner;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.devoxx.genie.service.rag.embedding.EmbeddingModelInstaller;
+import com.devoxx.genie.service.rag.embedding.EmbeddingPrefixes;
+import com.devoxx.genie.service.rag.embedding.EmbeddingProvider;
+import com.devoxx.genie.service.rag.embedding.EmbeddingProviderSettings;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
@@ -43,6 +50,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.text.JTextComponent;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
@@ -74,26 +83,21 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner maxResultsSpinner = new JBIntSpinner(new UINumericRange(stateService.getIndexerMaxResults(), 1, 50));
 
     /**
-     * Suggestions only: the combo is editable and accepts any Ollama model name. Listing
-     * installed models would need a network call, which must not happen on the EDT.
+     * Suggestions only: the combo is editable and accepts any model name. Listing installed
+     * models would need a network call, which must not happen on the EDT.
      */
-    static final List<String> SUGGESTED_EMBEDDING_MODELS = List.of(
-            EmbeddingFingerprint.DEFAULT_MODEL_NAME,
-            "nomic-embed-text-v2-moe",
-            "embeddinggemma-2",
-            "embeddinggemma",
-            "qwen3-embedding",
-            "bge-m3",
-            "bge-large",
-            "mxbai-embed-large",
-            "snowflake-arctic-embed",
-            "snowflake-arctic-embed2",
-            "all-minilm",
-            "granite-embedding",
-            "paraphrase-multilingual");
+    static final List<String> SUGGESTED_EMBEDDING_MODELS = EmbeddingProvider.OLLAMA.suggestedModels();
 
+    private final ComboBox<EmbeddingProvider> embeddingProviderComboBox = new ComboBox<>();
+    private final JBLabel embeddingProviderWarning = new JBLabel(AllIcons.General.Warning);
     private final ComboBox<String> embeddingModelComboBox = createEmbeddingModelComboBox(
             stateService.getRagEmbeddingModelName());
+    private final JBTextField queryPrefixField = new JBTextField(24);
+    private final JBTextField documentPrefixField = new JBTextField(24);
+    private final JBIntSpinner outputDimensionSpinner = new JBIntSpinner(0, 0, 65536, 64);
+    /** True while code fills the embedding fields, so their listeners don't react to it. */
+    private boolean loadingEmbeddingSettings;
+    private String prefixDefaultsModel = "";
 
     @Getter
     private final JSpinner minScoreField = new JSpinner(new SpinnerNumberModel(stateService.getIndexerMinScore().doubleValue(), 0.0d, 1.0d, 0.01d));
@@ -129,6 +133,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                 project, new java.util.ArrayList<>(ProjectScanSettingsService.getInstance(project).getRagExcludedDirectories()));
 
         initializeComponents();
+        resetEmbeddingSettings();
+        addEmbeddingListeners();
         addListeners();
         setupTable();
         loadCollections();
@@ -317,11 +323,22 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void addRAGSettingsSection(JPanel panel, GridBagConstraints gbc) {
         addSection(panel, gbc, RAG_SETTINGS_SECTION_TITLE);
         addSettingRow(panel, gbc, "Chroma DB port", leftAligned(portIndexer));
+        addSettingRow(panel, gbc, "Embedding provider", leftAligned(embeddingProviderComboBox));
+        addSettingRow(panel, gbc, "", leftAligned(embeddingProviderWarning));
+        addHelpText(panel, gbc, "Providers enabled in the LLM settings that can create embeddings. " +
+                "RAG uses the URL and API key configured there.");
         addSettingRow(panel, gbc, "Embedding model", leftAligned(embeddingModelComboBox));
-        addHelpText(panel, gbc, "Ollama model used to embed project files and queries (default " +
-                EmbeddingFingerprint.DEFAULT_MODEL_NAME + "). Pull it with `ollama pull <model>`. " +
-                "Changing it requires a full re-index; until then search keeps using the model " +
-                "the index was built with.");
+        addHelpText(panel, gbc, "Model used to embed project files and queries. " +
+                "Changing the provider, model, document prefix or output dimension requires a full " +
+                "re-index; until then search keeps using the settings the index was built with.");
+        addSettingRow(panel, gbc, "Query prefix", leftAligned(queryPrefixField));
+        addSettingRow(panel, gbc, "Document prefix", leftAligned(documentPrefixField));
+        addHelpText(panel, gbc, "Text added before search queries and indexed chunks when embedding, " +
+                "for models that expect it. Filled in for known models, and never stored or shown. " +
+                "Include any trailing space the model needs.");
+        addSettingRow(panel, gbc, "Output dimension", leftAligned(outputDimensionSpinner));
+        addHelpText(panel, gbc, "Shorten embeddings to this size to save memory, for models that support " +
+                "it (Matryoshka). 0 keeps the model's own size.");
         addSettingRow(panel, gbc, "Minimum score", leftAligned(minScoreField));
         addHelpText(panel, gbc, "Set the minimum score threshold for semantic search results. A lower value will include more results.");
         addSettingRow(panel, gbc, "Maximum results", leftAligned(maxResultsSpinner));
@@ -461,7 +478,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                     return;
                 }
                 if (model.ready()) {
-                    updateValidationStatus();
+                    refreshValidation();
                     runIndexingTask();
                 } else {
                     progressLabel.setText(model.problem());
@@ -632,7 +649,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void updateComponentsEnabled() {
         boolean enabled = enableIndexerCheckBox.isSelected();
         portIndexer.setEnabled(enabled);
+        embeddingProviderComboBox.setEnabled(enabled);
         embeddingModelComboBox.setEnabled(enabled);
+        queryPrefixField.setEnabled(enabled);
+        documentPrefixField.setEnabled(enabled);
+        outputDimensionSpinner.setEnabled(enabled);
         maxResultsSpinner.setEnabled(enabled);
         minScoreField.setEnabled(enabled);
         actionButton.setEnabled(enabled);
@@ -649,13 +670,144 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         return combo;
     }
 
-    /** The model name as typed, including text not yet committed with Enter; blank = default. */
+    /**
+     * The model name as typed, including text not yet committed with Enter. For Ollama, blank
+     * means the default model; other providers have no default, so blank stays blank.
+     */
     public @NotNull String getEmbeddingModelName() {
-        return getEmbeddingModelName(embeddingModelComboBox);
+        if (selectedEmbeddingProvider() == EmbeddingProvider.OLLAMA) {
+            return getEmbeddingModelName(embeddingModelComboBox);
+        }
+        return Objects.toString(embeddingModelComboBox.getEditor().getItem(), "").trim();
     }
 
-    public void setEmbeddingModelName(@Nullable String modelName) {
-        setEmbeddingModelName(embeddingModelComboBox, modelName);
+    private void showEmbeddingModelName(@Nullable String modelName) {
+        if (selectedEmbeddingProvider() == EmbeddingProvider.OLLAMA) {
+            setEmbeddingModelName(embeddingModelComboBox, modelName);
+        } else {
+            String name = Objects.toString(modelName, "");
+            embeddingModelComboBox.setSelectedItem(name);
+            embeddingModelComboBox.getEditor().setItem(name);
+        }
+    }
+
+    private @NotNull EmbeddingProvider selectedEmbeddingProvider() {
+        return embeddingProviderComboBox.getItem() == null
+                ? EmbeddingProvider.OLLAMA
+                : embeddingProviderComboBox.getItem();
+    }
+
+    private void addEmbeddingListeners() {
+        embeddingProviderComboBox.addActionListener(e -> {
+            if (loadingEmbeddingSettings) return;
+            EmbeddingProvider provider = selectedEmbeddingProvider();
+            showSuggestedModels(provider);
+            // Back on the saved provider, show its saved model; otherwise its default.
+            showEmbeddingModelName(provider == EmbeddingProvider.fromId(stateService.getRagEmbeddingProvider())
+                    ? stateService.getRagEmbeddingModelName()
+                    : provider.defaultModel());
+            updateEmbeddingProviderWarning();
+            followModelPrefixDefaults();
+        });
+        Component editor = embeddingModelComboBox.getEditor().getEditorComponent();
+        if (editor instanceof JTextComponent textEditor) {
+            textEditor.getDocument().addDocumentListener(new DocumentAdapter() {
+                @Override
+                protected void textChanged(@NotNull DocumentEvent event) {
+                    if (!loadingEmbeddingSettings) followModelPrefixDefaults();
+                }
+            });
+        }
+    }
+
+    /** Prefix fields follow the model's defaults, unless the user typed their own. */
+    private void followModelPrefixDefaults() {
+        String model = getEmbeddingModelName();
+        queryPrefixField.setText(EmbeddingPrefixes.afterModelChange(queryPrefixField.getText(),
+                EmbeddingPrefixes.defaultQueryPrefix(prefixDefaultsModel), EmbeddingPrefixes.defaultQueryPrefix(model)));
+        documentPrefixField.setText(EmbeddingPrefixes.afterModelChange(documentPrefixField.getText(),
+                EmbeddingPrefixes.defaultDocumentPrefix(prefixDefaultsModel), EmbeddingPrefixes.defaultDocumentPrefix(model)));
+        prefixDefaultsModel = model;
+    }
+
+    private void showSuggestedModels(@NotNull EmbeddingProvider provider) {
+        boolean wasLoading = loadingEmbeddingSettings;
+        loadingEmbeddingSettings = true;
+        embeddingModelComboBox.removeAllItems();
+        provider.suggestedModels().forEach(embeddingModelComboBox::addItem);
+        loadingEmbeddingSettings = wasLoading;
+    }
+
+    private void updateEmbeddingProviderWarning() {
+        EmbeddingProvider provider = selectedEmbeddingProvider();
+        boolean warn = provider.sendsCodeOffMachine(EmbeddingProviderSettings.baseUrl(provider, stateService));
+        embeddingProviderWarning.setVisible(warn);
+        embeddingProviderWarning.setText(warn ? offMachineWarning(provider) : "");
+    }
+
+    static @NotNull String offMachineWarning(@NotNull EmbeddingProvider provider) {
+        return "Your project's source code and search queries will be sent to " + provider
+                + ", which may charge for it.";
+    }
+
+    /** Fills the embedding fields from the saved settings. */
+    public void resetEmbeddingSettings() {
+        loadingEmbeddingSettings = true;
+        try {
+            EmbeddingProvider provider = EmbeddingProvider.fromId(stateService.getRagEmbeddingProvider());
+            embeddingProviderComboBox.removeAllItems();
+            EmbeddingProviderSettings.selectable(stateService, provider).forEach(embeddingProviderComboBox::addItem);
+            embeddingProviderComboBox.setItem(provider);
+            showSuggestedModels(provider);
+            showEmbeddingModelName(stateService.getRagEmbeddingModelName());
+            String model = getEmbeddingModelName();
+            queryPrefixField.setText(EmbeddingPrefixes.resolve(stateService.getRagQueryPrefix(),
+                    EmbeddingPrefixes.defaultQueryPrefix(model)));
+            documentPrefixField.setText(EmbeddingPrefixes.resolve(stateService.getRagDocumentPrefix(),
+                    EmbeddingPrefixes.defaultDocumentPrefix(model)));
+            Integer dimension = stateService.getRagOutputDimension();
+            outputDimensionSpinner.setNumber(dimension == null ? 0 : dimension);
+            prefixDefaultsModel = model;
+            updateEmbeddingProviderWarning();
+        } finally {
+            loadingEmbeddingSettings = false;
+        }
+    }
+
+    /** Saves the embedding fields. */
+    public void applyEmbeddingSettings() {
+        String model = getEmbeddingModelName();
+        stateService.setRagEmbeddingProvider(selectedEmbeddingProvider().id());
+        stateService.setRagEmbeddingModelName(model);
+        stateService.setRagQueryPrefix(EmbeddingPrefixes.toStored(queryPrefixField.getText(),
+                EmbeddingPrefixes.defaultQueryPrefix(model)));
+        stateService.setRagDocumentPrefix(EmbeddingPrefixes.toStored(documentPrefixField.getText(),
+                EmbeddingPrefixes.defaultDocumentPrefix(model)));
+        stateService.setRagOutputDimension(outputDimensionSpinner.getNumber() == 0 ? null : outputDimensionSpinner.getNumber());
+    }
+
+    public boolean isEmbeddingSettingsModified() {
+        String model = getEmbeddingModelName();
+        Integer savedDimension = stateService.getRagOutputDimension();
+        return selectedEmbeddingProvider() != EmbeddingProvider.fromId(stateService.getRagEmbeddingProvider())
+                || !model.equals(savedModelName())
+                || !Objects.equals(EmbeddingPrefixes.toStored(queryPrefixField.getText(),
+                        EmbeddingPrefixes.defaultQueryPrefix(model)), stateService.getRagQueryPrefix())
+                || !Objects.equals(EmbeddingPrefixes.toStored(documentPrefixField.getText(),
+                        EmbeddingPrefixes.defaultDocumentPrefix(model)), stateService.getRagDocumentPrefix())
+                || outputDimensionSpinner.getNumber() != (savedDimension == null ? 0 : savedDimension);
+    }
+
+    private @NotNull String savedModelName() {
+        String saved = stateService.getRagEmbeddingModelName();
+        return selectedEmbeddingProvider() == EmbeddingProvider.OLLAMA
+                ? EmbeddingFingerprint.ollama(saved).modelName()
+                : Objects.toString(saved, "").trim();
+    }
+
+    /** Re-runs the required services check, for example after the provider changes. */
+    public void refreshValidation() {
+        validationHandler.performValidation();
     }
 
     static @NotNull String getEmbeddingModelName(@NotNull ComboBox<String> combo) {

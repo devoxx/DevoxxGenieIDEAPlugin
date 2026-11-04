@@ -68,6 +68,9 @@ public class PostStartupActivity implements ProjectActivity {
         // and disposed with the project.
         maybeStartRagWatcher(project);
 
+        // Tell the user once if this project's RAG index was built with older embedding settings.
+        com.devoxx.genie.ui.settings.rag.RagIndexStaleNotifier.notifyOnceOnStartup(project);
+
         // First-launch analytics consent notification (task-206). Self-disables after firing once.
         AnalyticsConsentNotifier.maybeShow(project);
 

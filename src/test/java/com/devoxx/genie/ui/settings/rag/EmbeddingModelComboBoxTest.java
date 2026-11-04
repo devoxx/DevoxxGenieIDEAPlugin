@@ -9,8 +9,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EmbeddingModelComboBoxTest {
 
     @Test
-    void suggestionsStartWithTheDefault() {
-        assertThat(RAGSettingsComponent.SUGGESTED_EMBEDDING_MODELS).first().isEqualTo("nomic-embed-text");
+    void noSavedModelShowsTheDefaultEvenThoughTheListIsAlphabetical() {
+        ComboBox<String> combo = RAGSettingsComponent.createEmbeddingModelComboBox(null);
+
+        assertThat(combo.getItemAt(0)).isNotEqualTo("nomic-embed-text");
+        assertThat(combo.getSelectedItem()).isEqualTo("nomic-embed-text");
     }
 
     @Test
