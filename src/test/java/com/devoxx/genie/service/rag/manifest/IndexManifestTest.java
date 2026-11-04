@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class IndexManifestTest {
 
-    private static final String NOMIC = EmbeddingFingerprint.DEFAULT.id();
+    private static final String NOMIC = EmbeddingFingerprint.LEGACY.id();
     private static final String BGE = EmbeddingFingerprint.ollama("bge-m3").id();
 
     @Test
@@ -65,7 +65,7 @@ class IndexManifestTest {
                         System.currentTimeMillis(),
                         1,
                         "pre-v2-mystery-schema",
-                        NOMIC));
+                        NOMIC, null));
 
         assertThat(manifest.isCurrent(file, NOMIC))
                 .as("entries written under a different embedding schema version must NOT be treated as current")
@@ -114,7 +114,7 @@ class IndexManifestTest {
         InMemoryIndexManifest manifest = new InMemoryIndexManifest();
         manifest.entries.put(file.toAbsolutePath().toString(),
                 new IndexManifestEntry(InMemoryIndexManifest.sha1OrNull(file), 0L, 0L, 1,
-                        "v2", null));
+                        "v2", null, null));
 
         assertThat(manifest.isCurrent(file, NOMIC))
                 .as("pre-TASK-212 entries were all built with nomic-embed-text; upgrading must not force a re-index")

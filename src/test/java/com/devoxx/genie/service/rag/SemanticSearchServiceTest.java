@@ -85,8 +85,8 @@ class SemanticSearchServiceTest {
         when(mockChromaService.getEmbeddingStore()).thenReturn(store);
         when(mockChromaService.getEmbeddingModel()).thenReturn(embeddingModel);
         when(mockChromaService.getEmbeddingModel(any())).thenReturn(embeddingModel);
-        when(mockChromaService.configuredFingerprint()).thenReturn(EmbeddingFingerprint.DEFAULT);
-        when(mockChromaService.indexFingerprint(any())).thenReturn(EmbeddingFingerprint.DEFAULT);
+        when(mockChromaService.configuredFingerprint()).thenReturn(EmbeddingFingerprint.LEGACY);
+        when(mockChromaService.indexFingerprint(any())).thenReturn(EmbeddingFingerprint.LEGACY);
         // init(Project) is a no-op for the in-memory store.
         Mockito.doNothing().when(mockChromaService).init(any());
 
@@ -100,6 +100,31 @@ class SemanticSearchServiceTest {
         applicationManagerStatic.close();
         chromaServiceStatic.close();
         stateServiceStatic.close();
+    }
+
+    @Test
+    void queryPrefixGoesToTheModelButNeverIntoResults() {
+        when(mockChromaService.queryPrefix(any())).thenReturn("search_query: ");
+        java.util.List<String> sentToModel = new java.util.ArrayList<>();
+        EmbeddingModel recording = new EmbeddingModel() {
+            @Override
+            public dev.langchain4j.model.output.Response<java.util.List<dev.langchain4j.data.embedding.Embedding>> embedAll(
+                    java.util.List<TextSegment> segments) {
+                segments.forEach(segment -> sentToModel.add(segment.text()));
+                return dev.langchain4j.model.output.Response.from(segments.stream()
+                        .map(s -> dev.langchain4j.data.embedding.Embedding.from(new float[]{1f, 0f})).toList());
+            }
+        };
+        when(mockChromaService.getEmbeddingModel(any())).thenReturn(recording);
+        store.add(dev.langchain4j.data.embedding.Embedding.from(new float[]{1f, 0f}),
+                TextSegment.from("the stored chunk", dev.langchain4j.data.document.Metadata.from(
+                        IndexerConstants.FILE_PATH, "/project/A.java")));
+
+        java.util.List<SearchResult> results = new SemanticSearchService().search(mockProject, "find this");
+
+        assertThat(sentToModel).containsExactly("search_query: find this");
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).content()).isEqualTo("the stored chunk");
     }
 
     @Test

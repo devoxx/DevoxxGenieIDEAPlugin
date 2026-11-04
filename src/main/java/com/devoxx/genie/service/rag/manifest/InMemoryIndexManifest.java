@@ -55,7 +55,8 @@ public class InMemoryIndexManifest implements IndexManifest {
     }
 
     @Override
-    public void markIndexed(@NotNull Path file, int segmentCount, @NotNull String fingerprint) {
+    public void markIndexed(@NotNull Path file, int segmentCount, @NotNull String fingerprint,
+                            @org.jetbrains.annotations.Nullable String queryPrefix) {
         String key = file.toAbsolutePath().toString();
         String hash = sha1OrNull(file);
         if (hash == null) {
@@ -74,7 +75,8 @@ public class InMemoryIndexManifest implements IndexManifest {
                 System.currentTimeMillis(),
                 segmentCount,
                 IndexerConstants.CURRENT_EMBEDDING_SCHEMA_VERSION,
-                fingerprint));
+                fingerprint,
+                queryPrefix));
         onMutated();
     }
 
@@ -93,7 +95,14 @@ public class InMemoryIndexManifest implements IndexManifest {
         return entries.values().stream().findFirst().map(InMemoryIndexManifest::fingerprintOf);
     }
 
-    /** Legacy (pre-TASK-212) entries carry no fingerprint; they were built with the default. */
+    @Override
+    public @NotNull String indexQueryPrefix() {
+        return entries.values().stream().findFirst()
+                .map(IndexManifestEntry::queryPrefix)
+                .orElse("");
+    }
+
+    /** Legacy (pre-TASK-212) entries carry no fingerprint; they were built with the legacy setup. */
     private static @NotNull String fingerprintOf(@NotNull IndexManifestEntry entry) {
         return EmbeddingFingerprint.parse(entry.embeddingFingerprint()).id();
     }

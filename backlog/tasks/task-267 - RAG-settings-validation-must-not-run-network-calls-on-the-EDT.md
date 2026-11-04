@@ -4,7 +4,7 @@ title: RAG settings validation must not run network calls on the EDT
 status: To Do
 assignee: []
 created_date: '2026-11-03T13:25:00Z'
-updated_date: '2026-11-03T13:30:00Z'
+updated_date: '2026-11-04T14:30:00Z'
 labels:
   - bug
   - RAG
@@ -35,3 +35,9 @@ Constraint: the Settings dialog is modal, so results posted back to the UI must 
 - [ ] #3 Validation results still render while the modal Settings dialog is open
 - [ ] #4 A test (or reproducible manual check documented in the task notes) demonstrates validation no longer executes on the EDT
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-04: also covers the new EmbeddingProviderValidator (TASK-265), which makes a blocking HTTP call with a 2 second timeout. Validation runs up to three times per refresh on the EDT, so a dead remote URL can freeze the RAG settings panel for several seconds. This is the remaining likely cause of the panel feeling unresponsive after opening or Apply.
+<!-- SECTION:NOTES:END -->

@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.when;
  */
 class ProjectIndexerModelChangeTest {
 
-    private static final EmbeddingFingerprint NOMIC = EmbeddingFingerprint.DEFAULT;
+    private static final EmbeddingFingerprint NOMIC = EmbeddingFingerprint.LEGACY;
     private static final EmbeddingFingerprint BGE = EmbeddingFingerprint.ollama("bge-m3");
 
     private MockedStatic<ApplicationManager> applicationManagerStatic;
@@ -140,6 +141,85 @@ class ProjectIndexerModelChangeTest {
     }
 
     @Test
+    void dimensionLargerThanTheModelProvidesLeavesTheIndexUntouched(@TempDir Path tmp) throws IOException {
+        Path file = indexedWith(NOMIC, tmp.resolve("A.java"));
+        int vectors = storedVectors();
+        EmbeddingFingerprint tooLarge = new EmbeddingFingerprint("ollama", "bge-m3", 9999, "");
+
+        assertThatThrownBy(() -> indexer.prepareIndexFor(tooLarge))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("larger than the model's native dimension");
+
+        assertThat(storedVectors()).isEqualTo(vectors).isPositive();
+        assertThat(manifest.isCurrent(file, NOMIC.id())).isTrue();
+    }
+
+    @Test
+    void documentPrefixGoesToTheModelButNeverIntoTheStoredText(@TempDir Path tmp) throws IOException {
+        EmbeddingFingerprint prefixed = new EmbeddingFingerprint("ollama", "nomic-embed-text", null, "search_document: ");
+        RecordingEmbeddingModel model = new RecordingEmbeddingModel();
+        when(chroma.getEmbeddingModel(prefixed)).thenReturn(model);
+
+        indexedWith(prefixed, tmp.resolve("A.java"));
+
+        assertThat(model.received).isNotEmpty().allMatch(text -> text.startsWith("search_document: "));
+        assertThat(storedTexts()).isNotEmpty().noneMatch(text -> text.contains("search_document"));
+    }
+
+    @Test
+    void perSegmentFallbackAppliesTheDocumentPrefixToo(@TempDir Path tmp) throws IOException {
+        EmbeddingFingerprint prefixed = new EmbeddingFingerprint("ollama", "nomic-embed-text", null, "search_document: ");
+        RecordingEmbeddingModel model = new RecordingEmbeddingModel();
+        model.failBatches = true;
+        when(chroma.getEmbeddingModel(prefixed)).thenReturn(model);
+
+        indexedWith(prefixed, tmp.resolve("A.java"));
+
+        assertThat(model.received).isNotEmpty().allMatch(text -> text.startsWith("search_document: "));
+        assertThat(storedVectors()).isPositive();
+        assertThat(storedTexts()).noneMatch(text -> text.contains("search_document"));
+    }
+
+    @Test
+    void vectorsAreStoredAtTheConfiguredDimensionWithUnitLength(@TempDir Path tmp) throws IOException {
+        EmbeddingFingerprint truncated = new EmbeddingFingerprint("ollama", "nomic-embed-text", 2, "");
+
+        indexedWith(truncated, tmp.resolve("A.java"));
+
+        float[] vector = store.search(EmbeddingSearchRequest.builder()
+                .queryEmbedding(Embedding.from(new float[]{1f, 0f})).maxResults(1).build())
+                .matches().get(0).embedding().vector();
+        assertThat(vector).hasSize(2);
+        assertThat(Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1])).isCloseTo(1.0, within(1e-5));
+    }
+
+    @Test
+    void chunksThatFailToEmbedAreNotCountedAsIndexed(@TempDir Path tmp) throws IOException {
+        // The failed embeddinggemma run: the manifest claimed 18,626 segments with none stored.
+        EmbeddingModel broken = mock(EmbeddingModel.class);
+        when(broken.embedAll(Mockito.anyList())).thenThrow(new RuntimeException("model not found"));
+        when(broken.embed(Mockito.anyString())).thenThrow(new RuntimeException("model not found"));
+        when(chroma.getEmbeddingModel(BGE)).thenReturn(broken);
+        when(chroma.configuredFingerprint()).thenReturn(BGE);
+        Path file = tmp.resolve("A.java");
+        Files.writeString(file, "package x;\nclass A { void m() { System.out.println(\"hello\"); } }\n");
+
+        indexer.indexFile(file);
+
+        assertThat(manifest.isTracked(file)).isFalse();
+        assertThat(manifest.indexFingerprint()).isEmpty();
+    }
+
+    @Test
+    void queryPrefixIsRecordedSoAStaleIndexCanStillBeSearched(@TempDir Path tmp) throws IOException {
+        when(chroma.configuredQueryPrefix()).thenReturn("search_query: ");
+
+        indexedWith(NOMIC, tmp.resolve("A.java"));
+
+        assertThat(manifest.indexQueryPrefix()).isEqualTo("search_query: ");
+    }
+
+    @Test
     void changedFilesKeepUsingTheIndexModelUntilTheUserReindexes(@TempDir Path tmp) throws IOException {
         indexedWith(NOMIC, tmp.resolve("A.java"));
         when(chroma.configuredFingerprint()).thenReturn(BGE); // user switched settings to bge-m3
@@ -181,6 +261,34 @@ class ProjectIndexerModelChangeTest {
                 .maxResults(1000)
                 .minScore(0.0)
                 .build()).matches().size();
+    }
+
+    private List<String> storedTexts() {
+        return store.search(EmbeddingSearchRequest.builder()
+                .queryEmbedding(new FixedEmbeddingModel().embed("q").content())
+                .maxResults(1000)
+                .minScore(0.0)
+                .build()).matches().stream().map(match -> match.embedded().text()).toList();
+    }
+
+    /** Records every text the model receives; with {@code failBatches}, only single texts succeed. */
+    private static final class RecordingEmbeddingModel implements EmbeddingModel {
+        private final List<String> received = new java.util.ArrayList<>();
+        private boolean failBatches;
+
+        @Override
+        public Response<List<Embedding>> embedAll(List<TextSegment> segments) {
+            if (failBatches && !isTestEmbed(segments)) {
+                failBatches = false; // The fallback's single-text calls then succeed.
+                throw new RuntimeException("batch rejected");
+            }
+            segments.forEach(segment -> received.add(segment.text()));
+            return Response.from(segments.stream().map(s -> Embedding.from(new float[]{1f, 0f, 0f})).toList());
+        }
+
+        private static boolean isTestEmbed(List<TextSegment> segments) {
+            return segments.get(0).text().contains("embedding model check");
+        }
     }
 
     /** Same vector for every text; these tests are about which model is used, not similarity. */

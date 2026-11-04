@@ -1,6 +1,11 @@
 package com.devoxx.genie.service.rag.cli;
 
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.devoxx.genie.service.rag.embedding.EmbeddingModelFactory;
+import com.devoxx.genie.service.rag.embedding.EmbeddingPrefixes;
+import com.devoxx.genie.service.rag.embedding.EmbeddingProfile;
+import com.devoxx.genie.service.rag.embedding.EmbeddingProvider;
+import com.devoxx.genie.service.rag.embedding.ProfiledEmbedder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -10,7 +15,6 @@ import com.google.gson.Strictness;
 import java.io.StringReader;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.chroma.ChromaEmbeddingStore;
 
@@ -37,7 +41,9 @@ import java.util.Set;
  *
  * <p>Env overrides: {@code DEVOXXGENIE_CHROMA_URL} (default {@code http://localhost:8000}),
  * {@code DEVOXXGENIE_OLLAMA_URL} (default {@code http://localhost:11434}),
- * {@code DEVOXXGENIE_EMBED_MODEL} (default {@code nomic-embed-text}).
+ * {@code DEVOXXGENIE_EMBED_MODEL} (default {@code nomic-embed-text}),
+ * {@code DEVOXXGENIE_EMBED_URL} and {@code DEVOXXGENIE_EMBED_API_KEY} (OpenAI-compatible endpoint
+ * used instead of Ollama), {@code DEVOXXGENIE_EMBED_QUERY_PREFIX}, {@code DEVOXXGENIE_EMBED_DIMENSION}.
  */
 public final class RagCli {
 
@@ -66,17 +72,27 @@ public final class RagCli {
         String text = args[2];
         int topN = args.length >= 4 ? Integer.parseInt(args[3]) : 10;
 
-        EmbeddingModel embedder = OllamaEmbeddingModel.builder()
-                .baseUrl(env("DEVOXXGENIE_OLLAMA_URL", DEFAULT_OLLAMA_URL))
-                .modelName(env("DEVOXXGENIE_EMBED_MODEL", DEFAULT_EMBED_MODEL))
-                .build();
+        String model = env("DEVOXXGENIE_EMBED_MODEL", DEFAULT_EMBED_MODEL);
+        String openAiUrl = env("DEVOXXGENIE_EMBED_URL", null);
+        EmbeddingModel embedder = openAiUrl != null
+                ? EmbeddingModelFactory.create(EmbeddingProvider.CUSTOM_OPENAI, openAiUrl,
+                        env("DEVOXXGENIE_EMBED_API_KEY", null), model)
+                : EmbeddingModelFactory.create(EmbeddingProvider.OLLAMA,
+                        env("DEVOXXGENIE_OLLAMA_URL", DEFAULT_OLLAMA_URL), null, model);
+        String dimension = env("DEVOXXGENIE_EMBED_DIMENSION", null);
+        // Same defaults as the plugin. The query must match how the collection was indexed.
+        String queryPrefix = System.getenv("DEVOXXGENIE_EMBED_QUERY_PREFIX");
+        ProfiledEmbedder queryEmbedder = new ProfiledEmbedder(embedder, new EmbeddingProfile(
+                queryPrefix != null ? queryPrefix : EmbeddingPrefixes.defaultQueryPrefix(model),
+                "",
+                dimension == null ? null : Integer.valueOf(dimension.trim())));
 
         ChromaEmbeddingStore store = ChromaEmbeddingStore.builder()
                 .baseUrl(env("DEVOXXGENIE_CHROMA_URL", DEFAULT_CHROMA_URL))
                 .collectionName(collection)
                 .build();
 
-        Embedding q = embedder.embed(text).content();
+        Embedding q = queryEmbedder.embedQuery(text);
         var results = store.search(EmbeddingSearchRequest.builder()
                 .queryEmbedding(q)
                 .maxResults(topN)
@@ -190,6 +206,10 @@ public final class RagCli {
                   DEVOXXGENIE_CHROMA_URL   (default http://localhost:8000)
                   DEVOXXGENIE_OLLAMA_URL   (default http://localhost:11434)
                   DEVOXXGENIE_EMBED_MODEL  (default nomic-embed-text)
+                  DEVOXXGENIE_EMBED_URL    OpenAI-compatible endpoint, used instead of Ollama
+                  DEVOXXGENIE_EMBED_API_KEY       its API key (optional)
+                  DEVOXXGENIE_EMBED_QUERY_PREFIX  (default: the model's default prefix)
+                  DEVOXXGENIE_EMBED_DIMENSION     truncate vectors to this size (default: native)
                 """);
     }
 }

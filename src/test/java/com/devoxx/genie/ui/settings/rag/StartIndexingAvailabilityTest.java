@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.rag;
 
+import com.devoxx.genie.service.rag.embedding.EmbeddingProvider;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.service.rag.validator.ValidatorType;
@@ -42,10 +43,17 @@ class StartIndexingAvailabilityTest {
     }
 
     @Test
+    void blankModelMessageNamesTheProviderAndSaysTheIndexIsSafe() {
+        assertThat(EmbeddingModelDownloadPrompt.missingModelMessage(EmbeddingProvider.LLAMA_CPP))
+                .contains("llama.cpp")
+                .contains("not changed")
+                .doesNotContain("nomic");
+    }
+
+    @Test
     void suggestionsCoverOllamasEmbeddingModels() {
         assertThat(RAGSettingsComponent.SUGGESTED_EMBEDDING_MODELS)
-                .startsWith("nomic-embed-text")
-                .contains("embeddinggemma-2", "qwen3-embedding", "snowflake-arctic-embed2", "all-minilm")
+                .contains("nomic-embed-text", "embeddinggemma-2", "qwen3-embedding", "snowflake-arctic-embed2", "all-minilm")
                 .doesNotHaveDuplicates();
     }
 }

@@ -8,7 +8,10 @@ import com.devoxx.genie.service.rag.benchmark.RetrievalMetrics;
 import com.devoxx.genie.service.rag.chunking.RagChunker;
 import com.devoxx.genie.service.rag.embedding.EmbeddingProfile;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.devoxx.genie.service.rag.embedding.EmbeddingModelFactory;
+import com.devoxx.genie.service.rag.embedding.EmbeddingProvider;
 import com.devoxx.genie.service.rag.embedding.ProfiledEmbedder;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,8 +31,8 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 
 /**
- * {@code RagCli benchmark}: measures RAG retrieval quality for one Ollama embedding
- * configuration against a question dataset. See
+ * {@code RagCli benchmark}: measures RAG retrieval quality for one embedding configuration
+ * (Ollama or an OpenAI-compatible endpoint) against a question dataset. See
  * {@code src/test/resources/rag-benchmark/README.md}.
  *
  * <p>Runs entirely outside the IDE and never touches ChromaDB; vectors are kept in memory.
@@ -52,7 +55,8 @@ public final class RagBenchmarkCommand {
 
     /** Parsed command-line options; flags win over environment variables, which win over defaults. */
     record Options(Path dataset, Path repo, String ollamaUrl, String model,
-                   EmbeddingProfile profile, int topChunks, @Nullable Path out) {
+                   EmbeddingProfile profile, int topChunks, @Nullable Path out,
+                   @Nullable String openAiUrl, @Nullable String apiKey) {
 
         static Options parse(String[] args, UnaryOperator<String> env) {
             Map<String, String> flags = new LinkedHashMap<>();
@@ -106,11 +110,14 @@ public final class RagBenchmarkCommand {
                     pick(flags.get("--model"), env.apply("DEVOXXGENIE_EMBED_MODEL"), DEFAULT_MODEL),
                     new EmbeddingProfile(queryPrefix, docPrefix, dimension == null ? null : positiveInt("--dimension", dimension)),
                     flags.containsKey("--top-chunks") ? positiveInt("--top-chunks", flags.get("--top-chunks")) : DEFAULT_TOP_CHUNKS,
-                    out == null ? null : Path.of(out));
+                    out == null ? null : Path.of(out),
+                    pick(flags.get("--embed-url"), env.apply("DEVOXXGENIE_EMBED_URL"), null),
+                    // Environment only, so the key doesn't end up in shell history.
+                    env.apply("DEVOXXGENIE_EMBED_API_KEY"));
         }
 
         private static final List<String> KNOWN_FLAGS = List.of(
-                "--dataset", "--repo", "--ollama-url", "--model", "--query-prefix", "--doc-prefix",
+                "--dataset", "--repo", "--ollama-url", "--embed-url", "--model", "--query-prefix", "--doc-prefix",
                 "--prefix-preset", "--dimension", "--top-chunks", "--out");
 
         /** Prefixes may legitimately be empty, so only {@code null} means "not given". */
@@ -153,15 +160,17 @@ public final class RagBenchmarkCommand {
         System.err.printf(Locale.ROOT, "Benchmark '%s' v%d: %d questions, %d corpus files%n",
                 dataset.name(), dataset.version(), dataset.questions().size(), corpus.size());
         System.err.printf(Locale.ROOT, "Model %s @ %s, query prefix %s, document prefix %s, dimension %s%n",
-                options.model(), options.ollamaUrl(), quote(options.profile().queryPrefix()),
+                options.model(), endpoint(options), quote(options.profile().queryPrefix()),
                 quote(options.profile().documentPrefix()),
                 options.profile().outputDimension() == null ? "native" : options.profile().outputDimension());
 
-        OllamaEmbeddingModel model = OllamaEmbeddingModel.builder()
-                .baseUrl(options.ollamaUrl())
-                .modelName(options.model())
-                .timeout(Duration.ofMinutes(5))
-                .build();
+        EmbeddingModel model = options.openAiUrl() != null
+                ? EmbeddingModelFactory.create(EmbeddingProvider.CUSTOM_OPENAI, options.openAiUrl(), options.apiKey(), options.model())
+                : OllamaEmbeddingModel.builder()
+                        .baseUrl(options.ollamaUrl())
+                        .modelName(options.model())
+                        .timeout(Duration.ofMinutes(5))
+                        .build();
         RagBenchmark.Result result = new RagBenchmark(new ProfiledEmbedder(model, options.profile()), new RagChunker())
                 .withProgress(System.err)
                 .run(repo, corpus, dataset, options.topChunks());
@@ -172,7 +181,7 @@ public final class RagBenchmarkCommand {
             Map<String, String> runInfo = new LinkedHashMap<>();
             runInfo.put("timestamp", Instant.now().toString());
             runInfo.put("model", options.model());
-            runInfo.put("ollamaUrl", options.ollamaUrl());
+            runInfo.put("endpoint", endpoint(options));
             runInfo.put("gitCommit", git(repo, "rev-parse", "--short", "HEAD"));
             runInfo.put("gitDirty", String.valueOf(!git(repo, "status", "--porcelain").isEmpty()));
             Path out = options.out();
@@ -223,6 +232,10 @@ public final class RagBenchmarkCommand {
         return output.strip();
     }
 
+    private static String endpoint(Options options) {
+        return options.openAiUrl() != null ? options.openAiUrl() : options.ollamaUrl();
+    }
+
     private static String quote(String s) {
         return s.isEmpty() ? "(none)" : "'" + s + "'";
     }
@@ -236,6 +249,8 @@ public final class RagBenchmarkCommand {
                   --dataset <file>        question set (default src/test/resources/rag-benchmark/devoxxgenie-questions.json)
                   --repo <dir>            repository to index (default .)
                   --ollama-url <url>      DEVOXXGENIE_OLLAMA_URL         (default http://localhost:11434)
+                  --embed-url <url>       DEVOXXGENIE_EMBED_URL          OpenAI-compatible endpoint, used instead of Ollama
+                                          DEVOXXGENIE_EMBED_API_KEY      its API key (environment only; optional)
                   --model <name>          DEVOXXGENIE_EMBED_MODEL        (default nomic-embed-text)
                   --query-prefix <text>   DEVOXXGENIE_EMBED_QUERY_PREFIX (default none)
                   --doc-prefix <text>     DEVOXXGENIE_EMBED_DOC_PREFIX   (default none)
