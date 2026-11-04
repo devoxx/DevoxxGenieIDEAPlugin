@@ -115,12 +115,22 @@ The project requires **JDK 21** (JDK 25 breaks the Gradle build). Set `JAVA_HOME
 
 ```bash
 export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home
-./gradlew buildPlugin
+./gradlew buildPlugin   # regenerates application.properties, but packages the old one
+./gradlew buildPlugin   # packages the regenerated file: this zip is the release asset
 ```
 
-This regenerates `application.properties` with the new version and produces
-`build/distributions/DevoxxGenie-X.Y.Z.zip`. Confirm the zip name matches the new version
-before continuing — a mismatch means the version bump didn't take.
+The build is run twice because `updateProperties` rewrites `application.properties` after
+the jar is packaged, so the first zip after a version bump still bundles the previous version.
+
+This produces `build/distributions/DevoxxGenie-X.Y.Z.zip`. Confirm the zip name matches the
+new version before continuing — a mismatch means the version bump didn't take. Then confirm
+the zip bundles the new version:
+
+```bash
+unzip -p build/distributions/DevoxxGenie-X.Y.Z.zip DevoxxGenie/lib/DevoxxGenie-X.Y.Z.jar > /tmp/devoxxgenie-release-check.jar
+unzip -p /tmp/devoxxgenie-release-check.jar application.properties   # expect version=X.Y.Z
+rm /tmp/devoxxgenie-release-check.jar
+```
 
 ## Step 7 — Commit, tag, and push (confirm first)
 
