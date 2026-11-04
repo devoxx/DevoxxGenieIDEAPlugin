@@ -37,12 +37,15 @@ public enum EmbeddingProvider {
 
     private final String id;
     private final String displayName;
+    private final String defaultModel;
     private final List<String> suggestedModels;
 
-    EmbeddingProvider(String id, String displayName, List<String> suggestedModels) {
+    /** @param models the provider's models, default first; shown to the user alphabetically */
+    EmbeddingProvider(String id, String displayName, List<String> models) {
         this.id = id;
         this.displayName = displayName;
-        this.suggestedModels = suggestedModels;
+        this.defaultModel = models.isEmpty() ? "" : models.get(0);
+        this.suggestedModels = models.stream().sorted().toList();
     }
 
     /** Stable id, stored in settings and in the embedding fingerprint. */
@@ -50,8 +53,14 @@ public enum EmbeddingProvider {
         return id;
     }
 
+    /** Alphabetical, for the model dropdown. */
     public @NotNull List<String> suggestedModels() {
         return suggestedModels;
+    }
+
+    /** The model preselected when switching to this provider; empty if it has none. */
+    public @NotNull String defaultModel() {
+        return defaultModel;
     }
 
     /** The provider with this id; null, blank or unknown means {@link #OLLAMA}. */

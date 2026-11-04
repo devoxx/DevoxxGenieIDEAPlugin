@@ -53,8 +53,7 @@ class StartIndexingAvailabilityTest {
     @Test
     void suggestionsCoverOllamasEmbeddingModels() {
         assertThat(RAGSettingsComponent.SUGGESTED_EMBEDDING_MODELS)
-                .startsWith("nomic-embed-text")
-                .contains("embeddinggemma-2", "qwen3-embedding", "snowflake-arctic-embed2", "all-minilm")
+                .contains("nomic-embed-text", "embeddinggemma-2", "qwen3-embedding", "snowflake-arctic-embed2", "all-minilm")
                 .doesNotHaveDuplicates();
     }
 }

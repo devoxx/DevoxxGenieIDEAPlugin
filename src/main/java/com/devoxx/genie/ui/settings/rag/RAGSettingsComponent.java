@@ -702,10 +702,10 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
             if (loadingEmbeddingSettings) return;
             EmbeddingProvider provider = selectedEmbeddingProvider();
             showSuggestedModels(provider);
-            // Back on the saved provider, show its saved model; otherwise its first suggestion.
+            // Back on the saved provider, show its saved model; otherwise its default.
             showEmbeddingModelName(provider == EmbeddingProvider.fromId(stateService.getRagEmbeddingProvider())
                     ? stateService.getRagEmbeddingModelName()
-                    : provider.suggestedModels().stream().findFirst().orElse(""));
+                    : provider.defaultModel());
             updateEmbeddingProviderWarning();
             followModelPrefixDefaults();
         });

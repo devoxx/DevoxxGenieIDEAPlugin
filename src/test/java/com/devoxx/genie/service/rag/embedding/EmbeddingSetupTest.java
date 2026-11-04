@@ -85,6 +85,20 @@ class EmbeddingSetupTest {
     }
 
     @Test
+    void suggestedModelsAreAlphabeticalForEveryProvider() {
+        for (EmbeddingProvider provider : EmbeddingProvider.values()) {
+            assertThat(provider.suggestedModels()).as(provider.id()).isSorted();
+        }
+    }
+
+    @Test
+    void defaultModelDoesNotDependOnAlphabeticalOrder() {
+        assertThat(EmbeddingProvider.OLLAMA.defaultModel()).isEqualTo("nomic-embed-text");
+        assertThat(EmbeddingProvider.OPENAI.defaultModel()).isEqualTo("text-embedding-3-small");
+        assertThat(EmbeddingProvider.LLAMA_CPP.defaultModel()).isEmpty();
+    }
+
+    @Test
     void unknownProviderIdFallsBackToOllama() {
         assertThat(EmbeddingProvider.fromId(null)).isEqualTo(EmbeddingProvider.OLLAMA);
         assertThat(EmbeddingProvider.fromId("gone")).isEqualTo(EmbeddingProvider.OLLAMA);
