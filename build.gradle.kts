@@ -139,7 +139,7 @@ tasks.register<JavaExec>("ragQuery") {
     group = "verification"
     description = "Query the RAG store from the command line (see RagCli for usage)."
     mainClass.set("com.devoxx.genie.service.rag.cli.RagCli")
-    classpath = sourceSets["main"].runtimeClasspath
+    classpath = sourceSets["test"].runtimeClasspath
     standardInput = System.`in`
 }
 
@@ -152,7 +152,7 @@ tasks.register<JavaExec>("webSearch") {
     group = "verification"
     description = "Test the web search pipeline from the command line (see WebSearchCli for usage)."
     mainClass.set("com.devoxx.genie.service.prompt.websearch.cli.WebSearchCli")
-    classpath = sourceSets["main"].runtimeClasspath
+    classpath = sourceSets["test"].runtimeClasspath
     standardInput = System.`in`
 }
 
