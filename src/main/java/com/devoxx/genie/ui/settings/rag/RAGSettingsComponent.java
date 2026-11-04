@@ -5,6 +5,9 @@ import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.RagValidatorService;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.ui.components.JBScrollPane;
+import com.devoxx.genie.service.rag.embedding.EmbeddingModelInstaller;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
@@ -54,8 +57,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private static final String RAG_SETTINGS_SECTION_TITLE = "Retrieval-augmented Generation (RAG) settings";
 
     private final JBTextField testQueryField = new JBTextField();
-    private final JButton testQueryButton = new JButton("Test query");
-    private final JTextArea testQueryResults = new JTextArea(7, 40);
+    private final JButton testQueryButton = new JButton("Search");
+    private final RagSearchResultsPanel testQueryResults = new RagSearchResultsPanel();
     private final JProgressBar testQueryProgress = new JProgressBar();
 
     private JProgressBar progressBar;
@@ -75,7 +78,19 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
      * installed models would need a network call, which must not happen on the EDT.
      */
     static final List<String> SUGGESTED_EMBEDDING_MODELS = List.of(
-            EmbeddingFingerprint.DEFAULT_MODEL_NAME, "bge-m3", "mxbai-embed-large", "embeddinggemma");
+            EmbeddingFingerprint.DEFAULT_MODEL_NAME,
+            "nomic-embed-text-v2-moe",
+            "embeddinggemma-2",
+            "embeddinggemma",
+            "qwen3-embedding",
+            "bge-m3",
+            "bge-large",
+            "mxbai-embed-large",
+            "snowflake-arctic-embed",
+            "snowflake-arctic-embed2",
+            "all-minilm",
+            "granite-embedding",
+            "paraphrase-multilingual");
 
     private final ComboBox<String> embeddingModelComboBox = createEmbeddingModelComboBox(
             stateService.getRagEmbeddingModelName());
@@ -191,8 +206,15 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addIndexedProjectsSection(panel, gbc);
         addStartIndexButton(panel, gbc);
         addProgressSection(panel, gbc);
-        addTestQuerySection(panel, gbc);
         addValidationSection(panel, gbc);
+        addTestQuerySection(panel, gbc);
+
+        // Takes any spare height, so sections stay at the top instead of spreading apart.
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1.0;
+        panel.add(new JPanel(), gbc);
 
         return panel;
     }
@@ -204,16 +226,16 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         queryRow.add(testQueryField, BorderLayout.CENTER);
         queryRow.add(testQueryButton, BorderLayout.EAST);
         addSettingRow(panel, gbc, "Test query", queryRow);
-        testQueryResults.setEditable(false);
-        testQueryResults.setLineWrap(true);
-        testQueryResults.setWrapStyleWord(true);
         testQueryProgress.setIndeterminate(true);
         testQueryProgress.setVisible(false);
         JPanel output = new JPanel(new BorderLayout(0, 5));
         output.add(testQueryProgress, BorderLayout.NORTH);
-        output.add(new JScrollPane(testQueryResults), BorderLayout.CENTER);
+        output.add(testQueryResults, BorderLayout.CENTER);
         gbc.gridx = 0;
         gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0;
         panel.add(output, gbc);
         gbc.gridy++;
         testQueryButton.addActionListener(e -> runTestQuery());
@@ -225,46 +247,32 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void runTestQuery() {
         String query = testQueryField.getText().trim();
         if (query.isEmpty()) {
-            testQueryResults.setText("Enter a query to search the project index.");
+            testQueryResults.showMessage("Enter a query to search the project index.");
             return;
         }
         testQueryButton.setEnabled(false);
         testQueryProgress.setVisible(true);
-        testQueryResults.setText("Searching the project index...");
-        new SwingWorker<String, Void>() {
+        testQueryResults.showMessage("Searching the project index...");
+        new SwingWorker<List<SearchResult>, Void>() {
             @Override
-            protected String doInBackground() {
-                List<SearchResult> matches = SemanticSearchService.getInstance().search(project, query);
-                if (matches.isEmpty()) return "No matches found. Check that this project is indexed and review the minimum score.";
-                StringBuilder text = new StringBuilder();
-                for (SearchResult match : matches) {
-                    text.append(String.format(java.util.Locale.ROOT, "Score: %.4f  %s%n",
-                            match.score(), match.filePath()));
-                    String content = match.content();
-                    if (content != null) {
-                        text.append(content, 0, Math.min(content.length(), 500));
-                        if (content.length() > 500) text.append("...");
-                    }
-                    text.append("\n\n");
-                }
-                return text.toString();
+            protected List<SearchResult> doInBackground() {
+                return SemanticSearchService.getInstance().search(project, query);
             }
 
             @Override
             protected void done() {
                 try {
-                    testQueryResults.setText(get());
+                    testQueryResults.showResults(query, get(), project.getBasePath());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    testQueryResults.setText("Search interrupted.");
+                    testQueryResults.showMessage("Search interrupted.");
                 } catch (java.util.concurrent.ExecutionException e) {
                     Throwable cause = e.getCause();
-                    testQueryResults.setText("Search failed: " +
+                    testQueryResults.showMessage("Search failed: " +
                             (cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()));
                 } finally {
                     testQueryProgress.setVisible(false);
                     testQueryButton.setEnabled(true);
-                    testQueryResults.setCaretPosition(0);
                 }
             }
         }.execute();
@@ -391,8 +399,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Indexed projects");
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        panel.add(new JScrollPane(collectionsTable), gbc);
+        gbc.weighty = 0;
+        panel.add(new JBScrollPane(collectionsTable), gbc);
         gbc.gridy++;
     }
 
@@ -400,13 +408,9 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         addSection(panel, gbc, "Required RAG Services");
         validationHandler.performValidation();
         updateActionButtonState();
-        gbc.fill = GridBagConstraints.BOTH;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-
-        // Set a fixed height for the validationPanel
-        int fixedHeight = 100; // Adjust this value as needed
-        validationPanel.setPreferredSize(new Dimension(validationPanel.getPreferredSize().width, fixedHeight));
+        gbc.weighty = 0;
 
         panel.add(validationPanel, gbc);
         gbc.gridy++;
@@ -441,9 +445,36 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
             return;
         }
         
+        // The model may need downloading, which can take minutes and asks the user first. Done
+        // before the indexing task, off the EDT, with ModalityState.any() so it isn't held back
+        // by the modal Settings dialog.
+        startIndexButton.setEnabled(false);
+        progressLabel.setText("Checking embedding model...");
+        progressLabel.setVisible(true);
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            EmbeddingModelInstaller.Result model = EmbeddingModelDownloadPrompt.ensureInstalled(project, panel,
+                    status -> ApplicationManager.getApplication().invokeLater(
+                            () -> progressLabel.setText(status), ModalityState.any()));
+            ApplicationManager.getApplication().invokeLater(() -> {
+                startIndexButton.setEnabled(true);
+                if (project.isDisposed()) {
+                    return;
+                }
+                if (model.ready()) {
+                    updateValidationStatus();
+                    runIndexingTask();
+                } else {
+                    progressLabel.setText(model.problem());
+                    NotificationUtil.sendNotification(project, model.problem());
+                }
+            }, ModalityState.any());
+        });
+    }
+
+    private void runIndexingTask() {
         // Set indexing flag
         isIndexing = true;
-        
+
         // Make sure progress components are visible before starting the indexing process
         setStartButtons(false);
         
@@ -582,11 +613,17 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void updateStartIndexButtonVisibility() {
         ApplicationManager.getApplication().invokeLater(() -> {
             ValidationResult result = RagValidatorService.getInstance().validate();
-            boolean shouldShowButton = enableIndexerCheckBox.isSelected() && result.isValid();
+            boolean shouldShowButton = enableIndexerCheckBox.isSelected() && canStartIndexing(result.statuses());
             startIndexButton.setVisible(shouldShowButton);
             panel.revalidate();
             panel.repaint();
         });
+    }
+
+    /** A missing embedding model doesn't block indexing: Start Indexing offers to download it. */
+    static boolean canStartIndexing(@NotNull List<ValidatorStatus> statuses) {
+        return statuses.stream().allMatch(status ->
+                status.isValid() || status.action() == ValidationActionType.PULL_EMBEDDING_MODEL);
     }
 
     /**

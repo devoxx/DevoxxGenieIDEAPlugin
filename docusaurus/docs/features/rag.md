@@ -68,13 +68,13 @@ RAG is controlled by the **Enable RAG** setting; there is no separate per-conver
 
 ### Choosing an embedding model
 
-The **Embedding model** field accepts any embedding model installed in Ollama. Pull it first, then enter its name (for example `bge-m3`, or a tagged name such as `nomic-embed-text:v1.5`):
+The **Embedding model** field suggests common models and accepts any Ollama embedding model name, including tagged names such as `nomic-embed-text:v1.5`. See [Ollama's embedding models](https://ollama.com/search?c=embedding) for what's available.
+
+If the model isn't installed when you start indexing, DevoxxGenie asks whether to download it and starts indexing when the download finishes. If you decline, or the download fails, indexing stops and your existing index isn't changed. The same applies if the model can't create embeddings, for example a chat model. You can also install a model yourself:
 
 ```bash
 ollama pull bge-m3
 ```
-
-The validation panel checks that the configured model is installed and offers a **Pull model** button if it isn't.
 
 Vectors from different models can't be compared, so **changing the model requires re-indexing the project**. When you apply a new model, DevoxxGenie shows a notification with a **Re-index now** button; nothing is re-indexed automatically. Until you re-index, search keeps using the model the existing index was built with, so RAG keeps working. Re-indexing with a new model replaces the old index completely.
 

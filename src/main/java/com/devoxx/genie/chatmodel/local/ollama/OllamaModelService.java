@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 import static com.devoxx.genie.util.HttpUtil.ensureEndsWithSlash;
@@ -69,6 +70,10 @@ public class OllamaModelService implements LocalLLMProvider {
             String line;
             while ((line = reader.readLine()) != null) {
                 JsonObject status = gson.fromJson(line, JsonObject.class);
+                // A failed pull (e.g. unknown model) is still HTTP 200, with an error line in the stream.
+                if (status.has("error")) {
+                    throw new UnsuccessfulRequestException(status.get("error").getAsString());
+                }
                 if (status.has("status")) {
                     statusCallback.accept(status.get("status").getAsString());
 
@@ -77,7 +82,8 @@ public class OllamaModelService implements LocalLLMProvider {
                         long completed = status.get("completed").getAsLong();
                         long total = status.get("total").getAsLong();
                         double progress = (double) completed / total * 100;
-                        statusCallback.accept(String.format("Downloading: %.1f%%", progress));
+                        // Locale.ROOT: RAGSettingsHandler parses this number back.
+                        statusCallback.accept(String.format(Locale.ROOT, "Downloading: %.1f%%", progress));
                     }
                 }
             }

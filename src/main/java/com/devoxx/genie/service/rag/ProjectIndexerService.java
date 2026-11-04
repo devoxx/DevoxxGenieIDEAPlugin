@@ -309,8 +309,18 @@ public final class ProjectIndexerService {
      * project was indexed with a different embedding setup, drop every stored vector (Chroma
      * deletes and recreates the collection) and every manifest entry. Returns {@code false}
      * when the old vectors could not be dropped, in which case indexing must not proceed.
+     *
+     * @throws IllegalStateException when {@code target} cannot create embeddings (not installed,
+     *                               or a chat model), checked first so the index stays intact
      */
     boolean prepareIndexFor(@NotNull EmbeddingFingerprint target) {
+        try {
+            chromaEmbeddingService.getEmbeddingModel(target).embed("embedding model check");
+        } catch (Exception e) {
+            throw new IllegalStateException("Embedding model " + target.modelName()
+                    + " cannot create embeddings (" + e.getMessage() + "). The existing RAG index was not changed.", e);
+        }
+
         Optional<String> existing = manifest.indexFingerprint();
         if (existing.isEmpty() || existing.get().equals(target.id())) {
             return true;

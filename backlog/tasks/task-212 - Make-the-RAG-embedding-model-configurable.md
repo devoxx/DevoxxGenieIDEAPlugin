@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-05-26 18:00
-updated_date: '2026-11-03T17:16:00Z'
+updated_date: '2026-11-04T13:15:00Z'
 labels:
   - enhancement
   - RAG
@@ -72,6 +72,22 @@ modified_files:
   - src/main/java/com/devoxx/genie/service/rag/cli/RagCli.java
   - src/main/java/com/devoxx/genie/service/rag/cli/RagBenchmarkCommand.java
   - docusaurus/docs/features/rag.md
+  - >-
+    src/test/java/com/devoxx/genie/chatmodel/local/ollama/OllamaModelServicePullTest.java
+  - >-
+    src/main/java/com/devoxx/genie/chatmodel/local/ollama/OllamaModelService.java
+  - >-
+    src/test/java/com/devoxx/genie/service/rag/embedding/EmbeddingModelInstallerTest.java
+  - >-
+    src/main/java/com/devoxx/genie/service/rag/embedding/EmbeddingModelInstaller.java
+  - >-
+    src/main/java/com/devoxx/genie/ui/settings/rag/EmbeddingModelDownloadPrompt.java
+  - >-
+    src/test/java/com/devoxx/genie/ui/settings/rag/StartIndexingAvailabilityTest.java
+  - >-
+    src/test/java/com/devoxx/genie/ui/settings/rag/RagSearchResultsPanelTest.java
+  - src/main/java/com/devoxx/genie/ui/settings/rag/RagSearchResultsPanel.java
+  - src/main/java/com/devoxx/genie/ui/panel/ValidatorsPanel.java
 priority: medium
 ---
 
@@ -169,4 +185,10 @@ Benchmark, same corpus (1438 files, branch base 601cd373): nomic-embed-text reca
 Verification: full suite 3918 tests, 22 skipped, 0 failures; verifyPlugin Compatible against IU-253.31033.145 and IU-261.22158.277.
 
 Pre-existing, not fixed here: "Start Indexing" calls indexFiles(force=true) without removing a file's old chunks first, so re-indexing with the same model duplicates chunks. Worth its own task.
+
+2026-11-04, after trying the build. Selecting embeddinggemma when it wasn't installed wiped the project's 22,427-segment index: every chunk failed to embed, and the manifest still recorded 18,626 segments. Added at the maintainer's request: before indexing, a missing model prompts for an Ollama download (EmbeddingModelInstaller, EmbeddingModelDownloadPrompt), and Start Indexing stays visible when the model is the only thing missing. prepareIndexFor test-embeds first, so a model that can't embed (for example a chat model) leaves the index intact. pullModel now fails on Ollama's HTTP 200 error lines, and its progress text no longer depends on locale.
+
+2026-11-04, RAG settings panel. Required RAG Services now sits above Test semantic search; removed the carried-over GridBag weight and the fixed validation height that caused the gap. Test results are now a match list plus a preview (RagSearchResultsPanel). Removed nested scroll panes (validators) and replaced plain JScrollPane with JBScrollPane. Dropdown suggestions extended from ollama.com's embedding list; laya left out because its description reads as a decision model.
+
+Known gap, not fixed: storeSegments still logs and skips chunks that fail mid-run, and the manifest records the chunk count rather than what was stored. The test embed catches a model that can't embed at all, not failures partway through a run. RAG settings validation still runs on the EDT and freezes the panel after opening or Apply; that's TASK-267.
 <!-- SECTION:NOTES:END -->

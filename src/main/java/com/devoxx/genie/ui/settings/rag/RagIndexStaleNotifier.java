@@ -3,7 +3,9 @@ package com.devoxx.genie.ui.settings.rag;
 import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
 import com.devoxx.genie.service.rag.ProjectIndexerService;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.devoxx.genie.service.rag.embedding.EmbeddingModelInstaller;
 import com.devoxx.genie.service.rag.manifest.IndexManifestService;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationGroupManager;
@@ -85,12 +87,21 @@ final class RagIndexStaleNotifier {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try {
+                    EmbeddingModelInstaller.Result model = EmbeddingModelDownloadPrompt.ensureInstalled(project, null, status -> {
+                        indicator.checkCanceled();
+                        indicator.setText(status);
+                    });
+                    if (!model.ready()) {
+                        NotificationUtil.sendNotification(project, model.problem());
+                        return;
+                    }
                     // The settings panel may be closed; progress shows in the IDE status bar.
                     ProjectIndexerService.getInstance().indexFiles(project, true, new JProgressBar(), new JLabel());
                 } catch (ProcessCanceledException pce) {
                     throw pce;
                 } catch (Exception e) {
                     log.warn("RAG re-index failed: {}", e.getMessage());
+                    NotificationUtil.sendNotification(project, "RAG re-index failed: " + e.getMessage());
                 }
             }
 

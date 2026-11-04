@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -121,6 +122,24 @@ class ProjectIndexerModelChangeTest {
     }
 
     @Test
+    void modelThatCannotEmbedLeavesTheExistingIndexUntouched(@TempDir Path tmp) throws IOException {
+        // e.g. not pulled, or a chat model such as gemma4 that Ollama refuses to embed with.
+        Path file = indexedWith(NOMIC, tmp.resolve("A.java"));
+        int vectors = storedVectors();
+        EmbeddingModel broken = mock(EmbeddingModel.class);
+        when(broken.embed(Mockito.anyString())).thenThrow(new RuntimeException("model 'bge-m3' not found"));
+        when(chroma.getEmbeddingModel(BGE)).thenReturn(broken);
+
+        assertThatThrownBy(() -> indexer.prepareIndexFor(BGE))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("bge-m3")
+                .hasMessageContaining("not changed");
+
+        assertThat(storedVectors()).as("the working index must survive").isEqualTo(vectors).isPositive();
+        assertThat(manifest.isCurrent(file, NOMIC.id())).isTrue();
+    }
+
+    @Test
     void changedFilesKeepUsingTheIndexModelUntilTheUserReindexes(@TempDir Path tmp) throws IOException {
         indexedWith(NOMIC, tmp.resolve("A.java"));
         when(chroma.configuredFingerprint()).thenReturn(BGE); // user switched settings to bge-m3
@@ -140,6 +159,7 @@ class ProjectIndexerModelChangeTest {
         when(chroma.configuredFingerprint()).thenReturn(BGE);
 
         indexer.prepareIndexFor(BGE);
+        Mockito.clearInvocations(chroma); // prepareIndexFor test-embeds; only count the file's embedding
         indexer.indexFile(file);
 
         verify(chroma).getEmbeddingModel(BGE);
