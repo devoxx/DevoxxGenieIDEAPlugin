@@ -3,10 +3,10 @@ id: TASK-268
 title: >-
   RAG settings action button fires its action multiple times after repeated
   validations
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-03T13:25:00Z'
-updated_date: '2026-11-03T13:30:00Z'
+updated_date: '2026-11-04T17:56:00Z'
 labels:
   - bug
   - RAG
@@ -32,3 +32,9 @@ ordinal: 13000
 - [ ] #2 The action uses the most recent validation result, not a stale one
 - [ ] #3 A unit test reproduces the duplicate-listener behaviour and passes after the fix
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed without a separate fix. The duplicate-listener bug was in `RAGSettingsComponent.updateActionButtonState()`, but `actionButton` was never added to any panel, so nobody could click it and the bug couldn't happen. The button and its code were removed under TASK-267 with the maintainer's approval. The acceptance criteria are left unchecked because they describe a button that no longer exists. The visible action buttons in `ValidatorsPanel` are created fresh on each refresh, so they don't accumulate listeners.
+<!-- SECTION:FINAL_SUMMARY:END -->

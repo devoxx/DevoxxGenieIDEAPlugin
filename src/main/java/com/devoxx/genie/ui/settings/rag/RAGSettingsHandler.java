@@ -8,7 +8,6 @@ import com.devoxx.genie.service.rag.RagValidatorService;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidationResult;
-import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.service.rag.validator.ValidatorType;
 import com.devoxx.genie.ui.panel.ValidatorsPanel;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -19,7 +18,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.Container;
@@ -32,9 +30,7 @@ public class RAGSettingsHandler implements ActionListener {
     private final JPanel validationPanel;
     private final ChromaDBManager chromaDBManager;
     private final RAGSettingsComponent settingsComponent;
-    private volatile boolean validationInProgress = false;
-    private volatile boolean validationQueued = false;
-    private volatile boolean isInitialValidationDone = false;  // Add this flag
+    private final RagValidationRunner validationRunner;
 
     public RAGSettingsHandler(Project project,
                               JPanel validationPanel,
@@ -43,61 +39,47 @@ public class RAGSettingsHandler implements ActionListener {
         this.validationPanel = validationPanel;
         this.settingsComponent = settingsComponent;
         this.chromaDBManager = ChromaDBManager.getInstance(project);
+        // Validators make network and Docker calls, so they can't run on the EDT.
+        // ModalityState.any(): the Settings dialog is modal, and results must show while it's open.
+        this.validationRunner = new RagValidationRunner(
+                () -> RagValidatorService.getInstance().validate(),
+                task -> ApplicationManager.getApplication().executeOnPooledThread(task),
+                task -> ApplicationManager.getApplication().invokeLater(task, ModalityState.any()),
+                this::showValidationResult,
+                () -> showValidationMessage("Could not check the required RAG services. See the IDE log for details."));
     }
 
+    /** Call on the EDT. Existing rows stay visible until the new result arrives. */
     public void performValidation() {
-        if (!isInitialValidationDone) {
-            isInitialValidationDone = true;
-        } else if (validationInProgress) {
-            validationQueued = true;
-            return;
+        if (validationPanel.getComponentCount() == 0) {
+            showValidationMessage("Checking required RAG services…");
         }
-
-        // ModalityState.any() so this runs even when invoked from background callbacks
-        // while the Settings dialog is open (otherwise the EDT defers it until close).
-        ApplicationManager.getApplication().invokeLater(() -> {
-            try {
-                validationInProgress = true;
-
-                validationPanel.removeAll();
-                validationPanel.setLayout(new BoxLayout(validationPanel, BoxLayout.Y_AXIS));
-
-                ValidationResult result = RagValidatorService.getInstance().validate();
-                ValidatorsPanel statusPanel = new ValidatorsPanel(result.statuses(), this);
-                validationPanel.add(statusPanel);
-                validationPanel.add(Box.createVerticalStrut(5));
-
-                validationPanel.revalidate();
-                validationPanel.repaint();
-
-                settingsComponent.updateValidationStatus();
-            } finally {
-                validationInProgress = false;
-                if (validationQueued) {
-                    validationQueued = false;
-                    performValidation();
-                }
-            }
-        }, ModalityState.any());
+        validationRunner.request();
     }
 
-    public void handleValidationAction(@Nullable ValidatorStatus status) {
-        if (status == null || validationInProgress) {
+    private void showValidationResult(@NotNull ValidationResult result) {
+        if (project.isDisposed()) {
             return;
         }
+        resetValidationPanel();
+        validationPanel.add(new ValidatorsPanel(result.statuses(), this));
+        validationPanel.add(Box.createVerticalStrut(5));
+        validationPanel.revalidate();
+        validationPanel.repaint();
 
-        ValidationActionType action = status.action();
-        if (action == ValidationActionType.OK) {
-            return;
-        }
+        settingsComponent.applyValidationResult(result);
+    }
 
-        validationInProgress = true;
+    private void showValidationMessage(@NotNull String message) {
+        resetValidationPanel();
+        validationPanel.add(new JLabel(message));
+        validationPanel.revalidate();
+        validationPanel.repaint();
+    }
 
-        if (status.validatorType() == ValidatorType.CHROMADB) {
-            handleChromaDBAction(action);
-        } else if (status.validatorType() == ValidatorType.EMBEDDING_MODEL) {
-            handleEmbeddingModelAction(action);
-        }
+    private void resetValidationPanel() {
+        validationPanel.removeAll();
+        validationPanel.setLayout(new BoxLayout(validationPanel, BoxLayout.Y_AXIS));
     }
 
     private void handleEmbeddingModelAction(@NotNull ValidationActionType action) {
@@ -161,8 +143,6 @@ public class RAGSettingsHandler implements ActionListener {
                                 e.getMessage());
                         performValidation();
                     }, ModalityState.any());
-                } finally {
-                    validationInProgress = false;
                 }
             }
         }.queue();
@@ -310,13 +290,8 @@ public class RAGSettingsHandler implements ActionListener {
 
     private void refreshValidationState(String notification) {
         ApplicationManager.getApplication().invokeLater(() -> {
-            try {
-                NotificationUtil.sendNotification(project, notification);
-                performValidation();
-                settingsComponent.updateValidationStatus();
-            } finally {
-                validationInProgress = false; // Reset flag
-            }
+            NotificationUtil.sendNotification(project, notification);
+            performValidation();
         }, ModalityState.any());
     }
 }
