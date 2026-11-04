@@ -47,8 +47,8 @@ Constraint: the Settings dialog is modal, so results posted back to the UI must 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Opening the RAG settings panel does not run any validator on the EDT
-- [ ] #2 With Ollama or ChromaDB unreachable (e.g. connection hanging until timeout), the Settings dialog stays responsive while validation runs
-- [ ] #3 Validation results still render while the modal Settings dialog is open
+- [x] #2 With Ollama or ChromaDB unreachable (e.g. connection hanging until timeout), the Settings dialog stays responsive while validation runs
+- [x] #3 Validation results still render while the modal Settings dialog is open
 - [x] #4 A test (or reproducible manual check documented in the task notes) demonstrates validation no longer executes on the EDT
 <!-- AC:END -->
 
@@ -66,6 +66,8 @@ Manual check: run `python3 -c "import socket,time; s=socket.socket(); s.bind(('1
 Follow-up, not fixed here: deleting a collection in ButtonEditor.getCellEditorValue still calls ChromaDB and Docker on the EDT. Docker can take 30-45 seconds to time out; the dialog stays responsive, but the section shows no result until then.
 
 Correction to the note above: validate() guards with SwingUtilities.isEventDispatchThread() and throws IllegalStateException, not assertIsNonDispatchThread(), which the plugin verifier reports as experimental API. Re-verified: 4002 tests, 0 failures, 22 skipped; verifyPlugin Compatible with IU-253 and IU-261, with no experimental API usages.
+
+2026-11-04: the maintainer checked the fix manually in a running IDE and reported that it looked good, which covers AC #2 and #3.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
@@ -75,9 +77,9 @@ RAG settings validation no longer runs on the EDT. `RagValidationRunner` runs on
 
 Also fixed: `ButtonEditor.safeLoadCollections` no longer calls ChromaDB on the EDT, and `OllamaValidator` has a read timeout so a silent server can't hang it. `RagValidatorService.validate()` throws if called on the EDT. The unreachable action button was removed, which also settles TASK-268.
 
-Verified: 4002 tests, 0 failures, 22 skipped; verifyPlugin Compatible with IU-253 and IU-261.
-
-Not verified: AC #2 and #3 are unchecked because the manual check in the notes hasn't been run in a real IDE. Tests cover the threading and the use of `ModalityState.any()`, not actual responsiveness or rendering.
+Verified: 4002 tests, 0 failures, 22 skipped; verifyPlugin Compatible with IU-253 and IU-261; checked manually in a running IDE by the maintainer.
 
 Known gaps: status rows appear only once every check has finished, a refresh in progress can rebuild the rows and remove a ChromaDB pull's inline progress, and deleting a collection still calls ChromaDB and Docker on the EDT.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1382
 <!-- SECTION:FINAL_SUMMARY:END -->
