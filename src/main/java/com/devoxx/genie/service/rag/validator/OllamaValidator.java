@@ -23,6 +23,8 @@ public class OllamaValidator implements Validator {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(5000);
+            // Without this, a server that accepts the connection and never answers hangs forever.
+            connection.setReadTimeout(5000);
 
             int responseCode = connection.getResponseCode();
             if (responseCode == 200) {

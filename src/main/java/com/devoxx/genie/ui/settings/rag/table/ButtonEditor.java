@@ -6,16 +6,20 @@ import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.table.JBTable;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class ButtonEditor extends DefaultCellEditor {
@@ -28,6 +32,8 @@ public class ButtonEditor extends DefaultCellEditor {
     private final DefaultTableModel tableModel;
     private final transient Project project;
     private final transient ChromaDockerService dockerService;
+    /** Loads overlap when validation refreshes quickly; only the newest may update the table. */
+    private final AtomicInteger latestLoad = new AtomicInteger();
 
     public ButtonEditor(Project project,
                              JBTable collectionsTable,
@@ -107,61 +113,58 @@ public class ButtonEditor extends DefaultCellEditor {
         return super.stopCellEditing();
     }
 
-    private void addCollectionRowSafely(ChromaCollection collection) {
+    /** Calls ChromaDB, so this runs off the EDT. */
+    private @NotNull List<Object[]> loadCollectionRows() {
+        if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
+            return List.of();
+        }
+        ChromaDBManager chroma = ChromaDBManager.getInstance(project);
+        List<Object[]> rows = new ArrayList<>();
         try {
-            int totalDocs = ChromaDBManager.getInstance(project).countDocuments(collection.id());
-            tableModel.addRow(new Object[]{
-                    collection.name(),
-                    totalDocs,
-                    DELETE_LABEL
-            });
+            for (ChromaCollection collection : chroma.listCollections()) {
+                rows.add(new Object[]{collection.name(), countDocuments(chroma, collection), DELETE_LABEL});
+            }
         } catch (IOException e) {
-            // If we can't count documents for a specific collection, still add it with 0 count
-            tableModel.addRow(new Object[]{
-                    collection.name(),
-                    0,
-                    DELETE_LABEL
-            });
+            // ChromaDB unreachable is the common case here (container not running, wrong
+            // port, etc.) — the validator panel ("ChromaDB is not running" + Start button)
+            // already tells the user this. Surfacing it again as a balloon would just be
+            // noise, and {@code safeLoadCollections} is called on settings-panel open AND
+            // after each indexing run, so the duplicate was firing every time.
+            log.debug("Failed to load Chroma collections (panel will show validator error): {}", e.getMessage());
+            return List.of();
+        }
+        return rows;
+    }
+
+    /** If a collection's documents can't be counted, it's still listed, with a count of 0. */
+    private static int countDocuments(@NotNull ChromaDBManager chroma, @NotNull ChromaCollection collection) {
+        try {
+            return chroma.countDocuments(collection.id());
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    private void showCollectionRows(@NotNull List<Object[]> rows) {
+        tableModel.setRowCount(0);
+        rows.forEach(tableModel::addRow);
+        tableModel.fireTableDataChanged();
+        if (collectionsTable != null) {
+            collectionsTable.revalidate();
+            collectionsTable.repaint();
         }
     }
 
     public void safeLoadCollections() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            try {
-                // Clear table first
-                tableModel.setRowCount(0);
-
-                // Check if RAG is enabled in settings
-                if (Boolean.FALSE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
-                    // Don't try to load collections if RAG is disabled
-                    tableModel.fireTableDataChanged();
-                    return;
+        int load = latestLoad.incrementAndGet();
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            List<Object[]> rows = loadCollectionRows();
+            // ModalityState.any(): the Settings dialog is modal, and the table must update while it's open.
+            ApplicationManager.getApplication().invokeLater(() -> {
+                if (load == latestLoad.get()) {
+                    showCollectionRows(rows);
                 }
-
-                // Load collections
-                List<ChromaCollection> collections = ChromaDBManager.getInstance(project).listCollections();
-
-                // Add rows safely
-                for (ChromaCollection collection : collections) {
-                    addCollectionRowSafely(collection);
-                }
-
-                // Notify table of data change
-                tableModel.fireTableDataChanged();
-
-                // Force the table to repaint
-                if (collectionsTable != null) {
-                    collectionsTable.revalidate();
-                    collectionsTable.repaint();
-                }
-            } catch (IOException e) {
-                // ChromaDB unreachable is the common case here (container not running, wrong
-                // port, etc.) — the validator panel ("ChromaDB is not running" + Start button)
-                // already tells the user this. Surfacing it again as a balloon would just be
-                // noise, and {@code safeLoadCollections} is called on settings-panel open AND
-                // after each indexing run, so the duplicate was firing every time.
-                log.debug("Failed to load Chroma collections (panel will show validator error): {}", e.getMessage());
-            }
+            }, ModalityState.any());
         });
     }
 }

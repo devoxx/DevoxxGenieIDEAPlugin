@@ -7,6 +7,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.SwingUtilities;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +19,11 @@ public final class RagValidatorService {
         return ApplicationManager.getApplication().getService(RagValidatorService.class);
     }
 
+    /** Makes network and Docker calls, so never call it on the EDT. */
     public ValidationResult validate() {
+        if (SwingUtilities.isEventDispatchThread()) {
+            throw new IllegalStateException("RAG validation must not run on the EDT");
+        }
         List<ValidatorStatus> statuses = new ArrayList<>();
         List<Validator> validators = createValidators();
 

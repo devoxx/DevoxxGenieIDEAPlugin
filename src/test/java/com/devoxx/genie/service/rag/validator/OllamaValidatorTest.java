@@ -105,4 +105,26 @@ class OllamaValidatorTest {
     void getAction_returnsDefaultOK() {
         assertThat(validator.getAction()).isEqualTo(ValidationActionType.OK);
     }
+
+    @Test
+    void serverThatAcceptsButNeverAnswersFailsWithinTheTimeout() throws Exception {
+        // The kernel accepts connections on the backlog, so nothing ever replies. Closing the
+        // socket after 12 seconds keeps a missing read timeout from hanging the test forever.
+        try (java.net.ServerSocket silentServer = new java.net.ServerSocket(0);
+             var closer = java.util.concurrent.Executors.newSingleThreadScheduledExecutor()) {
+            closer.schedule(() -> {
+                silentServer.close();
+                return null;
+            }, 12, java.util.concurrent.TimeUnit.SECONDS);
+            when(stateService.getOllamaModelUrl()).thenReturn("http://127.0.0.1:" + silentServer.getLocalPort());
+
+            long start = System.nanoTime();
+            boolean valid = validator.isValid();
+            long seconds = java.util.concurrent.TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start);
+
+            assertThat(valid).isFalse();
+            assertThat(seconds).isLessThan(9);
+            closer.shutdownNow();
+        }
+    }
 }

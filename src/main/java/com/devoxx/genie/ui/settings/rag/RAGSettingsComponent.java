@@ -3,7 +3,6 @@ package com.devoxx.genie.ui.settings.rag;
 import com.devoxx.genie.service.rag.ProjectIndexerService;
 import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.service.rag.SearchResult;
-import com.devoxx.genie.service.rag.RagValidatorService;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.ModalityState;
@@ -58,7 +57,6 @@ import java.awt.*;
 import java.util.List;
 import java.util.Objects;
 
-import static com.intellij.openapi.application.ApplicationManager.getApplication;
 
 public class RAGSettingsComponent extends AbstractSettingsComponent {
 
@@ -118,7 +116,6 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     private final Project project;
     private JButton startIndexButton;
-    private final JButton actionButton = new JButton();
     private JBTable collectionsTable;
     private DefaultTableModel tableModel;
     private final JPanel validationPanel;
@@ -424,7 +421,6 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void addValidationSection(JPanel panel, GridBagConstraints gbc) {
         addSection(panel, gbc, "Required RAG Services");
         validationHandler.performValidation();
-        updateActionButtonState();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         gbc.weighty = 0;
@@ -581,60 +577,12 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         progressLabel.setVisible(!state);
     }
 
-    private void updateActionButtonState() {
-        getApplication().invokeLater(() -> {
-            ValidationResult result = RagValidatorService.getInstance().validate();
-            ActionButtonState actionState = determineActionState(result);
-            actionButton.setVisible(actionState != null);
-            if (actionState != null) {
-                actionButton.setText(actionState.getText());
-                actionButton.addActionListener(e -> {
-                    validationHandler.handleValidationAction(
-                            Objects.requireNonNull(result.statuses()
-                                    .stream()
-                                    .filter(status -> !status.isValid() &&
-                                            status.action() != ValidationActionType.OK)
-                                    .findFirst()
-                                    .orElse(null)));
-                    validationHandler.performValidation();
-                });
-            }
-            actionButton.setEnabled(enableIndexerCheckBox.isSelected());
-        });
-    }
-
-    private @Nullable ActionButtonState determineActionState(@NotNull ValidationResult result) {
-        for (ValidatorStatus status : result.statuses()) {
-            if (!status.isValid()) {
-                switch (status.action()) {
-                    case PULL_CHROMA_DB:
-                        return ActionButtonState.PULL_CHROMA_DB;
-                    case START_CHROMA_DB:
-                        return ActionButtonState.START_CHROMA_DB;
-                    case OK:
-                        break;
-                    default:
-                        return ActionButtonState.START_INDEXING;
-                }
-            }
-        }
-        return null;
-    }
-
-    public void updateValidationStatus() {
-        updateStartIndexButtonVisibility();
-        updateActionButtonState();
+    /** Called on the EDT with the result of one validation run. */
+    void applyValidationResult(@NotNull ValidationResult result) {
+        startIndexButton.setVisible(enableIndexerCheckBox.isSelected() && canStartIndexing(result.statuses()));
+        panel.revalidate();
+        panel.repaint();
         buttonEditor.safeLoadCollections();
-    }
-
-    private void updateStartIndexButtonVisibility() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-            ValidationResult result = RagValidatorService.getInstance().validate();
-            boolean shouldShowButton = enableIndexerCheckBox.isSelected() && canStartIndexing(result.statuses());
-            startIndexButton.setVisible(shouldShowButton);
-            panel.revalidate();
-            panel.repaint();
-        });
     }
 
     /** A missing embedding model doesn't block indexing: Start Indexing offers to download it. */
@@ -656,7 +604,6 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         outputDimensionSpinner.setEnabled(enabled);
         maxResultsSpinner.setEnabled(enabled);
         minScoreField.setEnabled(enabled);
-        actionButton.setEnabled(enabled);
         collectionsTable.setEnabled(enabled);
         queryExpansionCheckBox.setEnabled(enabled);
         // Variants spinner is doubly-gated: master switch + the expansion sub-switch.
