@@ -67,7 +67,7 @@ class ChunkingCharacterizationTest {
         recorder = new RecordingEmbeddingModel();
         when(chroma.getEmbeddingStore()).thenReturn(new InMemoryEmbeddingStore<>());
         when(chroma.getEmbeddingModel(any())).thenReturn(recorder);
-        when(chroma.configuredFingerprint()).thenReturn(EmbeddingFingerprint.DEFAULT);
+        when(chroma.configuredFingerprint()).thenReturn(EmbeddingFingerprint.LEGACY);
         Mockito.doNothing().when(chroma).init(any());
     }
 

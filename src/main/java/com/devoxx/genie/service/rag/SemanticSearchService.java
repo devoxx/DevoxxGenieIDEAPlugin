@@ -1,12 +1,13 @@
 package com.devoxx.genie.service.rag;
 
 import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
+import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
+import com.devoxx.genie.service.rag.embedding.ProfiledEmbedder;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.rag.query.Query;
 import dev.langchain4j.rag.query.transformer.ExpandingQueryTransformer;
@@ -66,19 +67,22 @@ public final class SemanticSearchService {
      */
     public @NotNull List<SearchResult> search(Project project, String query, @Nullable ChatModel chatModel) {
         embeddingService.init(project);
-        // Embed the query with the model the index was built with, not necessarily the one
-        // in settings: after a model change the old index stays searchable until re-indexed.
-        EmbeddingModel queryModel = embeddingService.getEmbeddingModel(embeddingService.indexFingerprint(project));
+        // Embed the query with the setup the index was built with, not necessarily the one in
+        // settings: after a change the old index stays searchable until re-indexed.
+        EmbeddingFingerprint index = embeddingService.indexFingerprint(project);
+        ProfiledEmbedder queryEmbedder = new ProfiledEmbedder(
+                embeddingService.getEmbeddingModel(index),
+                index.queryProfile(embeddingService.queryPrefix(project)));
 
         if (chatModel != null && Boolean.TRUE.equals(stateService.getRagQueryExpansionEnabled())) {
-            return searchWithExpansion(query, chatModel, queryModel);
+            return searchWithExpansion(query, chatModel, queryEmbedder);
         }
-        return singleQuerySearch(query, queryModel);
+        return singleQuerySearch(query, queryEmbedder);
     }
 
     private @NotNull List<SearchResult> searchWithExpansion(String query,
                                                            @NotNull ChatModel chatModel,
-                                                           @NotNull EmbeddingModel queryModel) {
+                                                           @NotNull ProfiledEmbedder queryEmbedder) {
         int n = stateService.getRagQueryExpansionN() == null ? 3 : stateService.getRagQueryExpansionN();
         LinkedHashSet<String> variants = new LinkedHashSet<>();
         variants.add(query); // keep the original as the unexpanded baseline
@@ -93,12 +97,12 @@ public final class SemanticSearchService {
         }
         return QueryExpansionFuser.expandAndFuse(
                 variants,
-                q -> singleQuerySearch(q, queryModel),
+                q -> singleQuerySearch(q, queryEmbedder),
                 stateService.getIndexerMaxResults());
     }
 
-    private @NotNull List<SearchResult> singleQuerySearch(@NotNull String query, @NotNull EmbeddingModel queryModel) {
-        Embedding queryEmbedding = queryModel.embed(query).content();
+    private @NotNull List<SearchResult> singleQuerySearch(@NotNull String query, @NotNull ProfiledEmbedder queryEmbedder) {
+        Embedding queryEmbedding = queryEmbedder.embedQuery(query);
         EmbeddingSearchRequest request = EmbeddingSearchRequest.builder()
                 .queryEmbedding(queryEmbedding)
                 .minScore(stateService.getIndexerMinScore())

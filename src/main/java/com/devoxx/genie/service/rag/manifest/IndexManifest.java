@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.rag.manifest;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -34,7 +35,12 @@ public interface IndexManifest {
      * Record that {@code file} has been indexed with the embedding setup {@code fingerprint};
      * computes and stores its current content hash.
      */
-    void markIndexed(@NotNull Path file, int segmentCount, @NotNull String fingerprint);
+    default void markIndexed(@NotNull Path file, int segmentCount, @NotNull String fingerprint) {
+        markIndexed(file, segmentCount, fingerprint, null);
+    }
+
+    /** As above, also recording the query prefix that goes with the index. */
+    void markIndexed(@NotNull Path file, int segmentCount, @NotNull String fingerprint, @Nullable String queryPrefix);
 
     /** Drop {@code file} from the manifest (e.g. file deleted). */
     void markRemoved(@NotNull Path file);
@@ -49,6 +55,14 @@ public interface IndexManifest {
      * after a model change until the user rebuilds the index.
      */
     @NotNull Optional<String> indexFingerprint();
+
+    /**
+     * The query prefix recorded with the index; empty string when none was recorded, as with an
+     * index built before prefixes existed.
+     */
+    default @NotNull String indexQueryPrefix() {
+        return "";
+    }
 
     /** Persist any in-memory state. No-op for in-memory implementations. */
     default void flush() {}

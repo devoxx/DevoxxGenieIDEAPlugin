@@ -89,7 +89,7 @@ class EmbeddingModelInstallerTest {
         }, statuses::add);
     }
 
-    private static final class FakeOllama implements EmbeddingModelInstaller.Ollama {
+    private static final class FakeOllama implements EmbeddingModelInstaller.ModelSource {
         private final List<String> installed;
         private final List<String> pulled = new ArrayList<>();
         private IOException listFailure;

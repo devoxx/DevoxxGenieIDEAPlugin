@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.rag;
 
+import com.devoxx.genie.service.rag.embedding.EmbeddingProvider;
 import com.devoxx.genie.service.rag.validator.ValidationActionType;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.service.rag.validator.ValidatorType;
@@ -39,6 +40,14 @@ class StartIndexingAvailabilityTest {
                 .contains("embeddinggemma")
                 .contains("Download")
                 .contains("several minutes");
+    }
+
+    @Test
+    void blankModelMessageNamesTheProviderAndSaysTheIndexIsSafe() {
+        assertThat(EmbeddingModelDownloadPrompt.missingModelMessage(EmbeddingProvider.LLAMA_CPP))
+                .contains("llama.cpp")
+                .contains("not changed")
+                .doesNotContain("nomic");
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.devoxx.genie.service.rag.validator;
 public enum ValidatorType {
     OLLAMA("ollama"),
     EMBEDDING_MODEL("embedding model"),
+    EMBEDDING_PROVIDER("embedding provider"),
     DOCKER("docker"),
     CHROMADB("chromadb");
 

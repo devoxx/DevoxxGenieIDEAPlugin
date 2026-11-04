@@ -9,14 +9,14 @@ class EmbeddingFingerprintTest {
 
     @Test
     void defaultIsOllamaNomicEmbedText() {
-        assertThat(EmbeddingFingerprint.DEFAULT.id()).isEqualTo("ollama:nomic-embed-text");
+        assertThat(EmbeddingFingerprint.LEGACY.id()).isEqualTo("ollama:nomic-embed-text");
         assertThat(EmbeddingFingerprint.DEFAULT_MODEL_NAME).isEqualTo("nomic-embed-text");
     }
 
     @Test
     void blankOrNullModelNameMeansTheDefault() {
-        assertThat(EmbeddingFingerprint.ollama(null)).isEqualTo(EmbeddingFingerprint.DEFAULT);
-        assertThat(EmbeddingFingerprint.ollama("  ")).isEqualTo(EmbeddingFingerprint.DEFAULT);
+        assertThat(EmbeddingFingerprint.ollama(null)).isEqualTo(EmbeddingFingerprint.LEGACY);
+        assertThat(EmbeddingFingerprint.ollama("  ")).isEqualTo(EmbeddingFingerprint.LEGACY);
     }
 
     @Test
@@ -30,7 +30,7 @@ class EmbeddingFingerprintTest {
     @Test
     void otherTagsAreDifferentModels() {
         assertThat(EmbeddingFingerprint.ollama("nomic-embed-text:v1.5"))
-                .isNotEqualTo(EmbeddingFingerprint.DEFAULT);
+                .isNotEqualTo(EmbeddingFingerprint.LEGACY);
     }
 
     @Test
@@ -45,8 +45,8 @@ class EmbeddingFingerprintTest {
     void missingFingerprintIsTheLegacyDefault() {
         // Manifest entries written before TASK-212 carry no fingerprint; they were all built
         // with nomic-embed-text, so existing installs must not be forced to re-index.
-        assertThat(EmbeddingFingerprint.parse(null)).isEqualTo(EmbeddingFingerprint.DEFAULT);
-        assertThat(EmbeddingFingerprint.parse("")).isEqualTo(EmbeddingFingerprint.DEFAULT);
+        assertThat(EmbeddingFingerprint.parse(null)).isEqualTo(EmbeddingFingerprint.LEGACY);
+        assertThat(EmbeddingFingerprint.parse("")).isEqualTo(EmbeddingFingerprint.LEGACY);
     }
 
     @Test
