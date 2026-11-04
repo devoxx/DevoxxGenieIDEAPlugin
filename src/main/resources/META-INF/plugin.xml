@@ -68,6 +68,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+                <h2>v1.17.0</h2>
+        <UL>
+                    <LI>feat(rag): <b>embed through your enabled LLM providers</b> (Ollama, Custom OpenAI, OpenAI, LM Studio, llama.cpp), with query/document prefixes and output dimension. Each index stays bound to the setup that built it; existing nomic indexes get a one-time Re-index notice (#1381)</LI>
+                    <LI>feat(settings): run a <b>test query</b> on the RAG settings page and a <b>test search</b> on the web search settings page (#1326)</LI>
+                    <LI>fix(rag): RAG settings validation runs off the EDT, so a slow or unreachable service no longer freezes the IDE (#1382)</LI>
+                    <LI>fix(settings): the settings page shows the installed plugin version instead of the previous release's (#1377)</LI>
+                    <LI>fix(ui): switching chat tabs no longer jumps to an earlier answer and scrolls back down (#1371)</LI>
+                </UL>
                 <h2>v1.16.0</h2>
         <UL>
                     <LI>feat(agent): <b>run_script (experimental)</b>: the agent can batch many tool calls into one sandboxed JavaScript step and return only the filtered result, saving round trips and tokens. Opt in under Agent → Built-in Tools (#1353)</LI>

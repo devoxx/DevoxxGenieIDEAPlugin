@@ -1,5 +1,35 @@
 # Changelog
 
+## v1.17.0 - 2026-11-04
+
+A minor release focused on RAG: **embeddings can now run through your enabled LLM providers**, with query/document prefixes and an output dimension, and each index stays bound to the embedding setup that built it. The RAG settings page no longer freezes the IDE while validating, and the RAG and web search settings pages can now run a test query.
+
+### Added
+- feat(rag): **embed through enabled LLM providers, with prefixes and output dimension**. A new dropdown above the embedding model offers Ollama, Custom OpenAI, OpenAI, LM Studio and llama.cpp, using the URLs and keys from the LLM settings, and warns when code would leave the machine. New query prefix, document prefix and output dimension fields are available; `nomic-embed-text` gets its prefixes automatically, and prefixes are never stored or shown to the LLM. The index is now bound to provider, model, dimension and document prefix: search and the file watcher keep using the index's setup until a full index runs, and a full index test-embeds before wiping anything. Chunks that fail partway through a run no longer count as indexed. Existing nomic indexes get one **Re-index now** notice per project; nothing re-indexes by itself and search keeps working until then. Measured on this repository, the new nomic prefix default ranks the answer first more often (25% vs 14%) and finds more in the top 10 (82% vs 71%), but finds fewer in the top 5 (54% vs 64%). Truncating to 256 dimensions drops the top 10 to 61%. LM Studio, llama.cpp and OpenAI embedding have not yet been run against real servers (#1381)
+- feat(settings): **test query on the RAG page and test search on the web search page**. The RAG settings page searches the project's index the way a prompt does and lists the best matches with their scores; the web search settings page runs a search with the configured provider (Tavily or Google) using the credentials in the form. Both run in the background and show results or errors on the settings page (#1326)
+- feat(rag): `./gradlew ragBenchmark` (also `RagCli benchmark`) measures retrieval quality: it indexes this repository in memory with the plugin's own chunker, asks 28 checked-in questions with known answer files, and reports recall@1/5/10, MRR and per-question pass/fail, with optional JSON output. It never touches ChromaDB (#1373)
+
+### Fixed
+- fix(rag): **RAG settings validation no longer freezes the IDE**. Each refresh ran all validators three times on the EDT, and opening the panel started two refreshes, so a slow or unreachable service froze the IDE. Validation now runs one at a time on a pooled thread and updates the status rows and Start Indexing from a single result. The indexed projects table no longer calls ChromaDB on the EDT, and `OllamaValidator` has a 5 s read timeout, so a server that accepts the connection and never answers can't hang it. Status rows appear only once every check has finished, so a slow service (Docker can take 30-45 s to time out) holds up the rest (#1382)
+- fix(settings): the settings page now shows the installed plugin version. It read the bundled `application.properties`, which the build packages before rewriting it, so every release showed the previous version. The version now comes from the installed plugin descriptor, falling back to `application.properties` only when the descriptor is unavailable (#1374, #1377)
+- fix(ui): switching chat tabs no longer jumps to an earlier answer and scrolls back down (#1370, #1371)
+
+### Changed
+- refactor(rag): the `RagCli` and `WebSearchCli` developer tools move to the test sources, so they no longer ship inside the plugin; the `ragQuery` and `webSearch` Gradle tasks now use the test runtime classpath (#1326)
+- refactor(rag): extract the IDE-independent `RagChunker`, with indexer behaviour pinned by a characterisation test, plus `ProjectScanDefaults`, `EmbeddingProfile` and `ProfiledEmbedder` (#1373)
+- chore(task-207): close the GenieBuilder analytics dashboard task; the implementation lives in devoxx/GenieBuilder#336 (#1006)
+
+### Dependencies
+- build(deps): upgrade AWS SDK BOM 2.57.4 → 2.57.8, sqlite-jdbc 3.53.4.0 → 3.54.1.0 and commonmark 0.31.0 → 0.32.0 (#1375)
+
+### Documentation
+- docs(rag): update the RAG docs for configurable embeddings and add a blog post with screenshots (#1381)
+
+### Contributors
+- @MrLesk
+- @omarmahamid
+- @stephanj
+
 ## v1.16.0 - 2026-11-03
 
 A minor release with one experimental headline feature and one long-session fix: **`run_script` ("code mode")** lets the agent batch many tool calls into a single sandboxed JavaScript step, and **"Add Project" context is now sent once, in the system prompt**, instead of being copied into every user message.
