@@ -20,7 +20,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.model.embedding.EmbeddingModel;
+import com.devoxx.genie.service.rag.embedding.ProfiledEmbedder;
 import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -315,7 +315,9 @@ public final class ProjectIndexerService {
      */
     boolean prepareIndexFor(@NotNull EmbeddingFingerprint target) {
         try {
-            chromaEmbeddingService.getEmbeddingModel(target).embed("embedding model check");
+            // Through the profile, so an output dimension the model can't provide fails here too.
+            new ProfiledEmbedder(chromaEmbeddingService.getEmbeddingModel(target), target.documentProfile())
+                    .embedDocument("embedding model check");
         } catch (Exception e) {
             throw new IllegalStateException("Embedding model " + target.modelName()
                     + " cannot create embeddings (" + e.getMessage() + "). The existing RAG index was not changed.", e);
@@ -492,7 +494,7 @@ public final class ProjectIndexerService {
             }
             int segmentCount = processPath(filePath, fingerprint);
             if (segmentCount > 0) {
-                manifest.markIndexed(filePath, segmentCount, fingerprint.id());
+                manifest.markIndexed(filePath, segmentCount, fingerprint.id(), queryPrefixFor(fingerprint));
                 log.debug("File successfully indexed ({} segments): {}", segmentCount, filePath);
             }
         } catch (Exception e) {
@@ -500,21 +502,35 @@ public final class ProjectIndexerService {
         }
     }
 
+    /** The query prefix to record with a file: the settings' for a current index, else the index's. */
+    private @Nullable String queryPrefixFor(@NotNull EmbeddingFingerprint fingerprint) {
+        return fingerprint.equals(chromaEmbeddingService.configuredFingerprint())
+                ? chromaEmbeddingService.configuredQueryPrefix()
+                : manifest.indexQueryPrefix();
+    }
+
     /**
      * Embed and store a batch of segments in one shot. The previous implementation made
      * one HTTP call to Ollama per segment, turning a 200-chunk file into 200 sequential
      * roundtrips. Embedding in batches and using {@code addAll} on the store collapses
      * that to {@code ceil(N / EMBEDDING_BATCH_SIZE)} calls and one store write per batch.
+     *
+     * <p>The document prefix only goes to the model: the stored segments keep their original text.
+     *
+     * @return how many segments were actually stored, so failures can't be counted as indexed
      */
-    private void storeSegments(@NotNull List<TextSegment> segments, @NotNull EmbeddingFingerprint fingerprint) {
-        if (segments.isEmpty()) return;
-        EmbeddingModel embeddingModel = chromaEmbeddingService.getEmbeddingModel(fingerprint);
+    private int storeSegments(@NotNull List<TextSegment> segments, @NotNull EmbeddingFingerprint fingerprint) {
+        if (segments.isEmpty()) return 0;
+        ProfiledEmbedder embedder = new ProfiledEmbedder(
+                chromaEmbeddingService.getEmbeddingModel(fingerprint), fingerprint.documentProfile());
+        int stored = 0;
         for (int from = 0; from < segments.size(); from += EMBEDDING_BATCH_SIZE) {
             int to = Math.min(from + EMBEDDING_BATCH_SIZE, segments.size());
             List<TextSegment> batch = segments.subList(from, to);
             try {
-                List<Embedding> embeddings = embeddingModel.embedAll(batch).content();
+                List<Embedding> embeddings = embedder.embedDocuments(batch);
                 chromaEmbeddingService.getEmbeddingStore().addAll(embeddings, batch);
+                stored += batch.size();
             } catch (Exception batchEx) {
                 // Some embedding backends choke on a single bad segment and reject the whole
                 // batch. Fall back to per-segment so one malformed chunk doesn't poison the
@@ -522,14 +538,16 @@ public final class ProjectIndexerService {
                 log.warn("Batch embed failed ({}); falling back to per-segment for this batch", batchEx.getMessage());
                 for (TextSegment segment : batch) {
                     try {
-                        Embedding embedding = embeddingModel.embed(segment.text()).content();
+                        Embedding embedding = embedder.embedDocument(segment.text());
                         chromaEmbeddingService.getEmbeddingStore().add(embedding, segment);
+                        stored++;
                     } catch (Exception singleEx) {
                         log.warn("Skipping segment that failed to embed: {}", singleEx.getMessage());
                     }
                 }
             }
         }
+        return stored;
     }
 
     /** Returns the number of segments stored for this file (0 if blank / unreadable). */
@@ -558,8 +576,7 @@ public final class ProjectIndexerService {
                 segments.add(new TextSegment(chunk.text(), metadata));
             }
 
-            storeSegments(segments, fingerprint);
-            return segments.size();
+            return storeSegments(segments, fingerprint);
         } catch (IOException e) {
             log.warn("Error processing file: {}", path);
             return 0;

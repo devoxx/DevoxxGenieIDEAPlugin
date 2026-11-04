@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.rag;
 
+import com.devoxx.genie.service.chromadb.ChromaEmbeddingService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
@@ -55,7 +56,7 @@ public class RAGSettingsConfigurable implements Configurable {
         boolean isModified = false;
         isModified |= ragSettingsComponent.getEnableIndexerCheckBox().isSelected() != stateService.getRagEnabled();
         isModified |= ragSettingsComponent.getPortIndexer().getNumber() != stateService.getIndexerPort();
-        isModified |= embeddingModelChanged(stateService);
+        isModified |= ragSettingsComponent.isEmbeddingSettingsModified();
         isModified |= ragSettingsComponent.getMaxResultsSpinner().getNumber() != stateService.getIndexerMaxResults();
         isModified |= ragSettingsComponent.getMinScoreField().getValue() != stateService.getIndexerMinScore();
         isModified |= ragSettingsComponent.getQueryExpansionCheckBox().isSelected()
@@ -80,8 +81,10 @@ public class RAGSettingsConfigurable implements Configurable {
 
         stateService.setRagEnabled(ragSettingsComponent.getEnableIndexerCheckBox().isSelected());
         stateService.setIndexerPort(ragSettingsComponent.getPortIndexer().getNumber());
-        boolean modelChanged = embeddingModelChanged(stateService);
-        stateService.setRagEmbeddingModelName(ragSettingsComponent.getEmbeddingModelName());
+        ChromaEmbeddingService embeddingService = ChromaEmbeddingService.getInstance();
+        EmbeddingFingerprint previousSetup = embeddingService.configuredFingerprint();
+        ragSettingsComponent.applyEmbeddingSettings();
+        boolean setupChanged = !previousSetup.equals(embeddingService.configuredFingerprint());
         stateService.setIndexerMinScore((Double) ragSettingsComponent.getMinScoreField().getValue());
         stateService.setIndexerMaxResults(ragSettingsComponent.getMaxResultsSpinner().getNumber());
         stateService.setRagQueryExpansionEnabled(ragSettingsComponent.getQueryExpansionCheckBox().isSelected());
@@ -93,9 +96,10 @@ public class RAGSettingsConfigurable implements Configurable {
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
 
         // Never re-index silently: offer it. The check runs off the EDT and only notifies
-        // when the project's existing index was built with a different model.
-        if (modelChanged && newValue) {
+        // when the project's existing index was built with a different setup.
+        if (setupChanged && newValue) {
             RagIndexStaleNotifier.notifyIfStale(project);
+            ragSettingsComponent.refreshValidation();
         }
 
         if (oldValue != newValue) {
@@ -103,12 +107,6 @@ public class RAGSettingsConfigurable implements Configurable {
                     .syncPublisher(AppTopics.RAG_STATE_TOPIC)
                     .onRAGStateChanged(newValue);
         }
-    }
-
-    /** Compares normalised names, so "nomic-embed-text:latest" vs blank vs the default is no change. */
-    private boolean embeddingModelChanged(@NotNull DevoxxGenieStateService stateService) {
-        return !EmbeddingFingerprint.ollama(ragSettingsComponent.getEmbeddingModelName())
-                .equals(EmbeddingFingerprint.ollama(stateService.getRagEmbeddingModelName()));
     }
 
     /**
@@ -119,7 +117,7 @@ public class RAGSettingsConfigurable implements Configurable {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
         ragSettingsComponent.getEnableIndexerCheckBox().setSelected(stateService.getRagEnabled());
         ragSettingsComponent.getPortIndexer().setNumber(stateService.getIndexerPort());
-        ragSettingsComponent.setEmbeddingModelName(stateService.getRagEmbeddingModelName());
+        ragSettingsComponent.resetEmbeddingSettings();
         ragSettingsComponent.getMinScoreField().setValue(stateService.getIndexerMinScore());
         ragSettingsComponent.getMaxResultsSpinner().setNumber(stateService.getIndexerMaxResults());
         ragSettingsComponent.getQueryExpansionCheckBox().setSelected(

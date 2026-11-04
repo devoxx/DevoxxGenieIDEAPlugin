@@ -155,8 +155,16 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Integer indexerPort = 8000;
     private Integer indexerMaxResults = 10;
     private Double indexerMinScore = 0.7;
-    /** Ollama model used for RAG embeddings (TASK-212); blank means the default, nomic-embed-text. */
+    /** {@link com.devoxx.genie.service.rag.embedding.EmbeddingProvider#id()} used for RAG embeddings. */
+    private String ragEmbeddingProvider = com.devoxx.genie.service.rag.embedding.EmbeddingProvider.OLLAMA.id();
+    /** Model used for RAG embeddings (TASK-212); blank means the default, nomic-embed-text. */
     private String ragEmbeddingModelName = EmbeddingFingerprint.DEFAULT_MODEL_NAME;
+    /** Null follows the model's default prefix; "" means no prefix. See EmbeddingPrefixes. */
+    private String ragQueryPrefix;
+    /** Null follows the model's default prefix; "" means no prefix. See EmbeddingPrefixes. */
+    private String ragDocumentPrefix;
+    /** Truncate embeddings to this many values; null or 0 keeps the model's own size. */
+    private Integer ragOutputDimension;
 
     // Local LLM URL fields
     private String ollamaModelUrl = OLLAMA_MODEL_URL;
