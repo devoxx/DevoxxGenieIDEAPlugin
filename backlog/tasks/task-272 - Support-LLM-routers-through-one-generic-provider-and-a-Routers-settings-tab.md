@@ -1,9 +1,11 @@
 ---
 id: TASK-272
 title: Support LLM routers through one generic provider and a Routers settings tab
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - Claude
 created_date: '2026-11-05T06:39:00Z'
+updated_date: '2026-11-05T10:45:00Z'
 labels: []
 dependencies: []
 references:
@@ -13,6 +15,88 @@ references:
   - https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1291
 documentation:
   - docs/superpowers/specs/2026-11-05-generic-llm-routers-design.md
+modified_files:
+  - AGENTS.md
+  - CLAUDE.md
+  - README.md
+  - docusaurus/docs/features/overview.md
+  - docusaurus/docs/getting-started/faq.md
+  - docusaurus/docs/getting-started/quick-start-cloud.md
+  - docusaurus/docs/getting-started/why-devoxxgenie.md
+  - docusaurus/docs/llm-providers/cloud-models.md
+  - docusaurus/docs/llm-providers/overview.md
+  - src/main/java/com/devoxx/genie/chatmodel/ChatModelFactoryProvider.java
+  - >-
+    src/main/java/com/devoxx/genie/chatmodel/cloud/openrouter/OpenRouterChatModelFactory.java
+  - >-
+    src/main/java/com/devoxx/genie/chatmodel/cloud/openrouter/OpenRouterService.java
+  - src/main/java/com/devoxx/genie/chatmodel/cloud/router/CatalogFields.java
+  - >-
+    src/main/java/com/devoxx/genie/chatmodel/cloud/router/RouterCatalogClient.java
+  - >-
+    src/main/java/com/devoxx/genie/chatmodel/cloud/router/RouterCatalogParser.java
+  - >-
+    src/main/java/com/devoxx/genie/chatmodel/cloud/router/RouterChatModelFactory.java
+  - src/main/java/com/devoxx/genie/chatmodel/cloud/router/RouterDefinition.java
+  - src/main/java/com/devoxx/genie/chatmodel/cloud/router/RouterRegistry.java
+  - src/main/java/com/devoxx/genie/controller/ProjectContextController.java
+  - src/main/java/com/devoxx/genie/model/enumarations/ModelProvider.java
+  - src/main/java/com/devoxx/genie/model/openrouter/Data.java
+  - src/main/java/com/devoxx/genie/model/openrouter/Pricing.java
+  - src/main/java/com/devoxx/genie/model/openrouter/ResponseDTO.java
+  - src/main/java/com/devoxx/genie/model/openrouter/TopProvider.java
+  - src/main/java/com/devoxx/genie/service/DevoxxGenieSettingsService.java
+  - src/main/java/com/devoxx/genie/service/LLMProviderService.java
+  - src/main/java/com/devoxx/genie/service/analytics/ProviderType.java
+  - src/main/java/com/devoxx/genie/service/credentials/CredentialKey.java
+  - src/main/java/com/devoxx/genie/service/credentials/CredentialService.java
+  - >-
+    src/main/java/com/devoxx/genie/service/credentials/PasswordSafeCredentialService.java
+  - src/main/java/com/devoxx/genie/service/models/LLMModelRegistryService.java
+  - src/main/java/com/devoxx/genie/ui/panel/LlmProviderPanel.java
+  - src/main/java/com/devoxx/genie/ui/renderer/ModelInfoRenderer.java
+  - src/main/java/com/devoxx/genie/ui/settings/DevoxxGenieStateService.java
+  - src/main/java/com/devoxx/genie/ui/settings/ProviderEnabledResolver.java
+  - src/main/java/com/devoxx/genie/ui/settings/agent/AgentSettingsComponent.java
+  - >-
+    src/main/java/com/devoxx/genie/ui/settings/agent/AgentSettingsConfigurable.java
+  - src/main/java/com/devoxx/genie/ui/settings/agent/ModelComboLoader.java
+  - src/main/java/com/devoxx/genie/ui/settings/llm/LLMProvidersComponent.java
+  - src/main/java/com/devoxx/genie/ui/settings/llm/LLMProvidersConfigurable.java
+  - src/main/java/com/devoxx/genie/util/DefaultLLMSettingsUtil.java
+  - src/main/resources/META-INF/plugin.xml
+  - src/test/java/com/devoxx/genie/chatmodel/ChatModelFactoryProviderTest.java
+  - >-
+    src/test/java/com/devoxx/genie/chatmodel/cloud/azureopenai/AzureOpenAiChatModelFactoryTest.java
+  - >-
+    src/test/java/com/devoxx/genie/chatmodel/cloud/openrouter/OpenRouterChatModelFactoryTest.java
+  - >-
+    src/test/java/com/devoxx/genie/chatmodel/cloud/router/RouterCatalogParserTest.java
+  - >-
+    src/test/java/com/devoxx/genie/chatmodel/cloud/router/RouterChatModelFactoryTest.java
+  - >-
+    src/test/java/com/devoxx/genie/chatmodel/cloud/router/RouterRegistryTest.java
+  - src/test/java/com/devoxx/genie/controller/ProjectContextControllerTest.java
+  - >-
+    src/test/java/com/devoxx/genie/model/enumarations/ModelProviderCloudflareTest.java
+  - src/test/java/com/devoxx/genie/service/LLMProviderServiceRouterTest.java
+  - src/test/java/com/devoxx/genie/service/LLMProviderServiceTest.java
+  - >-
+    src/test/java/com/devoxx/genie/service/credentials/PasswordSafeCredentialServiceSubKeyTest.java
+  - >-
+    src/test/java/com/devoxx/genie/service/models/LLMModelRegistryServiceRouterTest.java
+  - src/test/java/com/devoxx/genie/service/openrouter/OpenRouterServiceTest.java
+  - src/test/java/com/devoxx/genie/ui/panel/LlmProviderPanelTest.java
+  - src/test/java/com/devoxx/genie/ui/renderer/ModelInfoRendererTest.java
+  - >-
+    src/test/java/com/devoxx/genie/ui/settings/DevoxxGenieStateServiceRouterTest.java
+  - src/test/java/com/devoxx/genie/ui/settings/DevoxxGenieStateServiceTest.java
+  - src/test/java/com/devoxx/genie/ui/settings/ProviderEnabledResolverTest.java
+  - src/test/java/com/devoxx/genie/ui/settings/agent/ModelComboLoaderTest.java
+  - >-
+    src/test/java/com/devoxx/genie/ui/settings/llm/LLMProvidersRouterSettingsTest.java
+  - src/test/resources/router/openrouter-models.json
+  - src/test/resources/router/requesty-models.json
 priority: medium
 type: feature
 ordinal: 16000
@@ -26,16 +110,32 @@ Vendors keep asking to be added as LLM providers (Requesty, DemonRoute, OrcaRout
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Settings tabs read Local, Cloud Direct, Routers and Custom OpenAI
-- [ ] #2 The Routers tab shows the agreed privacy and security warning and lists OpenRouter, Cloudflare, Requesty and DemonRoute
-- [ ] #3 Each router's checkbox controls whether it appears in the LLM chat selection, and new routers are off by default
-- [ ] #4 Adding a typical OpenAI-compatible router requires only one provider enum line and one definition entry, enforced by a test
+- [x] #1 Settings tabs read Local, Cloud Direct, Routers and Custom OpenAI
+- [x] #2 The Routers tab shows the agreed privacy and security warning and lists OpenRouter, Cloudflare, Requesty and DemonRoute
+- [x] #3 Each router's checkbox controls whether it appears in the LLM chat selection, and new routers are off by default
+- [x] #4 Adding a typical OpenAI-compatible router requires only one provider enum line and one definition entry, enforced by a test
 - [ ] #5 Existing OpenRouter and Cloudflare users keep their keys, enabled state and selected model after upgrading
-- [ ] #6 Listing generic routers in the chat selection reads no credentials and sends no network requests
-- [ ] #7 A disabled router or a router without a key sends no requests
-- [ ] #8 A catalog request started with an old key cannot repopulate the cache after a credential change
+- [x] #6 Listing generic routers in the chat selection reads no credentials and sends no network requests
+- [x] #7 A disabled router or a router without a key sends no requests
+- [x] #8 A catalog request started with an old key cannot repopulate the cache after a credential change
 - [ ] #9 Both agent settings model loaders run off the EDT for generic routers and keep the saved model through asynchronous loading and Apply
-- [ ] #10 Requests send no affiliate, referral or attribution data
-- [ ] #11 Docs and release notes cover the Routers tab, and state that DemonRoute was not tested live
+- [x] #10 Requests send no affiliate, referral or attribution data
+- [x] #11 Docs and release notes cover the Routers tab, and state that DemonRoute was not tested live
 - [ ] #12 PRs #1303 and #1378 are closed with credit to their authors and a link to the replacement PR
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Follow docs/superpowers/plans/2026-11-05-generic-llm-routers.md on branch feat/generic-llm-routers, using subagent-driven development: (1) router credentials and enabled state, (2) definitions and catalog parser, (3) RouterChatModelFactory, (4) move OpenRouter onto the generic path, (5) Routers settings tab, (6) asynchronous agent settings loaders, (7) add Requesty and DemonRoute plus docs, (8) verify, open the PR and close #1303 and #1378. Design: docs/superpowers/specs/2026-11-05-generic-llm-routers-design.md. Plan and design were approved by the maintainer on 2026-11-05.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Verified on 71a3f577: full suite 4134 tests, 0 failures, 0 errors, 22 skipped; verifyPlugin compatible with IU-253.31033.145 and IU-261.22158.277.
+
+Criteria 5 and 9 stay open until the manual IDE check: the pieces are tested (key reuse, legacy-flag seed, ModelComboLoader), but the upgrade and the settings dialog have not been exercised in a running IDE, and AgentSettingsComponent's wiring to effectiveModelName() was verified by reading only. Requesty and DemonRoute have not been tested against live services.
+
+Known residuals: a routerEnabled XML entry with a null key or value makes state deserialization throw (hand-edited or corrupted XML only). Sibling providers can still delete a stored key on an empty keychain read (pre-existing). Tracked META-INF/plugin.xml.bak still names the deleted OpenRouterService.
+<!-- SECTION:NOTES:END -->
