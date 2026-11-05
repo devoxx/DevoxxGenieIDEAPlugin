@@ -7,7 +7,7 @@
 ![JetBrains Plugin Rating](https://img.shields.io/jetbrains/plugin/r/stars/24169-devoxxgenie)
 [![Documentation](https://img.shields.io/badge/docs-genie.devoxx.com-blue)](https://genie.devoxx.com)
 
-Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp), [Nativ](https://blaizzy.github.io/nativ/) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [Requesty](https://requesty.ai/), [DemonRoute](https://demonroute.com), [Cloudflare AI Gateway](https://www.cloudflare.com/products/ai-gateway/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service), [Amazon Bedrock](https://aws.amazon.com/bedrock) and [NVIDIA](https://build.nvidia.com/)
+Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, designed to integrate with local LLM providers such as [Ollama](https://ollama.com/), [LMStudio](https://lmstudio.ai/), [GPT4All](https://gpt4all.io/index.html), [Llama.cpp](https://github.com/ggerganov/llama.cpp), [Nativ](https://blaizzy.github.io/nativ/) and [Exo](https://github.com/exo-explore/exo) but also cloud based LLM's such as [OpenAI](https://openai.com), [Anthropic](https://www.anthropic.com/), [Mistral](https://mistral.ai/), [Groq](https://groq.com/), [Gemini](https://aistudio.google.com/app/apikey), [DeepInfra](https://deepinfra.com/dash/deployments), [DeepSeek](https://www.deepseek.com/), [Kimi](https://platform.moonshot.ai/), [GLM](https://open.bigmodel.cn/), [OpenRouter](https://www.openrouter.ai/), [OrcaRouter](https://www.orcarouter.ai/), [Requesty](https://requesty.ai/), [DemonRoute](https://demonroute.com), [Cloudflare AI Gateway](https://www.cloudflare.com/products/ai-gateway/), [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service), [Amazon Bedrock](https://aws.amazon.com/bedrock) and [NVIDIA](https://build.nvidia.com/)
 
 **🆕 [Skills](https://genie.devoxx.com/blog/commands-and-skills)** — Drop portable `SKILL.md` files into `~/.devoxxgenie/skills/`, `<project>/.devoxxgenie/skills/`, `.claude/skills/` or `.agents/skills/` and the LLM activates them mid-conversation when relevant. The same files work in Claude Code, Codex and Gemini — and Custom Prompts have been renamed to **Commands** to make the distinction clear.
 
@@ -164,8 +164,8 @@ Select multiple tasks (or click "Run All To Do") and the **Agent Loop** executes
 
 - Start your IDEA and go to plugins > Marketplace and enter "Devoxx"
 - Select "DevoxxGenie" and install plugin
-- Click on DevoxxGenie cog (settings) icon and click on Cloud Provider link icon to create API KEY
-- Paste API Key in Settings panel
+- Click on DevoxxGenie cog (settings) icon, open the **Cloud Direct** tab (or **Routers** for a router) and click on the provider link icon to create API KEY
+- Paste API Key in Settings panel. On the **Routers** tab, also tick the router's checkbox
 - In the DevoxxGenie window select your cloud provider and model
 - Start prompting
 
@@ -250,9 +250,18 @@ Expecting to add also [GraphRAG](https://github.com/devoxx/DevoxxGenieIDEAPlugin
 ### LLM Settings
 In the IDEA settings you can modify the REST endpoints and the LLM parameters.  Make sure to press enter and apply to save your changes.
 
-We now also support Cloud based LLMs, you can paste the API keys on the Settings page. 
+We now also support Cloud based LLMs, you can paste the API keys on the Settings page. The LLM providers are grouped in four tabs:
 
-<img width="1072" alt="Settings" src="https://github.com/user-attachments/assets/a88f1ae8-55dc-4c6b-b5eb-ec0c3d70b28f">
+- **Local**: providers running on your machine, such as Ollama and LM Studio.
+- **Cloud Direct**: cloud providers you have your own account with, such as OpenAI, Anthropic and Google. Prompts go straight to that provider.
+- **Routers**: gateways that reach many models through one API key: OpenRouter, Cloudflare AI Gateway, OrcaRouter, Requesty and DemonRoute. A router only appears in the chat's provider list once you tick its checkbox.
+- **Custom OpenAI**: any other OpenAI-compatible endpoint.
+
+Routers forward your prompts and code to other providers, each with its own logging, retention and training policies. Check a router's terms before enabling it, and see the [Routers documentation](https://genie.devoxx.com/docs/llm-providers/cloud-models#routers).
+
+<img width="1072" alt="The Cloud Direct tab in the LLM settings" src="docusaurus/static/img/settings-cloud-direct.png">
+
+<img width="1072" alt="The Routers tab in the LLM settings, with its privacy warning and a checkbox per router" src="docusaurus/static/img/settings-routers.png">
 
 ### Smart Model Selection and Cost Estimation
 The language model dropdown is not just a list anymore, it's your compass for smart model selection.

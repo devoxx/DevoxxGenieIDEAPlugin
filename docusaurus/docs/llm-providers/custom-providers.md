@@ -39,7 +39,7 @@ To configure a custom provider:
    - **Model**: The model identifier expected by the provider
    - **API Key**: Authentication key (if required)
 
-![Custom OpenAI Settings](/img/custom-openai-settings.png)
+![The Custom OpenAI tab in the LLM settings](/img/settings-custom-openai.png)
 
 ### Model Parameters
 

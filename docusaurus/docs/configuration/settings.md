@@ -28,10 +28,28 @@ This is the main settings page where you can:
 
 - Select and configure LLM providers
 - Enter API keys for cloud providers, including NVIDIA
+- Enable routers and enter their API keys
 - Manage [favorite models](../features/chat-interface.md#favorite-models)
 - Enable [Show Thinking](../features/chat-interface.md#show-thinking) for supported reasoning models
 - Configure endpoints for local providers
 - Enable optional providers (Azure OpenAI, Amazon Bedrock)
+
+The providers are grouped in four tabs:
+
+| Tab | Contains |
+|-----|----------|
+| **Local** | Endpoints for providers running on your machine, such as Ollama and LM Studio |
+| **Cloud Direct** | API keys for [cloud providers](../llm-providers/cloud-models.md) you have your own account with, such as OpenAI, Anthropic and Google |
+| **Routers** | A checkbox and API key for each [router](../llm-providers/cloud-models.md#routers): OpenRouter, Cloudflare AI Gateway, OrcaRouter, Requesty and DemonRoute |
+| **Custom OpenAI** | The URL, model and API key of any other [OpenAI-compatible endpoint](../llm-providers/custom-providers.md) |
+
+![The Local tab in the LLM settings](/img/settings-local.png)
+
+![The Cloud Direct tab in the LLM settings](/img/settings-cloud-direct.png)
+
+![The Routers tab in the LLM settings](/img/settings-routers.png)
+
+![The Custom OpenAI tab in the LLM settings](/img/settings-custom-openai.png)
 
 ### LLM Settings
 

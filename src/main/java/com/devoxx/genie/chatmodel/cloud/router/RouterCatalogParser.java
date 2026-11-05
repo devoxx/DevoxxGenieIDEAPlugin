@@ -87,8 +87,16 @@ public final class RouterCatalogParser {
         if (fields == null || fields.filterField() == null) {
             return true;
         }
-        String actual = stringAt(entry, fields.filterField());
-        return actual == null || actual.equals(fields.filterValue());
+        JsonElement actual = walk(entry, fields.filterField());
+        if (actual != null && actual.isJsonArray()) {
+            for (JsonElement item : actual.getAsJsonArray()) {
+                if (item.isJsonPrimitive() && item.getAsString().equals(fields.filterValue())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return actual == null || !actual.isJsonPrimitive() || actual.getAsString().equals(fields.filterValue());
     }
 
     private static double scaledPrice(JsonObject entry, @Nullable String path, double scale) {

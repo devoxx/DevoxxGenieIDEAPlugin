@@ -1,0 +1,83 @@
+{
+  "data": [
+    {
+      "id": "orcarouter/auto",
+      "object": "model",
+      "created": 1787329571,
+      "owned_by": "orcarouter",
+      "supported_endpoint_types": [
+        "openai",
+        "openai-response",
+        "anthropic",
+        "gemini"
+      ]
+    },
+    {
+      "id": "anthropic/claude-fable-5",
+      "object": "model",
+      "created": 1626777600,
+      "owned_by": "Anthropic",
+      "supported_endpoint_types": [
+        "anthropic",
+        "openai"
+      ],
+      "endpoint_capabilities": [
+        "anthropic_messages",
+        "chat_completions"
+      ],
+      "name": "Anthropic: Claude Fable 5",
+      "context_length": 1000000,
+      "max_completion_tokens": 128000,
+      "top_provider": {
+        "context_length": 1000000,
+        "max_completion_tokens": 128000
+      },
+      "pricing": {
+        "prompt": "0.0000100000",
+        "completion": "0.0000500000",
+        "prompt_per_million": "10.000000",
+        "completion_per_million": "50.000000",
+        "input_cache_read": "0.0000010000"
+      }
+    },
+    {
+      "id": "openai/tts-1",
+      "object": "model",
+      "created": 1626777600,
+      "owned_by": "custom",
+      "supported_endpoint_types": [
+        "openai"
+      ],
+      "endpoint_capabilities": [
+        "audio_speech"
+      ],
+      "pricing": {
+        "prompt": "0.0000150000",
+        "completion": "0.0000150000",
+        "prompt_per_million": "15.000000",
+        "completion_per_million": "15.000000"
+      }
+    },
+    {
+      "id": "openai/gpt-image-1",
+      "object": "model",
+      "created": 1626777600,
+      "owned_by": "OpenAI",
+      "supported_endpoint_types": [
+        "image-generation"
+      ],
+      "endpoint_capabilities": [
+        "image_generation"
+      ],
+      "pricing": {
+        "prompt": "0.0000050000",
+        "completion": "0.0000400000",
+        "prompt_per_million": "5.000000",
+        "completion_per_million": "40.000000",
+        "input_cache_read": "0.0000012500"
+      }
+    }
+  ],
+  "object": "list",
+  "success": true
+}

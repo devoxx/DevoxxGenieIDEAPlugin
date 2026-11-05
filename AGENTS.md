@@ -4,7 +4,7 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Project Overview
 
-DevoxxGenie is a Java-based LLM Code Assistant plugin for IntelliJ IDEA that integrates with both local LLM providers (Ollama, LMStudio, GPT4All, Llama.cpp, Exo) and cloud-based LLMs (OpenAI, Anthropic, Mistral, Groq, Gemini, DeepInfra, DeepSeek, OpenRouter, Requesty, DemonRoute, Azure OpenAI, Amazon Bedrock). The plugin supports advanced features like RAG (Retrieval-Augmented Generation), MCP (Model Context Protocol) servers, web search, and agentic programming capabilities.
+DevoxxGenie is a Java-based LLM Code Assistant plugin for IntelliJ IDEA that integrates with both local LLM providers (Ollama, LMStudio, GPT4All, Llama.cpp, Exo) and cloud-based LLMs (OpenAI, Anthropic, Mistral, Groq, Gemini, DeepInfra, DeepSeek, OpenRouter, OrcaRouter, Requesty, DemonRoute, Azure OpenAI, Amazon Bedrock). The plugin supports advanced features like RAG (Retrieval-Augmented Generation), MCP (Model Context Protocol) servers, web search, and agentic programming capabilities.
 
 ## Build & Development Commands
 
@@ -78,7 +78,7 @@ The plugin processes user prompts through a layered architecture:
 
 **Cloud Providers**: anthropic, azureopenai, bedrock, deepinfra, deepseek, google, grok, groq, mistral, openai
 
-**Routers** (generic path, defined in `chatmodel/cloud/router/RouterRegistry`): openrouter, requesty, demonroute
+**Routers** (generic path, defined in `chatmodel/cloud/router/RouterRegistry`): openrouter, orcarouter, requesty, demonroute
 
 **Local Providers**: ollama, gpt4all, lmstudio, llamacpp, jan, customopenai
 

@@ -2,7 +2,7 @@
 sidebar_position: 3
 title: Cloud LLM Providers
 description: Guide to all cloud-based LLM providers supported by DevoxxGenie, including setup instructions and configuration.
-keywords: [devoxxgenie, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloudflare, ai gateway, cloud llm]
+keywords: [devoxxgenie, llm router, openrouter, orcarouter, requesty, demonroute, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloudflare, ai gateway, cloud llm]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -16,7 +16,12 @@ For all cloud providers, available models are **automatically fetched** from the
 
 ## Supported Cloud Providers
 
-In the plugin settings, direct providers are on the **Cloud Direct** tab and routers are on the **Routers** tab.
+In the plugin settings (**Settings > Tools > DevoxxGenie**), cloud providers are on two tabs:
+
+- **Cloud Direct**: providers you have your own account with. Your prompts go straight to that provider.
+- **Routers**: gateways that reach models from many vendors through one API key. Your prompts pass through the router on their way to another provider. See [Routers](#routers).
+
+![The Cloud Direct tab in the LLM settings](/img/settings-cloud-direct.png)
 
 **Cloud Direct**
 
@@ -37,9 +42,10 @@ In the plugin settings, direct providers are on the **Cloud Direct** tab and rou
 **Routers** (see [Routers](#routers))
 
 1. [OpenRouter](#openrouter)
-2. [Requesty](#requesty)
-3. [DemonRoute](#demonroute)
-4. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
+2. [OrcaRouter](#orcarouter)
+3. [Requesty](#requesty)
+4. [DemonRoute](#demonroute)
+5. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
 
 ## OpenAI
 
@@ -350,7 +356,34 @@ Google provides the Gemini family of models through Google AI Studio.
 Anything you send, including project files added to context, may pass through the router and whichever provider it selects. Each has its own logging, retention and training policies, and a provider may be in another country. DevoxxGenie doesn't verify these services or their privacy claims, and listing one here isn't an endorsement. Check the router's terms before enabling it, and avoid sending confidential code or secrets unless your organisation allows it.
 :::
 
-OpenRouter, Requesty, DemonRoute and Cloudflare AI Gateway are configured on the **Routers** tab in the DevoxxGenie settings. Each router is disabled until you tick its checkbox and enter an API key.
+OpenRouter, OrcaRouter, Requesty, DemonRoute and Cloudflare AI Gateway are configured on the **Routers** tab in the DevoxxGenie settings. Each router is disabled until you tick its checkbox and enter an API key.
+
+![The Routers tab, with its privacy warning and a checkbox per router](/img/settings-routers.png)
+
+## OrcaRouter
+
+[OrcaRouter](https://www.orcarouter.ai/) is an OpenAI-compatible router that offers models from several vendors through one API key.
+
+DevoxxGenie talks to `https://api.orcarouter.ai/v1` and builds the model list from its `/models` endpoint, keeping chat models and OrcaRouter's routing aliases such as `orcarouter/auto`. Image, video, embedding and text-to-speech models are left out. Context window and prices come from that catalog. A model that doesn't list a context window is assumed to have 128K, and one without prices shows no price.
+
+### Setup
+
+1. Create an account at [OrcaRouter](https://www.orcarouter.ai/)
+2. Generate an API key on the [API Keys page](https://www.orcarouter.ai/console/token) of the console. Keys start with `sk-orca-`
+3. In DevoxxGenie settings, open the **Routers** tab, enable "OrcaRouter" and paste your API key
+4. Select a model from the list
+
+### Configuration
+
+- **API Key**: Your OrcaRouter API key
+- **Model**: Model ids use the `vendor/model` form, such as `anthropic/claude-fable-5`, or a routing alias such as `orcarouter/auto`
+- **Parameters**: Temperature, Top P, and the max output tokens from your chat model settings
+
+:::note Testing status
+OrcaRouter support was added for request #1291. The model list was checked against the live catalog, but chat requests haven't been tested against the live service.
+:::
+
+*Check the [OrcaRouter model list](https://www.orcarouter.ai/models) for current rates.*
 
 ## Requesty
 
