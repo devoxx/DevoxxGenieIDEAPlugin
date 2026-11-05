@@ -188,6 +188,16 @@ class LLMProvidersRouterSettingsTest {
     }
 
     @Test
+    void routersTab_listsDemonRouteLast_withRequestyAboveIt() {
+        configurable();
+        List<String> apiKeyRows = tabText("Routers").stream()
+                .filter(text -> text.endsWith(" API Key"))
+                .toList();
+        assertThat(apiKeyRows).containsExactly(
+                "OpenRouter API Key", "Cloudflare API Key", "Requesty API Key", "DemonRoute API Key");
+    }
+
+    @Test
     void everyRouterRow_startsDisabledWithEmptyKey() {
         configurable();
         for (RouterDefinition def : RouterRegistry.definitions()) {

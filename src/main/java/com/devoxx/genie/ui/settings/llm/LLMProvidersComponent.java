@@ -513,20 +513,25 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             if (def.hint() != null) {
                 addHintText(routersPanel, gbc, def.hint());
             }
+            if (def.provider() == ModelProvider.OpenRouter) {
+                addCloudflareRows(routersPanel, gbc);
+            }
         }
 
-        addProviderSettingRow(routersPanel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
-                createTextWithPasswordButton(cloudflareApiKeyField, "https://dash.cloudflare.com/profile/api-tokens"));
-        addHintText(routersPanel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
-        addSettingRow(routersPanel, gbc, "Cloudflare Account ID", cloudflareAccountIdField);
-        addSettingRow(routersPanel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
-        addHintText(routersPanel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
-        addProviderSettingRow(routersPanel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
-        addHintText(routersPanel, gbc, "Model ids use <code>provider/model</code> form, e.g. <code>openai/gpt-4o</code>. " +
-                "Workers AI ids (<code>@cf/...</code>) get the <code>workers-ai/</code> prefix added automatically.");
-        addHintText(routersPanel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
-
         return routersPanel;
+    }
+
+    private void addCloudflareRows(@NotNull JPanel panel, @NotNull GridBagConstraints gbc) {
+        addProviderSettingRow(panel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
+                createTextWithPasswordButton(cloudflareApiKeyField, "https://dash.cloudflare.com/profile/api-tokens"));
+        addHintText(panel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
+        addSettingRow(panel, gbc, "Cloudflare Account ID", cloudflareAccountIdField);
+        addSettingRow(panel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
+        addHintText(panel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
+        addProviderSettingRow(panel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
+        addHintText(panel, gbc, "Model ids use <code>provider/model</code> form, e.g. <code>openai/gpt-4o</code>. " +
+                "Workers AI ids (<code>@cf/...</code>) get the <code>workers-ai/</code> prefix added automatically.");
+        addHintText(panel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
     }
 
     private void addRoutersWarning(@NotNull JPanel panel, @NotNull GridBagConstraints gbc) {
