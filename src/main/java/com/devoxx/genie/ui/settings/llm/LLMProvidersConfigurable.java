@@ -299,10 +299,14 @@ public class LLMProvidersConfigurable implements Configurable {
             LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
             String newKey = new String(row.key().getPassword());
             boolean newEnabled = row.enabled().isSelected();
-            boolean changed = !newKey.equals(settings.getRouterKey(def.credentialSubKey()))
-                    || newEnabled != settings.isRouterEnabled(def.provider());
+            boolean keyChanged = !newKey.equals(settings.getRouterKey(def.credentialSubKey()));
+            boolean changed = keyChanged || newEnabled != settings.isRouterEnabled(def.provider());
 
-            settings.setRouterKey(def.credentialSubKey(), newKey);
+            // An empty write deletes the stored entry. A keychain read that failed also shows as an empty
+            // field, so an unchanged key must never be written back.
+            if (keyChanged) {
+                settings.setRouterKey(def.credentialSubKey(), newKey);
+            }
             settings.setRouterEnabled(def.provider(), newEnabled);
 
             if (changed) {

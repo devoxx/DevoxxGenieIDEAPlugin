@@ -4,7 +4,11 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.chatmodel.cloud.router.RouterDefinition;
 import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
+import com.devoxx.genie.chatmodel.cloud.router.RouterChatModelFactory;
 import com.devoxx.genie.model.enumarations.ModelProvider;
+import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.credentials.CredentialService;
+import com.sun.net.httpserver.HttpServer;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.listener.SettingsChangeListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -27,6 +31,11 @@ import org.mockito.quality.Strictness;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +43,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -162,7 +173,7 @@ class LLMProvidersRouterSettingsTest {
     void routersTab_showsWarningAndAllRouters() {
         configurable();
         List<String> routers = tabText("Routers");
-        assertThat(String.join("\n", routers)).contains("Routers forward your prompts and code");
+        assertThat(routers).anyMatch(text -> text.contains(LLMProvidersComponent.ROUTERS_WARNING));
         for (RouterDefinition def : RouterRegistry.definitions()) {
             assertThat(routers).contains(def.label() + " API Key");
             assertThat(component().getRouterRows()).containsKey(def.provider());
@@ -192,16 +203,18 @@ class LLMProvidersRouterSettingsTest {
 
     @Test
     void isModified_detectsKeyAndCheckbox() {
+        stateService.setRouterKey(definition.credentialSubKey(), "sk-stored");
+        stateService.setRouterEnabled(ROUTER, true);
         configurable();
-        assertThat(configurable.isModified()).isFalse();
+        assertThat(configurable.isModified()).as("not dirty straight after opening").isFalse();
 
         LLMProvidersComponent.RouterRow row = component().getRouterRows().get(ROUTER);
         row.key().setText("sk-new");
         assertThat(configurable.isModified()).isTrue();
-        row.key().setText("");
+        row.key().setText("sk-stored");
         assertThat(configurable.isModified()).isFalse();
 
-        row.enabled().setSelected(true);
+        row.enabled().setSelected(false);
         assertThat(configurable.isModified()).isTrue();
     }
 
@@ -246,41 +259,172 @@ class LLMProvidersRouterSettingsTest {
 
     @Test
     void apply_resetsCatalogOnlyForChangedRouter() throws ConfigurationException {
-        configurable();
-        configurable.apply();
-        verify(routerFactory, never()).resetModels();
+        RouterDefinition second = new RouterDefinition(ModelProvider.Groq, "Second", "https://second.test/v1/",
+                List.of("/models"), "router.second", "https://second.test/keys", null, null, null);
+        ChatModelFactory secondFactory = mock(ChatModelFactory.class);
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(ModelProvider.Groq.name()))
+                .thenReturn(Optional.of(secondFactory));
 
-        component().getRouterRows().get(ROUTER).key().setText("sk-1");
-        configurable.apply();
-        verify(routerFactory, times(1)).resetModels();
+        try (MockedStatic<RouterRegistry> registry = Mockito.mockStatic(RouterRegistry.class)) {
+            registry.when(RouterRegistry::definitions).thenReturn(List.of(definition, second));
+            configurable();
+            assertThat(component().getRouterRows()).containsOnlyKeys(ROUTER, ModelProvider.Groq);
 
-        // Nothing changed since: no further reset.
-        configurable.apply();
-        verify(routerFactory, times(1)).resetModels();
+            configurable.apply();
+            verify(routerFactory, never()).resetModels();
+            verify(secondFactory, never()).resetModels();
 
-        // Cloudflare is not a generic router and has no factory reset here.
+            component().getRouterRows().get(ModelProvider.Groq).key().setText("sk-second");
+            configurable.apply();
+            verify(secondFactory, times(1)).resetModels();
+            verify(routerFactory, never()).resetModels();
+            assertThat(stateService.getRouterKey("router.second")).isEqualTo("sk-second");
+
+            component().getRouterRows().get(ROUTER).enabled().setSelected(false);
+            component().getRouterRows().get(ROUTER).key().setText("sk-first");
+            configurable.apply();
+            verify(routerFactory, times(1)).resetModels();
+            verify(secondFactory, times(1)).resetModels();
+        }
         factoryProviderMockedStatic.verify(
                 () -> ChatModelFactoryProvider.getFactoryByProvider(ModelProvider.Cloudflare.name()), never());
     }
 
-    @Test
-    void apply_keyRemoved_clearsCatalogAndStopsRequests() throws ConfigurationException {
-        stateService.setRouterEnabled(ROUTER, true);
-        stateService.setRouterKey(definition.credentialSubKey(), "sk-old");
-        configurable();
-        List<String> keyAtReset = new ArrayList<>();
-        doAnswer(inv -> {
-            keyAtReset.add(stateService.getRouterKey(definition.credentialSubKey()));
-            return null;
-        }).when(routerFactory).resetModels();
+    /** A real factory against a loopback server: only a key containing "good" gets a catalog. */
+    private final class RealRouter {
+        final AtomicInteger requests = new AtomicInteger();
+        final HttpServer server;
+        final RouterChatModelFactory factory;
+        private final MockedStatic<LLMProviderService> providerService;
 
-        LLMProvidersComponent.RouterRow row = component().getRouterRows().get(ROUTER);
-        row.enabled().setSelected(false);
-        row.key().setText("");
+        RealRouter() throws Exception {
+            server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+            server.createContext("/models", exchange -> {
+                requests.incrementAndGet();
+                String auth = exchange.getRequestHeaders().getFirst("Authorization");
+                boolean good = auth != null && auth.contains("good");
+                byte[] body = (good ? "{\"data\":[{\"id\":\"model-a\"}]}" : "{}").getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(good ? 200 : 500, body.length);
+                exchange.getResponseBody().write(body);
+                exchange.close();
+            });
+            server.start();
+
+            LLMProviderService service = mock(LLMProviderService.class);
+            when(service.getApiKey(ROUTER)).thenAnswer(inv -> stateService.getRouterKey(definition.credentialSubKey()));
+            providerService = Mockito.mockStatic(LLMProviderService.class);
+            providerService.when(LLMProviderService::getInstance).thenReturn(service);
+
+            RouterDefinition local = new RouterDefinition(ROUTER, definition.label(),
+                    "http://127.0.0.1:" + server.getAddress().getPort() + "/", List.of("/models"),
+                    definition.credentialSubKey(), definition.keyUrl(), null, definition.catalogFields(), null);
+            factory = new RouterChatModelFactory(local) {
+                @Override
+                protected void notifyFetchFailure() {
+                    // No project in a unit test.
+                }
+            };
+            factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(ROUTER.name()))
+                    .thenReturn(Optional.of(factory));
+        }
+
+        void close() {
+            providerService.close();
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void apply_keyRemoved_clearsCatalogAndStopsRequests() throws Exception {
+        stateService.setRouterEnabled(ROUTER, true);
+        stateService.setRouterKey(definition.credentialSubKey(), "good-key");
+        RealRouter router = new RealRouter();
+        try {
+            assertThat(router.factory.getModels()).hasSize(1);
+            assertThat(router.requests).hasValue(1);
+
+            configurable();
+            component().getRouterRows().get(ROUTER).enabled().setSelected(false);
+            component().getRouterRows().get(ROUTER).key().setText("");
+            configurable.apply();
+
+            assertThat(router.factory.getCachedModels()).as("catalog dropped").isEmpty();
+            stateService.setRouterEnabled(ROUTER, true);
+            assertThat(router.factory.getModels()).isEmpty();
+            assertThat(router.requests).as("no request without a key").hasValue(1);
+        } finally {
+            router.close();
+        }
+    }
+
+    @Test
+    void apply_correctedKey_clearsBackoffAndRequestsAgain() throws Exception {
+        stateService.setRouterEnabled(ROUTER, true);
+        stateService.setRouterKey(definition.credentialSubKey(), "bad-key");
+        RealRouter router = new RealRouter();
+        try {
+            assertThat(router.factory.getModels()).isEmpty();
+            assertThat(router.factory.getModels()).as("inside the failure backoff").isEmpty();
+            assertThat(router.requests).hasValue(1);
+
+            configurable();
+            component().getRouterRows().get(ROUTER).key().setText("good-key");
+            configurable.apply();
+
+            assertThat(router.factory.getModels()).hasSize(1);
+            assertThat(router.requests).hasValue(2);
+        } finally {
+            router.close();
+        }
+    }
+
+    /** A keychain that holds {@code routerKey} for the router and nothing for any other entry. */
+    private CredentialService credentialServiceReading(String routerKey) {
+        CredentialService credentials = mock(CredentialService.class,
+                inv -> inv.getMethod().getReturnType() == String.class ? "" : null);
+        doReturn(routerKey).when(credentials).getCredential(definition.credentialSubKey());
+        return credentials;
+    }
+
+    @Test
+    void apply_unchangedRouterWithEmptyField_neverWritesCredential() throws ConfigurationException {
+        // A keychain read that fails or finds nothing gives an empty field. Applying another edit must not
+        // write that empty value back, because an empty write deletes the stored entry.
+        CredentialService credentials = credentialServiceReading("");
+        when(application.getService(CredentialService.class)).thenReturn(credentials);
+        configurable();
+
+        component().getOllamaEnabledCheckBox().setSelected(true);
         configurable.apply();
 
-        assertThat(keyAtReset).containsExactly("");
-        assertThat(stateService.isRouterEnabled(ROUTER)).isFalse();
+        verify(credentials, never()).setCredential(eq(definition.credentialSubKey()), any());
+        verify(credentials, never()).removeCredential(anyString());
+        verify(routerFactory, never()).resetModels();
+    }
+
+    @Test
+    void apply_unchangedRouterWithStoredKey_neverWritesCredential() throws ConfigurationException {
+        CredentialService credentials = credentialServiceReading("sk-keep");
+        when(application.getService(CredentialService.class)).thenReturn(credentials);
+        stateService.setRouterEnabled(ROUTER, true);
+        configurable();
+
+        component().getOllamaEnabledCheckBox().setSelected(true);
+        configurable.apply();
+
+        verify(credentials, never()).setCredential(eq(definition.credentialSubKey()), any());
+    }
+
+    @Test
+    void apply_keyRemovedOnPurpose_deletesIt() throws ConfigurationException {
+        CredentialService credentials = credentialServiceReading("sk-old");
+        when(application.getService(CredentialService.class)).thenReturn(credentials);
+        configurable();
+
+        component().getRouterRows().get(ROUTER).key().setText("");
+        configurable.apply();
+
+        verify(credentials).setCredential(definition.credentialSubKey(), "");
     }
 
     @Test
@@ -316,18 +460,6 @@ class LLMProvidersRouterSettingsTest {
         configurable.apply();
         verify(routerFactory, times(2)).resetModels();
         assertThat(stateService.getRouterKey(definition.credentialSubKey())).isEqualTo("sk-corrected");
-    }
-
-    @Test
-    void apply_correctedKeyWhileEnabled_resetsSoBackoffClears() throws ConfigurationException {
-        stateService.setRouterEnabled(ROUTER, true);
-        stateService.setRouterKey(definition.credentialSubKey(), "sk-bad");
-        configurable();
-
-        component().getRouterRows().get(ROUTER).key().setText("sk-good");
-        configurable.apply();
-
-        verify(routerFactory, times(1)).resetModels();
     }
 
     @Test

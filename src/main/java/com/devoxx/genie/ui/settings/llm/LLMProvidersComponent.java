@@ -348,7 +348,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
      * A tabbed pane that is only as tall as the tab currently shown.
      *
      * <p>{@link JTabbedPane#getPreferredSize()} reserves room for the <em>tallest</em> page, so the
-     * short tabs (Local, Custom OpenAI) inherited the very long Cloud tab's height and rendered a
+     * short tabs (Local, Custom OpenAI) inherited the very long Cloud Direct tab's height and rendered a
      * large empty band under their last row. Swapping the tallest page's height for the selected
      * one's keeps the surrounding layout — notably the Plugin version footer — tight against the
      * content actually on screen.</p>
