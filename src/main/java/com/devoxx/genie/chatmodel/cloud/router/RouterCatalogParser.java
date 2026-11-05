@@ -96,7 +96,8 @@ public final class RouterCatalogParser {
             return 0;
         }
         Double price = numberAt(entry, path);
-        if (price == null) {
+        // Dynamic entries (e.g. openrouter/auto) report -1 for "no fixed price"
+        if (price == null || price < 0) {
             return 0;
         }
         // Same rounding the OpenRouter factory used: 6 decimals, HALF_UP

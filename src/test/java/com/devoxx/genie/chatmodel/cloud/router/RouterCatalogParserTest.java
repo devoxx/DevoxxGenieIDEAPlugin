@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RouterCatalogParserTest {
 
+    // REQUESTY and PLAIN use ModelProvider.OpenRouter only as a placeholder provider.
     private static final RouterDefinition REQUESTY = new RouterDefinition(
             ModelProvider.OpenRouter, "Requesty", "https://router.requesty.ai/v1",
             List.of("/models/managed", "/models"), "requestyKey", "https://example.invalid/keys",
@@ -92,6 +93,20 @@ class RouterCatalogParserTest {
         LanguageModel bad = models.get(2);
         assertThat(bad.getInputCost()).isZero();
         assertThat(bad.getOutputCost()).isZero();
+    }
+
+    @Test
+    void negativePrices_becomeZero() {
+        String json = """
+                {"data":[{"id":"openrouter/auto","input_price":"-1","output_price":-1},
+                         {"id":"ok","input_price":"0.000001","output_price":0.000002}]}
+                """;
+
+        List<LanguageModel> models = RouterCatalogParser.parse(REQUESTY, json);
+
+        assertThat(models.get(0).getInputCost()).isZero();
+        assertThat(models.get(0).getOutputCost()).isZero();
+        assertThat(models.get(1).getInputCost()).isEqualTo(1.0);
     }
 
     @Test
