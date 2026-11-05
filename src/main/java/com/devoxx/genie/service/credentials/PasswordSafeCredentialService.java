@@ -7,10 +7,10 @@ import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.EnumSet;
 
 /**
  * Default {@link CredentialService} implementation, backed by IntelliJ's
@@ -26,10 +26,10 @@ public final class PasswordSafeCredentialService implements CredentialService {
      * of credentials set during this JVM lifetime (populated by {@link #setCredential}, not by
      * reads), so a value remains readable even if a later PasswordSafe {@code get()} fails.
      */
-    private final Map<CredentialKey, String> memoryFallback = new EnumMap<>(CredentialKey.class);
+    private final Map<String, String> memoryFallback = new HashMap<>();
 
     /** Keys whose PasswordSafe read returned null/empty or threw — skip the keychain on repeat reads. */
-    private final Set<CredentialKey> emptyKeys = EnumSet.noneOf(CredentialKey.class);
+    private final Set<String> emptyKeys = new HashSet<>();
 
     private final boolean passwordSafeAvailable;
 
@@ -55,7 +55,7 @@ public final class PasswordSafeCredentialService implements CredentialService {
     }
 
     @Override
-    public synchronized @NotNull String getCredential(@NotNull CredentialKey key) {
+    public synchronized @NotNull String getCredential(@NotNull String key) {
         if (!passwordSafeAvailable) {
             return memoryFallback.getOrDefault(key, "");
         }
@@ -64,7 +64,7 @@ public final class PasswordSafeCredentialService implements CredentialService {
             return memoryFallback.getOrDefault(key, "");
         }
         try {
-            Credentials creds = PasswordSafe.getInstance().get(key.attributes());
+            Credentials creds = PasswordSafe.getInstance().get(CredentialKey.attributesFor(key));
             String password = (creds == null) ? null : creds.getPasswordAsString();
             if (password != null && !password.isEmpty()) {
                 return password;
@@ -78,7 +78,7 @@ public final class PasswordSafeCredentialService implements CredentialService {
     }
 
     @Override
-    public synchronized void setCredential(@NotNull CredentialKey key, @Nullable String value) {
+    public synchronized void setCredential(@NotNull String key, @Nullable String value) {
         if (value == null || value.isEmpty()) {
             removeCredential(key);
             return;
@@ -93,7 +93,7 @@ public final class PasswordSafeCredentialService implements CredentialService {
             // Use null userName so the lookup key matches CredentialKey.attributes() exactly
             // (which builds CredentialAttributes with userName=null). Mixing a real user-name
             // here and null on retrieval breaks the round-trip on some keychain backends.
-            PasswordSafe.getInstance().set(key.attributes(), new Credentials(null, value));
+            PasswordSafe.getInstance().set(CredentialKey.attributesFor(key), new Credentials(null, value));
             // Write-through cache so reads after a failed PasswordSafe.get can still return the value
             // within the same JVM lifetime.
             memoryFallback.put(key, value);
@@ -104,17 +104,32 @@ public final class PasswordSafeCredentialService implements CredentialService {
     }
 
     @Override
-    public synchronized void removeCredential(@NotNull CredentialKey key) {
+    public synchronized void removeCredential(@NotNull String key) {
         memoryFallback.remove(key);
         emptyKeys.remove(key);
         if (!passwordSafeAvailable) {
             return;
         }
         try {
-            PasswordSafe.getInstance().set(key.attributes(), null);
+            PasswordSafe.getInstance().set(CredentialKey.attributesFor(key), null);
         } catch (Throwable t) {
             LOG.warn("PasswordSafe.set(" + key + ", null) failed", t);
         }
+    }
+
+    @Override
+    public @NotNull String getCredential(@NotNull CredentialKey key) {
+        return getCredential(key.getSubKey());
+    }
+
+    @Override
+    public void setCredential(@NotNull CredentialKey key, @Nullable String value) {
+        setCredential(key.getSubKey(), value);
+    }
+
+    @Override
+    public void removeCredential(@NotNull CredentialKey key) {
+        removeCredential(key.getSubKey());
     }
 
     @Override

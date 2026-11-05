@@ -58,6 +58,11 @@ public enum CredentialKey {
      * {@code PasswordSafe} for this key.
      */
     public @NotNull CredentialAttributes attributes() {
+        return attributesFor(subKey);
+    }
+
+    /** Build the {@link CredentialAttributes} for an arbitrary sub-key (e.g. a router id). */
+    public static @NotNull CredentialAttributes attributesFor(@NotNull String subKey) {
         return new CredentialAttributes(
                 CredentialAttributesKt.generateServiceName(SERVICE_NAME, subKey));
     }

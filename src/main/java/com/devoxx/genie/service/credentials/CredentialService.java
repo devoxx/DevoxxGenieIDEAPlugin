@@ -35,6 +35,18 @@ public interface CredentialService {
     void removeCredential(@NotNull CredentialKey key);
 
     /**
+     * Returns the credential stored under the raw {@code subKey}, or {@code ""}.
+     * The enum overloads and this one share the same PasswordSafe entry.
+     */
+    @NotNull String getCredential(@NotNull String subKey);
+
+    /** Stores {@code value} under {@code subKey}; {@code null} or empty removes the entry. */
+    void setCredential(@NotNull String subKey, @Nullable String value);
+
+    /** Removes the credential entry for {@code subKey}. */
+    void removeCredential(@NotNull String subKey);
+
+    /**
      * {@code true} if IntelliJ's {@code PasswordSafe} is reachable for this
      * process. When {@code false}, get/set operate on an in-memory fallback
      * map and values are lost on JVM restart.
