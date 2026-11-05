@@ -104,6 +104,9 @@ One `ChatModelFactory` class constructed from a `RouterDefinition`. It:
   neither updates the cache nor records a failure. Otherwise a request started with key A could
   finish after Apply changed the key to B and restore A's account-specific catalog indefinitely.
   A caller still waiting on a stale fetch gets the current cached snapshot.
+- When disabled, `getModels()` checks this first and returns no models, with no key read, no
+  request and no retry delay. A background load queued before the router was disabled therefore
+  sends nothing when it runs.
 - With no key, skips fetching and returns no models. When a key is present it is sent to every
   endpoint. This also skips Requesty's public list, which keeps one rule for all routers.
 - Is registered for each definition in `ChatModelFactoryProvider` by looping over the
@@ -264,7 +267,8 @@ Test-first, per project convention.
 - **Behaviour:** a disabled router sends no request; listing providers and
   `LLMModelRegistryService.getModels()` make no generic-router network or credential calls; a
   failed fetch is retried only after 60 seconds or a Refresh; one failed Requesty endpoint keeps
-  the other's results; a router with no key sends no request.
+  the other's results; a router with no key sends no request; a load queued before disabling
+  reads no key and sends no request when it runs.
 - **Concurrency:** a request started with key A that finishes after a credential change and
   reset doesn't repopulate the cache, and the next load uses key B; a late failure from an old
   request doesn't trigger the 60-second backoff; concurrent readers see complete snapshots.
