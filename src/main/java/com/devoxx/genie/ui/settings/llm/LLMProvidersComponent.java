@@ -449,7 +449,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(localPanel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
                 createTextWithDownloadButton(llamaCPPModelUrlField, "https://github.com/ggml-org/llama.cpp"));
         addProviderSettingRow(localPanel, gbc, "Nativ URL", nativEnabledCheckBox,
-                createTextWithDownloadButton(nativModelUrlField, "https://blaizzy.github.io/nativ/"));
+                createTextWithDownloadButton(nativModelUrlField, "https://neywa-labs.github.io/nativ/"));
         addHintText(localPanel, gbc, "Run MLX models locally on Apple Silicon. Nativ defaults to port 8080 — the same port as Llama.c++ — so change one of the two if you want both enabled.");
         addProviderSettingRow(localPanel, gbc, "Nativ Fallback Context", nativFallbackContextEnabledCheckBox, nativFallbackContextField);
         addHintText(localPanel, gbc, "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes " + NativChatModelFactory.DEFAULT_CONTEXT_LENGTH + " tokens unless you set it here.");

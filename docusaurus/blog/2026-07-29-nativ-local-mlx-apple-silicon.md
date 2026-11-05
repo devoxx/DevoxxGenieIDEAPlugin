@@ -89,6 +89,6 @@ If you're on Apple Silicon and want your local models managed by something that 
 
 Pair it with DevoxxGenie's agent mode and you have a fully local coding assistant with tool calling, streaming, and zero code leaving your laptop.
 
-- Nativ: [GitHub](https://github.com/Blaizzy/nativ) · [website](https://blaizzy.github.io/nativ/)
+- Nativ: [GitHub](https://github.com/Blaizzy/nativ) · [website](https://neywa-labs.github.io/nativ/)
 - Setup details: [DevoxxGenie local models documentation](/docs/llm-providers/local-models#nativ)
 - DevoxxGenie is [open source on GitHub](https://github.com/devoxx/DevoxxGenieIDEAPlugin) · issues, ideas, and stars all welcome.

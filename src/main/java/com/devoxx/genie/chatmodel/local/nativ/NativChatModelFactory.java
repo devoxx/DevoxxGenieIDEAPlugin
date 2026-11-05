@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 /**
- * Nativ (<a href="https://blaizzy.github.io/nativ/">blaizzy.github.io/nativ</a>) runs MLX models
+ * Nativ (<a href="https://neywa-labs.github.io/nativ/">neywa-labs.github.io/nativ</a>) runs MLX models
  * locally on Apple Silicon and serves them over an OpenAI-compatible API, so it plugs straight
  * into the shared OpenAI chat/streaming clients.
  */
