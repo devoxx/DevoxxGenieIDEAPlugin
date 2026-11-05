@@ -159,6 +159,19 @@ class ModelComboLoaderTest {
     }
 
     @Test
+    void pendingModel_clearedByNoProviderAndByEmptyNonRouterLoad() {
+        loader.load(ModelProvider.OpenRouter, "saved/model");
+        loader.load(null, null);
+        assertThat(loader.effectiveModelName()).isEmpty();
+
+        loader = new ModelComboLoader(combo, background, edt,
+                p -> p == ModelProvider.Ollama ? List.of() : fetcher.apply(p));
+        loader.load(ModelProvider.OpenRouter, "saved/model");
+        loader.load(ModelProvider.Ollama, null);
+        assertThat(loader.effectiveModelName()).isEmpty();
+    }
+
+    @Test
     void noProvider_clearsAndDisables() {
         loader.load(ModelProvider.Ollama, "x");
         loader.load(null, null);
@@ -166,6 +179,78 @@ class ModelComboLoaderTest {
         assertThat(combo.getItemCount()).isZero();
         assertThat(combo.isEnabled()).isFalse();
         assertThat(loader.effectiveModelName()).isEmpty();
+    }
+
+    @Test
+    void lateRouterResult_afterSwitchToNoProvider_isDiscarded() {
+        loader.load(ModelProvider.OpenRouter, "a");
+        background.runAll();
+        loader.load(null, null);
+        edt.runAll();
+
+        assertThat(combo.getItemCount()).isZero();
+        assertThat(combo.isEnabled()).isFalse();
+    }
+
+    @Test
+    void sameRouterReload_newestResultWins() {
+        List<List<LanguageModel>> results = List.of(
+                List.of(model(ModelProvider.OpenRouter, "old")),
+                List.of(model(ModelProvider.OpenRouter, "new")));
+        int[] call = {0};
+        loader = new ModelComboLoader(combo, background, edt, p -> results.get(call[0]++));
+
+        loader.load(ModelProvider.OpenRouter, null);
+        loader.load(ModelProvider.OpenRouter, null);
+        background.runAll();
+        edt.runAll();
+
+        assertThat(combo.getItemCount()).isEqualTo(1);
+        assertThat(combo.getItemAt(0).getModelName()).isEqualTo("new");
+    }
+
+    @Test
+    void retrySameRouterAfterFailedLoad_keepsSavedModelName() {
+        loader = new ModelComboLoader(combo, background, edt, p -> {
+            throw new IllegalStateException("boom");
+        });
+        loader.load(ModelProvider.OpenRouter, "saved/model");
+        background.runAll();
+        edt.runAll();
+        loader.load(ModelProvider.OpenRouter, null);
+
+        assertThat(loader.effectiveModelName()).isEqualTo("saved/model");
+    }
+
+    @Test
+    void errorInFetch_stillReEnablesCombo() {
+        loader = new ModelComboLoader(combo, background, edt, p -> {
+            throw new NoClassDefFoundError("x");
+        });
+        loader.load(ModelProvider.OpenRouter, "saved/model");
+        background.runAll();
+        edt.runAll();
+
+        assertThat(combo.isEnabled()).isTrue();
+        assertThat(loader.effectiveModelName()).isEqualTo("saved/model");
+    }
+
+    @Test
+    void sortFailure_isHandledLikeFailedLoad() {
+        class Unsortable extends LanguageModel {
+            @Override
+            public int compareTo(LanguageModel other) {
+                throw new NumberFormatException("overflow");
+            }
+        }
+        loader = new ModelComboLoader(combo, background, edt, p -> List.of(new Unsortable(), new Unsortable()));
+        loader.load(ModelProvider.OpenRouter, "saved/model");
+        background.runAll();
+        edt.runAll();
+
+        assertThat(combo.isEnabled()).isTrue();
+        assertThat(combo.getItemCount()).isZero();
+        assertThat(loader.effectiveModelName()).isEqualTo("saved/model");
     }
 
     @Test

@@ -39,6 +39,7 @@ final class ModelComboLoader {
     private int generation;
     private boolean disposed;
     private @Nullable String pendingModel;
+    private @Nullable ModelProvider currentProvider;
 
     ModelComboLoader(@NotNull ComboBox<LanguageModel> combo) {
         this(combo,
@@ -69,6 +70,9 @@ final class ModelComboLoader {
     /** EDT only. Replaces the combo contents; {@code modelToSelect} is the saved model, if any. */
     void load(@Nullable ModelProvider provider, @Nullable String modelToSelect) {
         int gen = ++generation;
+        // Re-selecting the same provider (the retry after a failed load) keeps the saved name.
+        String carried = provider != null && provider == currentProvider && modelToSelect == null ? pendingModel : null;
+        currentProvider = provider;
         pendingModel = null;
         combo.removeAllItems();
 
@@ -79,19 +83,19 @@ final class ModelComboLoader {
 
         if (!RouterRegistry.isGeneric(provider)) {
             combo.setEnabled(true);
-            populate(fetcher.apply(provider), modelToSelect);
+            populate(fetchSorted(provider), modelToSelect);
             return;
         }
 
-        pendingModel = modelToSelect == null || modelToSelect.isEmpty() ? null : modelToSelect;
+        String wanted = modelToSelect != null ? modelToSelect : carried;
+        pendingModel = wanted == null || wanted.isEmpty() ? null : wanted;
         combo.setEnabled(false);
         background.execute(() -> {
-            List<LanguageModel> models;
+            List<LanguageModel> models = List.of();
             try {
-                models = fetcher.apply(provider);
-            } catch (Exception e) {
-                LOG.warn("Could not load models for " + provider.getName() + ": " + e.getMessage());
-                models = List.of();
+                models = fetchSorted(provider);
+            } catch (Throwable t) { // always post the callback, or the combo stays disabled
+                LOG.warn("Could not load models for " + provider.getName() + ": " + t.getMessage());
             }
             List<LanguageModel> result = models;
             edt.execute(() -> finish(gen, result));
@@ -109,12 +113,20 @@ final class ModelComboLoader {
         populate(models, pendingModel);
     }
 
-    private void populate(List<LanguageModel> models, @Nullable String modelToSelect) {
-        if (models == null || models.isEmpty()) {
-            return; // keep the saved name pending
+    private List<LanguageModel> fetchSorted(ModelProvider provider) {
+        List<LanguageModel> models = fetcher.apply(provider);
+        if (models == null) {
+            return List.of();
         }
         List<LanguageModel> sorted = new ArrayList<>(models);
         sorted.sort(Comparator.naturalOrder());
+        return sorted;
+    }
+
+    private void populate(List<LanguageModel> sorted, @Nullable String modelToSelect) {
+        if (sorted.isEmpty()) {
+            return; // keep the saved name pending
+        }
         sorted.forEach(combo::addItem);
         if (modelToSelect != null && !modelToSelect.isEmpty()) {
             for (LanguageModel m : sorted) {
