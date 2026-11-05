@@ -79,7 +79,7 @@ class LLMProviderServiceRouterTest {
     }
 
     @Test
-    void genericRouter_isApiKeyBased_andSupported_andRefreshable() {
+    void genericRouter_requiresApiKey_andIsApiKeyBased() {
         assertThat(LLMProviderService.requiresApiKey(ModelProvider.OpenRouter)).isTrue();
         assertThat(DefaultLLMSettingsUtil.isApiKeyBasedProvider(ModelProvider.OpenRouter)).isTrue();
     }
