@@ -16,6 +16,10 @@ For all cloud providers, available models are **automatically fetched** from the
 
 ## Supported Cloud Providers
 
+In the plugin settings, direct providers are on the **Cloud Direct** tab and routers are on the **Routers** tab.
+
+**Cloud Direct**
+
 1. [OpenAI](#openai)
 2. [Anthropic](#anthropic)
 3. [Google](#google)
@@ -26,11 +30,16 @@ For all cloud providers, available models are **automatically fetched** from the
 8. [DeepSeek](#deepseek)
 9. [Kimi](#kimi)
 10. [GLM](#glm)
-11. [OpenRouter](#openrouter)
-12. [NVIDIA](#nvidia)
-13. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
-14. [Azure OpenAI](#azure-openai)
-15. [Amazon Bedrock](#amazon-bedrock)
+11. [NVIDIA](#nvidia)
+12. [Azure OpenAI](#azure-openai)
+13. [Amazon Bedrock](#amazon-bedrock)
+
+**Routers** (see [Routers](#routers))
+
+1. [OpenRouter](#openrouter)
+2. [Requesty](#requesty)
+3. [DemonRoute](#demonroute)
+4. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
 
 ## OpenAI
 
@@ -334,6 +343,65 @@ Google provides the Gemini family of models through Google AI Studio.
 - Pay-as-you-go pricing
 
 *Check [OpenRouter's pricing page](https://openrouter.ai/pricing) for current rates.*
+
+## Routers
+
+:::warning Routers forward your prompts and code to other providers
+Anything you send, including project files added to context, may pass through the router and whichever provider it selects. Each has its own logging, retention and training policies, and a provider may be in another country. DevoxxGenie doesn't verify these services or their privacy claims, and listing one here isn't an endorsement. Check the router's terms before enabling it, and avoid sending confidential code or secrets unless your organisation allows it.
+:::
+
+OpenRouter, Requesty, DemonRoute and Cloudflare AI Gateway are configured on the **Routers** tab in the DevoxxGenie settings. Each router is disabled until you tick its checkbox and enter an API key.
+
+## Requesty
+
+[Requesty](https://requesty.ai/) is an OpenAI-compatible router that offers models from several vendors through one API key.
+
+DevoxxGenie talks to `https://router.requesty.ai/v1` and builds the model list from the Requesty catalog (`/v1/models/managed` and `/v1/models`), keeping chat models only. Context window and prices come from that catalog.
+
+### Setup
+
+1. Create an account at [Requesty](https://app.requesty.ai/)
+2. Generate an API key at [app.requesty.ai/api-keys](https://app.requesty.ai/api-keys)
+3. In DevoxxGenie settings, open the **Routers** tab, enable "Requesty" and paste your API key
+4. Select a model from the list
+
+### Configuration
+
+- **API Key**: Your Requesty API key
+- **Model**: Model ids are either a Requesty managed policy such as `claude-sonnet-4-5`, or the `vendor/model` form such as `openai/gpt-4o-mini` or `anthropic/claude-sonnet-4-5`
+- **Parameters**: Temperature, Top P
+
+:::note EU region
+Requesty also runs an EU endpoint at `https://router.eu.requesty.ai/v1`. DevoxxGenie currently uses the global endpoint; see the [Requesty docs](https://docs.requesty.ai) for region details.
+:::
+
+:::note Testing status
+Requesty support was contributed by Thibault Jaigu (#1303). It hasn't been tested against the live service by the maintainers.
+:::
+
+*Check the [Requesty model list](https://requesty.ai/models) for current rates.*
+
+## DemonRoute
+
+[DemonRoute](https://demonroute.com) is an OpenAI-compatible router. DevoxxGenie talks to `https://api.demonroute.com/v1` and reads the model list from its `/models` endpoint.
+
+### Setup
+
+1. Create an account and an API key at [demonroute.com](https://demonroute.com)
+2. In DevoxxGenie settings, open the **Routers** tab, enable "DemonRoute" and paste your API key
+3. Select a model from the list
+
+### Configuration
+
+- **API Key**: Your DemonRoute API key
+- **Model**: Select from the models the endpoint reports
+- **Parameters**: Temperature, Top P, and the max output tokens from your chat model settings
+
+The `/models` endpoint is assumed to return the usual OpenAI-style list without prices or context windows, so DevoxxGenie assumes a 128K context window and shows no cost estimate.
+
+:::note Testing status
+DemonRoute support was added for requests #1340 and #1378. It hasn't been tested against the live service.
+:::
 
 ## NVIDIA
 

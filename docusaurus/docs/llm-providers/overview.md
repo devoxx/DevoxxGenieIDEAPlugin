@@ -42,7 +42,7 @@ Cloud providers offer powerful models as a service:
 - **Easy setup**: No model downloads or configuration
 - **Regular updates**: Always use the latest models
 
-Supported cloud providers:
+Supported cloud providers (settings tab **Cloud Direct**):
 - [OpenAI](cloud-models.md#openai) (GPT-4o, O-series, etc.)
 - [Anthropic](cloud-models.md#anthropic) (Claude models)
 - [Google](cloud-models.md#google) (Gemini models)
@@ -53,11 +53,15 @@ Supported cloud providers:
 - [DeepSeek](cloud-models.md#deepseek)
 - [Kimi](cloud-models.md#kimi)
 - [GLM](cloud-models.md#glm) (Zhipu AI)
-- [OpenRouter](cloud-models.md#openrouter)
 - [NVIDIA](cloud-models.md#nvidia) (NIM-hosted models through an OpenAI-compatible API)
-- [Cloudflare AI Gateway](cloud-models.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
 - [Azure OpenAI](cloud-models.md#azure-openai)
 - [Amazon Bedrock](cloud-models.md#amazon-bedrock)
+
+Supported [routers](cloud-models.md#routers) (settings tab **Routers**), which forward your prompts to other providers:
+- [OpenRouter](cloud-models.md#openrouter)
+- [Requesty](cloud-models.md#requesty)
+- [DemonRoute](cloud-models.md#demonroute)
+- [Cloudflare AI Gateway](cloud-models.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
 
 ## Provider Selection
 

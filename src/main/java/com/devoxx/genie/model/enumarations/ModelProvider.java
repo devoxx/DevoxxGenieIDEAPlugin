@@ -26,6 +26,8 @@ public enum ModelProvider {
     DeepInfra("DeepInfra", Type.CLOUD),
     Google("Google", Type.CLOUD),
     OpenRouter("OpenRouter", Type.ROUTER),
+    Requesty("Requesty", Type.ROUTER),
+    DemonRoute("DemonRoute", Type.ROUTER),
     DeepSeek("DeepSeek", Type.CLOUD),
     Grok("Grok", Type.CLOUD),
     Kimi("Kimi", Type.CLOUD),

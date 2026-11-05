@@ -188,6 +188,17 @@ class LLMProvidersRouterSettingsTest {
     }
 
     @Test
+    void everyRouterRow_startsDisabledWithEmptyKey() {
+        configurable();
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            LLMProvidersComponent.RouterRow row = component().getRouterRows().get(def.provider());
+            assertThat(row).as("row for %s", def.provider()).isNotNull();
+            assertThat(row.enabled().isSelected()).isFalse();
+            assertThat(row.key().getPassword()).isEmpty();
+        }
+    }
+
+    @Test
     void warning_matchesSpecText() {
         String plain = LLMProvidersComponent.ROUTERS_WARNING.replaceAll("<[^>]+>", "");
         assertThat(plain).isEqualTo("Routers forward your prompts and code to other providers. "

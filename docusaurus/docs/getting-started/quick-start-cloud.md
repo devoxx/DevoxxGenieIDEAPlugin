@@ -30,9 +30,10 @@ DevoxxGenie supports several cloud LLM providers:
 - [DeepSeek](https://www.deepseek.com/)
 - [Kimi](https://platform.moonshot.ai/)
 - [GLM](https://open.bigmodel.cn/) (Zhipu AI)
-- [OpenRouter](https://www.openrouter.ai/)
 - [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
 - [Amazon Bedrock](https://aws.amazon.com/bedrock)
+
+These are on the **Cloud Direct** tab in the settings. The **Routers** tab covers [OpenRouter](https://www.openrouter.ai/), [Requesty](https://requesty.ai/), [DemonRoute](https://demonroute.com) and Cloudflare AI Gateway, which forward your prompts to other providers (see [Routers](../llm-providers/cloud-models.md#routers)).
 
 ## Setting Up with OpenAI
 

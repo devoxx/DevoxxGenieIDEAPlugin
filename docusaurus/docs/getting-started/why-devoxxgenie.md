@@ -47,7 +47,9 @@ This matters for:
 
 Model choice is not unique to DevoxxGenie: competitors also offer multiple models, with availability depending on the product, feature, and plan. JetBrains also supports [BYOK and external agents](https://www.jetbrains.com/store/ai/?section=personal). DevoxxGenie's approach is to expose provider configuration directly inside an open-source IntelliJ plugin, without requiring a DevoxxGenie subscription.
 
-**Cloud providers**: OpenAI, Anthropic (Claude), Google Gemini, Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek, Kimi (Moonshot AI), GLM (Zhipu AI), OpenRouter, NVIDIA, Cloudflare AI Gateway, Azure OpenAI, Amazon Bedrock
+**Cloud providers (Cloud Direct)**: OpenAI, Anthropic (Claude), Google Gemini, Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek, Kimi (Moonshot AI), GLM (Zhipu AI), NVIDIA, Azure OpenAI, Amazon Bedrock
+
+**Routers**: OpenRouter, Requesty, DemonRoute, Cloudflare AI Gateway
 
 **Local providers**: Ollama, LM Studio, GPT4All, Llama.cpp, Jan, Nativ, Exo, and custom OpenAI-compatible endpoints
 

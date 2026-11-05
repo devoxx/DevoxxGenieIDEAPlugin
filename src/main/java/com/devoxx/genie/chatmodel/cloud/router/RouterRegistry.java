@@ -22,7 +22,33 @@ public final class RouterRegistry {
                     null, null),
             4000);
 
-    private static final List<RouterDefinition> DEFINITIONS = List.of(OPEN_ROUTER);
+    private static final RouterDefinition REQUESTY = new RouterDefinition(
+            ModelProvider.Requesty,
+            "Requesty",
+            "https://router.requesty.ai/v1",
+            List.of("/models/managed", "/models"),
+            "requestyKey",
+            "https://app.requesty.ai/api-keys",
+            "Model ids are a managed policy name or the vendor/model form. "
+                    + "An EU endpoint (router.eu.requesty.ai) exists but isn't used.",
+            new CatalogFields(null,
+                    List.of("context_window"),
+                    "input_price", "output_price", 1_000_000,
+                    "api", "chat"),
+            4000);
+
+    private static final RouterDefinition DEMON_ROUTE = new RouterDefinition(
+            ModelProvider.DemonRoute,
+            "DemonRoute",
+            "https://api.demonroute.com/v1",
+            List.of("/models"),
+            "demonRouteKey",
+            "https://demonroute.com",
+            null,
+            null,
+            null);
+
+    private static final List<RouterDefinition> DEFINITIONS = List.of(OPEN_ROUTER, REQUESTY, DEMON_ROUTE);
 
     private RouterRegistry() {
     }
