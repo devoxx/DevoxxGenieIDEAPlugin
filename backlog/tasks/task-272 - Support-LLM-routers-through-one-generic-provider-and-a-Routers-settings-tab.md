@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Claude
 created_date: '2026-11-05T06:39:00Z'
-updated_date: '2026-11-05T10:45:00Z'
+updated_date: '2026-11-05T10:46:00Z'
 labels: []
 dependencies: []
 references:
@@ -13,6 +13,7 @@ references:
   - https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1378
   - https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1340
   - https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1291
+  - https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1384
 documentation:
   - docs/superpowers/specs/2026-11-05-generic-llm-routers-design.md
 modified_files:
@@ -121,7 +122,7 @@ Vendors keep asking to be added as LLM providers (Requesty, DemonRoute, OrcaRout
 - [ ] #9 Both agent settings model loaders run off the EDT for generic routers and keep the saved model through asynchronous loading and Apply
 - [x] #10 Requests send no affiliate, referral or attribution data
 - [x] #11 Docs and release notes cover the Routers tab, and state that DemonRoute was not tested live
-- [ ] #12 PRs #1303 and #1378 are closed with credit to their authors and a link to the replacement PR
+- [x] #12 PRs #1303 and #1378 are closed with credit to their authors and a link to the replacement PR
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -139,3 +140,13 @@ Criteria 5 and 9 stay open until the manual IDE check: the pieces are tested (ke
 
 Known residuals: a routerEnabled XML entry with a null key or value makes state deserialization throw (hand-edited or corrupted XML only). Sibling providers can still delete a stored key on an empty keychain read (pre-existing). Tracked META-INF/plugin.xml.bak still names the deleted OpenRouterService.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added one generic router provider (RouterDefinition, RouterRegistry, RouterChatModelFactory), so a typical OpenAI-compatible router takes one enum line and one definition entry, enforced by a guard test. OpenRouter moved onto it, Requesty and DemonRoute were added, the settings tabs are now Local, Cloud Direct, Routers and Custom OpenAI with a privacy warning and per-router checkboxes, and both agent settings model loaders run off the EDT for generic routers. PR #1384 replaces #1303 and #1378, which are closed with credit.
+
+Verified on 71a3f577: 4134 tests, 0 failures, 22 skipped; verifyPlugin compatible with IU-253.31033.145 and IU-261.22158.277.
+
+Not yet verified: no run in an IDE, and no live test of any router. Criteria 5 and 9 stay open until the maintainer's IDE check, and the task stays In Progress until then.
+<!-- SECTION:FINAL_SUMMARY:END -->
