@@ -56,6 +56,7 @@ class ChatModelFactoryProviderTest {
                 Arguments.of("Ollama", OllamaChatModelFactory.class),
                 Arguments.of("OpenAI", OpenAIChatModelFactory.class),
                 Arguments.of("OpenRouter", RouterChatModelFactory.class),
+                Arguments.of("OrcaRouter", RouterChatModelFactory.class),
                 Arguments.of("Requesty", RouterChatModelFactory.class),
                 Arguments.of("DemonRoute", RouterChatModelFactory.class),
                 Arguments.of("Grok", GrokChatModelFactory.class),
@@ -112,7 +113,8 @@ class ChatModelFactoryProviderTest {
     @Test
     void testGetFactoryByProvider_AllCloudProviders() {
         String[] cloudProviders = {"Anthropic", "AzureOpenAI", "Bedrock", "DeepInfra", "DeepSeek",
-                "Google", "Groq", "Mistral", "OpenAI", "OpenRouter", "Requesty", "DemonRoute", "Grok", "Kimi", "GLM"};
+                "Google", "Groq", "Mistral", "OpenAI", "OpenRouter", "OrcaRouter", "Requesty", "DemonRoute", "Grok",
+                "Kimi", "GLM"};
 
         for (String provider : cloudProviders) {
             Optional<ChatModelFactory> factory = ChatModelFactoryProvider.getFactoryByProvider(provider);

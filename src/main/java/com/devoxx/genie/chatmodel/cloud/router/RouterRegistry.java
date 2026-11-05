@@ -22,6 +22,20 @@ public final class RouterRegistry {
                     null, null),
             4000);
 
+    private static final RouterDefinition ORCA_ROUTER = new RouterDefinition(
+            ModelProvider.OrcaRouter,
+            "OrcaRouter",
+            "https://api.orcarouter.ai/v1",
+            List.of("/models"),
+            "orcaRouterKey",
+            "https://www.orcarouter.ai/console/token",
+            null,
+            new CatalogFields("name",
+                    List.of("context_length", "top_provider.context_length"),
+                    "pricing.prompt", "pricing.completion", 1_000_000,
+                    "endpoint_capabilities", "chat_completions"),
+            null);
+
     private static final RouterDefinition REQUESTY = new RouterDefinition(
             ModelProvider.Requesty,
             "Requesty",
@@ -48,7 +62,7 @@ public final class RouterRegistry {
             null,
             null);
 
-    private static final List<RouterDefinition> DEFINITIONS = List.of(OPEN_ROUTER, REQUESTY, DEMON_ROUTE);
+    private static final List<RouterDefinition> DEFINITIONS = List.of(OPEN_ROUTER, ORCA_ROUTER, REQUESTY, DEMON_ROUTE);
 
     private RouterRegistry() {
     }

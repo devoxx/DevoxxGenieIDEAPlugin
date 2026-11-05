@@ -9,8 +9,8 @@ import java.util.List;
  *
  * @param contextWindow ordered fallbacks; the first path holding a positive number wins
  * @param priceScale    multiplier applied to prices to reach cost per million tokens
- * @param filterField   when set, an entry whose field is present must equal {@code filterValue};
- *                      an absent field counts as a match
+ * @param filterField   when set, an entry whose field is present must equal {@code filterValue}, or
+ *                      contain it when the field is an array; an absent field counts as a match
  */
 public record CatalogFields(@Nullable String displayName,
                             List<String> contextWindow,

@@ -12,6 +12,10 @@ DevoxxGenie supports a variety of local LLM providers, allowing you to run AI mo
 
 ## Supported Local Providers
 
+Configure these on the **Local** tab of the DevoxxGenie settings.
+
+![The Local tab in the LLM settings](/img/settings-local.png)
+
 DevoxxGenie integrates with these local LLM providers:
 
 1. [Ollama](#ollama)
