@@ -78,4 +78,14 @@ class DevoxxGenieStateServiceLocalProviderTest {
         state.setLocalProviderFallbackContext(ModelProvider.Nativ, null);
         assertThat(state.getLocalProviderFallbackContext(ModelProvider.Nativ)).isNull();
     }
+
+    @Test
+    void clearedFallback_staysClearedAfterReload() {
+        DevoxxGenieStateService saved = new DevoxxGenieStateService();
+        saved.setNativFallbackContextLength(131_072);
+        DevoxxGenieStateService loaded = upgrade(saved);
+        assertThat(loaded.getLocalProviderFallbackContext(ModelProvider.Nativ)).isEqualTo(131_072);
+        loaded.setLocalProviderFallbackContext(ModelProvider.Nativ, null);
+        assertThat(upgrade(loaded).getLocalProviderFallbackContext(ModelProvider.Nativ)).isNull();
+    }
 }
