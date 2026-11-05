@@ -1131,8 +1131,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         return LocalProviderRegistry.find(provider).map(LocalProviderDefinition::defaultUrl).orElse("");
     }
 
-    public void setLocalProviderUrl(@NotNull ModelProvider provider, @NotNull String url) {
-        localProviderUrls.put(provider.name(), url);
+    public void setLocalProviderUrl(@NotNull ModelProvider provider, @Nullable String url) {
+        // Absent means "use the definition's default", so a blank URL is removed rather than stored.
+        if (url == null || url.isBlank()) {
+            localProviderUrls.remove(provider.name());
+        } else {
+            localProviderUrls.put(provider.name(), url);
+        }
     }
 
     public boolean isLocalProviderEnabled(@NotNull ModelProvider provider) {

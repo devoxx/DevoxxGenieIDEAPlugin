@@ -111,6 +111,24 @@ class RouterCatalogParserTest {
     }
 
     @Test
+    void arrayFilter_keepsEntryWithEmptyArray() {
+        RouterDefinition arrayFilter = new RouterDefinition(
+                ModelProvider.OpenRouter, "ArrayFilter", "https://example.invalid/v1",
+                List.of("/models"), "arrayKey", "https://example.invalid/keys", null,
+                new CatalogFields(null, List.of("context_window"), null, null, 1, "modes", "chat"),
+                4000);
+        String json = """
+                {"data":[{"id":"has","modes":["chat","embed"]},
+                         {"id":"other","modes":["embed"]},
+                         {"id":"empty","modes":[]}]}
+                """;
+
+        List<LanguageModel> models = RouterCatalogParser.parse(arrayFilter, json);
+
+        assertThat(models).extracting(LanguageModel::getModelName).contains("has", "empty").doesNotContain("other");
+    }
+
+    @Test
     void invalidJson_throws() {
         assertThatThrownBy(() -> RouterCatalogParser.parse(PLAIN, "<html>nope</html>"))
                 .isInstanceOf(JsonParseException.class);

@@ -392,7 +392,7 @@ class LLMProvidersRouterSettingsTest {
     }
 
     @Test
-    void apply_savesAndClearsFallbackContext_withoutResettingFactory() throws ConfigurationException {
+    void apply_savesAndClearsFallbackContext_andResetsFactoryEachTime() throws ConfigurationException {
         ChatModelFactory factory = mock(ChatModelFactory.class);
         factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(ModelProvider.Nativ.name()))
                 .thenReturn(Optional.of(factory));
@@ -415,7 +415,23 @@ class LLMProvidersRouterSettingsTest {
         assertThat(stateService.getLocalProviderFallbackContext(ModelProvider.Nativ)).isNull();
         assertThat(configurable.isModified()).isFalse();
 
-        verify(factory, never()).resetModels();
+        // The context window is baked into cached models, so each change must reset the factory.
+        verify(factory, times(2)).resetModels();
+    }
+
+    @Test
+    void apply_urlWithOnlyTrailingSpaceAdded_doesNotResetFactory() throws ConfigurationException {
+        ChatModelFactory factory = stubLocalFactory();
+        configurable();
+        LLMProvidersComponent.LocalProviderRow row = component().getLocalProviderRows().get(LOCAL);
+        row.url().setText("http://localhost:8003/v1/");
+        configurable.apply();
+        verify(factory, times(1)).resetModels();
+
+        row.url().setText("http://localhost:8003/v1/ ");
+        configurable.apply();
+
+        verify(factory, times(1)).resetModels();
     }
 
     @Test

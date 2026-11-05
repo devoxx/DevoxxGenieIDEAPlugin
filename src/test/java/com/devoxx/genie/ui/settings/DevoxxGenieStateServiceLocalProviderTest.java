@@ -58,6 +58,7 @@ class DevoxxGenieStateServiceLocalProviderTest {
         assertThat(state.isLocalProviderEnabled(ModelProvider.Nativ)).isFalse();
         assertThat(state.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:8080/v1/");
         state.setLocalProviderUrl(ModelProvider.Nativ, "   ");
+        assertThat(state.getLocalProviderUrls()).doesNotContainKey("Nativ");
         assertThat(state.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:8080/v1/");
     }
 

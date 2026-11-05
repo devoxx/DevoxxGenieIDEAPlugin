@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
@@ -334,16 +335,22 @@ public class LLMProvidersConfigurable implements Configurable {
             ModelProvider provider = def.provider();
             LLMProvidersComponent.LocalProviderRow row = llmSettingsComponent.getLocalProviderRows().get(provider);
             boolean newEnabled = row.enabled().isSelected();
-            boolean changed = !row.url().getText().equals(settings.getLocalProviderUrl(provider))
-                    || newEnabled != settings.isLocalProviderEnabled(provider);
+            String typedUrl = row.url().getText().trim();
+            String newUrl = typedUrl.isEmpty() ? def.defaultUrl() : typedUrl;
+            Integer newFallback = row.fallback() == null ? null
+                    : (row.fallbackEnabled().isSelected() ? row.fallback().getNumber() : null);
+            // The fallback context window is baked into cached LanguageModels, so it counts as a change too.
+            boolean changed = !newUrl.equals(settings.getLocalProviderUrl(provider))
+                    || newEnabled != settings.isLocalProviderEnabled(provider)
+                    || (row.fallback() != null
+                        && !Objects.equals(newFallback, settings.getLocalProviderFallbackContext(provider)));
 
             settings.setLocalProviderUrl(provider, row.url().getText());
             // The saved URL is trimmed and a blank one means the default: show that, or the page stays dirty.
             row.url().setText(settings.getLocalProviderUrl(provider));
             settings.setLocalProviderEnabled(provider, newEnabled);
             if (row.fallback() != null) {
-                settings.setLocalProviderFallbackContext(provider,
-                        row.fallbackEnabled().isSelected() ? row.fallback().getNumber() : null);
+                settings.setLocalProviderFallbackContext(provider, newFallback);
             }
 
             if (changed) {

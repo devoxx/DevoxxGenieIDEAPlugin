@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * Dotted JSON paths naming where a router's model catalog keeps optional fields.
+ * Dotted JSON paths naming where a model catalog keeps optional fields.
  *
  * @param contextWindow ordered fallbacks; the first path holding a positive number wins
  * @param priceScale    multiplier applied to prices to reach cost per million tokens
