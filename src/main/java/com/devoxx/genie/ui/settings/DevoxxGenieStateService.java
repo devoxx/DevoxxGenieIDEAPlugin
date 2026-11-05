@@ -1155,6 +1155,10 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public void setLocalProviderFallbackContext(@NotNull ModelProvider provider, @Nullable Integer length) {
         if (length == null) {
             localProviderFallbackContext.remove(provider.name());
+            if (provider == ModelProvider.Nativ) {
+                // Clear the legacy field too, or the next loadState would re-seed the removed value.
+                nativFallbackContextLength = null;
+            }
         } else {
             localProviderFallbackContext.put(provider.name(), length);
         }
