@@ -30,7 +30,8 @@ class RouterRegistryTest {
     @Test
     void registry_hasExpectedRouters() {
         assertThat(RouterRegistry.definitions()).extracting(RouterDefinition::provider)
-                .containsExactly(ModelProvider.OpenRouter, ModelProvider.Requesty, ModelProvider.DemonRoute);
+                .containsExactly(ModelProvider.OpenRouter, ModelProvider.OrcaRouter, ModelProvider.Requesty,
+                        ModelProvider.DemonRoute);
     }
 
     @Test
@@ -80,6 +81,29 @@ class RouterRegistryTest {
         assertThat(models.get(0).getProvider()).isEqualTo(ModelProvider.Requesty);
         assertThat(models.get(0).getInputCost()).isEqualTo(3.0);
         assertThat(models.get(0).getInputMaxTokens()).isEqualTo(200_000);
+    }
+
+    @Test
+    void orcaRouter_sampleCatalogKeepsChatModelsOnly() throws IOException {
+        RouterDefinition def = RouterRegistry.find(ModelProvider.OrcaRouter).orElseThrow();
+        String json;
+        try (var in = RouterRegistryTest.class.getResourceAsStream("/router/orcarouter-models.json")) {
+            json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        List<LanguageModel> models = RouterCatalogParser.parse(def, json);
+
+        // TTS and image entries are dropped; routing aliases have no capability list and are kept
+        assertThat(models).extracting(LanguageModel::getModelName)
+                .containsExactly("orcarouter/auto", "anthropic/claude-fable-5");
+        LanguageModel fable = models.get(1);
+        assertThat(fable.getProvider()).isEqualTo(ModelProvider.OrcaRouter);
+        assertThat(fable.getDisplayName()).isEqualTo("Anthropic: Claude Fable 5");
+        assertThat(fable.getInputCost()).isEqualTo(10.0);
+        assertThat(fable.getOutputCost()).isEqualTo(50.0);
+        assertThat(fable.getInputMaxTokens()).isEqualTo(1_000_000);
+        assertThat(def.baseUrl()).isEqualTo("https://api.orcarouter.ai/v1");
+        assertThat(def.maxTokens()).isNull();
     }
 
     @Test

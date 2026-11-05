@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Claude
 created_date: '2026-11-05T06:39:00Z'
-updated_date: '2026-11-05T10:46:00Z'
+updated_date: '2026-11-05T12:59:00Z'
 labels: []
 dependencies: []
 references:
@@ -98,6 +98,14 @@ modified_files:
     src/test/java/com/devoxx/genie/ui/settings/llm/LLMProvidersRouterSettingsTest.java
   - src/test/resources/router/openrouter-models.json
   - src/test/resources/router/requesty-models.json
+  - docusaurus/docs/configuration/settings.md
+  - src/test/resources/router/orcarouter-models.json
+  - docusaurus/docs/llm-providers/custom-providers.md
+  - docusaurus/docs/llm-providers/local-models.md
+  - docusaurus/static/img/settings-local.png
+  - docusaurus/static/img/settings-cloud-direct.png
+  - docusaurus/static/img/settings-routers.png
+  - docusaurus/static/img/settings-custom-openai.png
 priority: medium
 type: feature
 ordinal: 16000
@@ -123,6 +131,7 @@ Vendors keep asking to be added as LLM providers (Requesty, DemonRoute, OrcaRout
 - [x] #10 Requests send no affiliate, referral or attribution data
 - [x] #11 Docs and release notes cover the Routers tab, and state that DemonRoute was not tested live
 - [x] #12 PRs #1303 and #1378 are closed with credit to their authors and a link to the replacement PR
+- [x] #13 OrcaRouter is added as a definition; its catalog keeps chat models and routing aliases only, and it is listed before Requesty so DemonRoute stays last
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -139,6 +148,8 @@ Verified on 71a3f577: full suite 4134 tests, 0 failures, 0 errors, 22 skipped; v
 Criteria 5 and 9 stay open until the manual IDE check: the pieces are tested (key reuse, legacy-flag seed, ModelComboLoader), but the upgrade and the settings dialog have not been exercised in a running IDE, and AgentSettingsComponent's wiring to effectiveModelName() was verified by reading only. Requesty and DemonRoute have not been tested against live services.
 
 Known residuals: a routerEnabled XML entry with a null key or value makes state deserialization throw (hand-edited or corrupted XML only). Sibling providers can still delete a stored key on an empty keychain read (pre-existing). Tracked META-INF/plugin.xml.bak still names the deleted OpenRouterService.
+
+Added OrcaRouter (#1291) after the first PR round. Base URL https://api.orcarouter.ai/v1 comes from OrcaRouter's docs, and the catalog was read live with no key. CatalogFields filter now accepts array fields. Chat requests not tested live: no key. README and docs now explain the Local, Cloud Direct, Routers and Custom OpenAI tabs.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
