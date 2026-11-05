@@ -34,13 +34,14 @@ This is the main settings page where you can:
 - Configure endpoints for local providers
 - Enable optional providers (Azure OpenAI, Amazon Bedrock)
 
-The providers are grouped in four tabs:
+The providers are grouped in five tabs:
 
 | Tab | Contains |
 |-----|----------|
 | **Local** | Endpoints for providers running on your machine, such as Ollama and LM Studio |
 | **Cloud Direct** | API keys for [cloud providers](../llm-providers/cloud-models.md) you have your own account with, such as OpenAI, Anthropic and Google |
 | **Routers** | A checkbox and API key for each [router](../llm-providers/cloud-models.md#routers): OpenRouter, Cloudflare AI Gateway, OrcaRouter, Requesty and DemonRoute |
+| **Sharding** | Exo, which splits a model across several Apple Silicon devices. Other solutions are listed as coming soon |
 | **Custom OpenAI** | The URL, model and API key of any other [OpenAI-compatible endpoint](../llm-providers/custom-providers.md) |
 
 ![The Local tab in the LLM settings](/img/settings-local.png)

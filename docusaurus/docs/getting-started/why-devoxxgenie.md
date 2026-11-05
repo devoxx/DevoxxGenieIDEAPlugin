@@ -51,7 +51,7 @@ Model choice is not unique to DevoxxGenie: competitors also offer multiple model
 
 **Routers**: OpenRouter, OrcaRouter, Requesty, DemonRoute, Cloudflare AI Gateway
 
-**Local providers**: Ollama, LM Studio, GPT4All, Llama.cpp, Jan, Nativ, Exo, and custom OpenAI-compatible endpoints
+**Local providers**: Ollama, LM Studio, GPT4All, Llama.cpp, Jan, Nativ, Exo, Rapid-MLX, and custom OpenAI-compatible endpoints
 
 Switch models mid-conversation. Use different models for different tasks. Assign specific models to sub-agents. The choice is always yours.
 

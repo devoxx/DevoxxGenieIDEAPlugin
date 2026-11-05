@@ -82,6 +82,8 @@ The plugin processes user prompts through a layered architecture:
 
 **Local Providers**: ollama, gpt4all, lmstudio, llamacpp, jan, customopenai
 
+**Generic local providers** (OpenAI-compatible, no factory; defined in `chatmodel/local/compatible/LocalProviderRegistry`): nativ, rapidmlx
+
 **Adding New Providers**:
 1. Create factory class implementing `ChatModelFactory` under `chatmodel/cloud/` or `chatmodel/local/`
 2. Implement `createChatModel()` and `createStreamingChatModel()` methods
