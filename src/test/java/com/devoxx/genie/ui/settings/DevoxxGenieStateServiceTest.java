@@ -125,7 +125,6 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getDeepInfraKey()).isEmpty();
             assertThat(stateService.getGeminiKey()).isEmpty();
             assertThat(stateService.getDeepSeekKey()).isEmpty();
-            assertThat(stateService.getOpenRouterKey()).isEmpty();
             assertThat(stateService.getAwsBearerToken()).isEmpty();
         }
 

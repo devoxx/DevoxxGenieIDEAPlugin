@@ -1,11 +1,14 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.chatmodel.cloud.router.RouterDefinition;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
 import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBLabel;
@@ -24,6 +27,22 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
+
+    /** The enabled checkbox and API key field of one generic router. */
+    public record RouterRow(JCheckBox enabled, JPasswordField key) {
+    }
+
+    static final String ROUTERS_WARNING =
+            "<b>Routers forward your prompts and code to other providers.</b> "
+                    + "Anything you send, including project files added to context, may pass through the router "
+                    + "and whichever provider it selects. Each has its own logging, retention and training policies, "
+                    + "and a provider may be in another country. DevoxxGenie doesn't verify these services or their "
+                    + "privacy claims, and listing one here isn't an endorsement. Check the router's terms before "
+                    + "enabling it, and avoid sending confidential code or secrets unless your organisation allows it.";
+
+    /** One row per generic router, in registry order. */
+    @Getter
+    private final Map<ModelProvider, RouterRow> routerRows = createRouterRows();
     private final DefaultListModel<FavoriteEntry> favoriteEntries = new DefaultListModel<>();
 
     private record FavoriteEntry(String provider, String model) {
@@ -167,8 +186,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JPasswordField deepSeekApiKeyField = new JPasswordField(stateService.getDeepSeekKey());
     @Getter
-    private final JPasswordField openRouterApiKeyField = new JPasswordField(stateService.getOpenRouterKey());
-    @Getter
     private final JPasswordField grokApiKeyField = new JPasswordField(stateService.getGrokKey());
     @Getter
     private final JPasswordField kimiApiKeyField = new JPasswordField(stateService.getKimiKey());
@@ -240,8 +257,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox geminiEnabledCheckBox = new JCheckBox("", stateService.isGoogleEnabled());
     @Getter
     private final JCheckBox deepSeekEnabledCheckBox = new JCheckBox("", stateService.isDeepSeekEnabled());
-    @Getter
-    private final JCheckBox openRouterEnabledCheckBox = new JCheckBox("", stateService.isRouterEnabled(ModelProvider.OpenRouter));
     @Getter
     private final JCheckBox grokEnabledCheckBox = new JCheckBox("", stateService.isGrokEnabled());
     @Getter
@@ -318,7 +333,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private @NotNull JTabbedPane createProviderTabs() {
         JTabbedPane tabbedPane = new SelectedTabSizedPane();
         tabbedPane.addTab("Local", topAnchored(createLocalProvidersPanel()));
-        tabbedPane.addTab("Cloud", topAnchored(createCloudProvidersPanel()));
+        tabbedPane.addTab("Cloud Direct", topAnchored(createCloudProvidersPanel()));
+        tabbedPane.addTab("Routers", topAnchored(createRoutersPanel()));
         tabbedPane.addTab("Custom OpenAI", topAnchored(createCustomOpenAIPanel()));
         // Preferred height changes with the selection, so the parent has to lay out again.
         tabbedPane.addChangeListener(event -> {
@@ -475,6 +491,58 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         return customOpenAIPanel;
     }
 
+    private @NotNull Map<ModelProvider, RouterRow> createRouterRows() {
+        Map<ModelProvider, RouterRow> rows = new LinkedHashMap<>();
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            rows.put(def.provider(), new RouterRow(
+                    new JCheckBox("", stateService.isRouterEnabled(def.provider())),
+                    new JPasswordField(stateService.getRouterKey(def.credentialSubKey()))));
+        }
+        return rows;
+    }
+
+    private @NotNull JPanel createRoutersPanel() {
+        JPanel routersPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+
+        addRoutersWarning(routersPanel, gbc);
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            RouterRow row = routerRows.get(def.provider());
+            addProviderSettingRow(routersPanel, gbc, def.label() + " API Key", row.enabled(),
+                    createTextWithPasswordButton(row.key(), def.keyUrl()));
+            if (def.hint() != null) {
+                addHintText(routersPanel, gbc, def.hint());
+            }
+        }
+
+        addProviderSettingRow(routersPanel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
+                createTextWithPasswordButton(cloudflareApiKeyField, "https://dash.cloudflare.com/profile/api-tokens"));
+        addHintText(routersPanel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
+        addSettingRow(routersPanel, gbc, "Cloudflare Account ID", cloudflareAccountIdField);
+        addSettingRow(routersPanel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
+        addHintText(routersPanel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
+        addProviderSettingRow(routersPanel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
+        addHintText(routersPanel, gbc, "Model ids use <code>provider/model</code> form, e.g. <code>openai/gpt-4o</code>. " +
+                "Workers AI ids (<code>@cf/...</code>) get the <code>workers-ai/</code> prefix added automatically.");
+        addHintText(routersPanel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
+
+        return routersPanel;
+    }
+
+    private void addRoutersWarning(@NotNull JPanel panel, @NotNull GridBagConstraints gbc) {
+        JBLabel warning = new JBLabel(AllIcons.General.Warning);
+        int wrapWidth = warning.getFontMetrics(warning.getFont()).charWidth('a') * HINT_WRAP_COLUMNS;
+        warning.setText("<html><body style='width:" + wrapWidth + "px'>" + ROUTERS_WARNING + "</body></html>");
+        warning.setVerticalTextPosition(SwingConstants.TOP);
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.weightx = 1.0;
+        panel.add(warning, gbc);
+        gbc.weightx = 0;
+        gbc.gridy++;
+    }
+
     private @NotNull JPanel createCloudProvidersPanel() {
         JPanel cloudPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = createSectionConstraints();
@@ -493,8 +561,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithPasswordButton(geminiApiKeyField, "https://aistudio.google.com/app/apikey"));
         addProviderSettingRow(cloudPanel, gbc, "Deep Seek API Key", deepSeekEnabledCheckBox,
                 createTextWithPasswordButton(deepSeekApiKeyField, "https://platform.deepseek.com/api_keys"));
-        addProviderSettingRow(cloudPanel, gbc, "Open Router API Key", openRouterEnabledCheckBox,
-                createTextWithPasswordButton(openRouterApiKeyField, "https://openrouter.ai/settings/keys"));
         addProviderSettingRow(cloudPanel, gbc, "Grok API Key", grokEnabledCheckBox,
                 createTextWithPasswordButton(grokApiKeyField, "https://accounts.x.ai/sign-in"));
         addProviderSettingRow(cloudPanel, gbc, "Kimi API Key", kimiEnabledCheckBox,
@@ -506,17 +572,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addProviderSettingRow(cloudPanel, gbc, "NVIDIA API Key", nvidiaEnabledCheckBox,
                 createTextWithPasswordButton(nvidiaApiKeyField, "https://build.nvidia.com"));
         addHintText(cloudPanel, gbc, "Uses NVIDIA NIM OpenAI-compatible API (integrate.api.nvidia.com); get your key at build.nvidia.com");
-        addProviderSettingRow(cloudPanel, gbc, "Cloudflare API Key", cloudflareEnabledCheckBox,
-                createTextWithPasswordButton(cloudflareApiKeyField, "https://dash.cloudflare.com/profile/api-tokens"));
-        addHintText(cloudPanel, gbc, "Cloudflare API token sent as <code>Authorization: Bearer</code>. Downstream provider keys (OpenAI, Anthropic, …) are stored in your Cloudflare dashboard (BYOK).");
-        addSettingRow(cloudPanel, gbc, "Cloudflare Account ID", cloudflareAccountIdField);
-        addSettingRow(cloudPanel, gbc, "Cloudflare Gateway Name", cloudflareGatewayNameField);
-        addHintText(cloudPanel, gbc, "Base URL is built as <code>https://gateway.ai.cloudflare.com/v1/&lt;account&gt;/&lt;gateway&gt;/compat</code>. Gateway defaults to <code>default</code> (auto-created by Cloudflare).");
-        addProviderSettingRow(cloudPanel, gbc, "Cloudflare Model", cloudflareModelNameEnabledCheckBox, cloudflareModelNameField);
-        addHintText(cloudPanel, gbc, "Model ids use <code>provider/model</code> form, e.g. <code>openai/gpt-4o</code>. " +
-                "Workers AI ids (<code>@cf/...</code>) get the <code>workers-ai/</code> prefix added automatically.");
-        addHintText(cloudPanel, gbc, "When enabled, this exact provider/model name (e.g. <code>openai/gpt-4o-mini</code>) is used and the dropdown is not auto-discovered from <code>/compat/models</code>.");
-
         addAzureOpenAIPanel(cloudPanel, gbc);
         addAWSPanel(cloudPanel, gbc);
 
@@ -563,7 +618,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         deepInfraEnabledCheckBox.addItemListener(e -> updateUrlFieldState(deepInfraEnabledCheckBox, deepInfraApiKeyField));
         geminiEnabledCheckBox.addItemListener(e -> updateUrlFieldState(geminiEnabledCheckBox, geminiApiKeyField));
         deepSeekEnabledCheckBox.addItemListener(e -> updateUrlFieldState(deepSeekEnabledCheckBox, deepSeekApiKeyField));
-        openRouterEnabledCheckBox.addItemListener(e -> updateUrlFieldState(openRouterEnabledCheckBox, openRouterApiKeyField));
+        routerRows.values().forEach(row ->
+                row.enabled().addItemListener(e -> updateUrlFieldState(row.enabled(), row.key())));
         grokEnabledCheckBox.addItemListener(e -> updateUrlFieldState(grokEnabledCheckBox, grokApiKeyField));
         kimiEnabledCheckBox.addItemListener(e -> updateUrlFieldState(kimiEnabledCheckBox, kimiApiKeyField));
         glmEnabledCheckBox.addItemListener(e -> updateUrlFieldState(glmEnabledCheckBox, glmApiKeyField));

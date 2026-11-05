@@ -66,7 +66,6 @@ class LLMModelRegistryServiceRouterTest {
         assertThat(models).anyMatch(m -> m.getProvider() == ModelProvider.OpenRouter
                 && m.getModelName().equals("vendor/alpha"));
         verify(routerFactory, never()).getModels();
-        verify(state, never()).getOpenRouterKey();
         verify(state, never()).getRouterKey(Mockito.anyString());
     }
 

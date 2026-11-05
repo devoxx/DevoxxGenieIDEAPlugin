@@ -1074,8 +1074,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Transient @Override public @NotNull String getDeepSeekKey()       { return creds().getCredential(CredentialKey.DEEP_SEEK_KEY); }
     @Transient @Override public void          setDeepSeekKey(String v) { creds().setCredential(CredentialKey.DEEP_SEEK_KEY, v); }
 
-    @Transient @Override public @NotNull String getOpenRouterKey()       { return creds().getCredential(CredentialKey.OPEN_ROUTER_KEY); }
-    @Transient @Override public void          setOpenRouterKey(String v) { creds().setCredential(CredentialKey.OPEN_ROUTER_KEY, v); }
     @Transient @Override public @NotNull String getRouterKey(String subKey) { return creds().getCredential(subKey); }
     @Transient @Override public void          setRouterKey(String subKey, String v) { creds().setCredential(subKey, v); }
 

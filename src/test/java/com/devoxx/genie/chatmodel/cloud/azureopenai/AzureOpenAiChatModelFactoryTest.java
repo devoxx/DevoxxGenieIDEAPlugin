@@ -29,7 +29,6 @@ public class AzureOpenAiChatModelFactoryTest extends AbstractLightPlatformTestCa
         when(settingsStateMock.getAzureOpenAIKey()).thenReturn("dummy-azure-openai-api-key");
         when(settingsStateMock.getAzureOpenAIEndpoint()).thenReturn("https://example.openai.azure.com/");
         when(settingsStateMock.getAzureOpenAIDeployment()).thenReturn("gpt-4o-deployment");
-        when(settingsStateMock.getOpenRouterKey()).thenReturn("dummy-openrouter-api-key");
 
         // Replace the service instance with the mock
         ServiceContainerUtil.replaceService(ApplicationManager.getApplication(), DevoxxGenieStateService.class, settingsStateMock, getTestRootDisposable());
