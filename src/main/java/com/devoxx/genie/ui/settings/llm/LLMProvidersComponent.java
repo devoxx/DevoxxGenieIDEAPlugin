@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
 import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
@@ -240,7 +241,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JCheckBox deepSeekEnabledCheckBox = new JCheckBox("", stateService.isDeepSeekEnabled());
     @Getter
-    private final JCheckBox openRouterEnabledCheckBox = new JCheckBox("", stateService.isOpenRouterEnabled());
+    private final JCheckBox openRouterEnabledCheckBox = new JCheckBox("", stateService.isRouterEnabled(ModelProvider.OpenRouter));
     @Getter
     private final JCheckBox grokEnabledCheckBox = new JCheckBox("", stateService.isGrokEnabled());
     @Getter

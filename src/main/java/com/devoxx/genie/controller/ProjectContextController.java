@@ -1,6 +1,7 @@
 package com.devoxx.genie.controller;
 
 import com.devoxx.genie.model.LanguageModel;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
@@ -99,7 +100,7 @@ public class ProjectContextController {
                 modelProvider.equals(OpenAI) ||
                 modelProvider.equals(Mistral) ||
                 modelProvider.equals(DeepSeek) ||
-                modelProvider.equals(OpenRouter) ||
+                RouterRegistry.isGeneric(modelProvider) ||
                 modelProvider.equals(DeepInfra) ||
                 modelProvider.equals(Ollama) ||
                 modelProvider.equals(Jan) ||

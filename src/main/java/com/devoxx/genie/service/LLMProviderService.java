@@ -1,5 +1,7 @@
 package com.devoxx.genie.service;
 
+import com.devoxx.genie.chatmodel.cloud.router.RouterDefinition;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -15,6 +17,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static com.devoxx.genie.model.enumarations.ModelProvider.*;
 
@@ -30,12 +33,14 @@ public class LLMProviderService {
         providerKeyMap.put(DeepInfra, () -> DevoxxGenieStateService.getInstance().getDeepInfraKey());
         providerKeyMap.put(Google, () -> DevoxxGenieStateService.getInstance().getGeminiKey());
         providerKeyMap.put(DeepSeek, () -> DevoxxGenieStateService.getInstance().getDeepSeekKey());
-        providerKeyMap.put(OpenRouter, () -> DevoxxGenieStateService.getInstance().getOpenRouterKey());
         providerKeyMap.put(Grok, () -> DevoxxGenieStateService.getInstance().getGrokKey());
         providerKeyMap.put(Kimi, () -> DevoxxGenieStateService.getInstance().getKimiKey());
         providerKeyMap.put(GLM, () -> DevoxxGenieStateService.getInstance().getGlmKey());
         providerKeyMap.put(Nvidia, () -> DevoxxGenieStateService.getInstance().getNvidiaKey());
         providerKeyMap.put(AzureOpenAI, () -> DevoxxGenieStateService.getInstance().getAzureOpenAIKey());
+        RouterRegistry.definitions().forEach(def ->
+                providerKeyMap.put(def.provider(),
+                        () -> DevoxxGenieStateService.getInstance().getRouterKey(def.credentialSubKey())));
         providerKeyMap.put(Cloudflare, () -> DevoxxGenieStateService.getInstance().getCloudflareKey());
         providerKeyMap.put(Bedrock, () -> switch (Optional.ofNullable(DevoxxGenieStateService.getInstance().getAwsBedrockAuthMode())
                 .orElse(AwsBedrockAuthMode.defaultMode())) {
@@ -84,10 +89,17 @@ public class LLMProviderService {
      */
     private List<ModelProvider> getEnabledCloudModelProviders() {
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-        return LLMModelRegistryService.getInstance().getModels()
-            .stream()
-            .filter(LanguageModel::isApiKeyUsed)
-            .map(LanguageModel::getProvider)
+        // Generic routers are listed from their enabled flag alone: their catalog is fetched lazily,
+        // so the registry may not hold any of their models yet.
+        Stream<ModelProvider> enabledRouters = RouterRegistry.definitions().stream()
+            .map(RouterDefinition::provider)
+            .filter(stateService::isRouterEnabled);
+        return Stream.concat(
+                LLMModelRegistryService.getInstance().getModels()
+                    .stream()
+                    .filter(LanguageModel::isApiKeyUsed)
+                    .map(LanguageModel::getProvider),
+                enabledRouters)
             .distinct()
             .filter(provider -> switch (provider) {
                 case OpenAI -> stateService.isOpenAIEnabled();
@@ -97,7 +109,6 @@ public class LLMProviderService {
                 case DeepInfra -> stateService.isDeepInfraEnabled();
                 case Google -> stateService.isGoogleEnabled();
                 case DeepSeek -> stateService.isDeepSeekEnabled();
-                case OpenRouter -> stateService.isOpenRouterEnabled();
                 case Grok -> stateService.isGrokEnabled();
                 case Kimi -> stateService.isKimiEnabled();
                 case GLM -> stateService.isGlmEnabled();
@@ -105,7 +116,7 @@ public class LLMProviderService {
                 case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
                 case Bedrock -> stateService.isAwsEnabled();
                 case Cloudflare -> stateService.isCloudflareEnabled();
-                default -> false;
+                default -> stateService.isRouterEnabled(provider);
             })
             .toList();
     }

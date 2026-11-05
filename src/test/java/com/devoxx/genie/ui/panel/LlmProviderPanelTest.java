@@ -108,7 +108,7 @@ class LlmProviderPanelTest {
         lenient().when(stateService.isDeepInfraEnabled()).thenReturn(false);
         lenient().when(stateService.isGoogleEnabled()).thenReturn(false);
         lenient().when(stateService.isDeepSeekEnabled()).thenReturn(false);
-        lenient().when(stateService.isOpenRouterEnabled()).thenReturn(false);
+        lenient().when(stateService.isRouterEnabled(ModelProvider.OpenRouter)).thenReturn(false);
         lenient().when(stateService.isGrokEnabled()).thenReturn(false);
         lenient().when(stateService.isKimiEnabled()).thenReturn(false);
         lenient().when(stateService.isGlmEnabled()).thenReturn(false);
@@ -402,6 +402,35 @@ class LlmProviderPanelTest {
         LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
         assertThat(selected).isNotNull();
         assertThat(selected.getModelName()).isEqualTo("meta/llama-3.1-70b");
+    }
+
+    @Test
+    void restart_restoresRouterSelectionAfterBackgroundLoad() {
+        // A generic router's catalog is fetched in the background, so the persisted pair must be
+        // re-selected once that load completes, without rewriting the persisted state.
+        when(stateService.isRouterEnabled(ModelProvider.OpenRouter)).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("OpenRouter");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("vendor/beta");
+
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.OpenRouter));
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenRouter)
+                        .modelName("vendor/alpha").displayName("vendor/alpha").build(),
+                LanguageModel.builder().provider(ModelProvider.OpenRouter)
+                        .modelName("vendor/beta").displayName("vendor/beta").build()));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenRouter"))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        assertThat(panel.getModelProviderComboBox().getSelectedItem()).isEqualTo(ModelProvider.OpenRouter);
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName()).isEqualTo("vendor/beta");
+        verify(stateService, never()).setSelectedProvider(eq("test-hash"), argThat(p -> !"OpenRouter".equals(p)));
+        verify(stateService, never()).setSelectedLanguageModel(eq("test-hash"), argThat(m -> !"vendor/beta".equals(m)));
     }
 
     @Test

@@ -12,7 +12,7 @@ import com.devoxx.genie.chatmodel.cloud.groq.GroqChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.kimi.KimiChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
-import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.router.RouterChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
@@ -55,7 +55,7 @@ class ChatModelFactoryProviderTest {
                 Arguments.of("Mistral", MistralChatModelFactory.class),
                 Arguments.of("Ollama", OllamaChatModelFactory.class),
                 Arguments.of("OpenAI", OpenAIChatModelFactory.class),
-                Arguments.of("OpenRouter", OpenRouterChatModelFactory.class),
+                Arguments.of("OpenRouter", RouterChatModelFactory.class),
                 Arguments.of("Grok", GrokChatModelFactory.class),
                 Arguments.of("Kimi", KimiChatModelFactory.class),
                 Arguments.of("GLM", GLMChatModelFactory.class),

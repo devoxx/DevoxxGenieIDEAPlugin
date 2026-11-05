@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -149,7 +150,7 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isDeepInfraEnabled() != llmSettingsComponent.getDeepInfraEnabledCheckBox().isSelected();
         isModified |= stateService.isGoogleEnabled() != llmSettingsComponent.getGeminiEnabledCheckBox().isSelected();
         isModified |= stateService.isDeepSeekEnabled() != llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected();
-        isModified |= stateService.isOpenRouterEnabled() != llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected();
+        isModified |= stateService.isRouterEnabled(ModelProvider.OpenRouter) != llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected();
         isModified |= stateService.isGrokEnabled() != llmSettingsComponent.getGrokEnabledCheckBox().isSelected();
         isModified |= stateService.isKimiEnabled() != llmSettingsComponent.getKimiEnabledCheckBox().isSelected();
         isModified |= stateService.isGlmEnabled() != llmSettingsComponent.getGlmEnabledCheckBox().isSelected();
@@ -260,7 +261,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setDeepInfraEnabled(llmSettingsComponent.getDeepInfraEnabledCheckBox().isSelected());
         settings.setGoogleEnabled(llmSettingsComponent.getGeminiEnabledCheckBox().isSelected());
         settings.setDeepSeekEnabled(llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected());
-        settings.setOpenRouterEnabled(llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected());
+        settings.setRouterEnabled(ModelProvider.OpenRouter, llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected());
         settings.setGrokEnabled(llmSettingsComponent.getGrokEnabledCheckBox().isSelected());
         settings.setKimiEnabled(llmSettingsComponent.getKimiEnabledCheckBox().isSelected());
         settings.setGlmEnabled(llmSettingsComponent.getGlmEnabledCheckBox().isSelected());
@@ -411,7 +412,7 @@ public class LLMProvidersConfigurable implements Configurable {
 
     private boolean hasEnabledAuxCloudKey(DevoxxGenieStateService settings) {
         return (!settings.getDeepSeekKey().isBlank() && settings.isDeepSeekEnabled()) ||
-                (!settings.getOpenRouterKey().isBlank() && settings.isOpenRouterEnabled()) ||
+                (!settings.getOpenRouterKey().isBlank() && settings.isRouterEnabled(ModelProvider.OpenRouter)) ||
                 (!settings.getGrokKey().isBlank() && settings.isGrokEnabled()) ||
                 (!settings.getKimiKey().isBlank() && settings.isKimiEnabled()) ||
                 (!settings.getGlmKey().isBlank() && settings.isGlmEnabled()) ||
@@ -523,7 +524,7 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getDeepInfraEnabledCheckBox().setSelected(settings.isDeepInfraEnabled());
         llmSettingsComponent.getGeminiEnabledCheckBox().setSelected(settings.isGoogleEnabled());
         llmSettingsComponent.getDeepSeekEnabledCheckBox().setSelected(settings.isDeepSeekEnabled());
-        llmSettingsComponent.getOpenRouterEnabledCheckBox().setSelected(settings.isOpenRouterEnabled());
+        llmSettingsComponent.getOpenRouterEnabledCheckBox().setSelected(settings.isRouterEnabled(ModelProvider.OpenRouter));
         llmSettingsComponent.getGrokEnabledCheckBox().setSelected(settings.isGrokEnabled());
         llmSettingsComponent.getKimiEnabledCheckBox().setSelected(settings.isKimiEnabled());
         llmSettingsComponent.getGlmEnabledCheckBox().setSelected(settings.isGlmEnabled());

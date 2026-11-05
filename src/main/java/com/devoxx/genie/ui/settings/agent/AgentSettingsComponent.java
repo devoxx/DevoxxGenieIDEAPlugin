@@ -408,7 +408,6 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case DeepInfra -> state.isDeepInfraEnabled();
                     case Google -> state.isGoogleEnabled();
                     case DeepSeek -> state.isDeepSeekEnabled();
-                    case OpenRouter -> state.isOpenRouterEnabled();
                     case Grok -> state.isGrokEnabled();
                     case Kimi -> state.isKimiEnabled();
                     case GLM -> state.isGlmEnabled();
@@ -418,6 +417,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                     case Bedrock -> state.isAwsEnabled();
                     case CLIRunners -> false;
                     case ACPRunners -> false;
+                    default -> state.isRouterEnabled(provider);
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
@@ -640,8 +640,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                         case DeepInfra -> state.isDeepInfraEnabled();
                         case Google -> state.isGoogleEnabled();
                         case DeepSeek -> state.isDeepSeekEnabled();
-                        case OpenRouter -> state.isOpenRouterEnabled();
-                        case Grok -> state.isGrokEnabled();
+                            case Grok -> state.isGrokEnabled();
                         case Kimi -> state.isKimiEnabled();
                         case GLM -> state.isGlmEnabled();
                         case Nvidia -> state.isNvidiaEnabled();
@@ -650,6 +649,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                         case Bedrock -> state.isAwsEnabled();
                         case CLIRunners -> false;
                         case ACPRunners -> false;
+                        default -> state.isRouterEnabled(provider);
                     })
                     .distinct()
                     .sorted(Comparator.comparing(ModelProvider::getName))

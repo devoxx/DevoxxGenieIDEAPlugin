@@ -9,6 +9,7 @@ import com.devoxx.genie.util.LanguageModelSelectionUtil;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.Persona;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.models.ModelConfigService;
@@ -226,7 +227,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case DeepInfra -> stateService.isDeepInfraEnabled();
                     case Google -> stateService.isGoogleEnabled();
                     case DeepSeek -> stateService.isDeepSeekEnabled();
-                    case OpenRouter -> stateService.isOpenRouterEnabled();
                     case Grok -> stateService.isGrokEnabled();
                     case Kimi -> stateService.isKimiEnabled();
                     case GLM -> stateService.isGlmEnabled();
@@ -236,6 +236,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     case Bedrock -> stateService.isAwsEnabled();
                     case CLIRunners -> true;
                     case ACPRunners -> true;
+                    default -> stateService.isRouterEnabled(provider);
                 })
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
@@ -392,7 +393,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                provider == ModelProvider.Jan ||
                provider == ModelProvider.Nativ ||
                provider == ModelProvider.GPT4All ||
-               provider == ModelProvider.OpenRouter ||
+               RouterRegistry.isGeneric(provider) ||
                provider == ModelProvider.Bedrock;
     }
 
