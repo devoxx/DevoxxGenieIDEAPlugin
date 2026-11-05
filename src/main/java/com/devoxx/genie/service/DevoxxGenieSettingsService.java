@@ -55,7 +55,7 @@ public interface DevoxxGenieSettingsService {
 
     String getDeepSeekKey();
 
-    String getOpenRouterKey();
+    String getRouterKey(String subKey);
 
     String getGrokKey();
 
@@ -173,7 +173,7 @@ public interface DevoxxGenieSettingsService {
 
     void setDeepSeekKey(String key);
 
-    void setOpenRouterKey(String key);
+    void setRouterKey(String subKey, String value);
 
     void setGrokKey(String key);
 

@@ -1,5 +1,6 @@
 package com.devoxx.genie.util;
 
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 
 import java.util.HashMap;
@@ -24,7 +25,7 @@ public class DefaultLLMSettingsUtil {
                 provider == ModelProvider.Groq ||
                 provider == ModelProvider.DeepInfra ||
                 provider == ModelProvider.Google ||
-                provider == ModelProvider.OpenRouter ||
+                RouterRegistry.isGeneric(provider) ||
                 provider == ModelProvider.AzureOpenAI;
     }
 

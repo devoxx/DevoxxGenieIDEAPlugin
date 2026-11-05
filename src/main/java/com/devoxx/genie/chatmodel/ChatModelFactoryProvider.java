@@ -14,7 +14,8 @@ import com.devoxx.genie.chatmodel.cloud.kimi.KimiChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.nvidia.NvidiaChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
-import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.router.RouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.chatmodel.local.acprunners.AcpRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.clirunners.CliRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
@@ -81,13 +82,14 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.Nativ, NativChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Ollama, OllamaChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.OpenAI, OpenAIChatModelFactory::new);
-        FACTORY_SUPPLIERS.put(ModelProvider.OpenRouter, OpenRouterChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Grok, GrokChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Kimi, KimiChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.GLM, GLMChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Nvidia, NvidiaChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.CLIRunners, CliRunnersChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.ACPRunners, AcpRunnersChatModelFactory::new);
+        RouterRegistry.definitions().forEach(def ->
+                FACTORY_SUPPLIERS.put(def.provider(), () -> new RouterChatModelFactory(def)));
     }
 
     /** Lazily-instantiated factory instances, keyed by the resolved provider. */

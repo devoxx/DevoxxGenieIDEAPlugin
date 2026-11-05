@@ -68,6 +68,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+                <h2>Unreleased</h2>
+        <UL>
+                    <LI>feat(router): OpenRouter, Requesty and DemonRoute now run on one generic router provider and are configured on the new <b>Routers</b> settings tab (the former Cloud tab is now <b>Cloud Direct</b>). Routers forward your prompts and code to other providers, so check their terms before enabling one. Requesty support is contributed by Thibault Jaigu (#1303) and hasn't been tested against the live service. DemonRoute (#1340, #1378) was not tested live</LI>
+                </UL>
                 <h2>v1.17.0</h2>
         <UL>
                     <LI>feat(rag): <b>embed through your enabled LLM providers</b> (Ollama, Custom OpenAI, OpenAI, LM Studio, llama.cpp), with query/document prefixes and output dimension. Each index stays bound to the setup that built it; existing nomic indexes get a one-time Re-index notice (#1381)</LI>
@@ -924,7 +928,6 @@
         <applicationService serviceImplementation="com.devoxx.genie.service.ProjectContentService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.TokenCalculationService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.lmstudio.LMStudioModelService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.bedrock.BedrockService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.nativ.NativModelService"/>

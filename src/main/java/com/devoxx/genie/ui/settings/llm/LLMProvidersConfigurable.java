@@ -1,5 +1,9 @@
 package com.devoxx.genie.ui.settings.llm;
 
+import com.devoxx.genie.chatmodel.ChatModelFactory;
+import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.cloud.router.RouterDefinition;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -73,7 +77,10 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), stateService.getGeminiKey());
         isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), stateService.getDeepSeekKey());
         isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), stateService.getLlamaCPPUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getOpenRouterApiKeyField(), stateService.getOpenRouterKey());
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
+            isModified |= isFieldModified(row.key(), stateService.getRouterKey(def.credentialSubKey()));
+        }
         isModified |= isFieldModified(llmSettingsComponent.getGrokApiKeyField(), stateService.getGrokKey());
         isModified |= isFieldModified(llmSettingsComponent.getKimiApiKeyField(), stateService.getKimiKey());
         isModified |= isFieldModified(llmSettingsComponent.getGlmApiKeyField(), stateService.getGlmKey());
@@ -149,7 +156,10 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isDeepInfraEnabled() != llmSettingsComponent.getDeepInfraEnabledCheckBox().isSelected();
         isModified |= stateService.isGoogleEnabled() != llmSettingsComponent.getGeminiEnabledCheckBox().isSelected();
         isModified |= stateService.isDeepSeekEnabled() != llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected();
-        isModified |= stateService.isOpenRouterEnabled() != llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected();
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            isModified |= stateService.isRouterEnabled(def.provider())
+                    != llmSettingsComponent.getRouterRows().get(def.provider()).enabled().isSelected();
+        }
         isModified |= stateService.isGrokEnabled() != llmSettingsComponent.getGrokEnabledCheckBox().isSelected();
         isModified |= stateService.isKimiEnabled() != llmSettingsComponent.getKimiEnabledCheckBox().isSelected();
         isModified |= stateService.isGlmEnabled() != llmSettingsComponent.getGlmEnabledCheckBox().isSelected();
@@ -217,7 +227,6 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setDeepInfraKey(new String(llmSettingsComponent.getDeepInfraApiKeyField().getPassword()));
         settings.setGeminiKey(new String(llmSettingsComponent.getGeminiApiKeyField().getPassword()));
         settings.setDeepSeekKey(new String(llmSettingsComponent.getDeepSeekApiKeyField().getPassword()));
-        settings.setOpenRouterKey(new String(llmSettingsComponent.getOpenRouterApiKeyField().getPassword()));
         settings.setGrokKey(new String(llmSettingsComponent.getGrokApiKeyField().getPassword()));
         settings.setKimiKey(new String(llmSettingsComponent.getKimiApiKeyField().getPassword()));
         settings.setGlmKey(new String(llmSettingsComponent.getGlmApiKeyField().getPassword()));
@@ -260,7 +269,6 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setDeepInfraEnabled(llmSettingsComponent.getDeepInfraEnabledCheckBox().isSelected());
         settings.setGoogleEnabled(llmSettingsComponent.getGeminiEnabledCheckBox().isSelected());
         settings.setDeepSeekEnabled(llmSettingsComponent.getDeepSeekEnabledCheckBox().isSelected());
-        settings.setOpenRouterEnabled(llmSettingsComponent.getOpenRouterEnabledCheckBox().isSelected());
         settings.setGrokEnabled(llmSettingsComponent.getGrokEnabledCheckBox().isSelected());
         settings.setKimiEnabled(llmSettingsComponent.getKimiEnabledCheckBox().isSelected());
         settings.setGlmEnabled(llmSettingsComponent.getGlmEnabledCheckBox().isSelected());
@@ -269,11 +277,42 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setCloudflareModelNameEnabled(llmSettingsComponent.getCloudflareModelNameEnabledCheckBox().isSelected());
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
 
+        applyRouters(settings);
+
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
             project.getMessageBus()
                     .syncPublisher(AppTopics.SETTINGS_CHANGED_TOPIC)
                     .settingsChanged(isAnyApiKeyEnabled(settings));
+        }
+    }
+
+    /**
+     * Persists every router's key and flag, then drops the catalog of each router whose key or flag
+     * changed. The state is written first: a fetch that starts between a reset and the write would
+     * read the old key under the new generation and have its result accepted. A cached catalog never
+     * re-reads the key, so this reset is the only way a removed or corrected key takes effect. It does
+     * no network I/O, so it is safe on the EDT.
+     */
+    private void applyRouters(@NotNull DevoxxGenieStateService settings) {
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
+            String newKey = new String(row.key().getPassword());
+            boolean newEnabled = row.enabled().isSelected();
+            boolean keyChanged = !newKey.equals(settings.getRouterKey(def.credentialSubKey()));
+            boolean changed = keyChanged || newEnabled != settings.isRouterEnabled(def.provider());
+
+            // An empty write deletes the stored entry. A keychain read that failed also shows as an empty
+            // field, so an unchanged key must never be written back.
+            if (keyChanged) {
+                settings.setRouterKey(def.credentialSubKey(), newKey);
+            }
+            settings.setRouterEnabled(def.provider(), newEnabled);
+
+            if (changed) {
+                ChatModelFactoryProvider.getFactoryByProvider(def.provider().name())
+                        .ifPresent(ChatModelFactory::resetModels);
+            }
         }
     }
 
@@ -295,12 +334,15 @@ public class LLMProvidersConfigurable implements Configurable {
         checkApiKeyProvider(problems, "DeepInfra", llmSettingsComponent.getDeepInfraEnabledCheckBox(), llmSettingsComponent.getDeepInfraApiKeyField());
         checkApiKeyProvider(problems, "Google Gemini", llmSettingsComponent.getGeminiEnabledCheckBox(), llmSettingsComponent.getGeminiApiKeyField());
         checkApiKeyProvider(problems, "DeepSeek", llmSettingsComponent.getDeepSeekEnabledCheckBox(), llmSettingsComponent.getDeepSeekApiKeyField());
-        checkApiKeyProvider(problems, "OpenRouter", llmSettingsComponent.getOpenRouterEnabledCheckBox(), llmSettingsComponent.getOpenRouterApiKeyField());
         checkApiKeyProvider(problems, "Grok", llmSettingsComponent.getGrokEnabledCheckBox(), llmSettingsComponent.getGrokApiKeyField());
         checkApiKeyProvider(problems, "Kimi", llmSettingsComponent.getKimiEnabledCheckBox(), llmSettingsComponent.getKimiApiKeyField());
         checkApiKeyProvider(problems, "GLM", llmSettingsComponent.getGlmEnabledCheckBox(), llmSettingsComponent.getGlmApiKeyField());
         checkApiKeyProvider(problems, "NVIDIA", llmSettingsComponent.getNvidiaEnabledCheckBox(), llmSettingsComponent.getNvidiaApiKeyField());
 
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
+            checkApiKeyProvider(problems, def.label(), row.enabled(), row.key());
+        }
         validateCloudflare(problems);
         validateAzureOpenAI(problems);
         validateAwsBedrock(problems);
@@ -411,13 +453,18 @@ public class LLMProvidersConfigurable implements Configurable {
 
     private boolean hasEnabledAuxCloudKey(DevoxxGenieStateService settings) {
         return (!settings.getDeepSeekKey().isBlank() && settings.isDeepSeekEnabled()) ||
-                (!settings.getOpenRouterKey().isBlank() && settings.isOpenRouterEnabled()) ||
+                hasEnabledRouterKey(settings) ||
                 (!settings.getGrokKey().isBlank() && settings.isGrokEnabled()) ||
                 (!settings.getKimiKey().isBlank() && settings.isKimiEnabled()) ||
                 (!settings.getGlmKey().isBlank() && settings.isGlmEnabled()) ||
                 (!settings.getNvidiaKey().isBlank() && settings.isNvidiaEnabled()) ||
                 (!settings.getCloudflareKey().isBlank() && settings.isCloudflareEnabled()) ||
                 (!settings.getCustomOpenAIApiKey().isBlank() && settings.isCustomOpenAIApiKeyEnabled());
+    }
+
+    private boolean hasEnabledRouterKey(DevoxxGenieStateService settings) {
+        return RouterRegistry.definitions().stream().anyMatch(def ->
+                !settings.getRouterKey(def.credentialSubKey()).isBlank() && settings.isRouterEnabled(def.provider()));
     }
 
     private boolean hasEnabledAwsOrAzureKey(DevoxxGenieStateService settings) {
@@ -476,7 +523,9 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getDeepInfraApiKeyField().setText(settings.getDeepInfraKey());
         llmSettingsComponent.getGeminiApiKeyField().setText(settings.getGeminiKey());
         llmSettingsComponent.getDeepSeekApiKeyField().setText(settings.getDeepSeekKey());
-        llmSettingsComponent.getOpenRouterApiKeyField().setText(settings.getOpenRouterKey());
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            llmSettingsComponent.getRouterRows().get(def.provider()).key().setText(settings.getRouterKey(def.credentialSubKey()));
+        }
         llmSettingsComponent.getKimiApiKeyField().setText(settings.getKimiKey());
         llmSettingsComponent.getGlmApiKeyField().setText(settings.getGlmKey());
         llmSettingsComponent.getNvidiaApiKeyField().setText(settings.getNvidiaKey());
@@ -523,7 +572,9 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getDeepInfraEnabledCheckBox().setSelected(settings.isDeepInfraEnabled());
         llmSettingsComponent.getGeminiEnabledCheckBox().setSelected(settings.isGoogleEnabled());
         llmSettingsComponent.getDeepSeekEnabledCheckBox().setSelected(settings.isDeepSeekEnabled());
-        llmSettingsComponent.getOpenRouterEnabledCheckBox().setSelected(settings.isOpenRouterEnabled());
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            llmSettingsComponent.getRouterRows().get(def.provider()).enabled().setSelected(settings.isRouterEnabled(def.provider()));
+        }
         llmSettingsComponent.getGrokEnabledCheckBox().setSelected(settings.isGrokEnabled());
         llmSettingsComponent.getKimiEnabledCheckBox().setSelected(settings.isKimiEnabled());
         llmSettingsComponent.getGlmEnabledCheckBox().setSelected(settings.isGlmEnabled());

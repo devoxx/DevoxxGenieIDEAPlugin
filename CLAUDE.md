@@ -61,6 +61,11 @@ export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
 3. Register in `ChatModelFactoryProvider`
 4. Add provider to `ModelProvider` enum in `model/enumarations/`
 
+**LLM routers** (OpenAI-compatible gateways such as OpenRouter, Requesty, DemonRoute) skip the factory: add a
+`Type.ROUTER` entry to the `ModelProvider` enum and one `RouterDefinition` in `RouterRegistry`. Use
+`RouterRegistry.isGeneric(provider)` rather than `Type.ROUTER` in shared code (Cloudflare is `Type.ROUTER` but not
+generic). `RouterRegistryTest.everyDefinition_isFullyWired` enforces the wiring.
+
 Steps 3 and 4 are easy to miss — a new factory silently does nothing until it is registered in both places.
 
 ## Important Implementation Details

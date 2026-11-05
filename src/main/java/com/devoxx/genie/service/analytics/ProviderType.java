@@ -7,7 +7,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Provider-type bucket emitted on {@code feature_used} events (task-209, AC #16).
  *
- * <p>{@link ModelProvider.Type#OPTIONAL} (Azure OpenAI, Bedrock) folds into {@link #CLOUD}:
+ * <p>{@link ModelProvider.Type#ROUTER} (OpenRouter, Cloudflare, ...) and
+ * {@link ModelProvider.Type#OPTIONAL} (Azure OpenAI, Bedrock) fold into {@link #CLOUD}:
  * both are cloud-hosted enterprise endpoints, they just require extra setup locally.
  * The wire schema is strictly {@code local | cloud | none} — no {@code optional} bucket.
  */
@@ -35,7 +36,7 @@ public enum ProviderType {
         }
         return switch (provider.getType()) {
             case LOCAL -> LOCAL;
-            case CLOUD, OPTIONAL -> CLOUD;
+            case CLOUD, ROUTER, OPTIONAL -> CLOUD;
         };
     }
 }

@@ -68,6 +68,9 @@ public class AgentSettingsConfigurable implements Configurable {
 
     @Override
     public void disposeUIResources() {
+        if (agentSettingsComponent != null) {
+            agentSettingsComponent.dispose();
+        }
         agentSettingsComponent = null;
     }
 }

@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.devoxx.genie.model.Constant.*;
 
@@ -242,6 +243,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isGoogleEnabled = false;
     private boolean isDeepSeekEnabled = false;
     private boolean isOpenRouterEnabled = false;
+
+    /** Per-router enabled flag keyed by {@code ModelProvider.name()}. */
+    private Map<String, Boolean> routerEnabled = new ConcurrentHashMap<>();
     private boolean isGrokEnabled = false;
     private boolean isKimiEnabled = false;
     private boolean isGlmEnabled = false;
@@ -697,6 +701,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
                     : AwsBedrockAuthMode.defaultMode();
         }
         shouldPowerFromAWSProfile = getAwsBedrockAuthMode() == AwsBedrockAuthMode.PROFILE;
+        // Copy so later edits do not alias the deserialized state's map; seed OpenRouter from its legacy flag.
+        setRouterEnabled(routerEnabled);
+        routerEnabled.putIfAbsent(ModelProvider.OpenRouter.name(), isOpenRouterEnabled);
         initializeDefaultCostsIfEmpty();
         // Migrate legacy customPrompts -> commands (issue #1040) before populating defaults.
         migrateLegacyCustomPrompts(state);
@@ -1021,17 +1028,26 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Transient
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
     private final CredentialService testFallbackCredentialService = new CredentialService() {
-        private final Map<CredentialKey, String> store = new java.util.concurrent.ConcurrentHashMap<>();
+        private final Map<String, String> store = new java.util.concurrent.ConcurrentHashMap<>();
 
         @Override public @NotNull String getCredential(@NotNull CredentialKey key) {
-            return store.getOrDefault(key, "");
+            return getCredential(key.getSubKey());
         }
         @Override public void setCredential(@NotNull CredentialKey key, @Nullable String value) {
-            if (value == null || value.isEmpty()) store.remove(key);
-            else store.put(key, value);
+            setCredential(key.getSubKey(), value);
         }
         @Override public void removeCredential(@NotNull CredentialKey key) {
-            store.remove(key);
+            removeCredential(key.getSubKey());
+        }
+        @Override public @NotNull String getCredential(@NotNull String subKey) {
+            return store.getOrDefault(subKey, "");
+        }
+        @Override public void setCredential(@NotNull String subKey, @Nullable String value) {
+            if (value == null || value.isEmpty()) store.remove(subKey);
+            else store.put(subKey, value);
+        }
+        @Override public void removeCredential(@NotNull String subKey) {
+            store.remove(subKey);
         }
         @Override public boolean isAvailable() {
             return false;
@@ -1059,8 +1075,32 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     @Transient @Override public @NotNull String getDeepSeekKey()       { return creds().getCredential(CredentialKey.DEEP_SEEK_KEY); }
     @Transient @Override public void          setDeepSeekKey(String v) { creds().setCredential(CredentialKey.DEEP_SEEK_KEY, v); }
 
-    @Transient @Override public @NotNull String getOpenRouterKey()       { return creds().getCredential(CredentialKey.OPEN_ROUTER_KEY); }
-    @Transient @Override public void          setOpenRouterKey(String v) { creds().setCredential(CredentialKey.OPEN_ROUTER_KEY, v); }
+    @Transient @Override public @NotNull String getRouterKey(String subKey) { return creds().getCredential(subKey); }
+    @Transient @Override public void          setRouterKey(String subKey, String v) { creds().setCredential(subKey, v); }
+
+    public boolean isRouterEnabled(@NotNull ModelProvider provider) {
+        return Boolean.TRUE.equals(routerEnabled.get(provider.name()));
+    }
+
+    /**
+     * Persisted via the bean accessors. Always copies into a {@link ConcurrentHashMap} (read from pooled
+     * threads while Apply writes on the EDT) and tolerates {@code null} and null entries.
+     */
+    public void setRouterEnabled(@Nullable Map<String, Boolean> enabled) {
+        Map<String, Boolean> copy = new ConcurrentHashMap<>();
+        if (enabled != null) {
+            enabled.forEach((key, value) -> {
+                if (key != null && value != null) {
+                    copy.put(key, value);
+                }
+            });
+        }
+        this.routerEnabled = copy;
+    }
+
+    public void setRouterEnabled(@NotNull ModelProvider provider, boolean enabled) {
+        routerEnabled.put(provider.name(), enabled);
+    }
 
     @Transient @Override public @NotNull String getGrokKey()       { return creds().getCredential(CredentialKey.GROK_KEY); }
     @Transient @Override public void          setGrokKey(String v) { creds().setCredential(CredentialKey.GROK_KEY, v); }

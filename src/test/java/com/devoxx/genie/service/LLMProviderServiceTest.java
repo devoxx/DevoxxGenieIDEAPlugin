@@ -67,7 +67,7 @@ class LLMProviderServiceTest {
         stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
         stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
 
-        lenient().when(credentialService.getCredential(any())).thenReturn("");
+        lenient().when(credentialService.getCredential(any(CredentialKey.class))).thenReturn("");
         lenient().when(modelRegistryService.getModels()).thenReturn(List.of(
                 LanguageModel.builder().provider(ModelProvider.Anthropic).modelName("claude-sonnet-4-6").apiKeyUsed(true).build(),
                 LanguageModel.builder().provider(ModelProvider.OpenAI).modelName("gpt-5").apiKeyUsed(true).build()
@@ -88,7 +88,7 @@ class LLMProviderServiceTest {
 
         providerService.getAvailableModelProviders();
 
-        verify(credentialService, never()).getCredential(any());
+        verify(credentialService, never()).getCredential(any(CredentialKey.class));
     }
 
     @Test

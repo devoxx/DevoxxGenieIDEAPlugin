@@ -8,10 +8,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ModelProviderCloudflareTest {
 
     @Test
-    void cloudflareProviderIsRegisteredAsCloud() {
+    void cloudflareProviderIsRegisteredAsRouter() {
         ModelProvider provider = ModelProvider.fromString("Cloudflare");
         assertThat(provider).isEqualTo(ModelProvider.Cloudflare);
-        assertThat(provider.getType()).isEqualTo(ModelProvider.Type.CLOUD);
+        assertThat(provider.getType()).isEqualTo(ModelProvider.Type.ROUTER);
         assertThat(provider.getName()).isEqualTo("Cloudflare");
     }
 

@@ -9,6 +9,7 @@ import com.devoxx.genie.util.LanguageModelSelectionUtil;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.Persona;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.models.ModelConfigService;
@@ -17,6 +18,7 @@ import com.devoxx.genie.ui.listener.PersonaChangeListener;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.renderer.ModelProviderRenderer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProviderEnabledResolver;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
@@ -210,33 +212,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
 
         providerService.getAvailableModelProviders().stream()
-                .filter(provider -> switch (provider) {
-                    case Ollama -> stateService.isOllamaEnabled();
-                    case LMStudio -> stateService.isLmStudioEnabled();
-                    case GPT4All -> stateService.isGpt4AllEnabled();
-                    case Jan -> stateService.isJanEnabled();
-                    case Nativ -> stateService.isNativEnabled();
-                    case LLaMA -> stateService.isLlamaCPPEnabled();
-                    case Exo -> stateService.isExoEnabled();
-                    case CustomOpenAI -> stateService.isCustomOpenAIUrlEnabled();
-                    case OpenAI -> stateService.isOpenAIEnabled();
-                    case Mistral -> stateService.isMistralEnabled();
-                    case Anthropic -> stateService.isAnthropicEnabled();
-                    case Groq -> stateService.isGroqEnabled();
-                    case DeepInfra -> stateService.isDeepInfraEnabled();
-                    case Google -> stateService.isGoogleEnabled();
-                    case DeepSeek -> stateService.isDeepSeekEnabled();
-                    case OpenRouter -> stateService.isOpenRouterEnabled();
-                    case Grok -> stateService.isGrokEnabled();
-                    case Kimi -> stateService.isKimiEnabled();
-                    case GLM -> stateService.isGlmEnabled();
-                    case Nvidia -> stateService.isNvidiaEnabled();
-                    case Cloudflare -> stateService.isCloudflareEnabled();
-                    case AzureOpenAI -> stateService.isAzureOpenAIEnabled();
-                    case Bedrock -> stateService.isAwsEnabled();
-                    case CLIRunners -> true;
-                    case ACPRunners -> true;
-                })
+                .filter(provider -> ProviderEnabledResolver.isEnabled(stateService, provider, true))
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
                 .forEach(modelProviderComboBox::addItem);
@@ -392,7 +368,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                provider == ModelProvider.Jan ||
                provider == ModelProvider.Nativ ||
                provider == ModelProvider.GPT4All ||
-               provider == ModelProvider.OpenRouter ||
+               RouterRegistry.isGeneric(provider) ||
                provider == ModelProvider.Bedrock;
     }
 

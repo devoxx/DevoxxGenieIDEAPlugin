@@ -1,6 +1,5 @@
 package com.devoxx.genie.ui.settings.agent;
 
-import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -12,6 +11,7 @@ import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProviderEnabledResolver;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.intellij.icons.AllIcons;
@@ -112,6 +112,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     private final ComboBox<ModelProvider> subAgentProviderComboBox = new ComboBox<>();
     private final ComboBox<LanguageModel> subAgentModelComboBox = new ComboBox<>();
+    private final ModelComboLoader subAgentModelLoader = new ModelComboLoader(subAgentModelComboBox);
 
     // Built-in tool enable/disable checkboxes
     private static final String[][] CORE_AGENT_TOOLS = {
@@ -392,33 +393,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
 
         providerService.getAvailableModelProviders().stream()
-                .filter(provider -> switch (provider) {
-                    case Ollama -> state.isOllamaEnabled();
-                    case LMStudio -> state.isLmStudioEnabled();
-                    case GPT4All -> state.isGpt4AllEnabled();
-                    case Jan -> state.isJanEnabled();
-                    case Nativ -> state.isNativEnabled();
-                    case LLaMA -> state.isLlamaCPPEnabled();
-                    case Exo -> state.isExoEnabled();
-                    case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
-                    case OpenAI -> state.isOpenAIEnabled();
-                    case Mistral -> state.isMistralEnabled();
-                    case Anthropic -> state.isAnthropicEnabled();
-                    case Groq -> state.isGroqEnabled();
-                    case DeepInfra -> state.isDeepInfraEnabled();
-                    case Google -> state.isGoogleEnabled();
-                    case DeepSeek -> state.isDeepSeekEnabled();
-                    case OpenRouter -> state.isOpenRouterEnabled();
-                    case Grok -> state.isGrokEnabled();
-                    case Kimi -> state.isKimiEnabled();
-                    case GLM -> state.isGlmEnabled();
-                    case Nvidia -> state.isNvidiaEnabled();
-                    case Cloudflare -> state.isCloudflareEnabled();
-                    case AzureOpenAI -> state.isAzureOpenAIEnabled();
-                    case Bedrock -> state.isAwsEnabled();
-                    case CLIRunners -> false;
-                    case ACPRunners -> false;
-                })
+                .filter(provider -> ProviderEnabledResolver.isEnabled(state, provider, false))
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
                 .forEach(subAgentProviderComboBox::addItem);
@@ -432,8 +407,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 for (int i = 0; i < subAgentProviderComboBox.getItemCount(); i++) {
                     if (provider.equals(subAgentProviderComboBox.getItemAt(i))) {
                         subAgentProviderComboBox.setSelectedIndex(i);
-                        updateSubAgentModelComboBox();
-                        restoreModelSelection();
+                        subAgentModelLoader.load(provider, stateService.getSubAgentModelName());
                         return;
                     }
                 }
@@ -446,38 +420,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         updateSubAgentModelComboBox();
     }
 
-    private void restoreModelSelection() {
-        String savedModel = stateService.getSubAgentModelName();
-        if (savedModel != null && !savedModel.isEmpty()) {
-            for (int i = 0; i < subAgentModelComboBox.getItemCount(); i++) {
-                LanguageModel model = subAgentModelComboBox.getItemAt(i);
-                if (model != null && savedModel.equals(model.getModelName())) {
-                    subAgentModelComboBox.setSelectedIndex(i);
-                    return;
-                }
-            }
-        }
-    }
-
     private void updateSubAgentModelComboBox() {
-        subAgentModelComboBox.removeAllItems();
-        ModelProvider selectedProvider = (ModelProvider) subAgentProviderComboBox.getSelectedItem();
-
-        if (selectedProvider == null) {
-            // Auto-detect mode: disable model combo box
-            subAgentModelComboBox.setEnabled(false);
-            return;
-        }
-
-        subAgentModelComboBox.setEnabled(true);
-        ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.getName())
-                .ifPresent(factory -> {
-                    List<LanguageModel> models = new ArrayList<>(factory.getModels());
-                    if (!models.isEmpty()) {
-                        models.sort(Comparator.naturalOrder());
-                        models.forEach(subAgentModelComboBox::addItem);
-                    }
-                });
+        subAgentModelLoader.load((ModelProvider) subAgentProviderComboBox.getSelectedItem(), null);
     }
 
     // --- Per-agent config row management ---
@@ -579,6 +523,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         private final JPanel rowPanel;
         private final ComboBox<ModelProvider> providerCombo;
         private final ComboBox<LanguageModel> modelCombo;
+        private final ModelComboLoader modelLoader;
         private final JButton removeButton;
 
         AgentConfigRow(int index) {
@@ -600,6 +545,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             modelCombo.setFont(DevoxxGenieFontsUtil.getDropdownFont());
             modelCombo.setPreferredSize(new Dimension(250, modelCombo.getPreferredSize().height));
             modelCombo.setEnabled(false);
+            modelLoader = new ModelComboLoader(modelCombo);
             rowPanel.add(modelCombo);
 
             removeButton = new JButton("-");
@@ -624,56 +570,14 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
 
             providerService.getAvailableModelProviders().stream()
-                    .filter(provider -> switch (provider) {
-                        case Ollama -> state.isOllamaEnabled();
-                        case LMStudio -> state.isLmStudioEnabled();
-                        case GPT4All -> state.isGpt4AllEnabled();
-                        case Jan -> state.isJanEnabled();
-                    case Nativ -> state.isNativEnabled();
-                        case LLaMA -> state.isLlamaCPPEnabled();
-                        case Exo -> state.isExoEnabled();
-                        case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
-                        case OpenAI -> state.isOpenAIEnabled();
-                        case Mistral -> state.isMistralEnabled();
-                        case Anthropic -> state.isAnthropicEnabled();
-                        case Groq -> state.isGroqEnabled();
-                        case DeepInfra -> state.isDeepInfraEnabled();
-                        case Google -> state.isGoogleEnabled();
-                        case DeepSeek -> state.isDeepSeekEnabled();
-                        case OpenRouter -> state.isOpenRouterEnabled();
-                        case Grok -> state.isGrokEnabled();
-                        case Kimi -> state.isKimiEnabled();
-                        case GLM -> state.isGlmEnabled();
-                        case Nvidia -> state.isNvidiaEnabled();
-                        case Cloudflare -> state.isCloudflareEnabled();
-                        case AzureOpenAI -> state.isAzureOpenAIEnabled();
-                        case Bedrock -> state.isAwsEnabled();
-                        case CLIRunners -> false;
-                        case ACPRunners -> false;
-                    })
+                    .filter(provider -> ProviderEnabledResolver.isEnabled(state, provider, false))
                     .distinct()
                     .sorted(Comparator.comparing(ModelProvider::getName))
                     .forEach(providerCombo::addItem);
         }
 
         private void updateRowModelComboBox() {
-            modelCombo.removeAllItems();
-            ModelProvider selectedProvider = (ModelProvider) providerCombo.getSelectedItem();
-
-            if (selectedProvider == null) {
-                modelCombo.setEnabled(false);
-                return;
-            }
-
-            modelCombo.setEnabled(true);
-            ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.getName())
-                    .ifPresent(factory -> {
-                        List<LanguageModel> models = new ArrayList<>(factory.getModels());
-                        if (!models.isEmpty()) {
-                            models.sort(Comparator.naturalOrder());
-                            models.forEach(modelCombo::addItem);
-                        }
-                    });
+            modelLoader.load((ModelProvider) providerCombo.getSelectedItem(), null);
         }
 
         JPanel getPanel() {
@@ -686,10 +590,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         SubAgentConfig toConfig() {
             ModelProvider provider = (ModelProvider) providerCombo.getSelectedItem();
-            LanguageModel model = (LanguageModel) modelCombo.getSelectedItem();
             return new SubAgentConfig(
                     provider != null ? provider.getName() : "",
-                    model != null ? model.getModelName() : ""
+                    modelLoader.effectiveModelName()
             );
         }
 
@@ -716,25 +619,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             for (int i = 0; i < providerCombo.getItemCount(); i++) {
                 if (provider.equals(providerCombo.getItemAt(i))) {
                     providerCombo.setSelectedIndex(i);
-                    updateRowModelComboBox();
-                    selectModel(modelName);
+                    modelLoader.load(provider, modelName);
                     return true;
                 }
             }
             return false;
-        }
-
-        private void selectModel(String modelName) {
-            if (modelName == null || modelName.isEmpty()) {
-                return;
-            }
-            for (int j = 0; j < modelCombo.getItemCount(); j++) {
-                LanguageModel m = modelCombo.getItemAt(j);
-                if (m != null && modelName.equals(m.getModelName())) {
-                    modelCombo.setSelectedIndex(j);
-                    return;
-                }
-            }
         }
 
         void remove() {
@@ -1215,6 +1104,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
 
+    public void dispose() {
+        subAgentModelLoader.dispose();
+        agentConfigRows.forEach(row -> row.modelLoader.dispose());
+    }
+
     public void reset() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         enableAgentModeCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentModeEnabled()));
@@ -1291,8 +1185,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     }
 
     private String getSelectedModelName() {
-        LanguageModel model = (LanguageModel) subAgentModelComboBox.getSelectedItem();
-        return model != null ? model.getModelName() : "";
+        return subAgentModelLoader.effectiveModelName();
     }
 
     @Override

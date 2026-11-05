@@ -1,7 +1,9 @@
 package com.devoxx.genie.service.models;
 
 import com.devoxx.genie.chatmodel.cloud.cloudflare.CloudflareChatModelFactory;
-import com.devoxx.genie.chatmodel.cloud.openrouter.OpenRouterChatModelFactory;
+import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.cloud.router.RouterChatModelFactory;
+import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.models.ModelConfig;
@@ -1252,20 +1254,28 @@ public final class LLMModelRegistryService {
         // Create a copy of the current models
         Map<String, LanguageModel> modelsCopy = new HashMap<>(models);
 
-        getOpenRouterModels(modelsCopy);
+        addRouterModels(modelsCopy);
         getCloudflareModels(modelsCopy);
 
         return new ArrayList<>(modelsCopy.values());
     }
 
-    private static void getOpenRouterModels(Map<String, LanguageModel> modelsCopy) {
-        // Add OpenRouter models if API key exists
-        OpenRouterChatModelFactory openRouterChatModelFactory = new OpenRouterChatModelFactory();
-        String apiKey = openRouterChatModelFactory.getApiKey(ModelProvider.OpenRouter);
-        if (apiKey != null && !apiKey.isEmpty()) {
-            openRouterChatModelFactory.getModels().forEach(model ->
-                modelsCopy.put(ModelProvider.OpenRouter.getName() + ":" + model.getModelName(), model));
-        }
+    /**
+     * Merges the catalogs the routers have already loaded. Never fetches or reads credentials, so it
+     * is safe on the EDT; a catalog arrives after the router's own background load.
+     */
+    private static void addRouterModels(Map<String, LanguageModel> modelsCopy) {
+        DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
+        RouterRegistry.definitions().forEach(def -> {
+            if (!state.isRouterEnabled(def.provider())) {
+                return;
+            }
+            ChatModelFactoryProvider.getFactoryByProvider(def.provider().name())
+                .filter(RouterChatModelFactory.class::isInstance)
+                .map(RouterChatModelFactory.class::cast)
+                .ifPresent(factory -> factory.getCachedModels().forEach(model ->
+                    modelsCopy.put(def.provider().getName() + ":" + model.getModelName(), model)));
+        });
     }
 
     private static void getCloudflareModels(Map<String, LanguageModel> modelsCopy) {

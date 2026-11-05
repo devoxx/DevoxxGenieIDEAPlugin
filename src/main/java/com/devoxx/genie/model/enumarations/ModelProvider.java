@@ -25,13 +25,15 @@ public enum ModelProvider {
     Groq("Groq", Type.CLOUD),
     DeepInfra("DeepInfra", Type.CLOUD),
     Google("Google", Type.CLOUD),
-    OpenRouter("OpenRouter", Type.CLOUD),
+    OpenRouter("OpenRouter", Type.ROUTER),
+    Requesty("Requesty", Type.ROUTER),
+    DemonRoute("DemonRoute", Type.ROUTER),
     DeepSeek("DeepSeek", Type.CLOUD),
     Grok("Grok", Type.CLOUD),
     Kimi("Kimi", Type.CLOUD),
     GLM("GLM", Type.CLOUD),
     Nvidia("NVIDIA", Type.CLOUD),
-    Cloudflare("Cloudflare", Type.CLOUD),
+    Cloudflare("Cloudflare", Type.ROUTER),
 
     AzureOpenAI("AzureOpenAI", Type.OPTIONAL),
     Bedrock("Bedrock", Type.OPTIONAL);
@@ -39,6 +41,7 @@ public enum ModelProvider {
     public enum Type {
         LOCAL, // Local Providers
         CLOUD, // Cloud Providers
+        ROUTER, // LLM routers (OpenRouter, Cloudflare AI Gateway, ...)
         OPTIONAL // Optional Providers(Need to be enabled from settings, due to inconvenient setup)
     }
 

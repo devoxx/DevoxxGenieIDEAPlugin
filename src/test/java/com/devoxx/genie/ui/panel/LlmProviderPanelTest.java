@@ -6,6 +6,7 @@ import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.LLMProviderService;
+import com.devoxx.genie.service.models.ModelConfigService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.Application;
@@ -108,7 +109,9 @@ class LlmProviderPanelTest {
         lenient().when(stateService.isDeepInfraEnabled()).thenReturn(false);
         lenient().when(stateService.isGoogleEnabled()).thenReturn(false);
         lenient().when(stateService.isDeepSeekEnabled()).thenReturn(false);
-        lenient().when(stateService.isOpenRouterEnabled()).thenReturn(false);
+        lenient().when(stateService.isRouterEnabled(ModelProvider.OpenRouter)).thenReturn(false);
+        lenient().when(stateService.isRouterEnabled(ModelProvider.Requesty)).thenReturn(false);
+        lenient().when(stateService.isRouterEnabled(ModelProvider.DemonRoute)).thenReturn(false);
         lenient().when(stateService.isGrokEnabled()).thenReturn(false);
         lenient().when(stateService.isKimiEnabled()).thenReturn(false);
         lenient().when(stateService.isGlmEnabled()).thenReturn(false);
@@ -402,6 +405,48 @@ class LlmProviderPanelTest {
         LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
         assertThat(selected).isNotNull();
         assertThat(selected.getModelName()).isEqualTo("meta/llama-3.1-70b");
+    }
+
+    @Test
+    void restart_restoresRouterSelectionAfterBackgroundLoad() {
+        // A generic router's catalog is fetched in the background, so the persisted pair must be
+        // re-selected once that load completes, without rewriting the persisted state.
+        when(stateService.isRouterEnabled(ModelProvider.OpenRouter)).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("OpenRouter");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("vendor/beta");
+
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.OpenRouter));
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenRouter)
+                        .modelName("vendor/alpha").displayName("vendor/alpha").build(),
+                LanguageModel.builder().provider(ModelProvider.OpenRouter)
+                        .modelName("vendor/beta").displayName("vendor/beta").build()));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenRouter"))
+                .thenReturn(Optional.of(factory));
+
+        // Defer the background load so the "no catalog loaded yet" state really exists.
+        List<Runnable> deferred = new java.util.ArrayList<>();
+        when(application.executeOnPooledThread(any(Runnable.class))).thenAnswer(invocation -> {
+            deferred.add(invocation.getArgument(0, Runnable.class));
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        });
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        assertThat(deferred).as("catalog load is pending").isNotEmpty();
+        assertThat(panel.getModelNameComboBox().getItemCount()).as("nothing loaded yet").isZero();
+        verify(factory, never()).getModels();
+
+        deferred.forEach(Runnable::run);
+
+        assertThat(panel.getModelProviderComboBox().getSelectedItem()).isEqualTo(ModelProvider.OpenRouter);
+        LanguageModel selected = (LanguageModel) panel.getModelNameComboBox().getSelectedItem();
+        assertThat(selected).isNotNull();
+        assertThat(selected.getModelName()).isEqualTo("vendor/beta");
+        verify(stateService, never()).setSelectedProvider(eq("test-hash"), argThat(p -> !"OpenRouter".equals(p)));
+        verify(stateService, never()).setSelectedLanguageModel(eq("test-hash"), argThat(m -> !"vendor/beta".equals(m)));
     }
 
     @Test
@@ -780,6 +825,35 @@ class LlmProviderPanelTest {
         clickRefresh(panel);
 
         assertThat(selectedModelName(panel)).isEqualTo("charlie");
+    }
+
+    @Test
+    void refreshOnAGenericRouter_resetsTheFactoryAndKeepsTheSelection() throws Exception {
+        // Routers refresh through the local path: reset the cached catalog and reload it, without
+        // the cloud path's remote-config refresh.
+        when(stateService.isRouterEnabled(ModelProvider.OpenRouter)).thenReturn(true);
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("OpenRouter");
+        when(stateService.getSelectedLanguageModel("test-hash")).thenReturn("vendor/beta");
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.OpenRouter));
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenRouter)
+                        .modelName("vendor/alpha").displayName("vendor/alpha").build(),
+                LanguageModel.builder().provider(ModelProvider.OpenRouter)
+                        .modelName("vendor/beta").displayName("vendor/beta").build()));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider("OpenRouter"))
+                .thenReturn(Optional.of(factory));
+
+        try (MockedStatic<ModelConfigService> configStatic = Mockito.mockStatic(ModelConfigService.class)) {
+            LlmProviderPanel panel = new LlmProviderPanel(project);
+            assertThat(selectedModelName(panel)).isEqualTo("vendor/beta");
+
+            clickRefresh(panel);
+
+            verify(factory).resetModels();
+            configStatic.verify(ModelConfigService::getInstance, never());
+            assertThat(selectedModelName(panel)).isEqualTo("vendor/beta");
+        }
     }
 
     @Test
