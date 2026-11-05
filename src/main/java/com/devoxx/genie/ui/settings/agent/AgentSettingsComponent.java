@@ -112,6 +112,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
     private final ComboBox<ModelProvider> subAgentProviderComboBox = new ComboBox<>();
     private final ComboBox<LanguageModel> subAgentModelComboBox = new ComboBox<>();
+    private final ModelComboLoader subAgentModelLoader = new ModelComboLoader(subAgentModelComboBox);
 
     // Built-in tool enable/disable checkboxes
     private static final String[][] CORE_AGENT_TOOLS = {
@@ -432,8 +433,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 for (int i = 0; i < subAgentProviderComboBox.getItemCount(); i++) {
                     if (provider.equals(subAgentProviderComboBox.getItemAt(i))) {
                         subAgentProviderComboBox.setSelectedIndex(i);
-                        updateSubAgentModelComboBox();
-                        restoreModelSelection();
+                        subAgentModelLoader.load(provider, stateService.getSubAgentModelName());
                         return;
                     }
                 }
@@ -446,38 +446,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         updateSubAgentModelComboBox();
     }
 
-    private void restoreModelSelection() {
-        String savedModel = stateService.getSubAgentModelName();
-        if (savedModel != null && !savedModel.isEmpty()) {
-            for (int i = 0; i < subAgentModelComboBox.getItemCount(); i++) {
-                LanguageModel model = subAgentModelComboBox.getItemAt(i);
-                if (model != null && savedModel.equals(model.getModelName())) {
-                    subAgentModelComboBox.setSelectedIndex(i);
-                    return;
-                }
-            }
-        }
-    }
-
     private void updateSubAgentModelComboBox() {
-        subAgentModelComboBox.removeAllItems();
-        ModelProvider selectedProvider = (ModelProvider) subAgentProviderComboBox.getSelectedItem();
-
-        if (selectedProvider == null) {
-            // Auto-detect mode: disable model combo box
-            subAgentModelComboBox.setEnabled(false);
-            return;
-        }
-
-        subAgentModelComboBox.setEnabled(true);
-        ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.getName())
-                .ifPresent(factory -> {
-                    List<LanguageModel> models = new ArrayList<>(factory.getModels());
-                    if (!models.isEmpty()) {
-                        models.sort(Comparator.naturalOrder());
-                        models.forEach(subAgentModelComboBox::addItem);
-                    }
-                });
+        subAgentModelLoader.load((ModelProvider) subAgentProviderComboBox.getSelectedItem(), null);
     }
 
     // --- Per-agent config row management ---
@@ -579,6 +549,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         private final JPanel rowPanel;
         private final ComboBox<ModelProvider> providerCombo;
         private final ComboBox<LanguageModel> modelCombo;
+        private final ModelComboLoader modelLoader;
         private final JButton removeButton;
 
         AgentConfigRow(int index) {
@@ -600,6 +571,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             modelCombo.setFont(DevoxxGenieFontsUtil.getDropdownFont());
             modelCombo.setPreferredSize(new Dimension(250, modelCombo.getPreferredSize().height));
             modelCombo.setEnabled(false);
+            modelLoader = new ModelComboLoader(modelCombo);
             rowPanel.add(modelCombo);
 
             removeButton = new JButton("-");
@@ -657,23 +629,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         }
 
         private void updateRowModelComboBox() {
-            modelCombo.removeAllItems();
-            ModelProvider selectedProvider = (ModelProvider) providerCombo.getSelectedItem();
-
-            if (selectedProvider == null) {
-                modelCombo.setEnabled(false);
-                return;
-            }
-
-            modelCombo.setEnabled(true);
-            ChatModelFactoryProvider.getFactoryByProvider(selectedProvider.getName())
-                    .ifPresent(factory -> {
-                        List<LanguageModel> models = new ArrayList<>(factory.getModels());
-                        if (!models.isEmpty()) {
-                            models.sort(Comparator.naturalOrder());
-                            models.forEach(modelCombo::addItem);
-                        }
-                    });
+            modelLoader.load((ModelProvider) providerCombo.getSelectedItem(), null);
         }
 
         JPanel getPanel() {
@@ -686,10 +642,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
 
         SubAgentConfig toConfig() {
             ModelProvider provider = (ModelProvider) providerCombo.getSelectedItem();
-            LanguageModel model = (LanguageModel) modelCombo.getSelectedItem();
             return new SubAgentConfig(
                     provider != null ? provider.getName() : "",
-                    model != null ? model.getModelName() : ""
+                    modelLoader.effectiveModelName()
             );
         }
 
@@ -716,25 +671,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             for (int i = 0; i < providerCombo.getItemCount(); i++) {
                 if (provider.equals(providerCombo.getItemAt(i))) {
                     providerCombo.setSelectedIndex(i);
-                    updateRowModelComboBox();
-                    selectModel(modelName);
+                    modelLoader.load(provider, modelName);
                     return true;
                 }
             }
             return false;
-        }
-
-        private void selectModel(String modelName) {
-            if (modelName == null || modelName.isEmpty()) {
-                return;
-            }
-            for (int j = 0; j < modelCombo.getItemCount(); j++) {
-                LanguageModel m = modelCombo.getItemAt(j);
-                if (m != null && modelName.equals(m.getModelName())) {
-                    modelCombo.setSelectedIndex(j);
-                    return;
-                }
-            }
         }
 
         void remove() {
@@ -1215,6 +1156,11 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         com.devoxx.genie.service.analytics.DevoxxGenieSettingsChangedTopic.notifySettingsChanged();
     }
 
+    public void dispose() {
+        subAgentModelLoader.dispose();
+        agentConfigRows.forEach(row -> row.modelLoader.dispose());
+    }
+
     public void reset() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         enableAgentModeCheckbox.setSelected(Boolean.TRUE.equals(state.getAgentModeEnabled()));
@@ -1291,8 +1237,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     }
 
     private String getSelectedModelName() {
-        LanguageModel model = (LanguageModel) subAgentModelComboBox.getSelectedItem();
-        return model != null ? model.getModelName() : "";
+        return subAgentModelLoader.effectiveModelName();
     }
 
     @Override
