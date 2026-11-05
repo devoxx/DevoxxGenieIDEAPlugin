@@ -67,7 +67,6 @@ public class Constant {
     public static final String LLAMA_CPP_MODEL_URL = "http://localhost:8080";
     // Nativ shares llama.cpp's default port 8080, which is why the provider ships disabled by default.
     public static final String NATIV_MODEL_URL = "http://localhost:8080/v1/";
-    public static final String RAPID_MLX_MODEL_URL = "http://localhost:8000/v1";
     public static final String EXO_MODEL_URL = "http://localhost:52415/v1/";
 
     // ActionCommands

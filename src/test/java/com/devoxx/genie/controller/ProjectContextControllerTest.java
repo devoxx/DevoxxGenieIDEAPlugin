@@ -110,7 +110,7 @@ class ProjectContextControllerTest {
     @EnumSource(value = ModelProvider.class, names = {
             "Google", "Anthropic", "OpenAI", "Mistral", "DeepSeek",
             "OpenRouter", "DeepInfra", "Ollama", "Jan", "Bedrock",
-            "LMStudio", "AzureOpenAI"
+            "LMStudio", "AzureOpenAI", "Nativ", "RapidMLX"
     })
     void testIsProjectContextSupportedProvider_SupportedProviders_ReturnsTrue(ModelProvider provider) {
         modelProviderComboBox.addItem(provider);

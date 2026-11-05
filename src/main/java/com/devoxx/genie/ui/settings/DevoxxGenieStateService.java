@@ -179,8 +179,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
     // Nativ's legacy fields below exist only so old settings files can be migrated into the localProvider* maps.
     private String nativModelUrl = NATIV_MODEL_URL;
-    private String rapidMLXModelUrl = RAPID_MLX_MODEL_URL;
-    // Nativ's /v1/models exposes no context length; null means "use NativChatModelFactory's default".
+    // Nativ's /v1/models exposes no context length; null means "use the registry's default".
     private Integer nativFallbackContextLength;
     private String exoModelUrl = EXO_MODEL_URL;
 
@@ -216,8 +215,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      * models, so the user opts in explicitly.
      */
     private boolean isNativEnabled = false;
-    // Opt in explicitly so other OpenAI-compatible servers on port 8000 are not polled.
-    private boolean isRapidMLXEnabled = false;
     private boolean isExoEnabled = false;
 
     // Local custom OpenAI-compliant LLM fields
@@ -1004,8 +1001,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             case "gpt4allModelUrl" -> getGpt4allModelUrl();
             case "lmStudioModelUrl" -> getLmstudioModelUrl();
             case "ollamaModelUrl" -> getOllamaModelUrl();
-            case "nativModelUrl" -> getNativModelUrl();
-            case "rapidMLXModelUrl" -> getRapidMLXModelUrl();
             case "exoModelUrl" -> getExoModelUrl();
             default -> null;
         };

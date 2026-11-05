@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel;
 
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.LanguageModel;
@@ -73,6 +74,11 @@ public class ChatModelProvider {
     private void setLocalBaseUrl(@NotNull LanguageModel languageModel,
                                  CustomChatModel customChatModel,
                                  DevoxxGenieSettingsService stateService) {
+        if (LocalProviderRegistry.isGeneric(languageModel.getProvider())) {
+            customChatModel.setBaseUrl(stateService.getLocalProviderUrl(languageModel.getProvider()));
+            return;
+        }
+
         // Set base URL for local providers
         switch (languageModel.getProvider()) {
             case LMStudio:
@@ -86,12 +92,6 @@ public class ChatModelProvider {
                 break;
             case LLaMA:
                 customChatModel.setBaseUrl(stateService.getLlamaCPPUrl());
-                break;
-            case Nativ:
-                customChatModel.setBaseUrl(stateService.getNativModelUrl());
-                break;
-            case RapidMLX:
-                customChatModel.setBaseUrl(stateService.getRapidMLXModelUrl());
                 break;
             case Exo:
                 customChatModel.setBaseUrl(stateService.getExoModelUrl());

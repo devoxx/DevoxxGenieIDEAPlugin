@@ -247,13 +247,7 @@ public interface DevoxxGenieSettingsService {
 
     void setLlamaCPPUrl(String text);
 
-    String getNativModelUrl();
-
-    void setNativModelUrl(String url);
-
-    String getRapidMLXModelUrl();
-
-    void setRapidMLXModelUrl(String url);
+    String getLocalProviderUrl(ModelProvider provider);
 
     String getExoModelUrl();
 

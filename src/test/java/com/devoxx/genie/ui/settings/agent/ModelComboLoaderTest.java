@@ -82,6 +82,21 @@ class ModelComboLoaderTest {
     }
 
     @Test
+    void genericLocalProvider_loadsOffTheCallingThread() {
+        loader.load(ModelProvider.RapidMLX, "y");
+
+        assertThat(fetchThread.get()).isNull();
+        assertThat(combo.getItemCount()).isZero();
+        assertThat(background.tasks).hasSize(1);
+        assertThat(loader.effectiveModelName()).isEqualTo("y");
+
+        background.runAll();
+        edt.runAll();
+        assertThat(fetchThread.get()).isNotNull();
+        assertThat(((LanguageModel) combo.getSelectedItem()).getModelName()).isEqualTo("y");
+    }
+
+    @Test
     void savedModel_selectedAfterAsyncLoad() {
         loader.load(ModelProvider.OpenRouter, "b");
         background.runAll();

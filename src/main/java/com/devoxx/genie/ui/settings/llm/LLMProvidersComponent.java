@@ -2,9 +2,10 @@ package com.devoxx.genie.ui.settings.llm;
 
 import com.devoxx.genie.chatmodel.cloud.router.RouterDefinition;
 import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderDefinition;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
-import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
 import com.devoxx.genie.service.PropertiesService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -17,6 +18,7 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -32,6 +34,15 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     public record RouterRow(JCheckBox enabled, JPasswordField key) {
     }
 
+    /** The settings of one generic local provider; the fallback pair is null when it has no such field. */
+    public record LocalProviderRow(JCheckBox enabled, JTextField url,
+                                   @Nullable JCheckBox fallbackEnabled, @Nullable JBIntSpinner fallback) {
+    }
+
+    /** Listed as grayed-out rows on the Sharding tab. They aren't providers and hold no settings. */
+    private static final List<String> PLANNED_SHARDING_SOLUTIONS =
+            List.of("vLLM", "SGLang", "llama.cpp RPC", "LocalAI", "GPUStack");
+
     static final String ROUTERS_WARNING =
             "<b>Routers forward your prompts and code to other providers.</b> "
                     + "Anything you send, including project files added to context, may pass through the router "
@@ -43,6 +54,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     /** One row per generic router, in registry order. */
     @Getter
     private final Map<ModelProvider, RouterRow> routerRows = createRouterRows();
+    /** One row per generic local provider, in registry order. */
+    @Getter
+    private final Map<ModelProvider, LocalProviderRow> localProviderRows = createLocalProviderRows();
     private final DefaultListModel<FavoriteEntry> favoriteEntries = new DefaultListModel<>();
 
     private record FavoriteEntry(String provider, String model) {
@@ -123,22 +137,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
     @Getter
     private final JTextField llamaCPPModelUrlField = new JTextField(stateService.getLlamaCPPUrl());
-    @Getter
-    private final JTextField nativModelUrlField = new JTextField(stateService.getNativModelUrl());
-    @Getter
-    private final JTextField rapidMLXModelUrlField = new JTextField(stateService.getRapidMLXModelUrl());
-    @Getter
-    private final JCheckBox nativFallbackContextEnabledCheckBox = new JCheckBox("", stateService.getNativFallbackContextLength() != null);
-    @Getter
-    private final JBIntSpinner nativFallbackContextField = new JBIntSpinner(
-            new UINumericRange(
-                    stateService.getNativFallbackContextLength() != null
-                            ? stateService.getNativFallbackContextLength()
-                            : NativChatModelFactory.DEFAULT_CONTEXT_LENGTH,
-                    1,
-                    2_000_000
-            )
-    );
     @Getter
     private final JTextField customOpenAIUrlField = new JTextField(stateService.getCustomOpenAIUrl());
     @Getter
@@ -227,10 +225,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox janEnabledCheckBox = new JCheckBox("", stateService.isJanEnabled());
     @Getter
     private final JCheckBox llamaCPPEnabledCheckBox = new JCheckBox("", stateService.isLlamaCPPEnabled());
-    @Getter
-    private final JCheckBox nativEnabledCheckBox = new JCheckBox("", stateService.isNativEnabled());
-    @Getter
-    private final JCheckBox rapidMLXEnabledCheckBox = new JCheckBox("", stateService.isRapidMLXEnabled());
     @Getter
     private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
     @Getter
@@ -332,13 +326,14 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     /**
      * The provider settings outgrew a single scrolling column, so they are split across tabs (same
      * {@link JBTabbedPane} treatment as the Appearance page). Tab order follows how a provider is
-     * usually chosen: local first, then the hosted ones, with the custom endpoint last.
+     * usually chosen: local first, then the hosted ones and sharded clusters, with the custom endpoint last.
      */
     private @NotNull JTabbedPane createProviderTabs() {
         JTabbedPane tabbedPane = new SelectedTabSizedPane();
         tabbedPane.addTab("Local", topAnchored(createLocalProvidersPanel()));
         tabbedPane.addTab("Cloud Direct", topAnchored(createCloudProvidersPanel()));
         tabbedPane.addTab("Routers", topAnchored(createRoutersPanel()));
+        tabbedPane.addTab("Sharding", topAnchored(createShardingPanel()));
         tabbedPane.addTab("Custom OpenAI", topAnchored(createCustomOpenAIPanel()));
         // Preferred height changes with the selection, so the parent has to lay out again.
         tabbedPane.addChangeListener(event -> {
@@ -452,19 +447,65 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
                 createTextWithDownloadButton(janModelUrlField, "https://jan.ai/download"));
         addProviderSettingRow(localPanel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
                 createTextWithDownloadButton(llamaCPPModelUrlField, "https://github.com/ggml-org/llama.cpp"));
-        addProviderSettingRow(localPanel, gbc, "Nativ URL", nativEnabledCheckBox,
-                createTextWithDownloadButton(nativModelUrlField, "https://neywa-labs.github.io/nativ/"));
-        addHintText(localPanel, gbc, "Run MLX models locally on Apple Silicon. Nativ defaults to port 8080 — the same port as Llama.c++ — so change one of the two if you want both enabled.");
-        addProviderSettingRow(localPanel, gbc, "Nativ Fallback Context", nativFallbackContextEnabledCheckBox, nativFallbackContextField);
-        addHintText(localPanel, gbc, "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes " + NativChatModelFactory.DEFAULT_CONTEXT_LENGTH + " tokens unless you set it here.");
-        addProviderSettingRow(localPanel, gbc, "Rapid-MLX URL", rapidMLXEnabledCheckBox,
-                createTextWithDownloadButton(rapidMLXModelUrlField, "https://rapidmlx.com/docs/"));
-        addHintText(localPanel, gbc, "Run MLX models locally on Apple Silicon. Enable after starting Rapid-MLX; set the URL to the server's port (8000 by default).");
-        addProviderSettingRow(localPanel, gbc, "Exo URL", exoEnabledCheckBox,
-                createTextWithInfoButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
-        addHintText(localPanel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
+        for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
+            LocalProviderRow row = localProviderRows.get(def.provider());
+            String name = def.provider().getName();
+            addProviderSettingRow(localPanel, gbc, name + " URL", row.enabled(),
+                    createTextWithDownloadButton(row.url(), def.downloadUrl()));
+            addHintText(localPanel, gbc, def.hint());
+            if (row.fallback() != null) {
+                addProviderSettingRow(localPanel, gbc, name + " Fallback Context", row.fallbackEnabled(), row.fallback());
+                addHintText(localPanel, gbc, def.fallbackContextHint());
+            }
+        }
 
         return localPanel;
+    }
+
+    private @NotNull Map<ModelProvider, LocalProviderRow> createLocalProviderRows() {
+        Map<ModelProvider, LocalProviderRow> rows = new LinkedHashMap<>();
+        for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
+            ModelProvider provider = def.provider();
+            Integer savedFallback = stateService.getLocalProviderFallbackContext(provider);
+            boolean hasFallback = def.fallbackContextHint() != null;
+            rows.put(provider, new LocalProviderRow(
+                    new JCheckBox("", stateService.isLocalProviderEnabled(provider)),
+                    new JTextField(stateService.getLocalProviderUrl(provider)),
+                    hasFallback ? new JCheckBox("", savedFallback != null) : null,
+                    hasFallback ? new JBIntSpinner(new UINumericRange(
+                            savedFallback != null ? savedFallback : def.defaultContextLength(), 1, 2_000_000)) : null));
+        }
+        return rows;
+    }
+
+    private @NotNull JPanel createShardingPanel() {
+        JPanel shardingPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createSectionConstraints();
+
+        addProviderSettingRow(shardingPanel, gbc, "Exo URL", exoEnabledCheckBox,
+                createTextWithInfoButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
+        addHintText(shardingPanel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
+        PLANNED_SHARDING_SOLUTIONS.forEach(name -> addPlannedSolutionRow(shardingPanel, gbc, name));
+        addHintText(shardingPanel, gbc, "OpenAI-compatible servers such as vLLM can already be used from the <b>Custom OpenAI</b> tab.");
+
+        return shardingPanel;
+    }
+
+    private void addPlannedSolutionRow(@NotNull JPanel panel, @NotNull GridBagConstraints gbc, String name) {
+        JLabel nameLabel = new JLabel(name);
+        nameLabel.setEnabled(false);
+        JLabel comingSoon = new JLabel("Coming soon");
+        comingSoon.setEnabled(false);
+
+        gbc.gridwidth = 1;
+        gbc.gridx = 0;
+        gbc.weightx = 0;
+        panel.add(nameLabel, gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        panel.add(comingSoon, gbc);
+        gbc.weightx = 0;
+        gbc.gridy++;
     }
 
     private @NotNull JPanel createCustomOpenAIPanel() {
@@ -614,9 +655,13 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         gpt4AllEnabledCheckBox.addItemListener(e -> updateUrlFieldState(gpt4AllEnabledCheckBox, gpt4AllModelUrlField));
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
         llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
-        nativEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nativEnabledCheckBox, nativModelUrlField));
-        rapidMLXEnabledCheckBox.addItemListener(e -> updateUrlFieldState(rapidMLXEnabledCheckBox, rapidMLXModelUrlField));
-        nativFallbackContextEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nativFallbackContextEnabledCheckBox, nativFallbackContextField));
+        localProviderRows.values().forEach(row -> {
+            row.enabled().addItemListener(e -> updateUrlFieldState(row.enabled(), row.url()));
+            if (row.fallback() != null) {
+                row.fallbackEnabled().addItemListener(e -> updateUrlFieldState(row.fallbackEnabled(), row.fallback()));
+                updateUrlFieldState(row.fallbackEnabled(), row.fallback());
+            }
+        });
         exoEnabledCheckBox.addItemListener(e -> updateUrlFieldState(exoEnabledCheckBox, exoModelUrlField));
 
         customOpenAIUrlEnabledCheckBox.addItemListener(e -> updateUrlFieldState(customOpenAIUrlEnabledCheckBox, customOpenAIUrlField));
@@ -642,7 +687,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         enableAzureOpenAICheckBox.addItemListener(e -> updateUrlFieldState(enableAzureOpenAICheckBox, azureOpenAIEndpointField));
 
         updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
-        updateUrlFieldState(nativFallbackContextEnabledCheckBox, nativFallbackContextField);
     }
 
     private void addAzureOpenAIPanel(JPanel panel, GridBagConstraints gbc) {

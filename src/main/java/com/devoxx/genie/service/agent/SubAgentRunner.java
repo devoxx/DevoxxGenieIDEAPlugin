@@ -2,6 +2,7 @@ package com.devoxx.genie.service.agent;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.CustomChatModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -263,13 +264,21 @@ public class SubAgentRunner {
     private void setBaseUrlIfLocal(@NotNull CustomChatModel config, @NotNull DevoxxGenieStateService settings) {
         if (resolvedProviderName == null) return;
 
+        try {
+            ModelProvider provider = ModelProvider.fromString(resolvedProviderName);
+            if (LocalProviderRegistry.isGeneric(provider)) {
+                config.setBaseUrl(settings.getLocalProviderUrl(provider));
+                return;
+            }
+        } catch (IllegalArgumentException ignored) {
+            // Not a display name ("LLaMA", for one) — the cases below still apply.
+        }
+
         switch (resolvedProviderName) {
             case OLLAMA -> config.setBaseUrl(settings.getOllamaModelUrl());
             case "LMStudio" -> config.setBaseUrl(settings.getLmstudioModelUrl());
             case "GPT4All" -> config.setBaseUrl(settings.getGpt4allModelUrl());
             case "Jan" -> config.setBaseUrl(settings.getJanModelUrl());
-            case "Nativ" -> config.setBaseUrl(settings.getNativModelUrl());
-            case "RapidMLX" -> config.setBaseUrl(settings.getRapidMLXModelUrl());
             case "LLaMA" -> config.setBaseUrl(settings.getLlamaCPPUrl());
             case "CustomOpenAI" -> config.setBaseUrl(settings.getCustomOpenAIUrl());
             default -> { /* Cloud providers don't need base URL */ }

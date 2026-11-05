@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.panel;
 
 import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIContextWindow;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAICost;
 import com.devoxx.genie.chatmodel.local.exo.ExoChatModelFactory;
@@ -366,8 +367,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         return provider == ModelProvider.LMStudio ||
                provider == ModelProvider.Ollama ||
                provider == ModelProvider.Jan ||
-               provider == ModelProvider.Nativ ||
-               provider == ModelProvider.RapidMLX ||
+               LocalProviderRegistry.isGeneric(provider) ||
                provider == ModelProvider.GPT4All ||
                RouterRegistry.isGeneric(provider) ||
                provider == ModelProvider.Bedrock;

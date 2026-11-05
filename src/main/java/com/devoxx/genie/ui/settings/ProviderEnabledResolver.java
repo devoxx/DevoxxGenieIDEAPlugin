@@ -10,8 +10,9 @@ import org.jetbrains.annotations.NotNull;
  * Single place that maps a {@link ModelProvider} to its "enabled" setting, shared by the chat provider
  * combo and the agent settings combos.
  * <p>
- * Generic routers (see {@link RouterRegistry}) are resolved through the per-router flag. Every other
- * provider needs an explicit case: an unmapped one is logged and treated as disabled, and
+ * Generic routers (see {@link RouterRegistry}) and generic local providers (see
+ * {@link LocalProviderRegistry}) are resolved through their per-provider flags. Every other provider
+ * needs an explicit case: an unmapped one is logged and treated as disabled, and
  * {@code ProviderEnabledResolverTest} fails for it so it cannot silently vanish from the combos.
  */
 public final class ProviderEnabledResolver {
@@ -32,8 +33,6 @@ public final class ProviderEnabledResolver {
             case LMStudio -> state.isLmStudioEnabled();
             case GPT4All -> state.isGpt4AllEnabled();
             case Jan -> state.isJanEnabled();
-            case Nativ -> state.isNativEnabled();
-            case RapidMLX -> state.isRapidMLXEnabled();
             case LLaMA -> state.isLlamaCPPEnabled();
             case Exo -> state.isExoEnabled();
             case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
