@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings;
 
 import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +52,15 @@ public final class ProviderEnabledResolver {
             case AzureOpenAI -> state.isAzureOpenAIEnabled();
             case Bedrock -> state.isAwsEnabled();
             case CLIRunners, ACPRunners -> runnersEnabled;
-            default -> RouterRegistry.isGeneric(provider) ? state.isRouterEnabled(provider) : unmapped(provider);
+            default -> {
+                if (RouterRegistry.isGeneric(provider)) {
+                    yield state.isRouterEnabled(provider);
+                }
+                if (LocalProviderRegistry.isGeneric(provider)) {
+                    yield state.isLocalProviderEnabled(provider);
+                }
+                yield unmapped(provider);
+            }
         };
     }
 
