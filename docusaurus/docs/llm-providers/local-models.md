@@ -205,12 +205,12 @@ Jan provides a full chat interface and API:
 
 ## Nativ
 
-[Nativ](https://blaizzy.github.io/nativ/) is an open-source (MIT) macOS app that runs MLX models locally on Apple
+[Nativ](https://neywa-labs.github.io/nativ/) is an open-source (MIT) macOS app that runs MLX models locally on Apple
 Silicon. It is built on MLX-VLM and takes advantage of the unified memory architecture of M1 and newer chips.
 
 ### Setup
 
-1. Download and install Nativ from [blaizzy.github.io/nativ](https://blaizzy.github.io/nativ/) (Apple Silicon only)
+1. Download and install Nativ from [neywa-labs.github.io/nativ](https://neywa-labs.github.io/nativ/) (Apple Silicon only)
 2. Launch Nativ and download one or more models from its curated catalog
 3. In DevoxxGenie settings, open **LLM Providers → Local** and tick the **Nativ URL** checkbox
 4. Select "Nativ" as the provider in the DevoxxGenie panel — your downloaded MLX models appear in the model dropdown
