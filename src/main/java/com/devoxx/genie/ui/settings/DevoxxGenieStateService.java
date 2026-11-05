@@ -1,5 +1,7 @@
 package com.devoxx.genie.ui.settings;
 
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderDefinition;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.Persona;
@@ -175,6 +177,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
+    // Nativ's legacy fields below exist only so old settings files can be migrated into the localProvider* maps.
     private String nativModelUrl = NATIV_MODEL_URL;
     private String rapidMLXModelUrl = RAPID_MLX_MODEL_URL;
     // Nativ's /v1/models exposes no context length; null means "use NativChatModelFactory's default".
@@ -249,6 +252,13 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     /** Per-router enabled flag keyed by {@code ModelProvider.name()}. */
     private Map<String, Boolean> routerEnabled = new ConcurrentHashMap<>();
+
+    /** Per-local-provider URL keyed by {@code ModelProvider.name()}; absent means the definition's default. */
+    private Map<String, String> localProviderUrls = new ConcurrentHashMap<>();
+    /** Per-local-provider enabled flag keyed by {@code ModelProvider.name()}. */
+    private Map<String, Boolean> localProviderEnabled = new ConcurrentHashMap<>();
+    /** Per-local-provider fallback context length keyed by {@code ModelProvider.name()}; absent means unset. */
+    private Map<String, Integer> localProviderFallbackContext = new ConcurrentHashMap<>();
     private boolean isGrokEnabled = false;
     private boolean isKimiEnabled = false;
     private boolean isGlmEnabled = false;
@@ -707,6 +717,18 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         // Copy so later edits do not alias the deserialized state's map; seed OpenRouter from its legacy flag.
         setRouterEnabled(routerEnabled);
         routerEnabled.putIfAbsent(ModelProvider.OpenRouter.name(), isOpenRouterEnabled);
+        // Same copy; seed Nativ from its legacy fields without pinning the default URL or an unset fallback.
+        setLocalProviderUrls(localProviderUrls);
+        setLocalProviderEnabled(localProviderEnabled);
+        setLocalProviderFallbackContext(localProviderFallbackContext);
+        String nativName = ModelProvider.Nativ.name();
+        if (nativModelUrl != null && !nativModelUrl.isBlank() && !NATIV_MODEL_URL.equals(nativModelUrl)) {
+            localProviderUrls.putIfAbsent(nativName, nativModelUrl);
+        }
+        localProviderEnabled.putIfAbsent(nativName, isNativEnabled);
+        if (nativFallbackContextLength != null) {
+            localProviderFallbackContext.putIfAbsent(nativName, nativFallbackContextLength);
+        }
         initializeDefaultCostsIfEmpty();
         // Migrate legacy customPrompts -> commands (issue #1040) before populating defaults.
         migrateLegacyCustomPrompts(state);
@@ -1104,6 +1126,63 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public void setRouterEnabled(@NotNull ModelProvider provider, boolean enabled) {
         routerEnabled.put(provider.name(), enabled);
+    }
+
+    public @NotNull String getLocalProviderUrl(@NotNull ModelProvider provider) {
+        String url = localProviderUrls.get(provider.name());
+        if (url != null && !url.isBlank()) {
+            return url.trim();
+        }
+        return LocalProviderRegistry.find(provider).map(LocalProviderDefinition::defaultUrl).orElse("");
+    }
+
+    public void setLocalProviderUrl(@NotNull ModelProvider provider, @NotNull String url) {
+        localProviderUrls.put(provider.name(), url);
+    }
+
+    public boolean isLocalProviderEnabled(@NotNull ModelProvider provider) {
+        return Boolean.TRUE.equals(localProviderEnabled.get(provider.name()));
+    }
+
+    public void setLocalProviderEnabled(@NotNull ModelProvider provider, boolean enabled) {
+        localProviderEnabled.put(provider.name(), enabled);
+    }
+
+    public @Nullable Integer getLocalProviderFallbackContext(@NotNull ModelProvider provider) {
+        return localProviderFallbackContext.get(provider.name());
+    }
+
+    public void setLocalProviderFallbackContext(@NotNull ModelProvider provider, @Nullable Integer length) {
+        if (length == null) {
+            localProviderFallbackContext.remove(provider.name());
+        } else {
+            localProviderFallbackContext.put(provider.name(), length);
+        }
+    }
+
+    /** Persisted via the bean accessors; copies into a {@link ConcurrentHashMap} and drops null entries. */
+    public void setLocalProviderUrls(@Nullable Map<String, String> urls) {
+        this.localProviderUrls = copyNonNull(urls);
+    }
+
+    public void setLocalProviderEnabled(@Nullable Map<String, Boolean> enabled) {
+        this.localProviderEnabled = copyNonNull(enabled);
+    }
+
+    public void setLocalProviderFallbackContext(@Nullable Map<String, Integer> lengths) {
+        this.localProviderFallbackContext = copyNonNull(lengths);
+    }
+
+    private static <V> Map<String, V> copyNonNull(@Nullable Map<String, V> source) {
+        Map<String, V> copy = new ConcurrentHashMap<>();
+        if (source != null) {
+            source.forEach((key, value) -> {
+                if (key != null && value != null) {
+                    copy.put(key, value);
+                }
+            });
+        }
+        return copy;
     }
 
     @Transient @Override public @NotNull String getGrokKey()       { return creds().getCredential(CredentialKey.GROK_KEY); }
