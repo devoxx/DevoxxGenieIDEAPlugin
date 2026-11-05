@@ -4,7 +4,6 @@ import com.devoxx.genie.service.agent.AgentFileChangeTracker;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -63,7 +62,8 @@ public class WriteFileToolExecutor implements ToolExecutor {
                 return "Error: Project base directory not found.";
             }
 
-            VirtualFile parentDir = resolveParentDir(path, projectBase);
+            String relativePath = AgentProjectFiles.relativeToRoot(projectBase, path);
+            VirtualFile parentDir = resolveParentDir(relativePath, projectBase);
             if (parentDir == null) {
                 return "Error: Failed to create parent directories for: " + path;
             }
@@ -71,7 +71,7 @@ public class WriteFileToolExecutor implements ToolExecutor {
                 return "Error: Access denied - path is outside the project root.";
             }
 
-            String fileName = extractFileName(path);
+            String fileName = extractFileName(relativePath);
             VirtualFile file = parentDir.findChild(fileName);
             boolean isNewFile = file == null;
             if (isNewFile) {
@@ -113,7 +113,7 @@ public class WriteFileToolExecutor implements ToolExecutor {
     }
 
     VirtualFile getProjectBaseDir() {
-        return ProjectUtil.guessProjectDir(project);
+        return AgentProjectFiles.root(project);
     }
 
     boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {

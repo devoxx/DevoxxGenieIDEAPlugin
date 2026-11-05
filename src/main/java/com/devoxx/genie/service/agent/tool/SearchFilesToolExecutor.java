@@ -2,7 +2,6 @@ package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -65,7 +64,7 @@ public class SearchFilesToolExecutor implements ToolExecutor {
     }
 
     VirtualFile getProjectBaseDir() {
-        return ProjectUtil.guessProjectDir(project);
+        return AgentProjectFiles.root(project);
     }
 
     static Pattern compilePattern(String patternStr) {
@@ -108,7 +107,7 @@ public class SearchFilesToolExecutor implements ToolExecutor {
         if (path == null || path.isBlank() || path.equals(".")) {
             return projectBase;
         }
-        return projectBase.findFileByRelativePath(path);
+        return projectBase.findFileByRelativePath(AgentProjectFiles.relativeToRoot(projectBase, path));
     }
 
     void searchInDirectory(VirtualFile dir, VirtualFile projectBase,

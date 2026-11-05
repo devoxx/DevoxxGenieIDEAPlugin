@@ -4,7 +4,6 @@ import com.devoxx.genie.service.agent.AgentFileChangeTracker;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -76,7 +75,7 @@ public class EditFileToolExecutor implements ToolExecutor {
                 return "Error: Project base directory not found.";
             }
 
-            VirtualFile file = findFile(projectBase, path);
+            VirtualFile file = findFile(projectBase, AgentProjectFiles.relativeToRoot(projectBase, path));
             if (file == null || !file.exists()) {
                 return "Error: File not found: " + path;
             }
@@ -156,7 +155,7 @@ public class EditFileToolExecutor implements ToolExecutor {
     }
 
     VirtualFile getProjectBaseDir() {
-        return ProjectUtil.guessProjectDir(project);
+        return AgentProjectFiles.root(project);
     }
 
     VirtualFile findFile(VirtualFile projectBase, String path) {

@@ -1,10 +1,10 @@
 package com.devoxx.genie.service.agent.tool.psi;
 
+import com.devoxx.genie.service.agent.tool.AgentProjectFiles;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
@@ -47,7 +47,7 @@ public final class PsiToolUtils {
      */
     @Nullable
     public static VirtualFile resolveVirtualFile(@NotNull Project project, @NotNull String relativePath) {
-        VirtualFile projectBase = ProjectUtil.guessProjectDir(project);
+        VirtualFile projectBase = getProjectBase(project);
         if (projectBase == null) return null;
 
         String normalized = normalizeRelativePath(relativePath);
@@ -284,7 +284,7 @@ public final class PsiToolUtils {
      */
     @Nullable
     public static VirtualFile getProjectBase(@NotNull Project project) {
-        return ProjectUtil.guessProjectDir(project);
+        return AgentProjectFiles.root(project);
     }
 
     /**

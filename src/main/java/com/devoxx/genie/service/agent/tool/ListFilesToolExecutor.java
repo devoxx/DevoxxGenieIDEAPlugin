@@ -2,7 +2,6 @@ package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.util.ReadAccess;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
@@ -43,7 +42,7 @@ public class ListFilesToolExecutor implements ToolExecutor {
     }
 
     VirtualFile getProjectBaseDir() {
-        return ProjectUtil.guessProjectDir(project);
+        return AgentProjectFiles.root(project);
     }
 
     @NotNull String listFiles(String path, boolean recursive, VirtualFile projectBase) {
@@ -77,7 +76,7 @@ public class ListFilesToolExecutor implements ToolExecutor {
         if (path == null || path.isBlank() || path.equals(".")) {
             return projectBase;
         }
-        return projectBase.findFileByRelativePath(path);
+        return projectBase.findFileByRelativePath(AgentProjectFiles.relativeToRoot(projectBase, path));
     }
 
     void listDirectory(VirtualFile dir, VirtualFile projectBase, boolean recursive,

@@ -1,7 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
@@ -128,7 +127,7 @@ public class AgentDiffPreviewFactory {
             return null;
         }
 
-        VirtualFile file = findFile(projectBase, path);
+        VirtualFile file = findFile(projectBase, AgentProjectFiles.relativeToRoot(projectBase, path));
         if (file == null || !file.exists() || file.isDirectory() || !isAncestor(projectBase, file)) {
             return null;
         }
@@ -142,7 +141,7 @@ public class AgentDiffPreviewFactory {
     }
 
     VirtualFile getProjectBaseDir() {
-        return ProjectUtil.guessProjectDir(project);
+        return AgentProjectFiles.root(project);
     }
 
     VirtualFile findFile(VirtualFile projectBase, String path) {
