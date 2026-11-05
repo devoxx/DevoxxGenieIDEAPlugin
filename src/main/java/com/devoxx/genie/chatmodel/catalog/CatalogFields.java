@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.cloud.router;
+package com.devoxx.genie.chatmodel.catalog;
 
 import org.jetbrains.annotations.Nullable;
 

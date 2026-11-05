@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel.cloud.router;
 
+import com.devoxx.genie.chatmodel.catalog.CatalogFields;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.analytics.ProviderType;
