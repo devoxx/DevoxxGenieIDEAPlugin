@@ -47,6 +47,7 @@ class RouterRegistryTest {
         for (RouterDefinition def : RouterRegistry.definitions()) {
             ModelProvider provider = def.provider();
 
+            assertThat(provider.getType()).as("type of %s", provider).isEqualTo(ModelProvider.Type.ROUTER);
             Optional<ChatModelFactory> factory = ChatModelFactoryProvider.getFactoryByProvider(provider.name());
             assertThat(factory).as("factory for %s", provider).isPresent();
             assertThat(factory.get()).isInstanceOf(RouterChatModelFactory.class);

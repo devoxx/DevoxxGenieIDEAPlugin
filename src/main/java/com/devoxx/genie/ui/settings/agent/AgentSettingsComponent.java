@@ -11,6 +11,7 @@ import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
+import com.devoxx.genie.ui.settings.ProviderEnabledResolver;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.intellij.icons.AllIcons;
@@ -392,33 +393,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
 
         providerService.getAvailableModelProviders().stream()
-                .filter(provider -> switch (provider) {
-                    case Ollama -> state.isOllamaEnabled();
-                    case LMStudio -> state.isLmStudioEnabled();
-                    case GPT4All -> state.isGpt4AllEnabled();
-                    case Jan -> state.isJanEnabled();
-                    case Nativ -> state.isNativEnabled();
-                    case LLaMA -> state.isLlamaCPPEnabled();
-                    case Exo -> state.isExoEnabled();
-                    case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
-                    case OpenAI -> state.isOpenAIEnabled();
-                    case Mistral -> state.isMistralEnabled();
-                    case Anthropic -> state.isAnthropicEnabled();
-                    case Groq -> state.isGroqEnabled();
-                    case DeepInfra -> state.isDeepInfraEnabled();
-                    case Google -> state.isGoogleEnabled();
-                    case DeepSeek -> state.isDeepSeekEnabled();
-                    case Grok -> state.isGrokEnabled();
-                    case Kimi -> state.isKimiEnabled();
-                    case GLM -> state.isGlmEnabled();
-                    case Nvidia -> state.isNvidiaEnabled();
-                    case Cloudflare -> state.isCloudflareEnabled();
-                    case AzureOpenAI -> state.isAzureOpenAIEnabled();
-                    case Bedrock -> state.isAwsEnabled();
-                    case CLIRunners -> false;
-                    case ACPRunners -> false;
-                    default -> state.isRouterEnabled(provider);
-                })
+                .filter(provider -> ProviderEnabledResolver.isEnabled(state, provider, false))
                 .distinct()
                 .sorted(Comparator.comparing(ModelProvider::getName))
                 .forEach(subAgentProviderComboBox::addItem);
@@ -595,33 +570,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
 
             providerService.getAvailableModelProviders().stream()
-                    .filter(provider -> switch (provider) {
-                        case Ollama -> state.isOllamaEnabled();
-                        case LMStudio -> state.isLmStudioEnabled();
-                        case GPT4All -> state.isGpt4AllEnabled();
-                        case Jan -> state.isJanEnabled();
-                    case Nativ -> state.isNativEnabled();
-                        case LLaMA -> state.isLlamaCPPEnabled();
-                        case Exo -> state.isExoEnabled();
-                        case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
-                        case OpenAI -> state.isOpenAIEnabled();
-                        case Mistral -> state.isMistralEnabled();
-                        case Anthropic -> state.isAnthropicEnabled();
-                        case Groq -> state.isGroqEnabled();
-                        case DeepInfra -> state.isDeepInfraEnabled();
-                        case Google -> state.isGoogleEnabled();
-                        case DeepSeek -> state.isDeepSeekEnabled();
-                            case Grok -> state.isGrokEnabled();
-                        case Kimi -> state.isKimiEnabled();
-                        case GLM -> state.isGlmEnabled();
-                        case Nvidia -> state.isNvidiaEnabled();
-                        case Cloudflare -> state.isCloudflareEnabled();
-                        case AzureOpenAI -> state.isAzureOpenAIEnabled();
-                        case Bedrock -> state.isAwsEnabled();
-                        case CLIRunners -> false;
-                        case ACPRunners -> false;
-                        default -> state.isRouterEnabled(provider);
-                    })
+                    .filter(provider -> ProviderEnabledResolver.isEnabled(state, provider, false))
                     .distinct()
                     .sorted(Comparator.comparing(ModelProvider::getName))
                     .forEach(providerCombo::addItem);

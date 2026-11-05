@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.devoxx.genie.model.Constant.*;
 
@@ -244,7 +245,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private boolean isOpenRouterEnabled = false;
 
     /** Per-router enabled flag keyed by {@code ModelProvider.name()}. */
-    private Map<String, Boolean> routerEnabled = new HashMap<>();
+    private Map<String, Boolean> routerEnabled = new ConcurrentHashMap<>();
     private boolean isGrokEnabled = false;
     private boolean isKimiEnabled = false;
     private boolean isGlmEnabled = false;
@@ -701,7 +702,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         }
         shouldPowerFromAWSProfile = getAwsBedrockAuthMode() == AwsBedrockAuthMode.PROFILE;
         // Copy so later edits do not alias the deserialized state's map; seed OpenRouter from its legacy flag.
-        routerEnabled = routerEnabled == null ? new HashMap<>() : new HashMap<>(routerEnabled);
+        setRouterEnabled(routerEnabled);
         routerEnabled.putIfAbsent(ModelProvider.OpenRouter.name(), isOpenRouterEnabled);
         initializeDefaultCostsIfEmpty();
         // Migrate legacy customPrompts -> commands (issue #1040) before populating defaults.
@@ -1079,6 +1080,22 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public boolean isRouterEnabled(@NotNull ModelProvider provider) {
         return Boolean.TRUE.equals(routerEnabled.get(provider.name()));
+    }
+
+    /**
+     * Persisted via the bean accessors. Always copies into a {@link ConcurrentHashMap} (read from pooled
+     * threads while Apply writes on the EDT) and tolerates {@code null} and null entries.
+     */
+    public void setRouterEnabled(@Nullable Map<String, Boolean> enabled) {
+        Map<String, Boolean> copy = new ConcurrentHashMap<>();
+        if (enabled != null) {
+            enabled.forEach((key, value) -> {
+                if (key != null && value != null) {
+                    copy.put(key, value);
+                }
+            });
+        }
+        this.routerEnabled = copy;
     }
 
     public void setRouterEnabled(@NotNull ModelProvider provider, boolean enabled) {

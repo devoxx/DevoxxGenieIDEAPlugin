@@ -397,7 +397,7 @@ Requesty support was contributed by Thibault Jaigu (#1303). It hasn't been teste
 - **Model**: Select from the models the endpoint reports
 - **Parameters**: Temperature, Top P, and the max output tokens from your chat model settings
 
-The `/models` endpoint is assumed to return the usual OpenAI-style list without prices or context windows, so DevoxxGenie assumes a 128K context window and shows no cost estimate.
+The `/models` endpoint is assumed to return the usual OpenAI-style list without prices or context windows, so DevoxxGenie assumes a 128K context window and treats the input cost as $0. The model dropdown therefore shows no price, and the project scan cost estimate reports $0.00000.
 
 :::note Testing status
 DemonRoute support was added for requests #1340 and #1378. It hasn't been tested against the live service.
