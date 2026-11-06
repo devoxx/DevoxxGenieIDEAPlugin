@@ -415,7 +415,7 @@ intellijPlatform {
             // 251/252 cannot be supported anymore: they bundle CMP 1.7.x-era runtimes that are
             // ABI-incompatible with the 1.10 APIs this plugin now compiles against.
             sinceBuild = "253.31033"
-            untilBuild = "262.*"
+            untilBuild = "263.*"
         }
     }
 
