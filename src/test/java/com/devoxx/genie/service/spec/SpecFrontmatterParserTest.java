@@ -335,6 +335,29 @@ class SpecFrontmatterParserTest {
     }
 
     @Test
+    void shouldParseFoldedScalarListItems() {
+        // Backlog.md writes long values as a YAML folded scalar: "  - >-" followed by the indented value
+        String content = """
+                ---
+                id: TASK-197
+                title: Replace deprecated APIs
+                references:
+                  - >-
+                    /Users/stephan/build/reports/pluginVerifier/IC-251.29188.11/report.html
+                  - >-
+                    /tmp/another reference.md
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getReferences()).containsExactly(
+                "/Users/stephan/build/reports/pluginVerifier/IC-251.29188.11/report.html",
+                "/tmp/another reference.md");
+    }
+
+    @Test
     void shouldHandleExplicitEmptyArrayInFrontmatter() {
         // "labels: []" should result in an empty list (not null)
         String content = """
