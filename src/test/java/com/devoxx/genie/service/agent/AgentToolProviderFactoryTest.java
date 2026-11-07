@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent;
 
+import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.model.mcp.MCPSettings;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.Application;
@@ -87,6 +88,25 @@ class AgentToolProviderFactoryTest {
 
             ToolProvider result = AgentToolProviderFactory.createToolProvider(project);
             assertThat(result).isNotNull();
+        }
+    }
+
+    @Test
+    void createToolProvider_nullMaxToolCalls_usesConstantDefault() {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = mockStatic(DevoxxGenieStateService.class);
+             MockedStatic<ApplicationManager> appMock = mockStatic(ApplicationManager.class)) {
+            stateMock.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
+            appMock.when(ApplicationManager::getApplication).thenReturn(application);
+
+            when(stateService.getAgentModeEnabled()).thenReturn(true);
+            when(stateService.getAgentMaxToolCalls()).thenReturn(null);
+            when(stateService.getMcpEnabled()).thenReturn(false);
+            when(stateService.getMcpSettings()).thenReturn(new MCPSettings());
+
+            ToolProvider result = AgentToolProviderFactory.createToolProvider(project);
+
+            assertThat(result).isInstanceOf(AgentLoopTracker.class);
+            assertThat(((AgentLoopTracker) result).getMaxToolCalls()).isEqualTo(Constant.AGENT_MAX_TOOL_CALLS);
         }
     }
 
