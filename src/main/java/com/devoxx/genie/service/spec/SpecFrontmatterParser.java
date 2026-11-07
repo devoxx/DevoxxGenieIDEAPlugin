@@ -35,6 +35,9 @@ public final class SpecFrontmatterParser {
             Pattern.MULTILINE
     );
 
+    /** YAML block scalar header (">", "|", ">-", "|-") used as a list item value. */
+    private static final Pattern BLOCK_SCALAR_PATTERN = Pattern.compile("^[>|][+-]?$");
+
     private SpecFrontmatterParser() {
     }
 
@@ -68,8 +71,10 @@ public final class SpecFrontmatterParser {
         String currentKey = null;
         List<String> currentList = null;
 
-        for (String line : frontmatter.split("\\n")) {
-            String trimmed = line.trim();
+        String[] lines = frontmatter.split("\\n");
+
+        for (int i = 0; i < lines.length; i++) {
+            String trimmed = lines[i].trim();
             if (trimmed.isEmpty()) {
                 continue;
             }
@@ -78,7 +83,12 @@ public final class SpecFrontmatterParser {
             if (trimmed.startsWith("- ") && currentKey != null && currentList != null) {
                 String value = trimmed.substring(2).trim();
                 value = stripQuotes(value);
-                currentList.add(value);
+                if (BLOCK_SCALAR_PATTERN.matcher(value).matches()) {
+                    // Backlog.md writes long values as "  - >-" followed by the indented value
+                    i = collectBlockScalar(lines, i, indentOf(lines[i]), value.startsWith("|"), currentList);
+                } else {
+                    currentList.add(value);
+                }
                 continue;
             }
 
@@ -100,6 +110,42 @@ public final class SpecFrontmatterParser {
         if (currentKey != null && currentList != null) {
             applyListField(currentKey, currentList, builder);
         }
+    }
+
+    /**
+     * Consume the more-indented lines that follow a block scalar marker such as {@code - >-}
+     * and add their joined text as a single list item.
+     *
+     * @return index of the last consumed line
+     */
+    private static int collectBlockScalar(@NotNull String[] lines,
+                                          int markerIndex,
+                                          int markerIndent,
+                                          boolean literal,
+                                          @NotNull List<String> out) {
+        StringBuilder value = new StringBuilder();
+        int i = markerIndex;
+        while (i + 1 < lines.length) {
+            String next = lines[i + 1];
+            if (next.isBlank() || indentOf(next) <= markerIndent) {
+                break;
+            }
+            i++;
+            if (value.length() > 0) {
+                value.append(literal ? "\n" : " ");
+            }
+            value.append(next.strip());
+        }
+        out.add(value.toString());
+        return i;
+    }
+
+    private static int indentOf(@NotNull String line) {
+        int i = 0;
+        while (i < line.length() && Character.isWhitespace(line.charAt(i))) {
+            i++;
+        }
+        return i;
     }
 
     private static void applyScalarField(@NotNull String key, @NotNull String value, TaskSpec.TaskSpecBuilder builder) {
