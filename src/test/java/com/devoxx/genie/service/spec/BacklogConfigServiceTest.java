@@ -275,8 +275,37 @@ class BacklogConfigServiceTest {
             service.invalidateCache();
             BacklogConfig loaded = service.getConfig();
 
-            // Milestones are serialized as inline list of names
-            assertThat(loaded.getMilestones()).isNotNull();
+            // Milestones are serialized as inline list of names, so they must survive the round-trip
+            assertThat(loaded.getMilestones())
+                    .extracting(BacklogConfig.BacklogMilestone::getName)
+                    .containsExactly("v1.0", "v2.0");
+        }
+    }
+
+    @Test
+    void getConfig_parsesMilestonesFromInlineArray(@TempDir Path tempDir) throws IOException {
+        try (MockedStatic<DevoxxGenieStateService> stateMock = Mockito.mockStatic(DevoxxGenieStateService.class)) {
+            BacklogConfigService service = setupService(tempDir, stateMock);
+            Path configPath = tempDir.resolve("backlog/config.yml");
+            Files.createDirectories(configPath.getParent());
+
+            // Format used by saveConfig() (and by earlier plugin versions already on disk)
+            String yaml = """
+                    project_name: "Inline Milestones"
+                    milestones: ["v1.0", "v2.0"]
+                    """;
+            Files.writeString(configPath, yaml, StandardCharsets.UTF_8);
+
+            BacklogConfig config = service.getConfig();
+
+            assertThat(config.getMilestones())
+                    .extracting(BacklogConfig.BacklogMilestone::getName)
+                    .containsExactly("v1.0", "v2.0");
+
+            // The loaded list is mutated in place by BacklogMilestoneToolExecutor, so it must be modifiable
+            assertThatCode(() -> config.getMilestones().add(
+                    BacklogConfig.BacklogMilestone.builder().name("v3.0").build()))
+                    .doesNotThrowAnyException();
         }
     }
 

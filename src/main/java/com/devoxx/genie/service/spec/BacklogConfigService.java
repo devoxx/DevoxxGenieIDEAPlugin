@@ -376,6 +376,15 @@ public final class BacklogConfigService {
             case "statuses" -> builder.statuses(new ArrayList<>(values));
             case "labels" -> builder.labels(new ArrayList<>(values));
             case "definition_of_done", "definitionofdone" -> builder.definitionOfDone(new ArrayList<>(values));
+            // saveConfig() writes milestones as an inline array of names; without this case the
+            // list is silently dropped when the config is read back.
+            case "milestones" -> {
+                List<BacklogConfig.BacklogMilestone> milestones = new ArrayList<>();
+                for (String name : values) {
+                    milestones.add(BacklogConfig.BacklogMilestone.builder().name(name).build());
+                }
+                builder.milestones(milestones);
+            }
             default -> log.trace("Ignoring unknown config list field: {}", key);
         }
     }
