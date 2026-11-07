@@ -164,6 +164,32 @@ class TaskDependencySorterTest {
                 });
     }
 
+    @Test
+    void sortToleratesRepeatedDependencyEntry() throws CircularDependencyException {
+        // The same dependency listed twice is still a single edge, not a cycle
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second", "TASK-1", "TASK-1");
+
+        List<TaskSpec> all = List.of(t1, t2);
+
+        assertThat(TaskDependencySorter.sort(all, all)).containsExactly(t1, t2);
+    }
+
+    @Test
+    void sortByLayersToleratesDependenciesDifferingOnlyByCase() throws CircularDependencyException {
+        // Dependencies are matched case-insensitively, so both entries refer to the same task
+        TaskSpec t1 = createTask("TASK-1", "First");
+        TaskSpec t2 = createTask("TASK-2", "Second", "TASK-1", "task-1");
+
+        List<TaskSpec> all = List.of(t1, t2);
+
+        List<List<TaskSpec>> layers = TaskDependencySorter.sortByLayers(all, all);
+
+        assertThat(layers).hasSize(2);
+        assertThat(layers.get(0)).containsExactly(t1);
+        assertThat(layers.get(1)).containsExactly(t2);
+    }
+
     // --- getUnsatisfiedDependencies() branch coverage ---
 
     @Test

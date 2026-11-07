@@ -203,8 +203,11 @@ public final class TaskDependencySorter {
             for (String dep : deps) {
                 String depLower = dep.toLowerCase();
                 if (selectedIds.contains(depLower)) {
-                    dependents.computeIfAbsent(depLower, k -> new HashSet<>()).add(taskId);
-                    inDegree.merge(taskId, 1, Integer::sum);
+                    // The dependents set already de-duplicates, so only count the edge the first
+                    // time it is added: a dependency listed twice is still one edge, not a cycle.
+                    if (dependents.computeIfAbsent(depLower, k -> new HashSet<>()).add(taskId)) {
+                        inDegree.merge(taskId, 1, Integer::sum);
+                    }
                 }
             }
         }
