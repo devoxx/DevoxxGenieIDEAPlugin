@@ -195,8 +195,8 @@ class LLMProvidersRouterSettingsTest {
                 .filter(text -> text.endsWith(" API Key"))
                 .toList();
         assertThat(apiKeyRows).containsExactly(
-                "OpenRouter API Key", "Cloudflare API Key", "OrcaRouter API Key", "Requesty API Key",
-                "DemonRoute API Key");
+                "OpenRouter API Key", "Cloudflare API Key", "OrcaRouter API Key", "UberLLM API Key",
+                "Requesty API Key", "DemonRoute API Key");
     }
 
     @Test

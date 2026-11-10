@@ -27,7 +27,7 @@ Connect to a wide range of LLM providers:
 
 - **Local Providers**: Ollama, LMStudio, GPT4All, Llama.cpp, Jan, Nativ, Exo, Rapid-MLX, and custom OpenAI-compatible providers
 - **Cloud Providers (Cloud Direct)**: OpenAI, Anthropic (Claude), Mistral, Groq, Google (Gemini), Grok (xAI), DeepInfra, DeepSeek, Kimi, GLM (Zhipu AI), NVIDIA, Azure OpenAI, and Amazon Bedrock
-- **Routers**: OpenRouter, OrcaRouter, Requesty, DemonRoute, and Cloudflare AI Gateway
+- **Routers**: OpenRouter, OrcaRouter, UberLLM, Requesty, DemonRoute, and Cloudflare AI Gateway
 
 ### Chat Interface
 

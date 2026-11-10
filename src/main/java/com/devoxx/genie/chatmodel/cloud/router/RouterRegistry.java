@@ -37,6 +37,20 @@ public final class RouterRegistry {
                     "endpoint_capabilities", "chat_completions"),
             null);
 
+    private static final RouterDefinition UBER_LLM = new RouterDefinition(
+            ModelProvider.UberLLM,
+            "UberLLM",
+            "https://api.uberllm.dev/v1",
+            List.of("/models"),
+            "uberLlmKey",
+            "https://uberllm.dev/signup",
+            null,
+            new CatalogFields("display_name",
+                    List.of("context_length", "top_provider.context_length"),
+                    "pricing.prompt", "pricing.completion", 1_000_000,
+                    "output_modalities", "text"),
+            null);
+
     private static final RouterDefinition REQUESTY = new RouterDefinition(
             ModelProvider.Requesty,
             "Requesty",
@@ -63,7 +77,7 @@ public final class RouterRegistry {
             null,
             null);
 
-    private static final List<RouterDefinition> DEFINITIONS = List.of(OPEN_ROUTER, ORCA_ROUTER, REQUESTY, DEMON_ROUTE);
+    private static final List<RouterDefinition> DEFINITIONS = List.of(OPEN_ROUTER, ORCA_ROUTER, UBER_LLM, REQUESTY, DEMON_ROUTE);
 
     private RouterRegistry() {
     }

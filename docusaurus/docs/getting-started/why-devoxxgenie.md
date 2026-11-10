@@ -49,7 +49,7 @@ Model choice is not unique to DevoxxGenie: competitors also offer multiple model
 
 **Cloud providers (Cloud Direct)**: OpenAI, Anthropic (Claude), Google Gemini, Grok (xAI), Mistral, Groq, DeepInfra, DeepSeek, Kimi (Moonshot AI), GLM (Zhipu AI), NVIDIA, Azure OpenAI, Amazon Bedrock
 
-**Routers**: OpenRouter, OrcaRouter, Requesty, DemonRoute, Cloudflare AI Gateway
+**Routers**: OpenRouter, OrcaRouter, UberLLM, Requesty, DemonRoute, Cloudflare AI Gateway
 
 **Local providers**: Ollama, LM Studio, GPT4All, Llama.cpp, Jan, Nativ, Exo, Rapid-MLX, and custom OpenAI-compatible endpoints
 

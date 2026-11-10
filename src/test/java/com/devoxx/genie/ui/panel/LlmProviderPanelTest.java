@@ -111,6 +111,7 @@ class LlmProviderPanelTest {
         lenient().when(stateService.isDeepSeekEnabled()).thenReturn(false);
         lenient().when(stateService.isRouterEnabled(ModelProvider.OpenRouter)).thenReturn(false);
         lenient().when(stateService.isRouterEnabled(ModelProvider.OrcaRouter)).thenReturn(false);
+        lenient().when(stateService.isRouterEnabled(ModelProvider.UberLLM)).thenReturn(false);
         lenient().when(stateService.isRouterEnabled(ModelProvider.Requesty)).thenReturn(false);
         lenient().when(stateService.isRouterEnabled(ModelProvider.DemonRoute)).thenReturn(false);
         lenient().when(stateService.isGrokEnabled()).thenReturn(false);

@@ -2,7 +2,7 @@
 sidebar_position: 1
 title: LLM Providers Overview - DevoxxGenie Documentation
 description: A comprehensive guide to all LLM providers supported by DevoxxGenie, including local and cloud-based options, with comparison of features and capabilities.
-keywords: [devoxxgenie, intellij plugin, llm providers, llm router, openrouter, orcarouter, requesty, demonroute, openai, anthropic, local llm, cloud llm, grok, mistral, ollama, kimi, glm, zhipu]
+keywords: [devoxxgenie, intellij plugin, llm providers, llm router, openrouter, orcarouter, uberllm, requesty, demonroute, openai, anthropic, local llm, cloud llm, grok, mistral, ollama, kimi, glm, zhipu]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -65,6 +65,7 @@ Routers are gateways that reach models from many vendors through one API key. Th
 Supported routers (settings tab **Routers**):
 - [OpenRouter](cloud-models.md#openrouter)
 - [OrcaRouter](cloud-models.md#orcarouter)
+- [UberLLM](cloud-models.md#uberllm)
 - [Requesty](cloud-models.md#requesty)
 - [DemonRoute](cloud-models.md#demonroute)
 - [Cloudflare AI Gateway](cloud-models.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
