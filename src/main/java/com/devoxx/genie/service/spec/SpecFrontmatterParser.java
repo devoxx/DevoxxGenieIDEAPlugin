@@ -115,6 +115,10 @@ public final class SpecFrontmatterParser {
     /**
      * Consume the more-indented lines that follow a block scalar marker such as {@code - >-}
      * and add their joined text as a single list item.
+     * <p>
+     * A blank line inside the block separates paragraphs of the same value; it does not end
+     * the block. Blank lines are held back until more indented content shows up, so trailing
+     * blank lines that only belong to the document layout are not appended to the value.
      *
      * @return index of the last consumed line
      */
@@ -125,15 +129,28 @@ public final class SpecFrontmatterParser {
                                           @NotNull List<String> out) {
         StringBuilder value = new StringBuilder();
         int i = markerIndex;
+        int pendingBlankLines = 0;
         while (i + 1 < lines.length) {
             String next = lines[i + 1];
-            if (next.isBlank() || indentOf(next) <= markerIndent) {
+            if (next.isBlank()) {
+                i++;
+                pendingBlankLines++;
+                continue;
+            }
+            if (indentOf(next) <= markerIndent) {
                 break;
             }
             i++;
             if (value.length() > 0) {
-                value.append(literal ? "\n" : " ");
+                if (literal) {
+                    // A literal scalar keeps every line break.
+                    value.append("\n".repeat(pendingBlankLines + 1));
+                } else {
+                    // A folded scalar joins lines with a space, and keeps blank lines as breaks.
+                    value.append(pendingBlankLines > 0 ? "\n".repeat(pendingBlankLines) : " ");
+                }
             }
+            pendingBlankLines = 0;
             value.append(next.strip());
         }
         out.add(value.toString());

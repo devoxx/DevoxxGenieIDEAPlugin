@@ -601,4 +601,72 @@ class SpecFrontmatterParserTest {
         assertThat(spec).isNotNull();
         assertThat(spec.getDisplayLabel()).isEqualTo("BACK-15: Fix search bug");
     }
+
+    @Test
+    void shouldKeepParagraphBreakInsideFoldedScalarListItem() {
+        // A blank line inside a ">-" block scalar separates paragraphs of the same value.
+        // It must not end the value: the text after it belongs to the same list item.
+        String content = """
+                ---
+                id: TASK-198
+                title: Multi paragraph note
+                references:
+                  - >-
+                    First paragraph of the note.
+
+                    Second paragraph of the note.
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getReferences())
+                .containsExactly("First paragraph of the note.\nSecond paragraph of the note.");
+    }
+
+    @Test
+    void shouldKeepBlankLineInsideLiteralScalarListItem() {
+        // A literal scalar keeps its line breaks, including the blank one.
+        String content = """
+                ---
+                id: TASK-199
+                title: Literal block
+                references:
+                  - |
+                    line one
+                    line two
+
+                    line four
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getReferences()).containsExactly("line one\nline two\n\nline four");
+    }
+
+    @Test
+    void shouldNotAppendTrailingBlankLineToBlockScalarValue() {
+        // The blank line that ends the block belongs to the document, not to the value.
+        String content = """
+                ---
+                id: TASK-200
+                title: Trailing blank line
+                references:
+                  - >-
+                    single line
+
+                labels:
+                  - bug
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getReferences()).containsExactly("single line");
+        assertThat(spec.getLabels()).containsExactly("bug");
+    }
 }
