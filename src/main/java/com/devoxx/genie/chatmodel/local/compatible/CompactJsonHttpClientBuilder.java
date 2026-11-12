@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.local.jan;
+package com.devoxx.genie.chatmodel.local.compatible;
 
 import dev.langchain4j.http.client.HttpClient;
 import dev.langchain4j.http.client.HttpClientBuilder;

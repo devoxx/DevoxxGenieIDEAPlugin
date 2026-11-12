@@ -104,7 +104,6 @@ public class ProjectContextController {
                 RouterRegistry.isGeneric(modelProvider) ||
                 modelProvider.equals(DeepInfra) ||
                 modelProvider.equals(Ollama) ||
-                modelProvider.equals(Jan) ||
                 modelProvider.equals(Bedrock) ||
                 modelProvider.equals(LMStudio) ||
                 LocalProviderRegistry.isGeneric(modelProvider) ||

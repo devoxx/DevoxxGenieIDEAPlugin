@@ -98,7 +98,7 @@ class LlmProviderPanelTest {
         lenient().when(stateService.isOllamaEnabled()).thenReturn(true);
         lenient().when(stateService.isLmStudioEnabled()).thenReturn(false);
         lenient().when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(false);
-        lenient().when(stateService.isJanEnabled()).thenReturn(false);
+        lenient().when(stateService.isLocalProviderEnabled(ModelProvider.Jan)).thenReturn(false);
         lenient().when(stateService.isLocalProviderEnabled(ModelProvider.LLaMA)).thenReturn(false);
         lenient().when(stateService.isExoEnabled()).thenReturn(false);
         lenient().when(stateService.isCustomOpenAIUrlEnabled()).thenReturn(false);
@@ -574,7 +574,7 @@ class LlmProviderPanelTest {
     void firstRun_selectsOllama_evenWhenAnotherProviderSortsFirst() {
         // GPT4All and Jan are enabled by default and sort before Ollama, but new users start on Ollama.
         when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(true);
-        when(stateService.isJanEnabled()).thenReturn(true);
+        when(stateService.isLocalProviderEnabled(ModelProvider.Jan)).thenReturn(true);
         when(llmProviderService.getAvailableModelProviders())
                 .thenReturn(List.of(ModelProvider.GPT4All, ModelProvider.Jan, ModelProvider.Ollama));
         factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
@@ -592,7 +592,7 @@ class LlmProviderPanelTest {
     void firstRun_withoutOllama_selectsTheFirstProvider() {
         when(stateService.isOllamaEnabled()).thenReturn(false);
         when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(true);
-        when(stateService.isJanEnabled()).thenReturn(true);
+        when(stateService.isLocalProviderEnabled(ModelProvider.Jan)).thenReturn(true);
         when(llmProviderService.getAvailableModelProviders())
                 .thenReturn(List.of(ModelProvider.Jan, ModelProvider.GPT4All, ModelProvider.Ollama));
         factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))

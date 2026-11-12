@@ -103,6 +103,33 @@ class DevoxxGenieStateServiceLocalProviderTest {
     }
 
     @Test
+    void upgrade_carriesJanCustomUrl_andDisabledState() {
+        DevoxxGenieStateService saved = new DevoxxGenieStateService();
+        saved.setJanModelUrl("http://localhost:1444/v1/");
+        saved.setJanEnabled(false);
+        DevoxxGenieStateService loaded = upgrade(saved);
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.Jan)).isEqualTo("http://localhost:1444/v1/");
+        assertThat(loaded.isLocalProviderEnabled(ModelProvider.Jan)).isFalse();
+    }
+
+    @Test
+    void freshInstall_andUntouchedUpgrade_haveJanEnabledOnDefaultUrl() {
+        assertThat(new DevoxxGenieStateService().isLocalProviderEnabled(ModelProvider.Jan)).isTrue();
+
+        DevoxxGenieStateService loaded = upgrade(new DevoxxGenieStateService());
+        assertThat(loaded.isLocalProviderEnabled(ModelProvider.Jan)).isTrue();
+        assertThat(loaded.getLocalProviderUrls()).doesNotContainKey("Jan");
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.Jan)).isEqualTo("http://localhost:1337/v1/");
+    }
+
+    @Test
+    void legacyJanConfigKey_resolvesToTheCurrentUrl() {
+        DevoxxGenieStateService state = new DevoxxGenieStateService();
+        state.setLocalProviderUrl(ModelProvider.Jan, "http://jan-box:1337/v1/");
+        assertThat(state.getConfigValue("janModelUrl")).isEqualTo("http://jan-box:1337/v1/");
+    }
+
+    @Test
     void upgrade_carriesLlamaCppCustomUrl_andDisabledState() {
         DevoxxGenieStateService saved = new DevoxxGenieStateService();
         saved.setLlamaCPPUrl("http://localhost:8181");
@@ -128,7 +155,9 @@ class DevoxxGenieStateServiceLocalProviderTest {
         saved.setNativModelUrl("http://localhost:9090/v1/");
         saved.setGpt4allModelUrl("http://localhost:4999/v1/");
         saved.setLlamaCPPUrl("http://localhost:8181");
+        saved.setJanModelUrl("http://localhost:1444/v1/");
         DevoxxGenieStateService loaded = upgrade(saved);
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.Jan)).isEqualTo("http://localhost:1444/v1/");
         assertThat(loaded.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:9090/v1/");
         assertThat(loaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4999/v1/");
         assertThat(loaded.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo("http://localhost:8181");
@@ -136,7 +165,10 @@ class DevoxxGenieStateServiceLocalProviderTest {
         loaded.setLocalProviderUrl(ModelProvider.Nativ, "");
         loaded.setLocalProviderUrl(ModelProvider.GPT4All, "");
         loaded.setLocalProviderUrl(ModelProvider.LLaMA, "");
+        loaded.setLocalProviderUrl(ModelProvider.Jan, "");
         DevoxxGenieStateService reloaded = upgrade(loaded);
+
+        assertThat(reloaded.getLocalProviderUrl(ModelProvider.Jan)).isEqualTo("http://localhost:1337/v1/");
 
         assertThat(reloaded.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:8080/v1/");
         assertThat(reloaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4891/v1/");
