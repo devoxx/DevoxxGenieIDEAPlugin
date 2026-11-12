@@ -78,7 +78,7 @@ class DevoxxGenieStateServiceTest {
         void shouldHaveCorrectDefaultLocalUrls() {
             assertThat(stateService.getOllamaModelUrl()).isEqualTo(OLLAMA_MODEL_URL);
             assertThat(stateService.getLmstudioModelUrl()).isEqualTo(LMSTUDIO_MODEL_URL);
-            assertThat(stateService.getGpt4allModelUrl()).isEqualTo(GPT4ALL_MODEL_URL);
+            assertThat(stateService.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo(GPT4ALL_MODEL_URL);
             assertThat(stateService.getJanModelUrl()).isEqualTo(JAN_MODEL_URL);
             assertThat(stateService.getLlamaCPPUrl()).isEqualTo(LLAMA_CPP_MODEL_URL);
         }
@@ -99,7 +99,7 @@ class DevoxxGenieStateServiceTest {
         void shouldHaveCorrectDefaultLocalProviderSettings() {
             assertThat(stateService.isOllamaEnabled()).isTrue();
             assertThat(stateService.isLmStudioEnabled()).isTrue();
-            assertThat(stateService.isGpt4AllEnabled()).isTrue();
+            assertThat(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
             assertThat(stateService.isJanEnabled()).isTrue();
             assertThat(stateService.isLlamaCPPEnabled()).isTrue();
         }
@@ -608,7 +608,7 @@ class DevoxxGenieStateServiceTest {
 
         @Test
         void shouldReturnGpt4allModelUrl() {
-            stateService.setGpt4allModelUrl("http://custom-gpt4all:4891/v1/");
+            stateService.setLocalProviderUrl(ModelProvider.GPT4All, "http://custom-gpt4all:4891/v1/");
             assertThat(stateService.getConfigValue("gpt4allModelUrl")).isEqualTo("http://custom-gpt4all:4891/v1/");
         }
 

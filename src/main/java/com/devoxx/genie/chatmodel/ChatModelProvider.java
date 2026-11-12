@@ -87,9 +87,6 @@ public class ChatModelProvider {
             case Ollama:
                 customChatModel.setBaseUrl(stateService.getOllamaModelUrl());
                 break;
-            case GPT4All:
-                customChatModel.setBaseUrl(stateService.getGpt4allModelUrl());
-                break;
             case LLaMA:
                 customChatModel.setBaseUrl(stateService.getLlamaCPPUrl());
                 break;

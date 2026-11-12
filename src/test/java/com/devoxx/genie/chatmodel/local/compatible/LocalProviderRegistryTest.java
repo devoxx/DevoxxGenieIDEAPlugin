@@ -32,7 +32,16 @@ class LocalProviderRegistryTest {
     @Test
     void registry_hasExpectedProviders() {
         assertThat(LocalProviderRegistry.definitions()).extracting(LocalProviderDefinition::provider)
-                .containsExactly(ModelProvider.Nativ, ModelProvider.RapidMLX);
+                .containsExactly(ModelProvider.GPT4All, ModelProvider.Nativ, ModelProvider.RapidMLX);
+    }
+
+    @Test
+    void onlyGpt4All_isEnabledByDefault() {
+        // GPT4All shipped enabled before it moved here; Nativ shares llama.cpp's port and Rapid-MLX is opt-in.
+        DevoxxGenieStateService state = new DevoxxGenieStateService();
+        assertThat(state.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
+        assertThat(state.isLocalProviderEnabled(ModelProvider.Nativ)).isFalse();
+        assertThat(state.isLocalProviderEnabled(ModelProvider.RapidMLX)).isFalse();
     }
 
     @Test
@@ -53,7 +62,11 @@ class LocalProviderRegistryTest {
             assertThat(factory.get()).as("factory for %s", provider).isInstanceOf(OpenAiCompatibleChatModelFactory.class);
             assertThat((Boolean) supported.invoke(controller, provider)).as("supported %s", provider).isTrue();
 
-            assertThat(state.isLocalProviderEnabled(provider)).as("disabled by default %s", provider).isFalse();
+            assertThat(state.isLocalProviderEnabled(provider)).as("default enabled %s", provider)
+                    .isEqualTo(def.enabledByDefault());
+            assertThat(ProviderEnabledResolver.isEnabled(state, provider, false)).as("resolver default %s", provider)
+                    .isEqualTo(def.enabledByDefault());
+            state.setLocalProviderEnabled(provider, false);
             assertThat(ProviderEnabledResolver.isEnabled(state, provider, false)).as("resolver off %s", provider).isFalse();
             state.setLocalProviderEnabled(provider, true);
             assertThat(ProviderEnabledResolver.isEnabled(state, provider, false)).as("resolver on %s", provider).isTrue();

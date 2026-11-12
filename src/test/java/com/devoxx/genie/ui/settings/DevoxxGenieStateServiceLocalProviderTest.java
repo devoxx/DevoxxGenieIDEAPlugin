@@ -81,6 +81,52 @@ class DevoxxGenieStateServiceLocalProviderTest {
     }
 
     @Test
+    void upgrade_carriesGpt4AllCustomUrl_andDisabledState() {
+        DevoxxGenieStateService saved = new DevoxxGenieStateService();
+        saved.setGpt4allModelUrl("http://localhost:4999/v1/");
+        saved.setGpt4AllEnabled(false);
+        DevoxxGenieStateService loaded = upgrade(saved);
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4999/v1/");
+        assertThat(loaded.isLocalProviderEnabled(ModelProvider.GPT4All)).isFalse();
+    }
+
+    @Test
+    void freshInstall_andUntouchedUpgrade_haveGpt4AllEnabledOnDefaultUrl() {
+        // A fresh install never calls loadState, so the definition's default must apply on its own.
+        DevoxxGenieStateService fresh = new DevoxxGenieStateService();
+        assertThat(fresh.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
+
+        DevoxxGenieStateService loaded = upgrade(new DevoxxGenieStateService());
+        assertThat(loaded.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
+        assertThat(loaded.getLocalProviderUrls()).doesNotContainKey("GPT4All");
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4891/v1/");
+    }
+
+    @Test
+    void clearedUrl_staysClearedAfterReload() {
+        DevoxxGenieStateService saved = new DevoxxGenieStateService();
+        saved.setNativModelUrl("http://localhost:9090/v1/");
+        saved.setGpt4allModelUrl("http://localhost:4999/v1/");
+        DevoxxGenieStateService loaded = upgrade(saved);
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:9090/v1/");
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4999/v1/");
+
+        loaded.setLocalProviderUrl(ModelProvider.Nativ, "");
+        loaded.setLocalProviderUrl(ModelProvider.GPT4All, "");
+        DevoxxGenieStateService reloaded = upgrade(loaded);
+
+        assertThat(reloaded.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:8080/v1/");
+        assertThat(reloaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4891/v1/");
+    }
+
+    @Test
+    void legacyGpt4AllConfigKey_resolvesToTheCurrentUrl() {
+        DevoxxGenieStateService state = new DevoxxGenieStateService();
+        state.setLocalProviderUrl(ModelProvider.GPT4All, "http://gpt4all-box:4891/v1/");
+        assertThat(state.getConfigValue("gpt4allModelUrl")).isEqualTo("http://gpt4all-box:4891/v1/");
+    }
+
+    @Test
     void clearedFallback_staysClearedAfterReload() {
         DevoxxGenieStateService saved = new DevoxxGenieStateService();
         saved.setNativFallbackContextLength(131_072);

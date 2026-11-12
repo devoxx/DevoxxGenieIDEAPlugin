@@ -102,7 +102,6 @@ public class LLMProvidersConfigurable implements Configurable {
             Integer savedFallback = stateService.getLmStudioFallbackContextLength();
             isModified |= savedFallback == null || !savedFallback.equals(llmSettingsComponent.getLmStudioFallbackContextField().getNumber());
         }
-        isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), stateService.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
         isModified |= isAnyLocalProviderModified(stateService);
 
@@ -134,7 +133,6 @@ public class LLMProvidersConfigurable implements Configurable {
 
         isModified |= stateService.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
         isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
-        isModified |= stateService.isGpt4AllEnabled() != llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected();
         isModified |= stateService.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
         isModified |= stateService.isLlamaCPPEnabled() != llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected();
         isModified |= stateService.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
@@ -192,7 +190,6 @@ public class LLMProvidersConfigurable implements Configurable {
                         ? llmSettingsComponent.getLmStudioFallbackContextField().getNumber()
                         : null
         );
-        settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
         settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
 
@@ -243,7 +240,6 @@ public class LLMProvidersConfigurable implements Configurable {
 
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
-        settings.setGpt4AllEnabled(llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected());
         settings.setJanEnabled(llmSettingsComponent.getJanEnabledCheckBox().isSelected());
         settings.setLlamaCPPEnabled(llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected());
         settings.setExoEnabled(llmSettingsComponent.getExoEnabledCheckBox().isSelected());
@@ -535,7 +531,6 @@ public class LLMProvidersConfigurable implements Configurable {
                 settings.getLmStudioFallbackContextLength() != null ? settings.getLmStudioFallbackContextLength() : 8000
         );
         llmSettingsComponent.getLmStudioFallbackContextField().setEnabled(settings.getLmStudioFallbackContextLength() != null);
-        llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
         llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
         for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
@@ -599,7 +594,6 @@ public class LLMProvidersConfigurable implements Configurable {
 
         llmSettingsComponent.getOllamaEnabledCheckBox().setSelected(settings.isOllamaEnabled());
         llmSettingsComponent.getLmStudioEnabledCheckBox().setSelected(settings.isLmStudioEnabled());
-        llmSettingsComponent.getGpt4AllEnabledCheckBox().setSelected(settings.isGpt4AllEnabled());
         llmSettingsComponent.getJanEnabledCheckBox().setSelected(settings.isJanEnabled());
         llmSettingsComponent.getLlamaCPPEnabledCheckBox().setSelected(settings.isLlamaCPPEnabled());
         llmSettingsComponent.getExoEnabledCheckBox().setSelected(settings.isExoEnabled());

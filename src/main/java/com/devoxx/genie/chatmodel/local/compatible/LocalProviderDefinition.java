@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
  * @param catalogFields         how to read the provider's {@code /models} entries, or null for the defaults
  * @param defaultContextLength  context window assumed when the provider does not report one
  * @param fallbackContextHint   settings hint for the optional fallback context field, or null for no such field
+ * @param enabledByDefault      whether the provider is enabled until the user changes it; this also applies on a
+ *                              fresh install, where no saved settings are loaded
  */
 public record LocalProviderDefinition(ModelProvider provider,
                                       String defaultUrl,
@@ -17,5 +19,6 @@ public record LocalProviderDefinition(ModelProvider provider,
                                       String hint,
                                       @Nullable CatalogFields catalogFields,
                                       int defaultContextLength,
-                                      @Nullable String fallbackContextHint) {
+                                      @Nullable String fallbackContextHint,
+                                      boolean enabledByDefault) {
 }

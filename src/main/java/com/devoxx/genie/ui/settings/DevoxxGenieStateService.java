@@ -174,12 +174,12 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean ollamaContextWindowOverrideEnabled = false;
     private String lmstudioModelUrl = LMSTUDIO_MODEL_URL;
     private Integer lmStudioFallbackContextLength;
+    // GPT4All's and Nativ's legacy fields exist only so old settings files can be migrated into the
+    // localProvider* maps; loadState resets them once migrated (see migrateLegacyLocalProvider).
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
     private String llamaCPPUrl = LLAMA_CPP_MODEL_URL;
-    // Nativ's legacy fields below exist only so old settings files can be migrated into the localProvider* maps.
     private String nativModelUrl = NATIV_MODEL_URL;
-    // Nativ's /v1/models exposes no context length; null means "use the registry's default".
     private Integer nativFallbackContextLength;
     private String exoModelUrl = EXO_MODEL_URL;
 
@@ -714,18 +714,19 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         // Copy so later edits do not alias the deserialized state's map; seed OpenRouter from its legacy flag.
         setRouterEnabled(routerEnabled);
         routerEnabled.putIfAbsent(ModelProvider.OpenRouter.name(), isOpenRouterEnabled);
-        // Same copy; seed Nativ from its legacy fields without pinning the default URL or an unset fallback.
+        // Same copy; then move Nativ's and GPT4All's legacy fields into the maps.
         setLocalProviderUrls(localProviderUrls);
         setLocalProviderEnabled(localProviderEnabled);
         setLocalProviderFallbackContext(localProviderFallbackContext);
-        String nativName = ModelProvider.Nativ.name();
-        if (nativModelUrl != null && !nativModelUrl.isBlank() && !NATIV_MODEL_URL.equals(nativModelUrl)) {
-            localProviderUrls.putIfAbsent(nativName, nativModelUrl);
-        }
-        localProviderEnabled.putIfAbsent(nativName, isNativEnabled);
-        if (nativFallbackContextLength != null) {
-            localProviderFallbackContext.putIfAbsent(nativName, nativFallbackContextLength);
-        }
+        migrateLegacyLocalProvider(ModelProvider.Nativ, nativModelUrl, NATIV_MODEL_URL,
+                isNativEnabled, false, nativFallbackContextLength);
+        nativModelUrl = NATIV_MODEL_URL;
+        isNativEnabled = false;
+        nativFallbackContextLength = null;
+        migrateLegacyLocalProvider(ModelProvider.GPT4All, gpt4allModelUrl, GPT4ALL_MODEL_URL,
+                isGpt4AllEnabled, true, null);
+        gpt4allModelUrl = GPT4ALL_MODEL_URL;
+        isGpt4AllEnabled = true;
         initializeDefaultCostsIfEmpty();
         // Migrate legacy customPrompts -> commands (issue #1040) before populating defaults.
         migrateLegacyCustomPrompts(state);
@@ -998,7 +999,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public @Nullable String getConfigValue(@NotNull String key) {
         return switch (key) {
             case "janModelUrl" -> getJanModelUrl();
-            case "gpt4allModelUrl" -> getGpt4allModelUrl();
+            case "gpt4allModelUrl" -> getLocalProviderUrl(ModelProvider.GPT4All);
             case "lmStudioModelUrl" -> getLmstudioModelUrl();
             case "ollamaModelUrl" -> getOllamaModelUrl();
             case "exoModelUrl" -> getExoModelUrl();
@@ -1141,7 +1142,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     public boolean isLocalProviderEnabled(@NotNull ModelProvider provider) {
-        return Boolean.TRUE.equals(localProviderEnabled.get(provider.name()));
+        Boolean saved = localProviderEnabled.get(provider.name());
+        if (saved != null) {
+            return saved;
+        }
+        return LocalProviderRegistry.find(provider).map(LocalProviderDefinition::enabledByDefault).orElse(false);
     }
 
     public void setLocalProviderEnabled(@NotNull ModelProvider provider, boolean enabled) {
@@ -1155,10 +1160,6 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     public void setLocalProviderFallbackContext(@NotNull ModelProvider provider, @Nullable Integer length) {
         if (length == null) {
             localProviderFallbackContext.remove(provider.name());
-            if (provider == ModelProvider.Nativ) {
-                // Clear the legacy field too, or the next loadState would re-seed the removed value.
-                nativFallbackContextLength = null;
-            }
         } else {
             localProviderFallbackContext.put(provider.name(), length);
         }
@@ -1175,6 +1176,28 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public void setLocalProviderFallbackContext(@Nullable Map<String, Integer> lengths) {
         this.localProviderFallbackContext = copyNonNull(lengths);
+    }
+
+    /**
+     * Copies a provider's settings from its pre-registry fields into the localProvider* maps, keeping values
+     * the maps already hold. A legacy value equal to its old default is not copied, so the provider keeps
+     * following its definition. The caller then resets the legacy fields: migrating once means a value the
+     * user later clears from the maps cannot be copied back on the next load.
+     */
+    private void migrateLegacyLocalProvider(@NotNull ModelProvider provider,
+                                            @Nullable String legacyUrl, @NotNull String legacyDefaultUrl,
+                                            boolean legacyEnabled, boolean legacyEnabledDefault,
+                                            @Nullable Integer legacyFallbackContext) {
+        String name = provider.name();
+        if (legacyUrl != null && !legacyUrl.isBlank() && !legacyDefaultUrl.equals(legacyUrl)) {
+            localProviderUrls.putIfAbsent(name, legacyUrl);
+        }
+        if (legacyEnabled != legacyEnabledDefault) {
+            localProviderEnabled.putIfAbsent(name, legacyEnabled);
+        }
+        if (legacyFallbackContext != null) {
+            localProviderFallbackContext.putIfAbsent(name, legacyFallbackContext);
+        }
     }
 
     private static <V> Map<String, V> copyNonNull(@Nullable Map<String, V> source) {

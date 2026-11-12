@@ -368,7 +368,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                provider == ModelProvider.Ollama ||
                provider == ModelProvider.Jan ||
                LocalProviderRegistry.isGeneric(provider) ||
-               provider == ModelProvider.GPT4All ||
                RouterRegistry.isGeneric(provider) ||
                provider == ModelProvider.Bedrock;
     }
@@ -730,14 +729,30 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
      * Set the last selected LLM provider or show default.
      */
     public void setLastSelectedProvider() {
-        int firstProvider = modelProviderComboBox.getItemCount() > 0
-                && modelProviderComboBox.getItemAt(0) == null ? 1 : 0;
-        ModelProvider modelProvider = firstProvider < modelProviderComboBox.getItemCount()
-                ? modelProviderComboBox.getItemAt(firstProvider) : null;
+        ModelProvider modelProvider = firstRunProvider();
         if (modelProvider != null) {
             DevoxxGenieStateService.getInstance().setSelectedProvider(stateKey, modelProvider.getName());
             updateModelNamesComboBox(modelProvider.getName());
         }
+    }
+
+    /**
+     * The provider a tab starts on when none has been saved: Ollama when it is available, because it is the
+     * recommended local setup for new users, otherwise the first entry. The combo is sorted by name, so without
+     * this a provider such as GPT4All, enabled by default, would be chosen only because it sorts first.
+     */
+    private @Nullable ModelProvider firstRunProvider() {
+        ModelProvider first = null;
+        for (int i = 0; i < modelProviderComboBox.getItemCount(); i++) {
+            ModelProvider provider = modelProviderComboBox.getItemAt(i);
+            if (provider == ModelProvider.Ollama) {
+                return provider;
+            }
+            if (first == null) {
+                first = provider; // null is the favorites entry, which is skipped
+            }
+        }
+        return first;
     }
 
     /**

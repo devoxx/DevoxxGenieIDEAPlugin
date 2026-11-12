@@ -31,7 +31,6 @@ public final class ProviderEnabledResolver {
         return switch (provider) {
             case Ollama -> state.isOllamaEnabled();
             case LMStudio -> state.isLmStudioEnabled();
-            case GPT4All -> state.isGpt4AllEnabled();
             case Jan -> state.isJanEnabled();
             case LLaMA -> state.isLlamaCPPEnabled();
             case Exo -> state.isExoEnabled();

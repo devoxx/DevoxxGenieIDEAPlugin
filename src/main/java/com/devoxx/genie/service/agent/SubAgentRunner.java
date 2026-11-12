@@ -277,7 +277,6 @@ public class SubAgentRunner {
         switch (resolvedProviderName) {
             case OLLAMA -> config.setBaseUrl(settings.getOllamaModelUrl());
             case "LMStudio" -> config.setBaseUrl(settings.getLmstudioModelUrl());
-            case "GPT4All" -> config.setBaseUrl(settings.getGpt4allModelUrl());
             case "Jan" -> config.setBaseUrl(settings.getJanModelUrl());
             case "LLaMA" -> config.setBaseUrl(settings.getLlamaCPPUrl());
             case "CustomOpenAI" -> config.setBaseUrl(settings.getCustomOpenAIUrl());

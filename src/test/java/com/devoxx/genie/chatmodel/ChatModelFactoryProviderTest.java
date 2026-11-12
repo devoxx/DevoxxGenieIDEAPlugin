@@ -14,7 +14,6 @@ import com.devoxx.genie.chatmodel.cloud.mistral.MistralChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.openai.OpenAIChatModelFactory;
 import com.devoxx.genie.chatmodel.cloud.router.RouterChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
-import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.local.acprunners.AcpRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.clirunners.CliRunnersChatModelFactory;
@@ -49,7 +48,7 @@ class ChatModelFactoryProviderTest {
                 Arguments.of("DeepSeek", DeepSeekChatModelFactory.class),
                 Arguments.of("Google", GoogleChatModelFactory.class),
                 Arguments.of("Groq", GroqChatModelFactory.class),
-                Arguments.of("GPT4All", GPT4AllChatModelFactory.class),
+                Arguments.of("GPT4All", OpenAiCompatibleChatModelFactory.class),
                 Arguments.of("Jan", JanChatModelFactory.class),
                 Arguments.of("LLaMA", LlamaChatModelFactory.class),
                 Arguments.of("LMStudio", LMStudioChatModelFactory.class),

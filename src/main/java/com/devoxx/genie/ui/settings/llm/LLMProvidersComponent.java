@@ -132,8 +132,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             )
     );
     @Getter
-    private final JTextField gpt4AllModelUrlField = new JTextField(stateService.getGpt4allModelUrl());
-    @Getter
     private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
     @Getter
     private final JTextField llamaCPPModelUrlField = new JTextField(stateService.getLlamaCPPUrl());
@@ -219,8 +217,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox ollamaEnabledCheckBox = new JCheckBox("", stateService.isOllamaEnabled());
     @Getter
     private final JCheckBox lmStudioEnabledCheckBox = new JCheckBox("", stateService.isLmStudioEnabled());
-    @Getter
-    private final JCheckBox gpt4AllEnabledCheckBox = new JCheckBox("", stateService.isGpt4AllEnabled());
     @Getter
     private final JCheckBox janEnabledCheckBox = new JCheckBox("", stateService.isJanEnabled());
     @Getter
@@ -441,8 +437,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addHintText(localPanel, gbc, "Base URL for OpenAI-compatible chat; model metadata is always fetched from /api/v1/models");
         addProviderSettingRow(localPanel, gbc, "LMStudio Fallback Context", lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
         addHintText(localPanel, gbc, "Used only when LMStudio model metadata does not expose context length");
-        addProviderSettingRow(localPanel, gbc, "GPT4All URL", gpt4AllEnabledCheckBox,
-                createTextWithDownloadButton(gpt4AllModelUrlField, "https://gpt4all.io/"));
         addProviderSettingRow(localPanel, gbc, "Jan URL", janEnabledCheckBox,
                 createTextWithDownloadButton(janModelUrlField, "https://jan.ai/download"));
         addProviderSettingRow(localPanel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
@@ -652,7 +646,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         ollamaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(ollamaEnabledCheckBox, ollamaModelUrlField));
         lmStudioEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioEnabledCheckBox, lmStudioModelUrlField));
         lmStudioFallbackContextEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField));
-        gpt4AllEnabledCheckBox.addItemListener(e -> updateUrlFieldState(gpt4AllEnabledCheckBox, gpt4AllModelUrlField));
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
         llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
         localProviderRows.values().forEach(row -> {

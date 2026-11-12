@@ -922,7 +922,6 @@
         <applicationService serviceImplementation="com.devoxx.genie.ui.window.ConversationTabRegistry"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.ollama.OllamaModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.exo.ExoModelService"/>
-        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.LLMProviderService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.PropertiesService"/>

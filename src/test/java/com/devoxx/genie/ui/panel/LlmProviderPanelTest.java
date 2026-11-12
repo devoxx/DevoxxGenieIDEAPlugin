@@ -97,7 +97,7 @@ class LlmProviderPanelTest {
         // Default state service values for provider filtering
         lenient().when(stateService.isOllamaEnabled()).thenReturn(true);
         lenient().when(stateService.isLmStudioEnabled()).thenReturn(false);
-        lenient().when(stateService.isGpt4AllEnabled()).thenReturn(false);
+        lenient().when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(false);
         lenient().when(stateService.isJanEnabled()).thenReturn(false);
         lenient().when(stateService.isLlamaCPPEnabled()).thenReturn(false);
         lenient().when(stateService.isExoEnabled()).thenReturn(false);
@@ -568,6 +568,41 @@ class LlmProviderPanelTest {
 
         verify(stateService).setSelectedProvider("test-hash", "OpenAI");
         verify(stateService).setSelectedLanguageModel("test-hash", "gpt-4");
+    }
+
+    @Test
+    void firstRun_selectsOllama_evenWhenAnotherProviderSortsFirst() {
+        // GPT4All and Jan are enabled by default and sort before Ollama, but new users start on Ollama.
+        when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(true);
+        when(stateService.isJanEnabled()).thenReturn(true);
+        when(llmProviderService.getAvailableModelProviders())
+                .thenReturn(List.of(ModelProvider.GPT4All, ModelProvider.Jan, ModelProvider.Ollama));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
+                .thenReturn(Optional.empty());
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        clearInvocations(stateService);
+        panel.setLastSelectedProvider();
+
+        verify(stateService).setSelectedProvider("test-hash", "Ollama");
+        verify(stateService, never()).setSelectedProvider("test-hash", "GPT4All");
+    }
+
+    @Test
+    void firstRun_withoutOllama_selectsTheFirstProvider() {
+        when(stateService.isOllamaEnabled()).thenReturn(false);
+        when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(true);
+        when(stateService.isJanEnabled()).thenReturn(true);
+        when(llmProviderService.getAvailableModelProviders())
+                .thenReturn(List.of(ModelProvider.Jan, ModelProvider.GPT4All, ModelProvider.Ollama));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
+                .thenReturn(Optional.empty());
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        clearInvocations(stateService);
+        panel.setLastSelectedProvider();
+
+        verify(stateService).setSelectedProvider("test-hash", "GPT4All");
     }
 
     @Test
