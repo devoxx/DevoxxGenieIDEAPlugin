@@ -1,7 +1,7 @@
 ---
 name: start-task
 description: Create a feature branch for a backlog task, switch to it, and start implementation. Use when the user says "start task-123", "work on task-123", "implement task-123", or invokes /start-task with a task ID.
-allowed-tools: Bash(git checkout:*), Bash(git branch:*), Bash(git status:*), Bash(git pull:*), Bash(git stash:*), Bash(npm run lint:*), Bash(npm run typecheck:*), Bash(npm test:*), Bash(npm run build*), Bash(npx playwright test:*), mcp__backlog__task_view, mcp__backlog__task_edit, mcp__backlog__task_search, mcp__backlog__task_list
+allowed-tools: Bash(git checkout:*), Bash(git branch:*), Bash(git status:*), Bash(git pull:*), Bash(git stash:*), Bash(./gradlew test:*), mcp__backlog__task_view, mcp__backlog__task_edit, mcp__backlog__task_search, mcp__backlog__task_list
 ---
 
 # Start Task
@@ -47,9 +47,9 @@ The user will provide a task ID (e.g. `task-123` or `123`). If no task ID is pro
 - Read all files referenced in the task, plus any related code you need to understand.
 - Create a plan and present it to the user for approval before writing code.
 - Once approved, implement the changes following the project's patterns and conventions.
-- After implementation, run the full verification suite:
+- After implementation, run the test suite with JDK 21 (see CLAUDE.md):
   ```bash
-  npm run lint && npm run typecheck && npm test && npm run build:app && npx playwright test
+  ./gradlew test 2>&1 | grep -E "FAILED|failed"
   ```
 - Fix any issues found by the verification suite.
 

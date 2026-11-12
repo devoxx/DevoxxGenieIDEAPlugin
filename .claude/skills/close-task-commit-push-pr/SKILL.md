@@ -48,8 +48,7 @@ Print a short commit plan (list of planned commits with the files in each) so th
 
 - Create one commit per logical group identified above. Stage only the files for that group using explicit file names (never `git add -A`; never stage `.env` or credential files).
 - Write a clean, descriptive commit message for each commit using conventional commits style.
-- End every commit message with:
-  `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
+- End every commit message with the `Co-Authored-By` trailer given in the session's attribution instructions.
 - Use a HEREDOC to pass the commit message for correct formatting.
 - **Include the closed task file** in the final commit.
 
@@ -78,9 +77,9 @@ Print a short commit plan (list of planned commits with the files in each) so th
 
 - Now that you have the PR number, use `mcp__backlog__task_edit` to append the PR URL/number to the `finalSummary`.
 
-### Step 7 — Amend commit with updated task file
+### Step 7 — Commit the updated task file
 
-- Stage the updated task file and amend the last commit to include the PR reference: `git commit --amend --no-edit` then `git push --force-with-lease`.
+- Stage the updated task file, commit it as `chore(backlog): link <task-id> to PR #<number>`, and `git push`.
 
 ### Step 8 — Report
 

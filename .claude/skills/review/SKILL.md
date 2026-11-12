@@ -21,7 +21,7 @@ Check `git status --short`, inspect the diff for files related to the task, and 
 Prioritize:
 - broken behavior versus the task intent
 - stale callers or UI paths left behind after refactors
-- contract mismatches across main/preload/renderer/shared code
+- contract mismatches between callers, `plugin.xml` registrations and persisted settings state
 - silent failure handling and misleading fallback behavior
 - missing or weak tests for the changed behavior
 - unnecessary performance regressions or duplicate work

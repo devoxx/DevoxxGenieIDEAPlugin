@@ -12,7 +12,6 @@ DevoxxGenie is a Java-based LLM Code Assistant plugin for IntelliJ IDEA that int
 ```bash
 ./gradlew buildPlugin              # Build plugin (creates ZIP in build/distributions/)
 ./gradlew clean                    # Clean build artifacts
-./gradlew shadowJar                # Create shadow JAR with dependencies
 ```
 
 ### Testing
@@ -42,7 +41,6 @@ task preview-changes VERSION=0.8.0     # Preview changelog without committing
 
 ### Multi-Module Structure
 - **Root module**: Main IntelliJ plugin code (`src/main/java/com/devoxx/genie/`)
-- **Core module**: Shared utilities being refactored (see `core/README.md` - issue #564)
 - **Docusaurus**: Documentation website (`docusaurus/`)
 
 ### Key Architectural Components
@@ -51,22 +49,17 @@ task preview-changes VERSION=0.8.0     # Preview changelog without committing
 The plugin processes user prompts through a layered architecture:
 
 **Entry Point**:
-- `UserPromptPanel` → `PromptSubmissionListener.onPromptSubmitted()` → `PromptExecutionController.handlePromptSubmission()`
+- `ActionButtonsPanelController.handlePromptSubmission()` → `PromptExecutionController.handlePromptSubmission()`
 
 **Processing Layer**:
 - `PromptExecutionService.executeQuery()` - Handles token calculations, RAG, and GitDiff settings
-- `ChatPromptExecutor.executePrompt()` - Dispatches to appropriate LLM provider
 - `LLMProviderService.getAvailableModelProviders()` - Retrieves model from ChatModelFactory
 
-**Execution Strategies**:
-- `StreamingPromptExecutor` - Token-by-token streaming responses
-- `NonStreamingPromptExecutionService` - Full response mode
-- `WebSearchPromptExecutionService` - Web search augmented prompts
+**Execution Strategies** (`service/prompt/strategy/`): `StreamingPromptStrategy`, `NonStreamingPromptStrategy`,
+`WebSearchPromptStrategy`, `CliPromptStrategy`, `AcpPromptStrategy`
 
 **Response Rendering**:
-- `ChatStreamingResponsePanel` - Real-time streaming UI updates
-- `ChatResponsePanel` - Final response display with code highlighting
-- `ResponseHeaderPanel`, `ResponseDocumentPanel`, `MetricExecutionInfoPanel` - Modular response components
+- The chat output is Compose for Desktop: `ConversationPanel` hosts `ConversationScreen` (`src/main/kotlin/.../ui/compose/screen/`)
 
 #### 2. LLM Provider System
 **Factory Pattern Implementation**:
@@ -93,25 +86,25 @@ The plugin processes user prompts through a layered architecture:
 - `ProjectIndexerService` - Indexes project files for semantic search
 - `ChromaEmbeddingService` - Stores embeddings in ChromaDB (Docker-based, v0.6.2)
 - `SemanticSearchService` - Retrieves relevant code based on similarity
-- Uses Ollama with Nomic Text embeddings for vector generation
-- `RAGValidatorService` - Validates Docker, ChromaDB, and Ollama setup
+- Embeddings come from a configurable `EmbeddingProvider` (Ollama, OpenAI, LM Studio, llama.cpp, Custom OpenAI)
+- `RagValidatorService` - Validates the RAG prerequisites
 
 **Validators**:
 - `DockerValidator` - Checks Docker availability
 - `ChromeDBValidator` - Validates ChromaDB connection
 - `OllamaValidator` - Verifies Ollama and embedding model
-- `NomicEmbedTextValidator` - Checks nomic-embed-text model
+- `EmbeddingProviderValidator`, `EmbeddingModelValidator` - Check the configured embedding provider and model
 
 #### 4. MCP (Model Context Protocol) Support
 **Key Services**:
 - `MCPService` - Core MCP server management
 - `MCPExecutionService` - Executes MCP tool calls
 - `MCPListenerService` - Implements ChatModelListener for MCP integration
-- `MCPCallbackLogger` - Logs MCP requests/responses for debugging
+- `MCPTrafficLogger` - Forwards MCP traffic to the log tool window for debugging
 
 **Configuration**:
 - MCP servers configured in Settings UI (`ui/settings/mcp/`)
-- Supports stdio and HTTP SSE transports
+- Supports stdio and HTTP transports (a saved `HTTP_SSE` server runs as `HTTP`)
 - Tools are automatically exposed to LLM conversations when MCP is enabled
 
 #### 5. Service Layer Organization
@@ -127,7 +120,7 @@ Key services under `service/`:
 **Main Panels**:
 - `DevoxxGenieToolWindowContent` - Main plugin window
 - `ConversationPanel` - Chat conversation display
-- `UserPromptPanel` - User input area with image/file DnD support
+- `PromptInputArea` - User input area
 - `ActionButtonsPanel` - Control buttons (submit, stop, clear, etc.)
 - `PromptOutputPanel` - Response output with streaming support
 
@@ -146,11 +139,6 @@ Key services under `service/`:
 - `ProjectAnalyzer` coordinates language-specific scanning
 - `CachedProjectScanner` - Caches scan results for performance
 
-### Test Driven Generation (TDG)
-**Experimental Feature** (`service/tdg/`):
-- `CodeGeneratorService` - Generates implementation from unit tests
-- Allows writing tests first, then generating implementation
-
 ## Code Style & Conventions
 
 ### Naming Conventions
@@ -159,14 +147,12 @@ Key services under `service/`:
 - **Constants**: SCREAMING_SNAKE_CASE
 - **Service Classes**: Suffix with "Service" (e.g., `ChatService`)
 - **Factory Classes**: Suffix with "Factory" (e.g., `ChatModelFactory`)
-- **Panel Classes**: Suffix with "Panel" (e.g., `UserPromptPanel`)
+- **Panel Classes**: Suffix with "Panel" (e.g., `ConversationPanel`)
 
 ### Dependency Management
-- Java minimum: JDK 17
-- IntelliJ minimum: 2023.3.4
-- Langchain4J version: 1.10.0 (beta: 1.10.0-beta18 for MCP/Chroma/web search)
+- Java bytecode target: 17 (build with JDK 21)
+- Minimum IDE build and library versions live in `build.gradle.kts` (`sinceBuild`, `lg4j_version`)
 - Uses Lombok for boilerplate reduction
-- Shadow plugin for fat JAR creation with dependency merging
 
 ### Testing Practices
 - Tests located in `src/test/java/` mirroring main structure
@@ -202,7 +188,6 @@ Key services under `service/`:
 - Configured via Settings UI with API keys
 
 ### Git Integration
-- `GitMergeService` - Git diff integration
 - Can include uncommitted changes in prompt context
 - Useful for explaining changes or generating commit messages
 
@@ -216,31 +201,24 @@ Key services under `service/`:
 ## Common Development Workflows
 
 ### Adding a New Custom Prompt
-1. Update `model/CustomPrompt.java` if new model properties needed
-2. Modify `ui/settings/prompt/PromptSettingsComponent.java` for UI
-3. Update `service/prompt/command/CustomPromptCommand.java` for execution
-4. Add entry in Settings → Prompts panel
+Custom prompts are managed in `PromptSettingsComponent` (Settings → Prompts) and edited through `CustomPromptDialog`.
 
 ### Debugging MCP Issues
 1. Enable MCP logging in Settings → MCP
-2. View logs in MCP Log Tool Window (`MCPLogPanel`)
-3. Check `MCPCallbackLogger` for request/response details
-4. Verify transport configuration (stdio vs HTTP SSE)
+2. View logs in the DevoxxGenie activity log tool window (`AgentMcpLogPanel`)
+3. Check `MCPTrafficLogger` for request/response traffic
+4. Verify transport configuration (stdio vs HTTP; a saved `HTTP_SSE` server runs as `HTTP`)
 
 ### Working with RAG
 1. Ensure Docker is running
 2. ChromaDB container must be started (docker-java integration)
-3. Ollama with nomic-embed-text model required
-4. Use `RAGValidatorService` to check prerequisites
+3. A configured embedding provider (`EmbeddingProvider`: Ollama, OpenAI, LM Studio, llama.cpp or Custom OpenAI)
+4. Use `RagValidatorService` to check prerequisites
 5. Index project via `ProjectIndexerService.indexFiles()`
 
 ## Release Process
-1. Update version in `build.gradle.kts`
-2. Generate changelog: `task generate-changelog VERSION=x.y.z`
-3. Review and commit changes to `CHANGELOG.md` and `plugin.xml`
-4. Build: `./gradlew buildPlugin`
-5. Test: `./gradlew test` and `./gradlew verifyPlugin`
-6. Publish: Set `PUBLISH_TOKEN` env var and run `./gradlew publishPlugin`
+Follow `.claude/skills/release/SKILL.md`; it owns the full sequence. Ask which version to cut rather than assuming
+the next number. Publishing to the JetBrains Marketplace is a separate step, done only when the user asks.
 
 ## Key Dependencies & Tools
 - **Langchain4J**: LLM integration framework (core abstraction)
@@ -255,30 +233,12 @@ Key services under `service/`:
 
 <!-- BACKLOG.MD MCP GUIDELINES START -->
 
-<CRITICAL_INSTRUCTION>
+## Backlog workflow
 
-## BACKLOG WORKFLOW INSTRUCTIONS
-
-This project uses Backlog.md MCP for all task and project management activities.
-
-**CRITICAL GUIDANCE**
-
-- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.
-- If your client only supports tools or the above request fails, call `backlog.get_workflow_overview()` tool to load the tool-oriented overview (it lists the matching guide tools).
-
-- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow
-- **Already familiar?** You should have the overview cached ("## Backlog.md Overview (MCP)")
-- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work
-
-These guides cover:
-- Decision framework for when to create tasks
-- Search-first workflow to avoid duplicates
-- Links to detailed guides for task creation, execution, and finalization
-- MCP tools reference
-
-You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
-
-</CRITICAL_INSTRUCTION>
+This project tracks tasks and project work with Backlog.md MCP. Before creating a task, or when unsure whether work
+should be tracked, read the workflow overview: the `backlog://workflow/overview` resource, or the Backlog MCP
+server's instructions tool where resources aren't available. It covers when to create tasks, searching first to
+avoid duplicates, and the guides for creating, executing and finalizing tasks. It is not summarized here.
 
 <!-- BACKLOG.MD MCP GUIDELINES END -->
 
