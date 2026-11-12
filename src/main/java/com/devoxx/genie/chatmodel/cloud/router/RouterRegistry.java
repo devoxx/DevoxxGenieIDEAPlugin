@@ -59,7 +59,7 @@ public final class RouterRegistry {
             "requestyKey",
             "https://app.requesty.ai/api-keys",
             "Model ids are a managed policy name or the vendor/model form. "
-                    + "An EU endpoint (router.eu.requesty.ai) exists but isn't used.",
+                    + "For EU routing, set the URL to https://router.eu.requesty.ai/v1.",
             new CatalogFields(null,
                     List.of("context_window"),
                     "input_price", "output_price", 1_000_000,
