@@ -164,9 +164,9 @@ GPT4All provides:
    ```bash
    llama-server -m /path/to/model.gguf -c 32768
    ```
-5. In DevoxxGenie settings, open the **Local** tab and check that **LLaMA.c++ URL** is ticked (it's enabled by default)
+5. In DevoxxGenie settings, open the **Local** tab and check that **llama.cpp URL** is ticked (it's enabled by default)
 6. Configure the endpoint (default: `http://localhost:8080`)
-7. Select "LLaMA.c++" as the provider in the DevoxxGenie panel, then select the model
+7. Select "llama.cpp" as the provider in the DevoxxGenie panel, then select the model
 
 ### Models and context window
 
@@ -238,8 +238,8 @@ Silicon. It is built on MLX-VLM and takes advantage of the unified memory archit
 3. In DevoxxGenie settings, open **LLM Providers → Local** and tick the **Nativ URL** checkbox
 4. Select "Nativ" as the provider in the DevoxxGenie panel — your downloaded MLX models appear in the model dropdown
 
-:::warning Port conflict with Llama.c++
-Nativ serves its API on `http://localhost:8080/v1/` by default, which is the **same port Llama.c++ uses**. That is why
+:::warning Port conflict with llama.cpp
+Nativ serves its API on `http://localhost:8080/v1/` by default, which is the **same port llama.cpp uses**. That is why
 Nativ ships disabled in DevoxxGenie. If you want both providers enabled at once, change the port of one of them —
 Nativ's port is configurable on its Developer page, and DevoxxGenie's matching URL field lives in the same settings row.
 :::

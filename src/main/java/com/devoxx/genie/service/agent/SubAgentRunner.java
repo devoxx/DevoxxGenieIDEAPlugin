@@ -271,7 +271,7 @@ public class SubAgentRunner {
                 return;
             }
         } catch (IllegalArgumentException ignored) {
-            // Not a display name: "LLaMA" is the enum name of "LLaMA.c++" and is handled below.
+            // Not a display name: "LLaMA" is the enum name of "llama.cpp" and is handled below.
         }
 
         switch (resolvedProviderName) {

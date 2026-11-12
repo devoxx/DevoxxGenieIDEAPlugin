@@ -256,7 +256,7 @@ class LLMProvidersRouterSettingsTest {
     void localTab_endsWithLlamaThenTheGenericProviders() {
         configurable();
         assertThat(tabText("Local").stream().filter(t -> t.endsWith(" URL")).toList())
-                .endsWith("Jan URL", "LLaMA.c++ URL", "GPT4All URL", "Nativ URL", "Rapid-MLX URL")
+                .endsWith("Jan URL", "llama.cpp URL", "GPT4All URL", "Nativ URL", "Rapid-MLX URL")
                 .doesNotContain("Exo URL")
                 .containsOnlyOnce("GPT4All URL");
         assertThat(tabText("Local")).contains("GPT4All Fallback Context", "Jan Fallback Context");
