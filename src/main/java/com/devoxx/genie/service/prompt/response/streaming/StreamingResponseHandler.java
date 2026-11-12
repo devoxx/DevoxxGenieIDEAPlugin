@@ -318,7 +318,7 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
         // StreamingException wrapper ("Error during streaming response"). Terminal states
         // are final, so the more specific text set here wins and the second set is a no-op.
         if (conversationViewController != null) {
-            String errorText = PromptErrorHandler.userFacingMessage(
+            String errorText = PromptErrorHandler.fullUserFacingMessage(
                 error,
                 context.getLanguageModel() != null ? context.getLanguageModel().getModelName() : null);
             ApplicationManager.getApplication().invokeLater(() ->

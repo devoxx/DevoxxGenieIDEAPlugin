@@ -680,7 +680,7 @@ class StreamingResponseHandlerTest {
     @Test
     void onError_setsErrorTerminalStateWithUserFacingMessage() {
         promptErrorHandlerMock
-                .when(() -> PromptErrorHandler.userFacingMessage(any(Throwable.class), nullable(String.class)))
+                .when(() -> PromptErrorHandler.fullUserFacingMessage(any(Throwable.class), nullable(String.class)))
                 .thenReturn("Provider exploded");
         StreamingResponseHandler handler = createHandler();
 
