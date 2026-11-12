@@ -24,7 +24,7 @@ requested.
 ## Git Workflow
 
 Always create a feature/fix branch BEFORE making any code changes. Never edit code on the current branch without
-confirming the branch strategy first. Feature/fix branches for issues are cut from `develop` (e.g. `fix/issue-1234`).
+confirming the branch strategy first. Feature/fix branches for issues are cut from `master` (e.g. `fix/issue-1234`).
 
 ## Testing
 
@@ -82,16 +82,16 @@ Steps 3 and 4 are easy to miss — a new factory silently does nothing until it 
 ### Debugging MCP Issues
 
 1. Enable MCP logging in Settings → MCP
-2. View logs in MCP Log Tool Window (`MCPLogPanel`)
-3. Check `MCPCallbackLogger` for request/response details
-4. Verify transport configuration (stdio vs HTTP SSE)
+2. View logs in the DevoxxGenie activity log tool window (`AgentMcpLogPanel`)
+3. Check `MCPTrafficLogger` for request/response traffic
+4. Verify transport configuration (stdio vs HTTP; a saved `HTTP_SSE` server runs as `HTTP`)
 
 ### Working with RAG
 
 1. Ensure Docker is running
 2. ChromaDB container must be started (docker-java integration)
-3. Ollama with nomic-embed-text model required
-4. Use `RAGValidatorService` to check prerequisites
+3. A configured embedding provider (`EmbeddingProvider`: Ollama, OpenAI, LM Studio, llama.cpp or Custom OpenAI)
+4. Use `RagValidatorService` to check prerequisites
 5. Index project via `ProjectIndexerService.indexFiles()`
 
 **RAG + Agent mode interaction:**

@@ -114,7 +114,7 @@ Keep the indentation consistent with the surrounding blocks.
 The project requires **JDK 21** (JDK 25 breaks the Gradle build). Set `JAVA_HOME` first:
 
 ```bash
-export JAVA_HOME=/Users/stephan/Library/Java/JavaVirtualMachines/azul-21.0.5/Contents/Home
+export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
 ./gradlew buildPlugin   # regenerates application.properties, but packages the old one
 ./gradlew buildPlugin   # packages the regenerated file: this zip is the release asset
 ```

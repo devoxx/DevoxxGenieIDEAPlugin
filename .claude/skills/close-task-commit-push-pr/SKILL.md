@@ -78,9 +78,9 @@ Print a short commit plan (list of planned commits with the files in each) so th
 
 - Now that you have the PR number, use `mcp__backlog__task_edit` to append the PR URL/number to the `finalSummary`.
 
-### Step 7 — Amend commit with updated task file
+### Step 7 — Commit the updated task file
 
-- Stage the updated task file and amend the last commit to include the PR reference: `git commit --amend --no-edit` then `git push --force-with-lease`.
+- Stage the updated task file, commit it as `chore(backlog): link <task-id> to PR #<number>`, and `git push`.
 
 ### Step 8 — Report
 

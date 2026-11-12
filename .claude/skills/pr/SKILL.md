@@ -1,5 +1,5 @@
 # Create PR Workflow
-1. Ensure all changes are on a feature/fix branch (create one if on main/develop)
+1. Ensure all changes are on a feature/fix branch (create one if on master)
 2. Run the build: `./gradlew build`
 3. Run tests: `./gradlew test`
 4. If build+tests pass, commit with a conventional commit message
