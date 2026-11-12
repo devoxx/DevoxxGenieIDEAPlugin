@@ -79,7 +79,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getOllamaModelUrl()).isEqualTo(OLLAMA_MODEL_URL);
             assertThat(stateService.getLmstudioModelUrl()).isEqualTo(LMSTUDIO_MODEL_URL);
             assertThat(stateService.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo(GPT4ALL_MODEL_URL);
-            assertThat(stateService.getJanModelUrl()).isEqualTo(JAN_MODEL_URL);
+            assertThat(stateService.getLocalProviderUrl(ModelProvider.Jan)).isEqualTo(JAN_MODEL_URL);
             assertThat(stateService.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo(LLAMA_CPP_MODEL_URL);
         }
 
@@ -100,7 +100,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.isOllamaEnabled()).isTrue();
             assertThat(stateService.isLmStudioEnabled()).isTrue();
             assertThat(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
-            assertThat(stateService.isJanEnabled()).isTrue();
+            assertThat(stateService.isLocalProviderEnabled(ModelProvider.Jan)).isTrue();
             assertThat(stateService.isLocalProviderEnabled(ModelProvider.LLaMA)).isTrue();
         }
 
@@ -602,7 +602,7 @@ class DevoxxGenieStateServiceTest {
 
         @Test
         void shouldReturnJanModelUrl() {
-            stateService.setJanModelUrl("http://custom-jan:1337/v1/");
+            stateService.setLocalProviderUrl(ModelProvider.Jan, "http://custom-jan:1337/v1/");
             assertThat(stateService.getConfigValue("janModelUrl")).isEqualTo("http://custom-jan:1337/v1/");
         }
 

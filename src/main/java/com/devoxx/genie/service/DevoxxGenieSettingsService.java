@@ -19,8 +19,6 @@ public interface DevoxxGenieSettingsService {
 
     String getLmstudioModelUrl();
 
-    String getJanModelUrl();
-
     String getOpenAIKey();
 
     String getAzureOpenAIEndpoint();
@@ -134,8 +132,6 @@ public interface DevoxxGenieSettingsService {
     void setOllamaContextWindowOverrideEnabled(Boolean enabled);
 
     void setLmstudioModelUrl(String url);
-
-    void setJanModelUrl(String url);
 
     void setOpenAIKey(String key);
 

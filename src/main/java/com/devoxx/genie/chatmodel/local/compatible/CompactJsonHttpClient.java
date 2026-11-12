@@ -1,4 +1,4 @@
-package com.devoxx.genie.chatmodel.local.jan;
+package com.devoxx.genie.chatmodel.local.compatible;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

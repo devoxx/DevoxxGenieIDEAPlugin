@@ -101,7 +101,6 @@ public class LLMProvidersConfigurable implements Configurable {
             Integer savedFallback = stateService.getLmStudioFallbackContextLength();
             isModified |= savedFallback == null || !savedFallback.equals(llmSettingsComponent.getLmStudioFallbackContextField().getNumber());
         }
-        isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
         isModified |= isAnyLocalProviderModified(stateService);
 
         isModified |= stateService.isCustomOpenAIApiKeyEnabled() != llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected();
@@ -132,7 +131,6 @@ public class LLMProvidersConfigurable implements Configurable {
 
         isModified |= stateService.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
         isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
-        isModified |= stateService.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
         isModified |= stateService.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), stateService.getExoModelUrl());
 
@@ -188,7 +186,6 @@ public class LLMProvidersConfigurable implements Configurable {
                         ? llmSettingsComponent.getLmStudioFallbackContextField().getNumber()
                         : null
         );
-        settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
 
         settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
         settings.setCustomOpenAIModelName(llmSettingsComponent.getCustomOpenAIModelNameField().getText());
@@ -237,7 +234,6 @@ public class LLMProvidersConfigurable implements Configurable {
 
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
-        settings.setJanEnabled(llmSettingsComponent.getJanEnabledCheckBox().isSelected());
         settings.setExoEnabled(llmSettingsComponent.getExoEnabledCheckBox().isSelected());
         settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
 
@@ -527,7 +523,6 @@ public class LLMProvidersConfigurable implements Configurable {
                 settings.getLmStudioFallbackContextLength() != null ? settings.getLmStudioFallbackContextLength() : 8000
         );
         llmSettingsComponent.getLmStudioFallbackContextField().setEnabled(settings.getLmStudioFallbackContextLength() != null);
-        llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
         for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
             ModelProvider provider = def.provider();
             LLMProvidersComponent.LocalProviderRow row = llmSettingsComponent.getLocalProviderRows().get(provider);
@@ -589,7 +584,6 @@ public class LLMProvidersConfigurable implements Configurable {
 
         llmSettingsComponent.getOllamaEnabledCheckBox().setSelected(settings.isOllamaEnabled());
         llmSettingsComponent.getLmStudioEnabledCheckBox().setSelected(settings.isLmStudioEnabled());
-        llmSettingsComponent.getJanEnabledCheckBox().setSelected(settings.isJanEnabled());
         llmSettingsComponent.getExoEnabledCheckBox().setSelected(settings.isExoEnabled());
         llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());
 

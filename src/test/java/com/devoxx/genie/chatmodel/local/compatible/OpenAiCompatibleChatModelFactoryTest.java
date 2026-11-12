@@ -36,10 +36,18 @@ class OpenAiCompatibleChatModelFactoryTest {
         protected void handleGeneralFetchError(IOException e) {
             fetchErrors.add(e);
         }
+
+        dev.langchain4j.http.client.HttpClientBuilder chatHttpClientBuilder() {
+            return resolveHttpClientBuilder();
+        }
     }
 
     private static LocalProviderDefinition rapidMlx() {
         return LocalProviderRegistry.find(ModelProvider.RapidMLX).orElseThrow();
+    }
+
+    private static LocalProviderDefinition jan() {
+        return LocalProviderRegistry.find(ModelProvider.Jan).orElseThrow();
     }
 
     private static LocalProviderDefinition llamaCpp() {
@@ -171,6 +179,62 @@ class OpenAiCompatibleChatModelFactoryTest {
 
         List<LanguageModel> withFallback = factory(gpt4All(), true, "http://localhost:4891/v1/", 32768, url -> body).getModels();
         assertThat(withFallback.get(0).getInputMaxTokens()).isEqualTo(32768);
+    }
+
+    @Test
+    void jan_compactsJsonRequestBodies_andOtherProvidersDoNot() {
+        // Issue #1051: Jan's bundled llama.cpp server hangs on multi-line JSON request bodies. Chat and streaming
+        // chat models are both built from this HTTP client builder.
+        assertThat(factory(jan(), true, "http://localhost:1337/v1/", null, url -> "{}").chatHttpClientBuilder())
+                .isInstanceOf(CompactJsonHttpClientBuilder.class);
+        for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
+            if (def.provider() != ModelProvider.Jan) {
+                assertThat(factory(def, true, def.defaultUrl(), null, url -> "{}").chatHttpClientBuilder())
+                        .as("%s keeps the plain client", def.provider())
+                        .isNotInstanceOf(CompactJsonHttpClientBuilder.class);
+            }
+        }
+    }
+
+    @Test
+    void jan_payload_fromJan088_usesConfiguredFallback_thenDefault_andShortensIds() {
+        // Shape captured from Jan 0.8.8: only id, object, created and owned_by.
+        String body = "{\"object\":\"list\",\"data\":["
+                + "{\"id\":\"bartowski/Llama-3.2-1B-Instruct-GGUF\",\"object\":\"model\",\"created\":1,\"owned_by\":\"llama.cpp\"},"
+                + "{\"id\":\"gemma4-e2b-it.gguf\",\"object\":\"model\",\"created\":1,\"owned_by\":\"llama.cpp\"}]}";
+        AtomicReference<String> seen = new AtomicReference<>();
+
+        List<LanguageModel> models = factory(jan(), true, "http://localhost:1337/v1/", null, url -> {
+            seen.set(url);
+            return body;
+        }).getModels();
+
+        assertThat(seen.get()).isEqualTo("http://localhost:1337/v1/models");
+        assertThat(models).extracting(LanguageModel::getModelName)
+                .containsExactlyInAnyOrder("bartowski/Llama-3.2-1B-Instruct-GGUF", "gemma4-e2b-it.gguf");
+        assertThat(models).extracting(LanguageModel::getDisplayName)
+                .containsExactlyInAnyOrder("Llama-3.2-1B-Instruct-GGUF", "gemma4-e2b-it.gguf");
+        assertThat(models).allMatch(m -> m.getInputMaxTokens() == 8000 && m.getProvider() == ModelProvider.Jan);
+
+        List<LanguageModel> withFallback = factory(jan(), true, "http://localhost:1337/v1/", 65536, url -> body).getModels();
+        assertThat(withFallback).allMatch(m -> m.getInputMaxTokens() == 65536);
+    }
+
+    @Test
+    void jan_payload_withContextFields_prefersSettings_thenTopLevel_andUsesName() {
+        // Older Jan versions report ctx_len under settings and/or at the top level, and may send a name.
+        String nested = "{\"id\":\"a\",\"name\":\"Model A\",\"ctx_len\":2048,\"settings\":{\"ctx_len\":4096}}";
+        String topLevel = "{\"id\":\"b\",\"ctx_len\":2048}";
+        String body = "{\"data\":[" + nested + "," + topLevel + "]}";
+
+        List<LanguageModel> models = factory(jan(), true, "http://localhost:1337/v1/", 65536, url -> body).getModels();
+
+        assertThat(models).filteredOn(m -> m.getModelName().equals("a"))
+                .extracting(LanguageModel::getInputMaxTokens, LanguageModel::getDisplayName)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(4096, "Model A"));
+        assertThat(models).filteredOn(m -> m.getModelName().equals("b"))
+                .extracting(LanguageModel::getInputMaxTokens, LanguageModel::getDisplayName)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(2048, "b"));
     }
 
     @Test

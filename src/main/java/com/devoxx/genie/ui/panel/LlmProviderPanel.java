@@ -366,7 +366,6 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
     private static boolean isLocalProvider(ModelProvider provider) {
         return provider == ModelProvider.LMStudio ||
                provider == ModelProvider.Ollama ||
-               provider == ModelProvider.Jan ||
                LocalProviderRegistry.isGeneric(provider) ||
                RouterRegistry.isGeneric(provider) ||
                provider == ModelProvider.Bedrock;

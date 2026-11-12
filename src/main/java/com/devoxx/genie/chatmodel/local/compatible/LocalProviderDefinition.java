@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * @param fallbackContextHint   settings hint for the optional fallback context field, or null for no such field
  * @param enabledByDefault      whether the provider is enabled until the user changes it; this also applies on a
  *                              fresh install, where no saved settings are loaded
+ * @param compactJsonRequestBodies whether chat requests go out as single-line JSON, for servers that hang on the
+ *                              multi-line bodies langchain4j sends (Jan, issue #1051)
  */
 public record LocalProviderDefinition(ModelProvider provider,
                                       String defaultUrl,
@@ -20,5 +22,6 @@ public record LocalProviderDefinition(ModelProvider provider,
                                       @Nullable CatalogFields catalogFields,
                                       int defaultContextLength,
                                       @Nullable String fallbackContextHint,
-                                      boolean enabledByDefault) {
+                                      boolean enabledByDefault,
+                                      boolean compactJsonRequestBodies) {
 }

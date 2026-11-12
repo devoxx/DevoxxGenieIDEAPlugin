@@ -200,10 +200,18 @@ Llama.cpp offers advanced configuration:
 
 1. Download and install Jan from [jan.ai](https://jan.ai/)
 2. Launch Jan and download models
-3. In DevoxxGenie settings, select "Jan" as the provider
-4. Configure any necessary connection parameters
+3. In Jan's settings, turn on the **Local API Server** (port 1337 by default)
+4. In DevoxxGenie settings, Jan is on the **Local** tab and enabled by default; check that the URL matches
+5. Select "Jan" as the provider in the DevoxxGenie panel, then select the model
 
 ### Configuration
+
+In DevoxxGenie settings:
+
+- **Jan URL**: the Local API Server's base URL, `http://localhost:1337/v1/` by default
+- **Jan Fallback Context**: Jan 0.8's `/v1/models` doesn't report a context window, so DevoxxGenie assumes 8,000 tokens. Tick this and enter your model's real context window to override it. When Jan does report a context length, DevoxxGenie uses it.
+
+Jan's bundled server can hang on multi-line JSON request bodies, so DevoxxGenie sends Jan its requests as single-line JSON.
 
 Jan provides a full chat interface and API:
 

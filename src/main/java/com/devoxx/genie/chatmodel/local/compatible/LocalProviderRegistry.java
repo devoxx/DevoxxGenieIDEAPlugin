@@ -12,6 +12,19 @@ public final class LocalProviderRegistry {
 
     // llama-server reports meta.n_ctx (the context it runs with, set by -c) and meta.n_ctx_train (the model's
     // maximum); requests beyond n_ctx fail, so the running context wins. It answers on /models and /v1/models.
+    // Jan 0.8.x lists only id, object, created and owned_by; older versions also report ctx_len, under settings
+    // and/or at the top level, and a name.
+    private static final LocalProviderDefinition JAN = new LocalProviderDefinition(
+            ModelProvider.Jan,
+            Constant.JAN_MODEL_URL,
+            "https://jan.ai/download",
+            "Run models in the Jan desktop app. Turn on its Local API Server; it listens on port 1337 by default.",
+            new CatalogFields("name", List.of("settings.ctx_len", "ctx_len"), null, null, 1, null, null),
+            8000,
+            "Jan's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here.",
+            true,
+            true);
+
     private static final LocalProviderDefinition LLAMA_CPP = new LocalProviderDefinition(
             ModelProvider.LLaMA,
             Constant.LLAMA_CPP_MODEL_URL,
@@ -20,7 +33,8 @@ public final class LocalProviderRegistry {
             new CatalogFields(null, List.of("meta.n_ctx", "meta.n_ctx_train"), null, null, 1, null, null),
             8000,
             null,
-            true);
+            true,
+            false);
 
     private static final LocalProviderDefinition GPT4ALL = new LocalProviderDefinition(
             ModelProvider.GPT4All,
@@ -30,7 +44,8 @@ public final class LocalProviderRegistry {
             null,
             8000,
             "GPT4All's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here.",
-            true);
+            true,
+            false);
 
     private static final LocalProviderDefinition NATIV = new LocalProviderDefinition(
             ModelProvider.Nativ,
@@ -40,6 +55,7 @@ public final class LocalProviderRegistry {
             null,
             8000,
             "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here.",
+            false,
             false);
 
     private static final LocalProviderDefinition RAPID_MLX = new LocalProviderDefinition(
@@ -50,9 +66,10 @@ public final class LocalProviderRegistry {
             new CatalogFields(null, List.of("max_model_len", "context_window"), null, null, 1, "capabilities", "text"),
             8000,
             null,
+            false,
             false);
 
-    private static final List<LocalProviderDefinition> DEFINITIONS = List.of(LLAMA_CPP, GPT4ALL, NATIV, RAPID_MLX);
+    private static final List<LocalProviderDefinition> DEFINITIONS = List.of(JAN, LLAMA_CPP, GPT4ALL, NATIV, RAPID_MLX);
 
     private LocalProviderRegistry() {
     }

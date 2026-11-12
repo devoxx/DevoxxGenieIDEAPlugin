@@ -132,8 +132,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             )
     );
     @Getter
-    private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
-    @Getter
     private final JTextField customOpenAIUrlField = new JTextField(stateService.getCustomOpenAIUrl());
     @Getter
     private final JTextField customOpenAIModelNameField = new JTextField(stateService.getCustomOpenAIModelName());
@@ -215,8 +213,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox ollamaEnabledCheckBox = new JCheckBox("", stateService.isOllamaEnabled());
     @Getter
     private final JCheckBox lmStudioEnabledCheckBox = new JCheckBox("", stateService.isLmStudioEnabled());
-    @Getter
-    private final JCheckBox janEnabledCheckBox = new JCheckBox("", stateService.isJanEnabled());
     @Getter
     private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
     @Getter
@@ -433,8 +429,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addHintText(localPanel, gbc, "Base URL for OpenAI-compatible chat; model metadata is always fetched from /api/v1/models");
         addProviderSettingRow(localPanel, gbc, "LMStudio Fallback Context", lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField);
         addHintText(localPanel, gbc, "Used only when LMStudio model metadata does not expose context length");
-        addProviderSettingRow(localPanel, gbc, "Jan URL", janEnabledCheckBox,
-                createTextWithDownloadButton(janModelUrlField, "https://jan.ai/download"));
         for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
             LocalProviderRow row = localProviderRows.get(def.provider());
             String name = def.provider().getName();
@@ -640,7 +634,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         ollamaEnabledCheckBox.addItemListener(e -> updateUrlFieldState(ollamaEnabledCheckBox, ollamaModelUrlField));
         lmStudioEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioEnabledCheckBox, lmStudioModelUrlField));
         lmStudioFallbackContextEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField));
-        janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
         localProviderRows.values().forEach(row -> {
             row.enabled().addItemListener(e -> updateUrlFieldState(row.enabled(), row.url()));
             if (row.fallback() != null) {

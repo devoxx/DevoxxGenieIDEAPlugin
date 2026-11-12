@@ -69,6 +69,12 @@ public class OpenAiCompatibleChatModelFactory extends LocalChatModelFactory {
     }
 
     @Override
+    protected dev.langchain4j.http.client.HttpClientBuilder resolveHttpClientBuilder() {
+        dev.langchain4j.http.client.HttpClientBuilder builder = super.resolveHttpClientBuilder();
+        return definition.compactJsonRequestBodies() ? new CompactJsonHttpClientBuilder(builder) : builder;
+    }
+
+    @Override
     protected String getModelUrl() {
         return url.get();
     }
