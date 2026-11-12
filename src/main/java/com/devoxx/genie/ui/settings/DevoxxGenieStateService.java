@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.settings;
 
+import com.devoxx.genie.chatmodel.cloud.router.RouterDefinition;
 import com.devoxx.genie.chatmodel.local.compatible.LocalProviderDefinition;
 import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.Command;
@@ -249,6 +250,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     /** Per-router enabled flag keyed by {@code ModelProvider.name()}. */
     private Map<String, Boolean> routerEnabled = new ConcurrentHashMap<>();
+    /** Per-router base URL keyed by {@code ModelProvider.name()}; absent means the definition's default. */
+    private Map<String, String> routerUrls = new ConcurrentHashMap<>();
 
     /** Per-local-provider URL keyed by {@code ModelProvider.name()}; absent means the definition's default. */
     private Map<String, String> localProviderUrls = new ConcurrentHashMap<>();
@@ -714,6 +717,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         // Copy so later edits do not alias the deserialized state's map; seed OpenRouter from its legacy flag.
         setRouterEnabled(routerEnabled);
         routerEnabled.putIfAbsent(ModelProvider.OpenRouter.name(), isOpenRouterEnabled);
+        setRouterUrls(routerUrls);
         // Same copy; then move Nativ's, GPT4All's, llama.cpp's and Jan's legacy fields into the maps.
         setLocalProviderUrls(localProviderUrls);
         setLocalProviderEnabled(localProviderEnabled);
@@ -1129,6 +1133,29 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     public void setRouterEnabled(@NotNull ModelProvider provider, boolean enabled) {
         routerEnabled.put(provider.name(), enabled);
+    }
+
+    /** The router's saved base URL, or the definition's default when none is saved. */
+    public @NotNull String getRouterUrl(@NotNull RouterDefinition def) {
+        String url = routerUrls.get(def.provider().name());
+        if (url != null && !url.isBlank()) {
+            return url.trim();
+        }
+        return def.baseUrl();
+    }
+
+    public void setRouterUrl(@NotNull ModelProvider provider, @Nullable String url) {
+        // Absent means "use the definition's default", so a blank URL is removed rather than stored.
+        if (url == null || url.isBlank()) {
+            routerUrls.remove(provider.name());
+        } else {
+            routerUrls.put(provider.name(), url.trim());
+        }
+    }
+
+    /** Persisted via the bean accessors; copies into a {@link ConcurrentHashMap} and drops null entries. */
+    public void setRouterUrls(@Nullable Map<String, String> urls) {
+        this.routerUrls = copyNonNull(urls);
     }
 
     public @NotNull String getLocalProviderUrl(@NotNull ModelProvider provider) {

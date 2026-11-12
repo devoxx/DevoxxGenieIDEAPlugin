@@ -41,6 +41,7 @@ public class RouterChatModelFactory implements ChatModelFactory {
     private final RouterDefinition def;
     private final BooleanSupplier enabled;
     private final Supplier<String> keySupplier;
+    private final Supplier<String> baseUrl;
     private final RouterCatalogClient client;
     private final LongSupplier clockMillis;
 
@@ -53,6 +54,7 @@ public class RouterChatModelFactory implements ChatModelFactory {
         this.def = def;
         this.enabled = () -> DevoxxGenieStateService.getInstance().isRouterEnabled(def.provider());
         this.keySupplier = () -> getApiKey(def.provider());
+        this.baseUrl = () -> DevoxxGenieStateService.getInstance().getRouterUrl(def);
         this.client = new RouterCatalogClient.OkHttp();
         this.clockMillis = () -> System.nanoTime() / 1_000_000; // monotonic: immune to wall-clock changes
     }
@@ -62,9 +64,19 @@ public class RouterChatModelFactory implements ChatModelFactory {
                            Supplier<String> keySupplier,
                            RouterCatalogClient client,
                            LongSupplier clockMillis) {
+        this(def, enabled, keySupplier, def::baseUrl, client, clockMillis);
+    }
+
+    RouterChatModelFactory(RouterDefinition def,
+                           BooleanSupplier enabled,
+                           Supplier<String> keySupplier,
+                           Supplier<String> baseUrl,
+                           RouterCatalogClient client,
+                           LongSupplier clockMillis) {
         this.def = def;
         this.enabled = enabled;
         this.keySupplier = keySupplier;
+        this.baseUrl = baseUrl;
         this.client = client;
         this.clockMillis = clockMillis;
     }
@@ -72,7 +84,7 @@ public class RouterChatModelFactory implements ChatModelFactory {
     @Override
     public ChatModel createChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiChatModel.builder()
-            .baseUrl(def.baseUrl())
+            .baseUrl(baseUrl.get())
             .apiKey(readKey())
             .modelName(customChatModel.getModelName())
             .maxRetries(customChatModel.getMaxRetries())
@@ -88,7 +100,7 @@ public class RouterChatModelFactory implements ChatModelFactory {
     @Override
     public StreamingChatModel createStreamingChatModel(@NotNull CustomChatModel customChatModel) {
         return OpenAiStreamingChatModel.builder()
-            .baseUrl(def.baseUrl())
+            .baseUrl(baseUrl.get())
             .apiKey(readKey())
             .modelName(customChatModel.getModelName())
             .maxTokens(maxTokens(customChatModel))
@@ -137,7 +149,7 @@ public class RouterChatModelFactory implements ChatModelFactory {
             if (gen != generation.get()) {
                 break;
             }
-            String url = joinUrl(def.baseUrl(), endpoint);
+            String url = joinUrl(baseUrl.get(), endpoint);
             try {
                 for (LanguageModel model : RouterCatalogParser.parse(def, client.fetch(url, key))) {
                     merged.putIfAbsent(model.getModelName(), model);

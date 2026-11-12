@@ -30,8 +30,8 @@ import java.util.Map;
 
 public class LLMProvidersComponent extends AbstractSettingsComponent {
 
-    /** The enabled checkbox and API key field of one generic router. */
-    public record RouterRow(JCheckBox enabled, JPasswordField key) {
+    /** The enabled checkbox, API key field and base URL field of one generic router. */
+    public record RouterRow(JCheckBox enabled, JPasswordField key, JTextField url) {
     }
 
     /** The settings of one generic local provider; the fallback pair is null when it has no such field. */
@@ -526,7 +526,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         for (RouterDefinition def : RouterRegistry.definitions()) {
             rows.put(def.provider(), new RouterRow(
                     new JCheckBox("", stateService.isRouterEnabled(def.provider())),
-                    new JPasswordField(stateService.getRouterKey(def.credentialSubKey()))));
+                    new JPasswordField(stateService.getRouterKey(def.credentialSubKey())),
+                    new JTextField(stateService.getRouterUrl(def))));
         }
         return rows;
     }
@@ -540,6 +541,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
             RouterRow row = routerRows.get(def.provider());
             addProviderSettingRow(routersPanel, gbc, def.label() + " API Key", row.enabled(),
                     createTextWithPasswordButton(row.key(), def.keyUrl()));
+            addSettingRow(routersPanel, gbc, def.label() + " URL", row.url());
             if (def.hint() != null) {
                 addHintText(routersPanel, gbc, def.hint());
             }
