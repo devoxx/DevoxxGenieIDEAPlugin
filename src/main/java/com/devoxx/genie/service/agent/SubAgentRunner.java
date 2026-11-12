@@ -271,14 +271,14 @@ public class SubAgentRunner {
                 return;
             }
         } catch (IllegalArgumentException ignored) {
-            // Not a display name ("LLaMA", for one) — the cases below still apply.
+            // Not a display name: "LLaMA" is the enum name of "LLaMA.c++" and is handled below.
         }
 
         switch (resolvedProviderName) {
             case OLLAMA -> config.setBaseUrl(settings.getOllamaModelUrl());
             case "LMStudio" -> config.setBaseUrl(settings.getLmstudioModelUrl());
             case "Jan" -> config.setBaseUrl(settings.getJanModelUrl());
-            case "LLaMA" -> config.setBaseUrl(settings.getLlamaCPPUrl());
+            case "LLaMA" -> config.setBaseUrl(settings.getLocalProviderUrl(ModelProvider.LLaMA));
             case "CustomOpenAI" -> config.setBaseUrl(settings.getCustomOpenAIUrl());
             default -> { /* Cloud providers don't need base URL */ }
         }

@@ -80,7 +80,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.getLmstudioModelUrl()).isEqualTo(LMSTUDIO_MODEL_URL);
             assertThat(stateService.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo(GPT4ALL_MODEL_URL);
             assertThat(stateService.getJanModelUrl()).isEqualTo(JAN_MODEL_URL);
-            assertThat(stateService.getLlamaCPPUrl()).isEqualTo(LLAMA_CPP_MODEL_URL);
+            assertThat(stateService.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo(LLAMA_CPP_MODEL_URL);
         }
 
         @Test
@@ -101,7 +101,7 @@ class DevoxxGenieStateServiceTest {
             assertThat(stateService.isLmStudioEnabled()).isTrue();
             assertThat(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
             assertThat(stateService.isJanEnabled()).isTrue();
-            assertThat(stateService.isLlamaCPPEnabled()).isTrue();
+            assertThat(stateService.isLocalProviderEnabled(ModelProvider.LLaMA)).isTrue();
         }
 
         @Test

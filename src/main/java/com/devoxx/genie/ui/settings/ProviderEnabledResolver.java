@@ -32,7 +32,6 @@ public final class ProviderEnabledResolver {
             case Ollama -> state.isOllamaEnabled();
             case LMStudio -> state.isLmStudioEnabled();
             case Jan -> state.isJanEnabled();
-            case LLaMA -> state.isLlamaCPPEnabled();
             case Exo -> state.isExoEnabled();
             case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();
             case OpenAI -> state.isOpenAIEnabled();

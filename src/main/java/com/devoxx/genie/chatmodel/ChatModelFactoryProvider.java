@@ -23,7 +23,6 @@ import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.chatmodel.local.compatible.OpenAiCompatibleChatModelFactory;
 import com.devoxx.genie.chatmodel.local.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
-import com.devoxx.genie.chatmodel.local.llamacpp.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -75,7 +74,6 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.Google, GoogleChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Groq, GroqChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Jan, JanChatModelFactory::new);
-        FACTORY_SUPPLIERS.put(ModelProvider.LLaMA, LlamaChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.LMStudio, LMStudioChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Mistral, MistralChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Ollama, OllamaChatModelFactory::new);

@@ -364,7 +364,7 @@ class ChatModelProviderTest {
                 .languageModel(languageModel)
                 .build();
 
-        when(stateService.getLlamaCPPUrl()).thenReturn("http://localhost:8080");
+        when(stateService.getLocalProviderUrl(ModelProvider.LLaMA)).thenReturn("http://localhost:8080");
 
         CustomChatModel result = chatModelProvider.initChatModel(context);
 

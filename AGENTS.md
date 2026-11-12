@@ -73,9 +73,9 @@ The plugin processes user prompts through a layered architecture:
 
 **Routers** (generic path, defined in `chatmodel/cloud/router/RouterRegistry`): openrouter, orcarouter, requesty, demonroute
 
-**Local Providers**: ollama, lmstudio, llamacpp, jan, customopenai
+**Local Providers**: ollama, lmstudio, jan, customopenai
 
-**Generic local providers** (OpenAI-compatible, no factory; defined in `chatmodel/local/compatible/LocalProviderRegistry`): gpt4all, nativ, rapidmlx
+**Generic local providers** (OpenAI-compatible, no factory; defined in `chatmodel/local/compatible/LocalProviderRegistry`): llamacpp, gpt4all, nativ, rapidmlx
 
 **Adding New Providers**:
 1. Create factory class implementing `ChatModelFactory` under `chatmodel/cloud/` or `chatmodel/local/`

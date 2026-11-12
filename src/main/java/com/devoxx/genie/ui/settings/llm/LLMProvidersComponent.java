@@ -134,8 +134,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField janModelUrlField = new JTextField(stateService.getJanModelUrl());
     @Getter
-    private final JTextField llamaCPPModelUrlField = new JTextField(stateService.getLlamaCPPUrl());
-    @Getter
     private final JTextField customOpenAIUrlField = new JTextField(stateService.getCustomOpenAIUrl());
     @Getter
     private final JTextField customOpenAIModelNameField = new JTextField(stateService.getCustomOpenAIModelName());
@@ -219,8 +217,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox lmStudioEnabledCheckBox = new JCheckBox("", stateService.isLmStudioEnabled());
     @Getter
     private final JCheckBox janEnabledCheckBox = new JCheckBox("", stateService.isJanEnabled());
-    @Getter
-    private final JCheckBox llamaCPPEnabledCheckBox = new JCheckBox("", stateService.isLlamaCPPEnabled());
     @Getter
     private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
     @Getter
@@ -439,8 +435,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addHintText(localPanel, gbc, "Used only when LMStudio model metadata does not expose context length");
         addProviderSettingRow(localPanel, gbc, "Jan URL", janEnabledCheckBox,
                 createTextWithDownloadButton(janModelUrlField, "https://jan.ai/download"));
-        addProviderSettingRow(localPanel, gbc, "LLaMA.c++ URL", llamaCPPEnabledCheckBox,
-                createTextWithDownloadButton(llamaCPPModelUrlField, "https://github.com/ggml-org/llama.cpp"));
         for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
             LocalProviderRow row = localProviderRows.get(def.provider());
             String name = def.provider().getName();
@@ -647,7 +641,6 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         lmStudioEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioEnabledCheckBox, lmStudioModelUrlField));
         lmStudioFallbackContextEnabledCheckBox.addItemListener(e -> updateUrlFieldState(lmStudioFallbackContextEnabledCheckBox, lmStudioFallbackContextField));
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
-        llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
         localProviderRows.values().forEach(row -> {
             row.enabled().addItemListener(e -> updateUrlFieldState(row.enabled(), row.url()));
             if (row.fallback() != null) {

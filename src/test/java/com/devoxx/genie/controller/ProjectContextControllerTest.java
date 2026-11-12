@@ -110,7 +110,7 @@ class ProjectContextControllerTest {
     @EnumSource(value = ModelProvider.class, names = {
             "Google", "Anthropic", "OpenAI", "Mistral", "DeepSeek",
             "OpenRouter", "DeepInfra", "Ollama", "Jan", "Bedrock",
-            "LMStudio", "AzureOpenAI", "GPT4All", "Nativ", "RapidMLX"
+            "LMStudio", "AzureOpenAI", "LLaMA", "GPT4All", "Nativ", "RapidMLX"
     })
     void testIsProjectContextSupportedProvider_SupportedProviders_ReturnsTrue(ModelProvider provider) {
         modelProviderComboBox.addItem(provider);
@@ -121,7 +121,7 @@ class ProjectContextControllerTest {
 
     @ParameterizedTest
     @EnumSource(value = ModelProvider.class, names = {
-            "LLaMA", "CustomOpenAI", "CLIRunners", "ACPRunners",
+            "CustomOpenAI", "CLIRunners", "ACPRunners",
             "Groq", "Grok", "Kimi", "GLM", "Cloudflare"
     })
     void testIsProjectContextSupportedProvider_UnsupportedProviders_ReturnsFalse(ModelProvider provider) {
