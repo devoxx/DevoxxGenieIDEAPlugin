@@ -51,4 +51,6 @@ After moving LLaMA.c++ to the generic local provider (TASK-274.2): the model dro
 - Blank chat: a streamed reply that produced no visible partial text completed through `addChatMessage` with the id of the prompt bubble already shown, so the Compose LazyColumn got a duplicate key and stopped rendering. `ConversationViewModel.addChatMessage` now fills the existing bubble when that id is present.
 - Tests: LlmProviderPanelTest (single local model shown, single cloud model hidden, legacy-name restore), ModelProviderLlamaCppTest, ChatModelFactoryProviderTest (legacy name resolves), ConversationViewModelDuplicateIdTest. Full suite green.
 - Known limitation, not fixed: small thinking models (Qwen3.5-0.8B) can end an agent turn with a tool call written inside reasoning_content and empty content; the bubble is then empty rather than crashing.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1413 (#1413)
 <!-- SECTION:FINAL_SUMMARY:END -->
