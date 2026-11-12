@@ -42,6 +42,10 @@ class OpenAiCompatibleChatModelFactoryTest {
         return LocalProviderRegistry.find(ModelProvider.RapidMLX).orElseThrow();
     }
 
+    private static LocalProviderDefinition gpt4All() {
+        return LocalProviderRegistry.find(ModelProvider.GPT4All).orElseThrow();
+    }
+
     private static LocalProviderDefinition nativ() {
         return LocalProviderRegistry.find(ModelProvider.Nativ).orElseThrow();
     }
@@ -140,6 +144,37 @@ class OpenAiCompatibleChatModelFactoryTest {
         f.getModels();
 
         assertThat(seen).containsExactly("http://one:8000/v1/models", "http://two:8000/v1/models");
+    }
+
+    @Test
+    void gpt4All_payload_usesProviderDefaultContext_thenConfiguredFallback() {
+        // GPT4All's /v1/models reports id, object, owned_by and permissions, but no context length.
+        String body = "{\"object\":\"list\",\"data\":[{\"id\":\"Llama 3 8B Instruct\",\"object\":\"model\","
+                + "\"owned_by\":\"humanity\",\"permissions\":[]}]}";
+        AtomicReference<String> seen = new AtomicReference<>();
+
+        List<LanguageModel> models = factory(gpt4All(), true, "http://localhost:4891/v1/", null, url -> {
+            seen.set(url);
+            return body;
+        }).getModels();
+
+        assertThat(seen.get()).isEqualTo("http://localhost:4891/v1/models");
+        assertThat(models).hasSize(1);
+        assertThat(models.get(0).getProvider()).isEqualTo(ModelProvider.GPT4All);
+        assertThat(models.get(0).getModelName()).isEqualTo("Llama 3 8B Instruct");
+        assertThat(models.get(0).getDisplayName()).isEqualTo("Llama 3 8B Instruct");
+        assertThat(models.get(0).getInputMaxTokens()).isEqualTo(8000);
+
+        List<LanguageModel> withFallback = factory(gpt4All(), true, "http://localhost:4891/v1/", 32768, url -> body).getModels();
+        assertThat(withFallback.get(0).getInputMaxTokens()).isEqualTo(32768);
+    }
+
+    @Test
+    void gpt4All_defaultsToEnabledOnPort4891() {
+        DevoxxGenieStateService state = new DevoxxGenieStateService();
+
+        assertThat(state.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
+        assertThat(state.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4891/v1/");
     }
 
     @Test

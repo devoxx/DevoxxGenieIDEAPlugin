@@ -174,8 +174,8 @@ class ActionButtonsPanelControllerTest {
 
     @Test
     void testUpdateButtonVisibility_UnsupportedProvider_HidesButtons() {
-        modelProviderComboBox.addItem(ModelProvider.GPT4All);
-        modelProviderComboBox.setSelectedItem(ModelProvider.GPT4All);
+        modelProviderComboBox.addItem(ModelProvider.CustomOpenAI);
+        modelProviderComboBox.setSelectedItem(ModelProvider.CustomOpenAI);
 
         controller.updateButtonVisibility();
 

@@ -133,6 +133,11 @@ See the [Inline Completion documentation](/docs/features/inline-completion) for 
 
 ### Configuration
 
+In DevoxxGenie settings, GPT4All is on the **Local** tab and enabled by default:
+
+- **GPT4All URL**: the API server's base URL, `http://localhost:4891/v1/` by default
+- **GPT4All Fallback Context**: GPT4All's `/v1/models` doesn't report a context window, so DevoxxGenie assumes 8,000 tokens. Tick this and enter your model's real context window to override it
+
 GPT4All provides:
 
 - **Model Library**: Built-in access to compatible models

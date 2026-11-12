@@ -109,7 +109,6 @@ public class ProjectContextController {
                 modelProvider.equals(LMStudio) ||
                 LocalProviderRegistry.isGeneric(modelProvider) ||
                 modelProvider.equals(AzureOpenAI);
-                // Note : NOT GPT4All because the selected context window is not provided in JSON model response
     }
 
     private int getWindowContext() {

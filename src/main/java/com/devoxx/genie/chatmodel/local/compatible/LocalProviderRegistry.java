@@ -10,6 +10,16 @@ import java.util.Optional;
 /** The local providers served by the generic local provider. */
 public final class LocalProviderRegistry {
 
+    private static final LocalProviderDefinition GPT4ALL = new LocalProviderDefinition(
+            ModelProvider.GPT4All,
+            Constant.GPT4ALL_MODEL_URL,
+            "https://gpt4all.io/",
+            "Run models in the GPT4All desktop app. Turn on its local API server in GPT4All's settings; it listens on port 4891 by default.",
+            null,
+            8000,
+            "GPT4All's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here.",
+            true);
+
     private static final LocalProviderDefinition NATIV = new LocalProviderDefinition(
             ModelProvider.Nativ,
             Constant.NATIV_MODEL_URL,
@@ -17,7 +27,8 @@ public final class LocalProviderRegistry {
             "Run MLX models locally on Apple Silicon. Nativ defaults to port 8080 — the same port as Llama.c++ — so change one of the two if you want both enabled.",
             null,
             8000,
-            "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here.");
+            "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here.",
+            false);
 
     private static final LocalProviderDefinition RAPID_MLX = new LocalProviderDefinition(
             ModelProvider.RapidMLX,
@@ -26,9 +37,10 @@ public final class LocalProviderRegistry {
             "Run MLX models locally on Apple Silicon, for example with <code>rapid-mlx serve qwen3.5-4b-4bit --port 8000</code>. Without <code>--port</code> it uses the first free port from 8000 to 8009, so check that this URL matches.",
             new CatalogFields(null, List.of("max_model_len", "context_window"), null, null, 1, "capabilities", "text"),
             8000,
-            null);
+            null,
+            false);
 
-    private static final List<LocalProviderDefinition> DEFINITIONS = List.of(NATIV, RAPID_MLX);
+    private static final List<LocalProviderDefinition> DEFINITIONS = List.of(GPT4ALL, NATIV, RAPID_MLX);
 
     private LocalProviderRegistry() {
     }

@@ -346,7 +346,7 @@ class ChatModelProviderTest {
                 .languageModel(languageModel)
                 .build();
 
-        when(stateService.getGpt4allModelUrl()).thenReturn("http://localhost:4891/v1/");
+        when(stateService.getLocalProviderUrl(ModelProvider.GPT4All)).thenReturn("http://localhost:4891/v1/");
 
         CustomChatModel result = chatModelProvider.initChatModel(context);
 

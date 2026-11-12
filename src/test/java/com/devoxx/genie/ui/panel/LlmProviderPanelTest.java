@@ -97,7 +97,7 @@ class LlmProviderPanelTest {
         // Default state service values for provider filtering
         lenient().when(stateService.isOllamaEnabled()).thenReturn(true);
         lenient().when(stateService.isLmStudioEnabled()).thenReturn(false);
-        lenient().when(stateService.isGpt4AllEnabled()).thenReturn(false);
+        lenient().when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(false);
         lenient().when(stateService.isJanEnabled()).thenReturn(false);
         lenient().when(stateService.isLlamaCPPEnabled()).thenReturn(false);
         lenient().when(stateService.isExoEnabled()).thenReturn(false);
