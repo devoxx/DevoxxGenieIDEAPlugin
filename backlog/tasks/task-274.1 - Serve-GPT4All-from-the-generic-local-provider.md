@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@Claude'
 created_date: '2026-11-12T11:21:00Z'
-updated_date: '2026-11-12T12:14:00Z'
+updated_date: '2026-11-12T12:15:00Z'
 labels:
   - local-llm
   - refactor
@@ -115,4 +115,6 @@ New users now start on Ollama when it's available. Before, the alphabetically so
 Visible changes: the GPT4All settings row moves to just after LLaMA.c++, and GPT4All can now add the project to the prompt context, like every generic provider.
 
 Full test suite passes. Not verified: AC #1's live check, listing models and chatting (streaming and non-streaming) against a running GPT4All server.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1408
 <!-- SECTION:FINAL_SUMMARY:END -->
