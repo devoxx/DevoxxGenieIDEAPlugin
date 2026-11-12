@@ -331,6 +331,15 @@ class ConversationViewModel(
     }
 
     fun addChatMessage(context: ChatMessageContext) {
+        // A streamed reply that never produced visible partial text (e.g. a thinking model whose
+        // output was all reasoning) completes here with the id of the prompt bubble already shown.
+        // A second item with that id crashes the chat's LazyColumn ("Key ... was already used"),
+        // so fill the existing bubble instead. updateAiMessageContent keeps its activity log.
+        val current = state
+        if (current is ConversationState.Chat && current.messages.any { it.id == context.id }) {
+            updateAiMessageContent(context)
+            return
+        }
         val aiText = context.aiMessage?.text() ?: ""
         val message = MessageUiModel(
             id = context.id,
@@ -812,7 +821,7 @@ class ConversationViewModel(
 
     private fun formatModelDisplayName(model: LanguageModel?): String {
         val name = model?.modelName ?: return ""
-        val provider = model.provider?.name ?: return name
+        val provider = model.provider?.getName() ?: return name
         return "$provider : $name"
     }
 
