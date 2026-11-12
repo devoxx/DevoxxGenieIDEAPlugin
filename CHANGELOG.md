@@ -1,5 +1,53 @@
 # Changelog
 
+## v1.18.0 - 2026-11-12
+
+A minor release about providers. **LLM routers now run on one generic provider with their own Routers settings tab**, and OrcaRouter, UberLLM, Requesty and DemonRoute join OpenRouter. **Local OpenAI-compatible servers get the same treatment**: Nativ, Rapid-MLX, GPT4All, llama.cpp and Jan now share one generic local provider that reads each server's real models and context window. It also fixes support for **IntelliJ IDEA 2026.3**, where the settings pages failed to load.
+
+### Added
+- feat(router): **LLM routers through one generic provider, on a new Routers settings tab**. `RouterDefinition`, `RouterRegistry` and a single `RouterChatModelFactory` replace the per-router classes, so a typical OpenAI-compatible router now takes one enum line and one definition. OpenRouter moves onto it, and **Requesty** (contributed by Thibault Jaigu in #1303) and **DemonRoute** (#1340, #1378) are added. The provider tabs become `Local | Cloud Direct | Routers | Sharding | Custom OpenAI`. The Routers tab opens with a privacy warning (routers forward your prompts and code to other providers), and each router has a checkbox controlling whether it appears in the chat's provider list. New routers are off by default and send no affiliate, referral or attribution data. A disabled router or one without a key sends no requests, failed catalog requests back off for 60 s, and a key is only written on Apply when it changed, so an empty keychain read can't delete it. Requesty and DemonRoute were not tested against the live services (#1384, #1386)
+- feat(router): **OrcaRouter** as a router at `https://api.orcarouter.ai/v1`. Its catalog also lists image, video, embedding and speech models, so the catalog filter now accepts array fields and keeps only entries whose `endpoint_capabilities` include `chat_completions`. The README and docs describe the Local, Cloud Direct, Routers and Custom OpenAI tabs with a screenshot of each. Its model list was checked against the live service, but its chat requests were not tested (#1291, #1385)
+- feat(router): **UberLLM** as a router at `https://api.uberllm.dev/v1`, with display names, context windows and prices read from its `/models` catalog and only text-output models kept (#1401)
+- feat(router): **editable base URL per router**, pre-filled with the default. The model catalog and chat requests use the saved URL; a blank field falls back to the default, and only a changed URL is stored, so routers left on the default follow later changes to it. Changing the URL refreshes that router's model list. This makes alternative endpoints usable, such as Requesty's EU router (#1414)
+- feat(local): **generic OpenAI-compatible local provider**. `LocalProviderRegistry`, `LocalProviderDefinition` and `OpenAiCompatibleChatModelFactory` share the router catalog parser, so a typical local server needs one enum line and one definition. Nativ moves onto it, and **Rapid-MLX** is added for Apple Silicon (off by default, `http://localhost:8000/v1/`, context from `max_model_len`). Thanks to @raullenchai for the original Rapid-MLX provider (#1404) and for Rapid-MLX itself (#1342, #1405)
+- feat(local): **GPT4All on the generic local provider**. Its models now get a context window (8,000 tokens by default, with an optional fallback setting); before they had none. Saved GPT4All and Nativ settings migrate once, keeping a custom URL and a disabled state, and new users start on Ollama when it's available instead of landing on GPT4All (#1408)
+- feat(local): **llama.cpp on the generic local provider**. It lists the models `llama-server` actually serves with their real context window (from `meta.n_ctx`, then `meta.n_ctx_train`), instead of a hard-coded `test-model` with an assumed 8k. It also gains streaming chat, "add project to context" and the "is not running" notice. Saved settings migrate once (#1409)
+- feat(local): **Jan on the generic local provider**. The compact-JSON request workaround for older Jan versions (#1051) moves with it as a definition flag. Checked against Jan 0.8.8 (#1410)
+- feat(ui): **full error text in the chat's error card, with Copy**. Errors over 300 characters used to be cut off before they reached the chat. The card now shortens them on screen with a **Show full error** / **Show less** link, the text is selectable, and a **Copy** button next to Retry copies the whole error (#1411)
+- feat(settings): Exo moves to a new **Sharding** tab, which also lists planned distributed-inference options as "Coming soon" (#1405)
+
+### Fixed
+- fix: **DevoxxGenie settings load on IntelliJ IDEA 2026.3**. The settings pages stayed on "Loading" with `ClassNotFoundException: org.jdesktop.swingx.JXTitledSeparator`, because 2026.3 no longer gives plugins SwingX. They now use the platform's `TitledSeparator`, and a test keeps SwingX out. Commit automation is registered through an optional `vcs-features.xml`, since 2026.3 moved the VCS check-in API into the bundled Version Control plugin. The Plugin Verifier now also checks 2026.3 (#1412)
+- fix: declare support for IntelliJ IDEA 2026.3 (build `263.*`), which disabled the plugin as incompatible (#1388)
+- fix(local): **llama.cpp model dropdown, name and a blank chat**. The single-model rule hid llama.cpp's dropdown; local model servers now show it even with one model, while cloud providers and routers still hide a single choice. The provider is now shown as **llama.cpp**, and settings saved under the old name `LLaMA.c++` still load. A streamed reply with no visible text (a thinking model returning only reasoning) re-added the prompt bubble's id, so the chat threw `Key ... was already used` and stayed blank, hiding later prompts too (#1413)
+- fix(agent): **file tools reach every module in multi-module projects**. When modules sit side by side with no root module, the file tools only saw the first module and `write_file` could write into the wrong one. File and semantic tools now share the opened folder as their root, and file tools accept absolute paths inside the project (#1316, #1383)
+- fix(backlog): milestones added through `backlog_milestone_add` no longer disappear after an IDE restart. They were written to `config.yml` but dropped on the next read (#1391, #1392)
+- fix(spec): folded and literal block scalar list items (`- >-`, `- |`) are read as their text instead of the `>-` marker, so a task's references reach the model's `<TaskSpec>` block (#1396)
+- fix(spec): text after a blank line inside a block scalar is kept instead of dropped (#1403)
+- fix(spec): a dependency listed twice in one task no longer causes a false "circular dependency" error that refused the whole agent loop run (#1394)
+- fix(router): UberLLM's key button opens its API key page instead of the sign-up page (#1415)
+- fix(docs): Nativ links point at its new website; the Nativ download button on the Local settings tab opened a dead page (#1387)
+
+### Changed
+- chore(release): the release build runs twice so the zip bundles the new version in `application.properties`
+- chore(skills): merge the `pr` skill into `git-commit-push-pr`, and add a test gate to it and to `close-task-commit-push-pr` (#1407)
+
+### Dependencies
+- build(deps): upgrade langchain4j 1.22.0 → 1.23.0 (beta modules 1.22.0-beta32 → 1.23.0-beta33), jsoup 1.23.2 → 1.24.1 and netty 4.2.19 → 4.2.20 (#1389)
+- build(deps): upgrade AWS SDK BOM 2.57.8 → 2.57.11 and the Gradle wrapper 9.8.2 → 9.9.0 (#1399)
+
+### Documentation
+- docs(agents): fix stale facts in `CLAUDE.md`, `AGENTS.md` and the project skills, and resolve conflicting instructions (#1406)
+- docs: document the Routers and Sharding tabs, OrcaRouter, UberLLM, Requesty, DemonRoute and Rapid-MLX, and rename LLaMA.c++ to llama.cpp throughout (#1385, #1401, #1405, #1413)
+
+### Contributors
+- @omarmahamid
+- @PSA-Team-source
+- @raullenchai
+- @SamyNassiem
+- @stephanj
+- @WMK666666
+
 ## v1.17.0 - 2026-11-04
 
 A minor release focused on RAG: **embeddings can now run through your enabled LLM providers**, with query/document prefixes and an output dimension, and each index stays bound to the embedding setup that built it. The RAG settings page no longer freezes the IDE while validating, and the RAG and web search settings pages can now run a test query.

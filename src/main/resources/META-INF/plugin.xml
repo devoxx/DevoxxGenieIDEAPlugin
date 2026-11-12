@@ -68,12 +68,18 @@
     ]]></description>
 
     <change-notes><![CDATA[
-                <h2>Unreleased</h2>
+                <h2>v1.18.0</h2>
         <UL>
-                    <LI>feat: add Rapid-MLX as a local LLM provider for Apple Silicon, off by default (#1342). Thanks to Raullen Chai for the proposal and reference implementation. Not tested against a live server</LI>
-                    <LI>feat: Exo moves to a new <b>Sharding</b> tab in the LLM provider settings</LI>
-                    <LI>feat(router): OpenRouter, OrcaRouter, Requesty and DemonRoute now run on one generic router provider and are configured on the new <b>Routers</b> settings tab (the former Cloud tab is now <b>Cloud Direct</b>). Routers forward your prompts and code to other providers, so check their terms before enabling one. Requesty support is contributed by Thibault Jaigu (#1303) and hasn't been tested against the live service. DemonRoute (#1340, #1378) was not tested live. OrcaRouter (#1291) had its model list checked against the live service, but its chat requests were not tested</LI>
-                    <LI>feat(router): add UberLLM as a router</LI>
+                    <LI>feat(router): <b>LLM routers on one generic provider, with a new Routers settings tab</b> (the former Cloud tab is now <b>Cloud Direct</b>): OpenRouter, OrcaRouter, UberLLM, Requesty and DemonRoute. Routers forward your prompts and code to other providers, so check their terms before enabling one. Requesty (contributed by Thibault Jaigu, #1303) and DemonRoute were not tested live; OrcaRouter had its model list checked but not its chat requests (#1384, #1385, #1401)</LI>
+                    <LI>feat(router): each router has an editable base URL, pre-filled with its default (#1414)</LI>
+                    <LI>feat(local): <b>Nativ, Rapid-MLX, GPT4All, llama.cpp and Jan now share one generic local provider</b> that lists the models each server serves with their real context window. llama.cpp gains streaming, GPT4All models get a context window, and saved settings migrate. Rapid-MLX is new, off by default; thanks to Raullen Chai (#1342, #1404, #1405, #1408, #1409, #1410)</LI>
+                    <LI>feat: Exo moves to a new <b>Sharding</b> tab in the LLM provider settings (#1405)</LI>
+                    <LI>feat(ui): the chat's error card shows the full error, with Show full error and Copy (#1411)</LI>
+                    <LI>fix: <b>settings load on IntelliJ IDEA 2026.3</b>, which no longer ships SwingX to plugins, and 2026.3 (263.*) is declared supported (#1388, #1412)</LI>
+                    <LI>fix(local): llama.cpp shows its model dropdown and its proper name, and a reply with only reasoning no longer leaves the chat blank (#1413)</LI>
+                    <LI>fix(agent): file tools reach every module in multi-module projects (#1383)</LI>
+                    <LI>fix(backlog): milestones survive an IDE restart; spec tasks read block scalars correctly and a duplicated dependency is no longer a false cycle (#1392, #1394, #1396, #1403)</LI>
+                    <LI>build(deps): langchain4j 1.23.0 (#1389)</LI>
                 </UL>
                 <h2>v1.17.0</h2>
         <UL>
