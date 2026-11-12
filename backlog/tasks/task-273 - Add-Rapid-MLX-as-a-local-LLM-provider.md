@@ -127,4 +127,6 @@ Rebase onto master (2026-11-12): master had meanwhile merged #1404, a dedicated 
 Not verified: AC #6 (Nativ upgrade keeps URL, enabled state, fallback context and selected model) and AC #8 (chat, streaming, agent and sub-agent paths use the configured URL) still need a manual check in the IDE against live servers. Screenshots still need retaking, including a new Sharding image.
 
 Follow-ups: TASK-274 (move GPT4All, LLaMA.c++ and Jan onto the generic provider); ParallelExploreToolExecutorTest leaks its own executor (flaky); sub-agents saved on a disabled provider can still send requests, for every provider.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1405
 <!-- SECTION:FINAL_SUMMARY:END -->
