@@ -174,7 +174,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private Boolean ollamaContextWindowOverrideEnabled = false;
     private String lmstudioModelUrl = LMSTUDIO_MODEL_URL;
     private Integer lmStudioFallbackContextLength;
-    // Jan's, GPT4All's, LLaMA.c++'s and Nativ's legacy fields exist only so old settings files can be migrated into the
+    // Jan's, GPT4All's, llama.cpp's and Nativ's legacy fields exist only so old settings files can be migrated into the
     // localProvider* maps; loadState resets them once migrated (see migrateLegacyLocalProvider).
     private String gpt4allModelUrl = GPT4ALL_MODEL_URL;
     private String janModelUrl = JAN_MODEL_URL;
@@ -714,7 +714,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         // Copy so later edits do not alias the deserialized state's map; seed OpenRouter from its legacy flag.
         setRouterEnabled(routerEnabled);
         routerEnabled.putIfAbsent(ModelProvider.OpenRouter.name(), isOpenRouterEnabled);
-        // Same copy; then move Nativ's, GPT4All's, LLaMA.c++'s and Jan's legacy fields into the maps.
+        // Same copy; then move Nativ's, GPT4All's, llama.cpp's and Jan's legacy fields into the maps.
         setLocalProviderUrls(localProviderUrls);
         setLocalProviderEnabled(localProviderEnabled);
         setLocalProviderFallbackContext(localProviderFallbackContext);

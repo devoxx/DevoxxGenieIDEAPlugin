@@ -11,7 +11,7 @@ public enum ModelProvider {
     CustomOpenAI("CustomOpenAI", Type.LOCAL),
     GPT4All("GPT4All", Type.LOCAL),
     Jan("Jan", Type.LOCAL),
-    LLaMA("LLaMA.c++", Type.LOCAL),
+    LLaMA("llama.cpp", Type.LOCAL, "LLaMA.c++"),
     LMStudio("LMStudio", Type.LOCAL),
     Nativ("Nativ", Type.LOCAL),
     RapidMLX("Rapid-MLX", Type.LOCAL),
@@ -49,10 +49,23 @@ public enum ModelProvider {
 
     private final String name;
     private final Type type;
+    /** Former display names, still found in saved settings (selected provider, sub-agent configs). */
+    private final List<String> legacyNames;
 
-    ModelProvider(String name, Type type) {
+    ModelProvider(String name, Type type, String... legacyNames) {
         this.name = name;
         this.type = type;
+        this.legacyNames = List.of(legacyNames);
+    }
+
+    /** Whether {@code text} is this provider's display name or one of its former names, ignoring case. */
+    public boolean hasName(String text) {
+        return name.equalsIgnoreCase(text) || legacyNames.stream().anyMatch(legacy -> legacy.equalsIgnoreCase(text));
+    }
+
+    /** Whether {@code text} is exactly one of this provider's former display names. */
+    public boolean isLegacyName(String text) {
+        return legacyNames.contains(text);
     }
 
     @Override
@@ -62,7 +75,7 @@ public enum ModelProvider {
 
     public static @NotNull ModelProvider fromString(String text) {
         for (ModelProvider provider : ModelProvider.values()) {
-            if (provider.name.equalsIgnoreCase(text)) {
+            if (provider.hasName(text)) {
                 return provider;
             }
         }

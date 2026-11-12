@@ -154,7 +154,7 @@ class ChatModelFactoryProviderTest {
     /**
      * The other half of the dual-key contract: every provider must also resolve via its display
      * name ({@code provider.getName()}, the key used by AgentSettingsComponent). This is what
-     * differs for LLaMA ("LLaMA.c++"), CLI Runners and ACP Runners.
+     * differs for LLaMA ("llama.cpp"), CLI Runners and ACP Runners.
      */
     @ParameterizedTest(name = "ModelProvider.{0}.getName() resolves to a factory")
     @EnumSource(ModelProvider.class)
@@ -162,5 +162,12 @@ class ChatModelFactoryProviderTest {
         assertThat(ChatModelFactoryProvider.getFactoryByProvider(provider.getName()))
                 .as("Factory for provider display name '%s'", provider.getName())
                 .isPresent();
+    }
+
+    /** Settings saved before the rename store llama.cpp's old display name. */
+    @Test
+    void legacyLlamaCppDisplayNameResolvesToTheSameFactory() {
+        assertThat(ChatModelFactoryProvider.getFactoryByProvider("LLaMA.c++"))
+                .containsSame(ChatModelFactoryProvider.getFactoryByProvider("llama.cpp").orElseThrow());
     }
 }

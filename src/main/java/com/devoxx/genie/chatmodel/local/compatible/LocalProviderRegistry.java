@@ -51,7 +51,7 @@ public final class LocalProviderRegistry {
             ModelProvider.Nativ,
             Constant.NATIV_MODEL_URL,
             "https://neywa-labs.github.io/nativ/",
-            "Run MLX models locally on Apple Silicon. Nativ defaults to port 8080 — the same port as Llama.c++ — so change one of the two if you want both enabled.",
+            "Run MLX models locally on Apple Silicon. Nativ defaults to port 8080 — the same port as llama.cpp — so change one of the two if you want both enabled.",
             null,
             8000,
             "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here.",

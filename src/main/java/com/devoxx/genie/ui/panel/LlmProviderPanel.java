@@ -567,7 +567,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                     sorted.sort(Comparator.naturalOrder());
                     sorted.forEach(modelNameComboBox::addItem);
                 }
-                modelNameComboBox.setVisible(modelNameComboBox.getItemCount() > 1);
+                updateModelNameComboBoxVisibility();
                 updateFavoriteButton();
                 modelNameComboBox.setRenderer(new ModelInfoRenderer());
                 modelNameComboBox.revalidate();
@@ -584,6 +584,29 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         });
     }
 
+    private void updateModelNameComboBoxVisibility() {
+        ModelProvider provider = (ModelProvider) modelProviderComboBox.getSelectedItem();
+        modelNameComboBox.setVisible(shouldShowModelNameComboBox(provider, modelNameComboBox.getItemCount()));
+    }
+
+    /**
+     * A single-choice dropdown is hidden, except for local model servers: llama-server, for one,
+     * serves exactly one model per process, and the dropdown is the only place showing which.
+     */
+    static boolean shouldShowModelNameComboBox(@Nullable ModelProvider provider, int modelCount) {
+        if (modelCount > 1) {
+            return true;
+        }
+        return modelCount == 1 && isLocalModelServer(provider);
+    }
+
+    private static boolean isLocalModelServer(@Nullable ModelProvider provider) {
+        return provider == ModelProvider.Ollama ||
+               provider == ModelProvider.LMStudio ||
+               provider == ModelProvider.Exo ||
+               LocalProviderRegistry.isGeneric(provider);
+    }
+
     /**
      * Hide the model name combobox.
      */
@@ -598,11 +621,16 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         if (lastSelectedProvider != null) {
             for (int i = 0; i < modelProviderComboBox.getItemCount(); i++) {
                 ModelProvider provider = modelProviderComboBox.getItemAt(i);
-                if (provider != null && provider.getName().equals(lastSelectedProvider)) {
+                if (provider != null && (provider.getName().equals(lastSelectedProvider)
+                        || provider.isLegacyName(lastSelectedProvider))) {
+                    if (provider.isLegacyName(lastSelectedProvider)) {
+                        lastSelectedProvider = provider.getName();
+                        DevoxxGenieStateService.getInstance().setSelectedProvider(stateKey, lastSelectedProvider);
+                    }
                     modelProviderComboBox.setSelectedIndex(i);
                     // Model loading is asynchronous, so restore the previously selected
                     // language model only once the combo has been repopulated.
-                    updateModelNamesComboBox(lastSelectedProvider, this::restoreLastSelectedLanguageModel);
+                    updateModelNamesComboBox(provider.getName(), this::restoreLastSelectedLanguageModel);
                     break;
                 }
             }
@@ -675,7 +703,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
         LanguageModel restored = synthesizePersistedModel(provider, lastSelectedLanguageModel);
         modelNameComboBox.addItem(restored);
         modelNameComboBox.setSelectedItem(restored);
-        modelNameComboBox.setVisible(modelNameComboBox.getItemCount() > 1);
+        updateModelNameComboBoxVisibility();
     }
 
     /**
@@ -720,7 +748,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
             LanguageModel restored = synthesizePersistedModel(provider, previous.getModelName());
             modelNameComboBox.addItem(restored);
             modelNameComboBox.setSelectedItem(restored);
-            modelNameComboBox.setVisible(modelNameComboBox.getItemCount() > 1);
+            updateModelNameComboBoxVisibility();
         }
     }
 

@@ -39,7 +39,7 @@ class LocalProviderRegistryTest {
 
     @Test
     void enabledByDefault_matchesWhatEachProviderShippedWith() {
-        // Jan, LLaMA.c++ and GPT4All shipped enabled before they moved here; Nativ shares llama.cpp's port and
+        // Jan, llama.cpp and GPT4All shipped enabled before they moved here; Nativ shares llama.cpp's port and
         // Rapid-MLX is opt-in.
         DevoxxGenieStateService state = new DevoxxGenieStateService();
         assertThat(state.isLocalProviderEnabled(ModelProvider.Jan)).isTrue();
@@ -78,7 +78,7 @@ class LocalProviderRegistryTest {
 
             assertThat(def.defaultUrl()).as("default URL %s", provider).startsWith("http://localhost:");
             // Two providers enabled out of the box on one port would list each other's models. Sharing a port
-            // is fine when one of them is off by default (Nativ and LLaMA.c++ both default to 8080).
+            // is fine when one of them is off by default (Nativ and llama.cpp both default to 8080).
             if (def.enabledByDefault()) {
                 URI uri = URI.create(def.defaultUrl());
                 assertThat(enabledByDefaultPorts.add(uri.getHost() + ":" + uri.getPort()))

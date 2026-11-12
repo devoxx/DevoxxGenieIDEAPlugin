@@ -44,7 +44,7 @@ import java.util.function.Supplier;
  * Lookups accept <em>either</em> the enum constant name ({@link ModelProvider#name()}, used by
  * {@code ChatModelProvider} and {@code LlmProviderPanel}) <em>or</em> the display name
  * ({@link ModelProvider#getName()}, used by {@code AgentSettingsComponent}). These differ for
- * {@code LLaMA} ("LLaMA.c++"), {@code CLIRunners} ("CLI Runners") and {@code ACPRunners}
+ * {@code LLaMA} ("llama.cpp", formerly "LLaMA.c++"), {@code CLIRunners} ("CLI Runners") and {@code ACPRunners}
  * ("ACP Runners"); accepting both keeps every existing caller working regardless of which key it
  * passes. Matching is case-sensitive.
  */
@@ -98,12 +98,13 @@ public final class ChatModelFactoryProvider {
 
     /**
      * Resolve a provider key to its {@link ModelProvider}, matching either the enum constant name
-     * or the display name (case-sensitive). Only providers present in {@link #FACTORY_SUPPLIERS}
+     * or the display name (case-sensitive), or a former display name kept in older settings. Only providers present in {@link #FACTORY_SUPPLIERS}
      * are returned, so the result maps directly to an available factory.
      */
     private static @NotNull Optional<ModelProvider> resolveProvider(@NotNull String key) {
         return FACTORY_SUPPLIERS.keySet().stream()
-                .filter(provider -> provider.name().equals(key) || provider.getName().equals(key))
+                .filter(provider -> provider.name().equals(key) || provider.getName().equals(key)
+                        || provider.isLegacyName(key))
                 .findFirst();
     }
 }

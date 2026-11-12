@@ -252,6 +252,51 @@ class LlmProviderPanelTest {
     }
 
     @Test
+    void updateModelNamesComboBox_localServerWithOneModel_showsComboBox() {
+        // llama-server serves one model per process; hiding the "single choice" dropdown left the
+        // user with no way to see which model the server is running.
+        List<ModelProvider> providers = List.of(ModelProvider.LLaMA);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+        when(stateService.isLocalProviderEnabled(ModelProvider.LLaMA)).thenReturn(true);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.LLaMA)
+                        .modelName("Qwen3.5-0.8B-Q8_0.gguf").displayName("Qwen3.5-0.8B-Q8_0.gguf").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        panel.updateModelNamesComboBox("llama.cpp");
+
+        assertThat(panel.getModelNameComboBox().getItemCount()).isEqualTo(1);
+        assertThat(panel.getModelNameComboBox().isVisible()).isTrue();
+    }
+
+    @Test
+    void updateModelNamesComboBox_cloudProviderWithOneModel_hidesComboBox() {
+        List<ModelProvider> providers = List.of(ModelProvider.OpenAI);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.OpenAI)
+                        .modelName("gpt-4").displayName("GPT-4").build()));
+
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        panel.updateModelNamesComboBox("OpenAI");
+
+        assertThat(panel.getModelNameComboBox().getItemCount()).isEqualTo(1);
+        assertThat(panel.getModelNameComboBox().isVisible()).isFalse();
+    }
+
+    @Test
     void testUpdateModelNamesComboBox_NoFactory_HidesComboBox() {
         List<ModelProvider> providers = List.of(ModelProvider.Ollama);
         when(llmProviderService.getAvailableModelProviders()).thenReturn(providers);
@@ -515,6 +560,26 @@ class LlmProviderPanelTest {
 
         // The corrected selection must be persisted so the corrupted state heals itself.
         verify(stateService).setSelectedLanguageModel(eq("test-hash"), eq(selected.getModelName()));
+    }
+
+    @Test
+    void restoresLlamaCppSavedUnderItsFormerName() {
+        // Settings saved before the rename to "llama.cpp" store "LLaMA.c++" as the selected provider.
+        when(stateService.getSelectedProvider("test-hash")).thenReturn("LLaMA.c++");
+        when(stateService.isLocalProviderEnabled(ModelProvider.LLaMA)).thenReturn(true);
+        when(llmProviderService.getAvailableModelProviders()).thenReturn(List.of(ModelProvider.Ollama, ModelProvider.LLaMA));
+
+        ChatModelFactory factory = mock(ChatModelFactory.class);
+        when(factory.getModels()).thenReturn(List.of(
+                LanguageModel.builder().provider(ModelProvider.LLaMA)
+                        .modelName("Qwen3.5-0.8B-Q8_0.gguf").displayName("Qwen3.5-0.8B-Q8_0.gguf").build()));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
+                .thenReturn(Optional.of(factory));
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+
+        assertThat(panel.getModelProviderComboBox().getSelectedItem()).isEqualTo(ModelProvider.LLaMA);
+        verify(stateService).setSelectedProvider("test-hash", "llama.cpp");
     }
 
     @Test
