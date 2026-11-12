@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.components.JBLabel;
-import org.jdesktop.swingx.JXTitledSeparator;
+import com.intellij.ui.TitledSeparator;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -69,7 +69,7 @@ public class AbstractSettingsComponent implements SettingsComponent {
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.gridwidth = 2;
-        panel.add(new JXTitledSeparator(title), gbc);
+        panel.add(new TitledSeparator(title), gbc);
         gbc.gridy++;
     }
 

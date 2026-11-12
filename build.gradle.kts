@@ -40,8 +40,8 @@ val binaryIncompatibleRuntimeJarPatterns = listOf(
 val packagedPluginDirName = "DevoxxGenie"
 val pluginVerifierUnifiedIdeVersions = listOf(
     "2025.3.3",           // 253 line — minimum supported (sinceBuild); first build with CMP 1.10.0 stable (Jewel 0.34)
-    "2026.1"              // 261 line
-    // "2026.2-EAP-SNAPSHOT" // 262 line — not yet available
+    "2026.1",             // 261 line
+    "2026.3"              // 263 line — maximum supported (untilBuild 263.*)
 )
 
 fun Project.stripBinaryIncompatibleRuntimeJars(sandboxPluginPath: String) {
