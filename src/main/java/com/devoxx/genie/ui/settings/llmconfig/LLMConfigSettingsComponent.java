@@ -5,7 +5,7 @@ import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.util.ui.JBUI;
 import lombok.Getter;
-import org.jdesktop.swingx.JXTitledSeparator;
+import com.intellij.ui.TitledSeparator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,7 +41,7 @@ public class LLMConfigSettingsComponent extends AbstractSettingsComponent {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = JBUI.insets(5);
 
-        panel.add(new JXTitledSeparator("LLM Chat Settings"), gbc);
+        panel.add(new TitledSeparator("LLM Chat Settings"), gbc);
 
         gbc.gridy++;
         gbc.gridwidth = 1;

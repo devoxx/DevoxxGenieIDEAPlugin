@@ -948,7 +948,6 @@
         <!-- Blog feed service -->
         <applicationService serviceImplementation="com.devoxx.genie.service.blog.BlogFeedService"/>
         <!-- Event Automation listeners -->
-        <checkinHandlerFactory implementation="com.devoxx.genie.service.automation.listeners.VcsCheckinHandlerFactory"/>
         <testStatusListener implementation="com.devoxx.genie.service.automation.listeners.TestExecutionListener"/>
     </extensions>
 
@@ -958,6 +957,7 @@
     </extensionPoints>
 
     <!-- Optional dependencies for enhanced functionality in specific IDEs -->
+    <depends optional="true" config-file="vcs-features.xml">com.intellij.modules.vcs</depends>
     <depends optional="true" config-file="java-features.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="php-features.xml">com.jetbrains.php</depends>
     <depends optional="true" config-file="python-features.xml">com.intellij.modules.python</depends>

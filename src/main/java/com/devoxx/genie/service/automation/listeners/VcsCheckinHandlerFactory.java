@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 /**
- * Factory registered in plugin.xml that creates {@link VcsCommitListener}
+ * Factory registered in vcs-features.xml (optional dependency on com.intellij.modules.vcs) that creates {@link VcsCommitListener}
  * instances for each commit operation.
  */
 public class VcsCheckinHandlerFactory extends CheckinHandlerFactory {
