@@ -1,0 +1,8 @@
+<!-- vcs-features.xml: loaded when the com.intellij.modules.vcs module is present. IntelliJ IDEA 2026.3 moved the
+     VCS check-in API into the bundled "Version Control" plugin, whose classes are only visible through this dependency. -->
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Event Automation: run configured automations on commit -->
+        <checkinHandlerFactory implementation="com.devoxx.genie.service.automation.listeners.VcsCheckinHandlerFactory"/>
+    </extensions>
+</idea-plugin>
