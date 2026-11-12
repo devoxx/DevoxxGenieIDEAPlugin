@@ -43,7 +43,7 @@ public final class RouterRegistry {
             "https://api.uberllm.dev/v1",
             List.of("/models"),
             "uberLlmKey",
-            "https://uberllm.dev/signup",
+            "https://uberllm.dev/dashboard/keys",
             null,
             new CatalogFields("display_name",
                     List.of("context_length", "top_provider.context_length"),
