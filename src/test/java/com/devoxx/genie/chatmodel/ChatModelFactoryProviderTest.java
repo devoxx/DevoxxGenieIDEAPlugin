@@ -21,6 +21,7 @@ import com.devoxx.genie.chatmodel.local.clirunners.CliRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.llamacpp.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
+import com.devoxx.genie.chatmodel.local.rapidmlx.RapidMLXChatModelFactory;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +55,7 @@ class ChatModelFactoryProviderTest {
                 Arguments.of("LMStudio", LMStudioChatModelFactory.class),
                 Arguments.of("Mistral", MistralChatModelFactory.class),
                 Arguments.of("Ollama", OllamaChatModelFactory.class),
+                Arguments.of("Rapid-MLX", RapidMLXChatModelFactory.class),
                 Arguments.of("OpenAI", OpenAIChatModelFactory.class),
                 Arguments.of("OpenRouter", RouterChatModelFactory.class),
                 Arguments.of("OrcaRouter", RouterChatModelFactory.class),

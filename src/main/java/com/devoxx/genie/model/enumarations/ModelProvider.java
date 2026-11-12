@@ -14,6 +14,7 @@ public enum ModelProvider {
     LLaMA("LLaMA.c++", Type.LOCAL),
     LMStudio("LMStudio", Type.LOCAL),
     Nativ("Nativ", Type.LOCAL),
+    RapidMLX("Rapid-MLX", Type.LOCAL),
     Exo("Exo", Type.LOCAL),
     Ollama("Ollama", Type.LOCAL),
     CLIRunners("CLI Runners", Type.LOCAL),

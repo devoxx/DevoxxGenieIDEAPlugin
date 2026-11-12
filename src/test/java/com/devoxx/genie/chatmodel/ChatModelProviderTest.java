@@ -71,6 +71,23 @@ class ChatModelProviderTest {
     }
 
     @Test
+    void rapidMLX_preservesLocalBaseUrlAndDiscoveredContext() {
+        when(stateService.getRapidMLXModelUrl()).thenReturn("http://localhost:8000/v1");
+        LanguageModel languageModel = LanguageModel.builder()
+                .provider(ModelProvider.RapidMLX)
+                .modelName("mlx-community/Qwen3.5-4B-MLX-4bit")
+                .inputMaxTokens(262_144)
+                .build();
+
+        CustomChatModel result = chatModelProvider.initChatModel(ChatMessageContext.builder()
+                .languageModel(languageModel).build());
+
+        assertThat(result.getBaseUrl()).isEqualTo("http://localhost:8000/v1");
+        assertThat(result.getModelName()).isEqualTo(languageModel.getModelName());
+        assertThat(result.getContextWindow()).isEqualTo(262_144);
+    }
+
+    @Test
     void testGetChatLanguageModel_ReturnsModel() {
         LanguageModel languageModel = LanguageModel.builder()
                 .provider(ModelProvider.OpenAI)

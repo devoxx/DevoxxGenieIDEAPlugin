@@ -931,6 +931,7 @@
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.cloud.bedrock.BedrockService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.jan.JanModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.nativ.NativModelService"/>
+        <applicationService serviceImplementation="com.devoxx.genie.chatmodel.local.rapidmlx.RapidMLXModelService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPExecutionService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.mcp.MCPRegistryService"/>
         <applicationService serviceImplementation="com.devoxx.genie.service.chromadb.ChromaDockerService"/>

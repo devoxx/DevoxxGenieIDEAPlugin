@@ -26,6 +26,7 @@ import com.devoxx.genie.chatmodel.local.llamacpp.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
 import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
+import com.devoxx.genie.chatmodel.local.rapidmlx.RapidMLXChatModelFactory;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,6 +81,7 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.LMStudio, LMStudioChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Mistral, MistralChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Nativ, NativChatModelFactory::new);
+        FACTORY_SUPPLIERS.put(ModelProvider.RapidMLX, RapidMLXChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Ollama, OllamaChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.OpenAI, OpenAIChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Grok, GrokChatModelFactory::new);

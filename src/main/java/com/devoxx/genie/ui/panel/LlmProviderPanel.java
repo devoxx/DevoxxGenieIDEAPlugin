@@ -367,6 +367,7 @@ public class LlmProviderPanel extends JBPanel<LlmProviderPanel> implements LLMSe
                provider == ModelProvider.Ollama ||
                provider == ModelProvider.Jan ||
                provider == ModelProvider.Nativ ||
+               provider == ModelProvider.RapidMLX ||
                provider == ModelProvider.GPT4All ||
                RouterRegistry.isGeneric(provider) ||
                provider == ModelProvider.Bedrock;

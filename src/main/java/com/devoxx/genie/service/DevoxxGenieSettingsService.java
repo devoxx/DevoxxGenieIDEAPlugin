@@ -251,6 +251,10 @@ public interface DevoxxGenieSettingsService {
 
     void setNativModelUrl(String url);
 
+    String getRapidMLXModelUrl();
+
+    void setRapidMLXModelUrl(String url);
+
     String getExoModelUrl();
 
     void setExoModelUrl(String url);
