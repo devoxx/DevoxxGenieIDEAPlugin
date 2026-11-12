@@ -40,7 +40,7 @@ The providers are grouped in five tabs:
 |-----|----------|
 | **Local** | Endpoints for providers running on your machine, such as Ollama and LM Studio |
 | **Cloud Direct** | API keys for [cloud providers](../llm-providers/cloud-models.md) you have your own account with, such as OpenAI, Anthropic and Google |
-| **Routers** | A checkbox and API key for each [router](../llm-providers/cloud-models.md#routers): OpenRouter, Cloudflare AI Gateway, OrcaRouter, Requesty and DemonRoute |
+| **Routers** | A checkbox and API key for each [router](../llm-providers/cloud-models.md#routers): OpenRouter, Cloudflare AI Gateway, OrcaRouter, UberLLM, Requesty and DemonRoute |
 | **Sharding** | Exo, which splits a model across several Apple Silicon devices. Other solutions are listed as coming soon |
 | **Custom OpenAI** | The URL, model and API key of any other [OpenAI-compatible endpoint](../llm-providers/custom-providers.md) |
 

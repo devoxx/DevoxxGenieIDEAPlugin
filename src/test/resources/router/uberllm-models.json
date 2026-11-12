@@ -1,0 +1,87 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "anthropic/claude-sonnet-4.5",
+      "object": "model",
+      "created": 1784894838,
+      "owned_by": "Anthropic",
+      "display_name": "Claude Sonnet 4.5",
+      "type": "chat",
+      "context_length": 198000,
+      "max_output_tokens": 64000,
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "output_modalities": [
+        "text"
+      ],
+      "endpoints": [
+        "/v1/chat/completions",
+        "/v1/messages",
+        "/v1/responses"
+      ],
+      "top_provider": {
+        "context_length": 198000,
+        "max_completion_tokens": 64000
+      },
+      "pricing": {
+        "prompt": "0.00000177",
+        "completion": "0.00000885"
+      }
+    },
+    {
+      "id": "deepseek/deepseek-v3.2",
+      "object": "model",
+      "created": 1784879137,
+      "owned_by": "deepseek",
+      "display_name": "DeepSeek V3.2",
+      "type": "chat",
+      "context_length": 160000,
+      "max_output_tokens": 32768,
+      "input_modalities": [
+        "text"
+      ],
+      "output_modalities": [
+        "text"
+      ],
+      "endpoints": [
+        "/v1/chat/completions",
+        "/v1/messages",
+        "/v1/responses"
+      ],
+      "top_provider": {
+        "context_length": 160000,
+        "max_completion_tokens": 32768
+      },
+      "pricing": {
+        "prompt": "0.0000000286",
+        "completion": "0.0000000418"
+      }
+    },
+    {
+      "id": "openai/gpt-6-luna-decisions",
+      "object": "model",
+      "created": 1792414712,
+      "owned_by": "OpenAI",
+      "display_name": "GPT-6 Luna Decisions (OpenAI)",
+      "type": "chat",
+      "input_modalities": [
+        "text"
+      ],
+      "output_modalities": [
+        "decisions"
+      ],
+      "endpoints": [
+        "/v1/chat/completions",
+        "/v1/messages",
+        "/v1/responses"
+      ],
+      "top_provider": {},
+      "pricing": {
+        "prompt": "0.000000076"
+      }
+    }
+  ]
+}

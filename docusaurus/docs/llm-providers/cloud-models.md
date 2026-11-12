@@ -2,7 +2,7 @@
 sidebar_position: 3
 title: Cloud LLM Providers
 description: Guide to all cloud-based LLM providers supported by DevoxxGenie, including setup instructions and configuration.
-keywords: [devoxxgenie, llm router, openrouter, orcarouter, requesty, demonroute, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloudflare, ai gateway, cloud llm]
+keywords: [devoxxgenie, llm router, openrouter, orcarouter, uberllm, requesty, demonroute, openai, anthropic, google, gemini, grok, mistral, groq, deepseek, kimi, moonshot, glm, zhipu, cloudflare, ai gateway, cloud llm]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -43,9 +43,10 @@ In the plugin settings (**Settings > Tools > DevoxxGenie**), cloud providers are
 
 1. [OpenRouter](#openrouter)
 2. [OrcaRouter](#orcarouter)
-3. [Requesty](#requesty)
-4. [DemonRoute](#demonroute)
-5. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
+3. [UberLLM](#uberllm)
+4. [Requesty](#requesty)
+5. [DemonRoute](#demonroute)
+6. [Cloudflare AI Gateway](#cloudflare-ai-gateway)
 
 ## OpenAI
 
@@ -356,7 +357,7 @@ Google provides the Gemini family of models through Google AI Studio.
 Anything you send, including project files added to context, may pass through the router and whichever provider it selects. Each has its own logging, retention and training policies, and a provider may be in another country. DevoxxGenie doesn't verify these services or their privacy claims, and listing one here isn't an endorsement. Check the router's terms before enabling it, and avoid sending confidential code or secrets unless your organisation allows it.
 :::
 
-OpenRouter, OrcaRouter, Requesty, DemonRoute and Cloudflare AI Gateway are configured on the **Routers** tab in the DevoxxGenie settings. Each router is disabled until you tick its checkbox and enter an API key.
+OpenRouter, OrcaRouter, UberLLM, Requesty, DemonRoute and Cloudflare AI Gateway are configured on the **Routers** tab in the DevoxxGenie settings. Each router is disabled until you tick its checkbox and enter an API key.
 
 ![The Routers tab, with its privacy warning and a checkbox per router](/img/settings-routers.png)
 
@@ -384,6 +385,26 @@ OrcaRouter support was added for request #1291. The model list was checked again
 :::
 
 *Check the [OrcaRouter model list](https://www.orcarouter.ai/models) for current rates.*
+
+## UberLLM
+
+[UberLLM](https://uberllm.dev) is an OpenAI-compatible router that offers models from several vendors through one API key.
+
+DevoxxGenie talks to `https://api.uberllm.dev/v1` and builds the model list from its `/models` endpoint, keeping models that return text. Context window and prices come from that catalog. A model that doesn't list a context window is assumed to have 128K.
+
+### Setup
+
+1. Create an account and an API key at [uberllm.dev/signup](https://uberllm.dev/signup). Credit is prepaid, with no monthly fee
+2. In DevoxxGenie settings, open the **Routers** tab, enable "UberLLM" and paste your API key
+3. Select a model from the list
+
+### Configuration
+
+- **API Key**: Your UberLLM API key
+- **Model**: Model ids use the `vendor/model` form, such as `deepseek/deepseek-v3.2` or `anthropic/claude-sonnet-4.5`
+- **Parameters**: Temperature, Top P, and the max output tokens from your chat model settings
+
+*Check the [UberLLM model list](https://uberllm.dev/models) for current rates.*
 
 ## Requesty
 

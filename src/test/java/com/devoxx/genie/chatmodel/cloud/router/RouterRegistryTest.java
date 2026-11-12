@@ -30,8 +30,8 @@ class RouterRegistryTest {
     @Test
     void registry_hasExpectedRouters() {
         assertThat(RouterRegistry.definitions()).extracting(RouterDefinition::provider)
-                .containsExactly(ModelProvider.OpenRouter, ModelProvider.OrcaRouter, ModelProvider.Requesty,
-                        ModelProvider.DemonRoute);
+                .containsExactly(ModelProvider.OpenRouter, ModelProvider.OrcaRouter, ModelProvider.UberLLM,
+                        ModelProvider.Requesty, ModelProvider.DemonRoute);
     }
 
     @Test
@@ -103,6 +103,29 @@ class RouterRegistryTest {
         assertThat(fable.getOutputCost()).isEqualTo(50.0);
         assertThat(fable.getInputMaxTokens()).isEqualTo(1_000_000);
         assertThat(def.baseUrl()).isEqualTo("https://api.orcarouter.ai/v1");
+        assertThat(def.maxTokens()).isNull();
+    }
+
+    @Test
+    void uberLlm_sampleCatalogKeepsTextModelsOnly() throws IOException {
+        RouterDefinition def = RouterRegistry.find(ModelProvider.UberLLM).orElseThrow();
+        String json;
+        try (var in = RouterRegistryTest.class.getResourceAsStream("/router/uberllm-models.json")) {
+            json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        List<LanguageModel> models = RouterCatalogParser.parse(def, json);
+
+        // The "decisions" entry returns no text, so it is dropped
+        assertThat(models).extracting(LanguageModel::getModelName)
+                .containsExactly("anthropic/claude-sonnet-4.5", "deepseek/deepseek-v3.2");
+        LanguageModel deepseek = models.get(1);
+        assertThat(deepseek.getProvider()).isEqualTo(ModelProvider.UberLLM);
+        assertThat(deepseek.getDisplayName()).isEqualTo("DeepSeek V3.2");
+        assertThat(deepseek.getInputCost()).isEqualTo(0.0286);
+        assertThat(deepseek.getOutputCost()).isEqualTo(0.0418);
+        assertThat(deepseek.getInputMaxTokens()).isEqualTo(160_000);
+        assertThat(def.baseUrl()).isEqualTo("https://api.uberllm.dev/v1");
         assertThat(def.maxTokens()).isNull();
     }
 

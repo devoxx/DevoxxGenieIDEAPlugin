@@ -28,6 +28,7 @@ public enum ModelProvider {
     Google("Google", Type.CLOUD),
     OpenRouter("OpenRouter", Type.ROUTER),
     OrcaRouter("OrcaRouter", Type.ROUTER),
+    UberLLM("UberLLM", Type.ROUTER),
     Requesty("Requesty", Type.ROUTER),
     DemonRoute("DemonRoute", Type.ROUTER),
     DeepSeek("DeepSeek", Type.CLOUD),
