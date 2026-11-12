@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@Claude'
 created_date: '2026-11-12T13:04:00Z'
-updated_date: '2026-11-12T13:19:00Z'
+updated_date: '2026-11-12T13:20:00Z'
 labels:
   - ui
   - errors
@@ -79,4 +79,6 @@ PromptErrorHandler gained fullUserFacingMessage(exception, modelName): the trans
 Tests: PromptErrorHandlerMessageTest (full text kept, notification still shortened, translated wording kept, empty-message fallback) and ErrorCardTextTest (short, at-limit and long errors; copy is the full text). StreamingResponseHandlerTest stubs the new method. Full suite passes.
 
 Not verified: AC #1 and #2 in the IDE (expanding the card, and what Copy puts on the clipboard); the project has no Compose UI test setup.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1411
 <!-- SECTION:FINAL_SUMMARY:END -->
