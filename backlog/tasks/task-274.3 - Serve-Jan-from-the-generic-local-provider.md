@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@Claude'
 created_date: '2026-11-12T11:22:00Z'
-updated_date: '2026-11-12T12:50:00Z'
+updated_date: '2026-11-12T12:51:00Z'
 labels:
   - local-llm
   - refactor
@@ -132,4 +132,6 @@ Checked against Jan 0.8.8: /v1/models lists only id, object, created and owned_b
 Legacy janModelUrl and isJanEnabled migrate once, and getConfigValue("janModelUrl") resolves to the generic URL. Removed JanChatModelFactory, JanModelService, the five model/jan DTOs and their tests, including BaseIntellijTest, which only the Jan test used, and Jan's special cases.
 
 Full test suite passes. Not verified: AC #1, Jan models listed and streaming and non-streaming chat through DevoxxGenie in the IDE.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1410
 <!-- SECTION:FINAL_SUMMARY:END -->
