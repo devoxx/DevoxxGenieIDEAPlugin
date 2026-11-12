@@ -55,10 +55,13 @@ const sidebars = {
       type: 'category',
       label: 'LLM Providers',
       items: [
+        // Ordered like the tabs of the plugin's LLM settings page:
+        // Local | Cloud Direct | Routers | Sharding | Custom OpenAI
         'llm-providers/overview',
         'llm-providers/local-models',
-        'llm-providers/exo',
         'llm-providers/cloud-models',
+        'llm-providers/routers',
+        'llm-providers/exo',
         'llm-providers/custom-providers',
         'features/acp-runners',
         'features/cli-runners',

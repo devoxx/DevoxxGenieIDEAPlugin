@@ -40,7 +40,7 @@ The providers are grouped in five tabs:
 |-----|----------|
 | **Local** | Endpoints for providers running on your machine, such as Ollama and LM Studio |
 | **Cloud Direct** | API keys for [cloud providers](../llm-providers/cloud-models.md) you have your own account with, such as OpenAI, Anthropic and Google |
-| **Routers** | A privacy warning, then a checkbox, API key and base URL for each [router](../llm-providers/cloud-models.md#routers): OpenRouter, Cloudflare AI Gateway, OrcaRouter, UberLLM, Requesty and DemonRoute |
+| **Routers** | A privacy warning, then a checkbox, API key and base URL for each [router](../llm-providers/routers.md): OpenRouter, Cloudflare AI Gateway, OrcaRouter, UberLLM, Requesty and DemonRoute |
 | **Sharding** | [Exo](../llm-providers/exo.md), which splits a model across several Apple Silicon devices. vLLM, SGLang, llama.cpp RPC, LocalAI and GPUStack are listed as coming soon |
 | **Custom OpenAI** | The URL, model and API key of any other [OpenAI-compatible endpoint](../llm-providers/custom-providers.md) |
 
@@ -54,7 +54,7 @@ The providers are grouped in five tabs:
 
 #### Routers tab
 
-Routers forward your prompts and code to other providers, so the tab opens with a privacy warning. Each router is off until you tick its checkbox, which also decides whether it appears in the chat's provider list. The **URL** field is pre-filled with the router's default endpoint; change it to use an alternative endpoint, or leave it blank to use the default. See [Routers](../llm-providers/cloud-models.md#routers) for how each field behaves.
+Routers forward your prompts and code to other providers, so the tab opens with a privacy warning. Each router is off until you tick its checkbox, which also decides whether it appears in the chat's provider list. The **URL** field is pre-filled with the router's default endpoint; change it to use an alternative endpoint, or leave it blank to use the default. See [Routers](../llm-providers/routers.md) for how each field behaves.
 
 #### Sharding tab
 

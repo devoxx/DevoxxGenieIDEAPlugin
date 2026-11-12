@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+sidebar_label: Overview
 title: LLM Providers Overview - DevoxxGenie Documentation
 description: A comprehensive guide to all LLM providers supported by DevoxxGenie, including local and cloud-based options, with comparison of features and capabilities.
 keywords: [devoxxgenie, intellij plugin, llm providers, llm router, openrouter, orcarouter, uberllm, requesty, demonroute, openai, anthropic, local llm, cloud llm, grok, mistral, ollama, kimi, glm, zhipu]
@@ -60,15 +61,15 @@ Supported cloud providers (settings tab **Cloud Direct**):
 
 ### LLM Routers
 
-Routers are gateways that reach models from many vendors through one API key. They forward your prompts and code to other providers, so check a router's terms before enabling it. See [Routers](cloud-models.md#routers).
+Routers are gateways that reach models from many vendors through one API key. They forward your prompts and code to other providers, so check a router's terms before enabling it. See [Routers](routers.md).
 
 Supported routers (settings tab **Routers**):
-- [OpenRouter](cloud-models.md#openrouter)
-- [OrcaRouter](cloud-models.md#orcarouter)
-- [UberLLM](cloud-models.md#uberllm)
-- [Requesty](cloud-models.md#requesty)
-- [DemonRoute](cloud-models.md#demonroute)
-- [Cloudflare AI Gateway](cloud-models.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
+- [OpenRouter](routers.md#openrouter)
+- [OrcaRouter](routers.md#orcarouter)
+- [UberLLM](routers.md#uberllm)
+- [Requesty](routers.md#requesty)
+- [DemonRoute](routers.md#demonroute)
+- [Cloudflare AI Gateway](routers.md#cloudflare-ai-gateway) (one key for every provider behind your gateway)
 
 ## Provider Selection
 

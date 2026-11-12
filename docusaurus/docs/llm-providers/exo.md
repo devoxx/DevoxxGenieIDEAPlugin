@@ -1,5 +1,6 @@
 ---
 sidebar_position: 3
+sidebar_label: Sharding (Exo)
 title: Exo - Distributed AI Cluster
 description: Run large AI models across multiple Apple Silicon devices using Exo with DevoxxGenie.
 keywords: [devoxxgenie, exo, distributed, cluster, apple silicon, thunderbolt, mlx, local llm]

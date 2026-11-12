@@ -38,9 +38,10 @@ exclude = [
   "https://genie\\.devoxx\\.com/img/.*",
   "https://genie\\.devoxx\\.com/static/img/.*",
   # New doc pages added in this PR — will exist on the live site after next deploy.
-  # TODO(post-deploy): remove these two lines once the renamed/new pages are live.
+  # TODO(post-deploy): remove these lines once the renamed/new pages are live.
   "https://genie\\.devoxx\\.com/docs/features/commands$",
   "https://genie\\.devoxx\\.com/docs/features/skills$",
+  "https://genie\\.devoxx\\.com/docs/llm-providers/routers$",
   # Placeholder/example URLs used in documentation snippets.
   "https://github\\.com/myproject/.*",
   "https://wiki\\.example\\.com/.*",

@@ -1,5 +1,6 @@
 ---
 sidebar_position: 5
+sidebar_label: CLI Runners
 title: CLI Runners - Use Claude Code & Copilot in IntelliJ IDEA
 description: Use Claude Code, GitHub Copilot CLI, Codex, Gemini CLI, or Kimi CLI directly inside IntelliJ IDEA. DevoxxGenie CLI Runners manage spec task execution via your existing AI subscriptions.
 keywords: [devoxxgenie, cli runners, claude code, copilot, codex, gemini, kimi, cli tools, spec-driven development, sdd, agent loop]

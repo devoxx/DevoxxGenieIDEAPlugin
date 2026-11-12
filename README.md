@@ -49,7 +49,7 @@ Quick links:
 - [Plugin Integration API](https://genie.devoxx.com/blog/devoxxgenie-plugin-integrations) - Integrate other IntelliJ plugins with DevoxxGenie at runtime
 - [Inline Code Completion](https://genie.devoxx.com/docs/features/inline-completion) - AI-powered code suggestions as you type
 - [Local AI Cluster (Exo)](https://genie.devoxx.com/docs/llm-providers/exo) - Distributed LLM inference across Apple Silicon devices
-- [Cloudflare AI Gateway](https://genie.devoxx.com/docs/llm-providers/cloud-models#cloudflare-ai-gateway) - One Cloudflare token unlocks every provider behind your gateway, with caching, rate limiting and analytics
+- [Cloudflare AI Gateway](https://genie.devoxx.com/docs/llm-providers/routers#cloudflare-ai-gateway) - One Cloudflare token unlocks every provider behind your gateway, with caching, rate limiting and analytics
 - [MCP Support](https://genie.devoxx.com/docs/mcp-support) - Model Context Protocol integration
 - [RAG Setup](https://genie.devoxx.com/docs/rag) - Retrieval-Augmented Generation guide
 - [Troubleshooting](https://genie.devoxx.com/docs/troubleshooting) - Common issues and solutions
@@ -135,8 +135,8 @@ Select multiple tasks (or click "Run All To Do") and the **Agent Loop** executes
 - **🍎 [Nativ](https://neywa-labs.github.io/nativ/)**: Run MLX models locally on Apple Silicon through Nativ's OpenAI-compatible server. Enable it under Settings → LLM Providers → Local and DevoxxGenie discovers every MLX model you have downloaded. Note that Nativ listens on port `8080` by default — the same port as llama.cpp — so change one of the two if you want both enabled.
 - **🖥️ [Local AI Cluster](https://genie.devoxx.com/docs/llm-providers/exo)**: Pool multiple Apple Silicon devices into a single LLM inference cluster with [Exo](https://github.com/exo-explore/exo). Run models like Llama 3.1 405B across your machines with automatic device discovery, zero cloud costs, and full data privacy.
 - **🍎 [Rapid-MLX](https://github.com/raullenchai/Rapid-MLX)**: Run MLX models locally on Apple Silicon through Rapid-MLX's OpenAI-compatible server. Enable it under Settings → LLM Providers → Local and DevoxxGenie discovers the served model and its context window (not yet tested against a live server).
-- **🔀 [LLM Routers](https://genie.devoxx.com/docs/llm-providers/cloud-models#routers)** *(v1.18.0+)*: Reach models from many vendors through one API key with OpenRouter, OrcaRouter, UberLLM, Requesty or DemonRoute, configured on the **Routers** settings tab. Each router is off until you enable it, and its base URL can be changed, for example to a regional endpoint.
-- **☁️ [Cloudflare AI Gateway](https://genie.devoxx.com/docs/llm-providers/cloud-models#cloudflare-ai-gateway)** *(v1.10.0+)*: Point DevoxxGenie at your Cloudflare AI Gateway and use every model behind it with a single Cloudflare token (BYOK) — your provider keys stay in Cloudflare, and you get caching, rate limiting, spend controls and per-request analytics for free.
+- **🔀 [LLM Routers](https://genie.devoxx.com/docs/llm-providers/routers)** *(v1.18.0+)*: Reach models from many vendors through one API key with OpenRouter, OrcaRouter, UberLLM, Requesty or DemonRoute, configured on the **Routers** settings tab. Each router is off until you enable it, and its base URL can be changed, for example to a regional endpoint.
+- **☁️ [Cloudflare AI Gateway](https://genie.devoxx.com/docs/llm-providers/routers#cloudflare-ai-gateway)** *(v1.10.0+)*: Point DevoxxGenie at your Cloudflare AI Gateway and use every model behind it with a single Cloudflare token (BYOK) — your provider keys stay in Cloudflare, and you get caching, rate limiting, spend controls and per-request analytics for free.
 - **🔥️ [MCP Support with Marketplace](https://genie.devoxx.com/docs/features/mcp_expanded)**: Browse and install MCP servers from the integrated marketplace. Add MCP servers and use them in your conversations!
 - **🗂️ [DEVOXXGENIE.md](https://genie.devoxx.com/docs/configuration/devoxxgenie-md)**: By incorporating this into the system prompt, the LLM will gain a deeper understanding of your project and provide more relevant responses.
 - **📸 [DnD images](https://genie.devoxx.com/docs/features/dnd-images)**: You can now DnD images with multimodal LLM's.
@@ -260,7 +260,7 @@ We now also support Cloud based LLMs, you can paste the API keys on the Settings
 - **Sharding**: Exo, which splits a model across several Apple Silicon devices. Other solutions are listed as coming soon.
 - **Custom OpenAI**: any other OpenAI-compatible endpoint.
 
-Routers forward your prompts and code to other providers, each with its own logging, retention and training policies. Check a router's terms before enabling it, and see the [Routers documentation](https://genie.devoxx.com/docs/llm-providers/cloud-models#routers).
+Routers forward your prompts and code to other providers, each with its own logging, retention and training policies. Check a router's terms before enabling it, and see the [Routers documentation](https://genie.devoxx.com/docs/llm-providers/routers).
 
 <img width="1072" alt="The Cloud Direct tab in the LLM settings" src="docusaurus/static/img/settings-cloud-direct.png">
 
