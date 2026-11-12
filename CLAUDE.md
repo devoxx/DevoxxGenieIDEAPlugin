@@ -17,9 +17,8 @@ as appropriate.
 
 ## Workflow Rules
 
-When asked to investigate or fix an issue, do NOT deeply explore the entire codebase autonomously. Start focused on
-the specific area mentioned, and ask before expanding scope. Avoid unnecessary web searches unless explicitly
-requested.
+When asked to investigate or fix an issue, start with the specific area mentioned and ask before widening the
+investigation to the rest of the codebase. Search the web only when the user asks for it.
 
 ## Git Workflow
 
@@ -35,7 +34,7 @@ told otherwise.
 
 ### Java Version Requirement
 
-**IMPORTANT**: This project requires **JDK 21** for building. JDK 25 causes Gradle build script failures. Always set `JAVA_HOME` before running Gradle commands:
+This project builds with JDK 21; JDK 25 breaks the Gradle build script. Set `JAVA_HOME` before running Gradle commands:
 
 ```bash
 export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
@@ -43,7 +42,7 @@ export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
 
 ### Testing
 
-**IMPORTANT**: Always pipe test output to grep for failures so you can immediately focus on what failed:
+Filter test output for failures so you can focus on what failed:
 
 ```bash
 ./gradlew test 2>&1 | grep -E "FAILED|failed"
@@ -51,6 +50,8 @@ export JAVA_HOME=~/.sdkman/candidates/java/21-zulu
 ./gradlew test --tests ClassName.methodName 2>&1 | grep -E "FAILED|failed"
 ./gradlew verifyPlugin                            # Verify plugin (includes tests)
 ```
+
+Compiler errors don't match this filter. When the build fails before the tests run, read the unfiltered output.
 
 ## Core Architecture
 
@@ -112,30 +113,12 @@ never assume the next version number.
 
 <!-- BACKLOG.MD MCP GUIDELINES START -->
 
-<CRITICAL_INSTRUCTION>
+## Backlog workflow
 
-## BACKLOG WORKFLOW INSTRUCTIONS
-
-This project uses Backlog.md MCP for all task and project management activities.
-
-**CRITICAL GUIDANCE**
-
-- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.
-- If your client only supports tools or the above request fails, call `backlog.get_workflow_overview()` tool to load the tool-oriented overview (it lists the matching guide tools).
-
-- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow
-- **Already familiar?** You should have the overview cached ("## Backlog.md Overview (MCP)")
-- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work
-
-These guides cover:
-- Decision framework for when to create tasks
-- Search-first workflow to avoid duplicates
-- Links to detailed guides for task creation, execution, and finalization
-- MCP tools reference
-
-You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
-
-</CRITICAL_INSTRUCTION>
+This project tracks tasks and project work with Backlog.md MCP. Before creating a task, or when unsure whether work
+should be tracked, read the workflow overview: the `backlog://workflow/overview` resource, or the Backlog MCP
+server's instructions tool where resources aren't available. It covers when to create tasks, searching first to
+avoid duplicates, and the guides for creating, executing and finalizing tasks. It is not summarized here.
 
 <!-- BACKLOG.MD MCP GUIDELINES END -->
 
