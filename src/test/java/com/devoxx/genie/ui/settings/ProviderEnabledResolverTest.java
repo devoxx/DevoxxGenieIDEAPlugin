@@ -27,6 +27,18 @@ class ProviderEnabledResolverTest {
     }
 
     @Test
+    void rapidMLX_isOptInAndUsesConfiguredUrl() {
+        DevoxxGenieStateService state = new DevoxxGenieStateService();
+
+        assertThat(state.getRapidMLXModelUrl()).isEqualTo("http://localhost:8000/v1");
+        assertThat(ProviderEnabledResolver.isEnabled(state, ModelProvider.RapidMLX, false)).isFalse();
+        state.setRapidMLXEnabled(true);
+        state.setRapidMLXModelUrl("http://localhost:8477/v1");
+        assertThat(ProviderEnabledResolver.isEnabled(state, ModelProvider.RapidMLX, false)).isTrue();
+        assertThat(state.getConfigValue("rapidMLXModelUrl")).isEqualTo("http://localhost:8477/v1");
+    }
+
+    @Test
     void runnerProviders_followTheCallerChoice() {
         DevoxxGenieStateService state = allEnabledState();
 

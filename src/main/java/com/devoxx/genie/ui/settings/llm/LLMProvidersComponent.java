@@ -126,6 +126,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     @Getter
     private final JTextField nativModelUrlField = new JTextField(stateService.getNativModelUrl());
     @Getter
+    private final JTextField rapidMLXModelUrlField = new JTextField(stateService.getRapidMLXModelUrl());
+    @Getter
     private final JCheckBox nativFallbackContextEnabledCheckBox = new JCheckBox("", stateService.getNativFallbackContextLength() != null);
     @Getter
     private final JBIntSpinner nativFallbackContextField = new JBIntSpinner(
@@ -227,6 +229,8 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox llamaCPPEnabledCheckBox = new JCheckBox("", stateService.isLlamaCPPEnabled());
     @Getter
     private final JCheckBox nativEnabledCheckBox = new JCheckBox("", stateService.isNativEnabled());
+    @Getter
+    private final JCheckBox rapidMLXEnabledCheckBox = new JCheckBox("", stateService.isRapidMLXEnabled());
     @Getter
     private final JTextField exoModelUrlField = new JTextField(stateService.getExoModelUrl());
     @Getter
@@ -453,6 +457,9 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         addHintText(localPanel, gbc, "Run MLX models locally on Apple Silicon. Nativ defaults to port 8080 — the same port as Llama.c++ — so change one of the two if you want both enabled.");
         addProviderSettingRow(localPanel, gbc, "Nativ Fallback Context", nativFallbackContextEnabledCheckBox, nativFallbackContextField);
         addHintText(localPanel, gbc, "Nativ's <code>/v1/models</code> does not report a context length; DevoxxGenie assumes " + NativChatModelFactory.DEFAULT_CONTEXT_LENGTH + " tokens unless you set it here.");
+        addProviderSettingRow(localPanel, gbc, "Rapid-MLX URL", rapidMLXEnabledCheckBox,
+                createTextWithDownloadButton(rapidMLXModelUrlField, "https://rapidmlx.com/docs/"));
+        addHintText(localPanel, gbc, "Run MLX models locally on Apple Silicon. Enable after starting Rapid-MLX; set the URL to the server's port (8000 by default).");
         addProviderSettingRow(localPanel, gbc, "Exo URL", exoEnabledCheckBox,
                 createTextWithInfoButton(exoModelUrlField, "https://genie.devoxx.com/docs/llm-providers/exo"));
         addHintText(localPanel, gbc, "Distributed AI cluster — auto-creates model instances across connected devices");
@@ -608,6 +615,7 @@ public class LLMProvidersComponent extends AbstractSettingsComponent {
         janEnabledCheckBox.addItemListener(e -> updateUrlFieldState(janEnabledCheckBox, janModelUrlField));
         llamaCPPEnabledCheckBox.addItemListener(e -> updateUrlFieldState(llamaCPPEnabledCheckBox, llamaCPPModelUrlField));
         nativEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nativEnabledCheckBox, nativModelUrlField));
+        rapidMLXEnabledCheckBox.addItemListener(e -> updateUrlFieldState(rapidMLXEnabledCheckBox, rapidMLXModelUrlField));
         nativFallbackContextEnabledCheckBox.addItemListener(e -> updateUrlFieldState(nativFallbackContextEnabledCheckBox, nativFallbackContextField));
         exoEnabledCheckBox.addItemListener(e -> updateUrlFieldState(exoEnabledCheckBox, exoModelUrlField));
 

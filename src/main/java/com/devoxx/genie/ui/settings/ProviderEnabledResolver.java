@@ -32,6 +32,7 @@ public final class ProviderEnabledResolver {
             case GPT4All -> state.isGpt4AllEnabled();
             case Jan -> state.isJanEnabled();
             case Nativ -> state.isNativEnabled();
+            case RapidMLX -> state.isRapidMLXEnabled();
             case LLaMA -> state.isLlamaCPPEnabled();
             case Exo -> state.isExoEnabled();
             case CustomOpenAI -> state.isCustomOpenAIUrlEnabled();

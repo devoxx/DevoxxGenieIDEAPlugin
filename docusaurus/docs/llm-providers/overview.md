@@ -30,6 +30,7 @@ Supported local providers:
 - [Llama.cpp](local-models.md#llamacpp)
 - [Jan](local-models.md#jan)
 - [Nativ](local-models.md#nativ) (MLX on Apple Silicon)
+- [Rapid-MLX](local-models.md#rapid-mlx) (MLX on Apple Silicon)
 - [Exo](exo.md) (Distributed AI cluster)
 - [Custom OpenAI-compatible](local-models.md#custom-openai-compatible-providers)
 

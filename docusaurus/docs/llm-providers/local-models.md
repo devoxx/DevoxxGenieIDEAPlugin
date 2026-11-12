@@ -24,8 +24,9 @@ DevoxxGenie integrates with these local LLM providers:
 4. [Llama.cpp](#llamacpp)
 5. [Jan](#jan)
 6. [Nativ](#nativ) (MLX on Apple Silicon)
-7. [Exo](/docs/llm-providers/exo) (Distributed AI cluster)
-8. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
+7. [Rapid-MLX](#rapid-mlx) (MLX on Apple Silicon)
+8. [Exo](/docs/llm-providers/exo) (Distributed AI cluster)
+9. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
 
 ## Ollama
 
@@ -237,6 +238,32 @@ dropdown shows the short name without the organisation prefix.
 - Fully local — no account, subscription, or cloud round-trip
 - Open source under the MIT license
 - OpenAI-compatible API, so streaming and agent mode work as with any other local provider
+
+## Rapid-MLX
+
+[Rapid-MLX](https://rapidmlx.com) is an open-source (Apache-2.0) local LLM inference server for Apple Silicon,
+built on MLX with an OpenAI-compatible API.
+
+### Setup
+
+1. Install with `brew install rapid-mlx` (or `pip install rapid-mlx` with Python 3.12+).
+2. Start the server with `rapid-mlx serve qwen3.5-4b-4bit --port 8000`.
+3. In DevoxxGenie settings, open **LLM Providers → Local** and tick **Rapid-MLX URL**.
+4. Select **Rapid-MLX** in the DevoxxGenie panel. Served models appear in the model dropdown.
+
+### Configuration
+
+- **Rapid-MLX URL**: `http://localhost:8000/v1` by default. The provider is disabled until you enable it.
+  If another server uses port 8000, choose a different port with `--port` and update this URL.
+- Without an explicit `--port`, Rapid-MLX uses the first free port from 8000–8009; set the URL to the port it selects.
+- Context windows come from `context_window` in `/v1/models`, with an 8,000-token fallback when absent or invalid.
+- Model IDs are preserved for requests; the dropdown shows the short name without the Hugging Face organisation prefix.
+
+No API key is required by default. This provider uses the shared local OpenAI chat and streaming clients, including
+agent mode. Optional server authentication is not configured by this integration; use
+[Custom OpenAI](#custom-openai-compatible-providers) if you enable an API key on the server.
+
+See the [Rapid-MLX documentation](https://rapidmlx.com/docs/) for more setup options.
 
 ## Custom OpenAI-compatible Providers
 
