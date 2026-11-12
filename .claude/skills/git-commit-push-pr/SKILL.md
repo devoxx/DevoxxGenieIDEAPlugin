@@ -1,7 +1,7 @@
 ---
 name: git-commit-push-pr
-description: Commit all changes, push to remote, and open a pull request in one go. Use when the user says "commit push pr", "ship it", "open a pr", or invokes /git-commit-push-pr.
-allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git commit:*), Bash(git push:*), Bash(git branch:*), Bash(git checkout:*), Bash(gh pr create:*)
+description: Commit all changes, push to remote, and open a pull request in one go. Use when the user says "commit push pr", "ship it", "open a pr", "pr", or invokes /git-commit-push-pr.
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git commit:*), Bash(git push:*), Bash(git branch:*), Bash(git checkout:*), Bash(gh pr create:*), Bash(./gradlew test:*)
 ---
 
 # Git Commit, Push & PR
@@ -16,7 +16,17 @@ allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git l
 
 ## Your task
 
-Review the changes in the repo and ship them as a pull request in one go.
+Review the changes in the repo, check that the tests pass, and ship them as a pull request in one go.
+
+### Step 0 — Run the tests
+
+Run the test suite with JDK 21 (see CLAUDE.md for `JAVA_HOME`) before committing:
+
+```bash
+./gradlew test 2>&1 | grep -E "FAILED|failed"
+```
+
+If a test fails, or the build fails before the tests run, stop and report the failures instead of committing. Compiler errors don't match this filter, so read the unfiltered output when the build itself fails.
 
 ### Step 1 — Analyze changes and plan commits
 

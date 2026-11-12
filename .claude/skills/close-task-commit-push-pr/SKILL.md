@@ -1,7 +1,7 @@
 ---
 name: close-task-commit-push-pr
 description: Close the active backlog task (detected from branch name), commit all changes, push to remote, and open a pull request. Use when the user says "close task and ship it", "close task commit push pr", or invokes /close-task-commit-push-pr.
-allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git commit:*), Bash(git push:*), Bash(git branch:*), Bash(git checkout:*), Bash(gh pr create:*), mcp__backlog__task_edit, mcp__backlog__task_complete, mcp__backlog__task_view
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git commit:*), Bash(git push:*), Bash(git branch:*), Bash(git checkout:*), Bash(gh pr create:*), Bash(./gradlew test:*), mcp__backlog__task_edit, mcp__backlog__task_complete, mcp__backlog__task_view
 ---
 
 # Close Task, Commit, Push & PR
@@ -16,14 +16,24 @@ allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git l
 
 ## Your task
 
-Close the active backlog task, commit all changes, push, and open a pull request.
+Check that the tests pass, close the active backlog task, commit all changes, push, and open a pull request.
 
 ### Step 0 — Identify the task
 
 - Extract the task ID from the current branch name (e.g. `feature/task-113-split-css-modules` → `task-113`).
 - If no task ID is found in the branch name, ask the user which task to close.
 
-### Step 1 — Close the backlog task
+### Step 1 — Run the tests
+
+Run the test suite with JDK 21 (see CLAUDE.md for `JAVA_HOME`) before committing:
+
+```bash
+./gradlew test 2>&1 | grep -E "FAILED|failed"
+```
+
+If a test fails, or the build fails before the tests run, stop and report the failures instead of committing. Compiler errors don't match this filter, so read the unfiltered output when the build itself fails.
+
+### Step 2 — Close the backlog task
 
 Close the task **before** committing so the task file changes are included in the commit and PR.
 
@@ -34,7 +44,7 @@ Close the task **before** committing so the task file changes are included in th
   - Write a `finalSummary` that concisely describes what was implemented
 - Use `mcp__backlog__task_complete` to move the task to the completed folder.
 
-### Step 2 — Analyze changes and plan commits
+### Step 3 — Analyze changes and plan commits
 
 Before committing, analyze `git status` and `git diff HEAD` to identify logically distinct groups of changes. Group by feature or concern — for example:
 
@@ -44,7 +54,7 @@ Before committing, analyze `git status` and `git diff HEAD` to identify logicall
 
 Print a short commit plan (list of planned commits with the files in each) so the grouping is visible.
 
-### Step 3 — Commit
+### Step 4 — Commit
 
 - Create one commit per logical group identified above. Stage only the files for that group using explicit file names (never `git add -A`; never stage `.env` or credential files).
 - Write a clean, descriptive commit message for each commit using conventional commits style.
@@ -52,12 +62,12 @@ Print a short commit plan (list of planned commits with the files in each) so th
 - Use a HEREDOC to pass the commit message for correct formatting.
 - **Include the closed task file** in the final commit.
 
-### Step 4 — Push
+### Step 5 — Push
 
 - If the current branch is `main` or `master`, create a new feature branch first (use a descriptive name based on the changes).
 - Push the branch to origin with `-u` to set upstream tracking.
 
-### Step 5 — Pull Request
+### Step 6 — Pull Request
 
 - Create a PR using `gh pr create` targeting the main branch.
 - Keep the PR title short (under 70 characters), using conventional commit style.
@@ -73,15 +83,15 @@ Print a short commit plan (list of planned commits with the files in each) so th
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
-### Step 6 — Update task with PR reference
+### Step 7 — Update task with PR reference
 
 - Now that you have the PR number, use `mcp__backlog__task_edit` to append the PR URL/number to the `finalSummary`.
 
-### Step 7 — Commit the updated task file
+### Step 8 — Commit the updated task file
 
 - Stage the updated task file, commit it as `chore(backlog): link <task-id> to PR #<number>`, and `git push`.
 
-### Step 8 — Report
+### Step 9 — Report
 
 - Print the PR URL and confirm the task was closed.
 
