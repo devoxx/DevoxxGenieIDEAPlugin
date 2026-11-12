@@ -82,6 +82,7 @@ public class LLMProvidersConfigurable implements Configurable {
         for (RouterDefinition def : RouterRegistry.definitions()) {
             LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
             isModified |= isFieldModified(row.key(), stateService.getRouterKey(def.credentialSubKey()));
+            isModified |= isFieldModified(row.url(), stateService.getRouterUrl(def));
         }
         isModified |= isFieldModified(llmSettingsComponent.getGrokApiKeyField(), stateService.getGrokKey());
         isModified |= isFieldModified(llmSettingsComponent.getKimiApiKeyField(), stateService.getKimiKey());
@@ -278,8 +279,11 @@ public class LLMProvidersConfigurable implements Configurable {
             LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
             String newKey = new String(row.key().getPassword());
             boolean newEnabled = row.enabled().isSelected();
+            String typedUrl = row.url().getText().trim();
+            String newUrl = typedUrl.isEmpty() ? def.baseUrl() : typedUrl;
             boolean keyChanged = !newKey.equals(settings.getRouterKey(def.credentialSubKey()));
-            boolean changed = keyChanged || newEnabled != settings.isRouterEnabled(def.provider());
+            boolean changed = keyChanged || newEnabled != settings.isRouterEnabled(def.provider())
+                    || !newUrl.equals(settings.getRouterUrl(def));
 
             // An empty write deletes the stored entry. A keychain read that failed also shows as an empty
             // field, so an unchanged key must never be written back.
@@ -287,6 +291,10 @@ public class LLMProvidersConfigurable implements Configurable {
                 settings.setRouterKey(def.credentialSubKey(), newKey);
             }
             settings.setRouterEnabled(def.provider(), newEnabled);
+            // The default is stored as absent, so a later change to the definition's URL still reaches users.
+            settings.setRouterUrl(def.provider(), newUrl.equals(def.baseUrl()) ? null : newUrl);
+            // The saved URL is trimmed and a blank one means the default: show that, or the page stays dirty.
+            row.url().setText(settings.getRouterUrl(def));
 
             if (changed) {
                 ChatModelFactoryProvider.getFactoryByProvider(def.provider().name())
@@ -557,7 +565,9 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGeminiApiKeyField().setText(settings.getGeminiKey());
         llmSettingsComponent.getDeepSeekApiKeyField().setText(settings.getDeepSeekKey());
         for (RouterDefinition def : RouterRegistry.definitions()) {
-            llmSettingsComponent.getRouterRows().get(def.provider()).key().setText(settings.getRouterKey(def.credentialSubKey()));
+            LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
+            row.key().setText(settings.getRouterKey(def.credentialSubKey()));
+            row.url().setText(settings.getRouterUrl(def));
         }
         llmSettingsComponent.getKimiApiKeyField().setText(settings.getKimiKey());
         llmSettingsComponent.getGlmApiKeyField().setText(settings.getGlmKey());

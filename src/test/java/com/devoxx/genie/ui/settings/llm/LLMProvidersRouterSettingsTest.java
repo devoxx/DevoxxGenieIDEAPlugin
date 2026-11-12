@@ -200,6 +200,61 @@ class LLMProvidersRouterSettingsTest {
     }
 
     @Test
+    void everyRouterRow_hasUrlField_prefilledWithDefaultBaseUrl() {
+        configurable();
+        assertThat(tabText("Routers")).contains("UberLLM URL", "OrcaRouter URL");
+        for (RouterDefinition def : RouterRegistry.definitions()) {
+            LLMProvidersComponent.RouterRow row = component().getRouterRows().get(def.provider());
+            assertThat(row.url().getText()).as("URL for %s", def.label()).isEqualTo(def.baseUrl());
+        }
+        assertThat(configurable.isModified()).isFalse();
+    }
+
+    @Test
+    void apply_routerUrl_persistsBeforeResettingFactory() throws ConfigurationException {
+        List<String> seen = new ArrayList<>();
+        doAnswer(inv -> {
+            seen.add(stateService.getRouterUrl(definition));
+            return null;
+        }).when(routerFactory).resetModels();
+        configurable();
+
+        component().getRouterRows().get(ROUTER).url().setText("  https://eu.example.com/v1  ");
+        assertThat(configurable.isModified()).isTrue();
+        configurable.apply();
+
+        assertThat(seen).containsExactly("https://eu.example.com/v1");
+        assertThat(configurable.isModified()).isFalse();
+    }
+
+    @Test
+    void apply_blankRouterUrl_fallsBackToDefault() throws ConfigurationException {
+        configurable();
+        LLMProvidersComponent.RouterRow row = component().getRouterRows().get(ROUTER);
+        row.url().setText("https://eu.example.com/v1");
+        configurable.apply();
+
+        row.url().setText("   ");
+        configurable.apply();
+
+        assertThat(stateService.getRouterUrl(definition)).isEqualTo(definition.baseUrl());
+        assertThat(row.url().getText()).isEqualTo(definition.baseUrl());
+        assertThat(configurable.isModified()).isFalse();
+    }
+
+    @Test
+    void reset_restoresSavedRouterUrl() {
+        stateService.setRouterUrl(ROUTER, "https://eu.example.com/v1");
+        configurable();
+        LLMProvidersComponent.RouterRow row = component().getRouterRows().get(ROUTER);
+        row.url().setText("https://typo.example.com");
+
+        configurable.reset();
+
+        assertThat(row.url().getText()).isEqualTo("https://eu.example.com/v1");
+    }
+
+    @Test
     void everyRouterRow_startsDisabledWithEmptyKey() {
         configurable();
         for (RouterDefinition def : RouterRegistry.definitions()) {

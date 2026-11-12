@@ -123,6 +123,19 @@ class RouterChatModelFactoryTest {
         assertThat(latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).as("latch released in time").isTrue();
     }
 
+    // --- base URL ---
+
+    @Test
+    void getModels_fetchesFromTheConfiguredBaseUrl_notTheDefinitionDefault() {
+        String override = "https://eu.router.test/v1";
+        client.respond(override + MODELS, CATALOG);
+        RouterChatModelFactory factory = new RouterChatModelFactory(def(BASE + "/", null, MODELS),
+                enabled::get, key::get, () -> override, client, clock::get);
+
+        assertThat(ids(factory.getModels())).containsExactly("a", "b");
+        assertThat(client.calls).extracting(Call::url).containsExactly(override + MODELS);
+    }
+
     // --- caching ---
 
     @Test
