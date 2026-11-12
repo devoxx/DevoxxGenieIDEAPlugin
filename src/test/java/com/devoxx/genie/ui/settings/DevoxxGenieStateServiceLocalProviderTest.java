@@ -103,20 +103,44 @@ class DevoxxGenieStateServiceLocalProviderTest {
     }
 
     @Test
+    void upgrade_carriesLlamaCppCustomUrl_andDisabledState() {
+        DevoxxGenieStateService saved = new DevoxxGenieStateService();
+        saved.setLlamaCPPUrl("http://localhost:8181");
+        saved.setLlamaCPPEnabled(false);
+        DevoxxGenieStateService loaded = upgrade(saved);
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo("http://localhost:8181");
+        assertThat(loaded.isLocalProviderEnabled(ModelProvider.LLaMA)).isFalse();
+    }
+
+    @Test
+    void freshInstall_andUntouchedUpgrade_haveLlamaCppEnabledOnDefaultUrl() {
+        assertThat(new DevoxxGenieStateService().isLocalProviderEnabled(ModelProvider.LLaMA)).isTrue();
+
+        DevoxxGenieStateService loaded = upgrade(new DevoxxGenieStateService());
+        assertThat(loaded.isLocalProviderEnabled(ModelProvider.LLaMA)).isTrue();
+        assertThat(loaded.getLocalProviderUrls()).doesNotContainKey("LLaMA");
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo("http://localhost:8080");
+    }
+
+    @Test
     void clearedUrl_staysClearedAfterReload() {
         DevoxxGenieStateService saved = new DevoxxGenieStateService();
         saved.setNativModelUrl("http://localhost:9090/v1/");
         saved.setGpt4allModelUrl("http://localhost:4999/v1/");
+        saved.setLlamaCPPUrl("http://localhost:8181");
         DevoxxGenieStateService loaded = upgrade(saved);
         assertThat(loaded.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:9090/v1/");
         assertThat(loaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4999/v1/");
+        assertThat(loaded.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo("http://localhost:8181");
 
         loaded.setLocalProviderUrl(ModelProvider.Nativ, "");
         loaded.setLocalProviderUrl(ModelProvider.GPT4All, "");
+        loaded.setLocalProviderUrl(ModelProvider.LLaMA, "");
         DevoxxGenieStateService reloaded = upgrade(loaded);
 
         assertThat(reloaded.getLocalProviderUrl(ModelProvider.Nativ)).isEqualTo("http://localhost:8080/v1/");
         assertThat(reloaded.getLocalProviderUrl(ModelProvider.GPT4All)).isEqualTo("http://localhost:4891/v1/");
+        assertThat(reloaded.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo("http://localhost:8080");
     }
 
     @Test

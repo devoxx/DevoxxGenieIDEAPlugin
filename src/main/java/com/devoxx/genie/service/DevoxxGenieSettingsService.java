@@ -239,10 +239,6 @@ public interface DevoxxGenieSettingsService {
 
     void setModelWindowContext(ModelProvider provider, String modelName, int windowContext);
 
-    String getLlamaCPPUrl();
-
-    void setLlamaCPPUrl(String text);
-
     String getLocalProviderUrl(ModelProvider provider);
 
     String getExoModelUrl();

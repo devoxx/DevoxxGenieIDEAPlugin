@@ -42,6 +42,10 @@ class OpenAiCompatibleChatModelFactoryTest {
         return LocalProviderRegistry.find(ModelProvider.RapidMLX).orElseThrow();
     }
 
+    private static LocalProviderDefinition llamaCpp() {
+        return LocalProviderRegistry.find(ModelProvider.LLaMA).orElseThrow();
+    }
+
     private static LocalProviderDefinition gpt4All() {
         return LocalProviderRegistry.find(ModelProvider.GPT4All).orElseThrow();
     }
@@ -167,6 +171,44 @@ class OpenAiCompatibleChatModelFactoryTest {
 
         List<LanguageModel> withFallback = factory(gpt4All(), true, "http://localhost:4891/v1/", 32768, url -> body).getModels();
         assertThat(withFallback.get(0).getInputMaxTokens()).isEqualTo(32768);
+    }
+
+    @Test
+    void llamaCpp_payload_usesRunningContext_thenTrainingContext_thenDefault() {
+        // Shape captured from llama-server 0.4.1: without --alias the id is the GGUF path, and meta.n_ctx is the
+        // context the server runs with (-c) while meta.n_ctx_train is the model's maximum.
+        String running = "{\"id\":\"/models/gemma-4-E2B-it-Q4_K_M.gguf\",\"object\":\"model\",\"owned_by\":\"llamacpp\","
+                + "\"meta\":{\"n_ctx\":4096,\"n_ctx_train\":131072,\"n_vocab\":262144}}";
+        String trainingOnly = "{\"id\":\"older.gguf\",\"object\":\"model\",\"meta\":{\"n_ctx_train\":32768}}";
+        String noMeta = "{\"id\":\"bare\",\"object\":\"model\"}";
+        String body = "{\"object\":\"list\",\"data\":[" + running + "," + trainingOnly + "," + noMeta + "]}";
+        AtomicReference<String> seen = new AtomicReference<>();
+
+        List<LanguageModel> models = factory(llamaCpp(), true, "http://localhost:8080", null, url -> {
+            seen.set(url);
+            return body;
+        }).getModels();
+
+        assertThat(seen.get()).isEqualTo("http://localhost:8080/models");
+        assertThat(models).extracting(LanguageModel::getModelName)
+                .containsExactlyInAnyOrder("/models/gemma-4-E2B-it-Q4_K_M.gguf", "older.gguf", "bare");
+        LanguageModel gemma = models.stream().filter(m -> m.getModelName().endsWith("gemma-4-E2B-it-Q4_K_M.gguf"))
+                .findFirst().orElseThrow();
+        assertThat(gemma.getDisplayName()).isEqualTo("gemma-4-E2B-it-Q4_K_M.gguf");
+        assertThat(gemma.getInputMaxTokens()).isEqualTo(4096);
+        assertThat(models).filteredOn(m -> m.getModelName().equals("older.gguf"))
+                .extracting(LanguageModel::getInputMaxTokens).containsExactly(32768);
+        assertThat(models).filteredOn(m -> m.getModelName().equals("bare"))
+                .extracting(LanguageModel::getInputMaxTokens).containsExactly(8000);
+        assertThat(models).allMatch(m -> m.getProvider() == ModelProvider.LLaMA);
+    }
+
+    @Test
+    void llamaCpp_defaultsToEnabledOnItsExistingUrl() {
+        DevoxxGenieStateService state = new DevoxxGenieStateService();
+
+        assertThat(state.isLocalProviderEnabled(ModelProvider.LLaMA)).isTrue();
+        assertThat(state.getLocalProviderUrl(ModelProvider.LLaMA)).isEqualTo("http://localhost:8080");
     }
 
     @Test

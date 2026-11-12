@@ -17,6 +17,7 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -32,13 +33,15 @@ class LocalProviderRegistryTest {
     @Test
     void registry_hasExpectedProviders() {
         assertThat(LocalProviderRegistry.definitions()).extracting(LocalProviderDefinition::provider)
-                .containsExactly(ModelProvider.GPT4All, ModelProvider.Nativ, ModelProvider.RapidMLX);
+                .containsExactly(ModelProvider.LLaMA, ModelProvider.GPT4All, ModelProvider.Nativ, ModelProvider.RapidMLX);
     }
 
     @Test
-    void onlyGpt4All_isEnabledByDefault() {
-        // GPT4All shipped enabled before it moved here; Nativ shares llama.cpp's port and Rapid-MLX is opt-in.
+    void enabledByDefault_matchesWhatEachProviderShippedWith() {
+        // LLaMA.c++ and GPT4All shipped enabled before they moved here; Nativ shares llama.cpp's port and
+        // Rapid-MLX is opt-in.
         DevoxxGenieStateService state = new DevoxxGenieStateService();
+        assertThat(state.isLocalProviderEnabled(ModelProvider.LLaMA)).isTrue();
         assertThat(state.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
         assertThat(state.isLocalProviderEnabled(ModelProvider.Nativ)).isFalse();
         assertThat(state.isLocalProviderEnabled(ModelProvider.RapidMLX)).isFalse();
@@ -46,7 +49,7 @@ class LocalProviderRegistryTest {
 
     @Test
     void everyDefinition_isFullyWired() throws Exception {
-        Set<String> urls = new HashSet<>();
+        Set<String> enabledByDefaultPorts = new HashSet<>();
         DevoxxGenieStateService state = new DevoxxGenieStateService();
 
         Method supported = ProjectContextController.class.getDeclaredMethod("isSupportedProvider", ModelProvider.class);
@@ -72,7 +75,13 @@ class LocalProviderRegistryTest {
             assertThat(ProviderEnabledResolver.isEnabled(state, provider, false)).as("resolver on %s", provider).isTrue();
 
             assertThat(def.defaultUrl()).as("default URL %s", provider).startsWith("http://localhost:");
-            assertThat(urls.add(def.defaultUrl())).as("unique URL %s", provider).isTrue();
+            // Two providers enabled out of the box on one port would list each other's models. Sharing a port
+            // is fine when one of them is off by default (Nativ and LLaMA.c++ both default to 8080).
+            if (def.enabledByDefault()) {
+                URI uri = URI.create(def.defaultUrl());
+                assertThat(enabledByDefaultPorts.add(uri.getHost() + ":" + uri.getPort()))
+                        .as("unique default port among enabled-by-default providers: %s", provider).isTrue();
+            }
 
             String customUrl = "http://localhost:9" + provider.ordinal() + "/v1/";
             state.setLocalProviderUrl(provider, customUrl);
@@ -85,7 +94,8 @@ class LocalProviderRegistryTest {
     void subAgent_nameThatIsNotADisplayName_stillUsesTheExistingCases() throws Exception {
         // "LLaMA" is a constant name, not a display name, so ModelProvider.fromString rejects it.
         DevoxxGenieStateService state = new DevoxxGenieStateService();
-        assertThat(subAgentBaseUrl(state, "LLaMA")).isEqualTo(state.getLlamaCPPUrl());
+        state.setLocalProviderUrl(ModelProvider.LLaMA, "http://llama-box:8080");
+        assertThat(subAgentBaseUrl(state, "LLaMA")).isEqualTo("http://llama-box:8080");
         assertThat(subAgentBaseUrl(state, "no-such-provider")).isNull();
     }
 

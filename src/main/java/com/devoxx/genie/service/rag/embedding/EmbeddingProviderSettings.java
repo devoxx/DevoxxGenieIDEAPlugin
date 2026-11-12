@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.rag.embedding;
 
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,7 +21,7 @@ public final class EmbeddingProviderSettings {
             case CUSTOM_OPENAI -> state.getCustomOpenAIUrl();
             case OPENAI -> OPENAI_URL;
             case LM_STUDIO -> state.getLmstudioModelUrl();
-            case LLAMA_CPP -> state.getLlamaCPPUrl();
+            case LLAMA_CPP -> state.getLocalProviderUrl(ModelProvider.LLaMA);
         };
     }
 
@@ -43,7 +44,7 @@ public final class EmbeddingProviderSettings {
             case CUSTOM_OPENAI -> state.isCustomOpenAIUrlEnabled();
             case OPENAI -> state.isOpenAIEnabled();
             case LM_STUDIO -> state.isLmStudioEnabled();
-            case LLAMA_CPP -> state.isLlamaCPPEnabled();
+            case LLAMA_CPP -> state.isLocalProviderEnabled(ModelProvider.LLaMA);
         };
     }
 

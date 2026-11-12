@@ -87,9 +87,6 @@ public class ChatModelProvider {
             case Ollama:
                 customChatModel.setBaseUrl(stateService.getOllamaModelUrl());
                 break;
-            case LLaMA:
-                customChatModel.setBaseUrl(stateService.getLlamaCPPUrl());
-                break;
             case Exo:
                 customChatModel.setBaseUrl(stateService.getExoModelUrl());
                 break;

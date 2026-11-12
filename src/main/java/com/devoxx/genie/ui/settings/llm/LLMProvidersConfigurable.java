@@ -79,7 +79,6 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(llmSettingsComponent.getDeepInfraApiKeyField(), stateService.getDeepInfraKey());
         isModified |= isFieldModified(llmSettingsComponent.getGeminiApiKeyField(), stateService.getGeminiKey());
         isModified |= isFieldModified(llmSettingsComponent.getDeepSeekApiKeyField(), stateService.getDeepSeekKey());
-        isModified |= isFieldModified(llmSettingsComponent.getLlamaCPPModelUrlField(), stateService.getLlamaCPPUrl());
         for (RouterDefinition def : RouterRegistry.definitions()) {
             LLMProvidersComponent.RouterRow row = llmSettingsComponent.getRouterRows().get(def.provider());
             isModified |= isFieldModified(row.key(), stateService.getRouterKey(def.credentialSubKey()));
@@ -134,7 +133,6 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isOllamaEnabled() != llmSettingsComponent.getOllamaEnabledCheckBox().isSelected();
         isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
         isModified |= stateService.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
-        isModified |= stateService.isLlamaCPPEnabled() != llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected();
         isModified |= stateService.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), stateService.getExoModelUrl());
 
@@ -191,7 +189,6 @@ public class LLMProvidersConfigurable implements Configurable {
                         : null
         );
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
-        settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
 
         settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
         settings.setCustomOpenAIModelName(llmSettingsComponent.getCustomOpenAIModelNameField().getText());
@@ -241,7 +238,6 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setOllamaEnabled(llmSettingsComponent.getOllamaEnabledCheckBox().isSelected());
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
         settings.setJanEnabled(llmSettingsComponent.getJanEnabledCheckBox().isSelected());
-        settings.setLlamaCPPEnabled(llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected());
         settings.setExoEnabled(llmSettingsComponent.getExoEnabledCheckBox().isSelected());
         settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
 
@@ -532,7 +528,6 @@ public class LLMProvidersConfigurable implements Configurable {
         );
         llmSettingsComponent.getLmStudioFallbackContextField().setEnabled(settings.getLmStudioFallbackContextLength() != null);
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
-        llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
         for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
             ModelProvider provider = def.provider();
             LLMProvidersComponent.LocalProviderRow row = llmSettingsComponent.getLocalProviderRows().get(provider);
@@ -595,7 +590,6 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getOllamaEnabledCheckBox().setSelected(settings.isOllamaEnabled());
         llmSettingsComponent.getLmStudioEnabledCheckBox().setSelected(settings.isLmStudioEnabled());
         llmSettingsComponent.getJanEnabledCheckBox().setSelected(settings.isJanEnabled());
-        llmSettingsComponent.getLlamaCPPEnabledCheckBox().setSelected(settings.isLlamaCPPEnabled());
         llmSettingsComponent.getExoEnabledCheckBox().setSelected(settings.isExoEnabled());
         llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());
 

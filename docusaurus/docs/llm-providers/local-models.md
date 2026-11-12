@@ -160,12 +160,21 @@ GPT4All provides:
 1. Clone the [llama.cpp repository](https://github.com/ggerganov/llama.cpp)
 2. Build the project following the repository instructions
 3. Download model weights
-4. Start the server:
+4. Start the server, for example with a 32K context window:
    ```bash
-   ./server -m /path/to/model.gguf
+   llama-server -m /path/to/model.gguf -c 32768
    ```
-5. In DevoxxGenie settings, select "Llama CPP" as the provider
+5. In DevoxxGenie settings, open the **Local** tab and check that **LLaMA.c++ URL** is ticked (it's enabled by default)
 6. Configure the endpoint (default: `http://localhost:8080`)
+7. Select "LLaMA.c++" as the provider in the DevoxxGenie panel, then select the model
+
+### Models and context window
+
+DevoxxGenie lists the models `llama-server` serves, read from its `/v1/models` endpoint. Without `--alias`, a model is listed under its GGUF file name.
+
+The context window comes from the server: the context it runs with (`-c`), or the model's training context when the server doesn't report that. If neither is available, DevoxxGenie assumes 8,000 tokens. Start the server with the context size you want DevoxxGenie to use.
+
+`llama-server` listens on port 8080 by default, the same port as Nativ. If you use both, give one of them another port and update its URL.
 
 ### Configuration
 
