@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@Claude'
 created_date: '2026-11-12T11:22:00Z'
-updated_date: '2026-11-12T12:32:00Z'
+updated_date: '2026-11-12T12:33:00Z'
 labels:
   - local-llm
   - refactor
@@ -114,4 +114,6 @@ LLaMA.c++ is registered in LocalProviderRegistry (enabled by default, no fallbac
 User-visible: the loaded model and its real context in the dropdown, streaming chat (the old factory had none), "add project to context" support, and an "is not running" notice when llama-server is down.
 
 Full test suite passes. Not verified: AC #3, streaming and non-streaming chat against a running llama-server in the IDE.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1409
 <!-- SECTION:FINAL_SUMMARY:END -->
