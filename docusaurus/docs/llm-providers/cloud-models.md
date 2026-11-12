@@ -332,9 +332,8 @@ Google provides the Gemini family of models through Google AI Studio.
 
 1. Create an account at [OpenRouter](https://openrouter.ai/)
 2. Generate an API key
-3. In DevoxxGenie settings, select "OpenRouter" as the provider
-4. Paste your API key
-5. Select your preferred model from the extensive list
+3. In DevoxxGenie settings, open the **Routers** tab, enable "OpenRouter" and paste your API key
+4. Select your preferred model from the extensive list
 
 ### Configuration
 
@@ -360,6 +359,16 @@ Anything you send, including project files added to context, may pass through th
 OpenRouter, OrcaRouter, UberLLM, Requesty, DemonRoute and Cloudflare AI Gateway are configured on the **Routers** tab in the DevoxxGenie settings. Each router is disabled until you tick its checkbox and enter an API key.
 
 ![The Routers tab, with its privacy warning and a checkbox per router](/img/settings-routers.png)
+
+Each router row works the same way:
+
+- **Checkbox**: decides whether the router appears in the chat's provider list. New routers are off by default.
+- **API Key**: the key button next to the field opens the router's API key page. A key is only saved on **Apply** when you changed it.
+- **URL**: the base URL for the model catalog and chat requests, pre-filled with the router's default. Change it to use an alternative endpoint, such as Requesty's EU router. Leave it blank to go back to the default. Only a changed URL is stored, so a router left on the default follows later changes to it. Changing the URL refreshes that router's model list.
+
+A disabled router, or one without a key, sends no requests. If fetching a router's model catalog fails, DevoxxGenie waits 60 seconds before trying again. DevoxxGenie sends no affiliate, referral or attribution data to any router.
+
+Cloudflare AI Gateway has its own fields (API token, account ID and gateway name) instead of a URL; see [Cloudflare AI Gateway](#cloudflare-ai-gateway).
 
 ## OrcaRouter
 
@@ -426,7 +435,7 @@ DevoxxGenie talks to `https://router.requesty.ai/v1` and builds the model list f
 - **Parameters**: Temperature, Top P
 
 :::note EU region
-Requesty also runs an EU endpoint at `https://router.eu.requesty.ai/v1`. DevoxxGenie currently uses the global endpoint; see the [Requesty docs](https://docs.requesty.ai) for region details.
+DevoxxGenie uses the global endpoint by default. To route through Requesty's EU endpoint, set the **Requesty URL** on the Routers tab to `https://router.eu.requesty.ai/v1`. See the [Requesty docs](https://docs.requesty.ai) for region details.
 :::
 
 :::note Testing status

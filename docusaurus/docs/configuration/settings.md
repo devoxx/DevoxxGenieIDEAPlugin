@@ -40,8 +40,8 @@ The providers are grouped in five tabs:
 |-----|----------|
 | **Local** | Endpoints for providers running on your machine, such as Ollama and LM Studio |
 | **Cloud Direct** | API keys for [cloud providers](../llm-providers/cloud-models.md) you have your own account with, such as OpenAI, Anthropic and Google |
-| **Routers** | A checkbox and API key for each [router](../llm-providers/cloud-models.md#routers): OpenRouter, Cloudflare AI Gateway, OrcaRouter, UberLLM, Requesty and DemonRoute |
-| **Sharding** | Exo, which splits a model across several Apple Silicon devices. Other solutions are listed as coming soon |
+| **Routers** | A privacy warning, then a checkbox, API key and base URL for each [router](../llm-providers/cloud-models.md#routers): OpenRouter, Cloudflare AI Gateway, OrcaRouter, UberLLM, Requesty and DemonRoute |
+| **Sharding** | [Exo](../llm-providers/exo.md), which splits a model across several Apple Silicon devices. vLLM, SGLang, llama.cpp RPC, LocalAI and GPUStack are listed as coming soon |
 | **Custom OpenAI** | The URL, model and API key of any other [OpenAI-compatible endpoint](../llm-providers/custom-providers.md) |
 
 ![The Local tab in the LLM settings](/img/settings-local.png)
@@ -51,6 +51,14 @@ The providers are grouped in five tabs:
 ![The Routers tab in the LLM settings](/img/settings-routers.png)
 
 ![The Custom OpenAI tab in the LLM settings](/img/settings-custom-openai.png)
+
+#### Routers tab
+
+Routers forward your prompts and code to other providers, so the tab opens with a privacy warning. Each router is off until you tick its checkbox, which also decides whether it appears in the chat's provider list. The **URL** field is pre-filled with the router's default endpoint; change it to use an alternative endpoint, or leave it blank to use the default. See [Routers](../llm-providers/cloud-models.md#routers) for how each field behaves.
+
+#### Sharding tab
+
+Sharding splits one model across several machines, so you can run a model that doesn't fit on one device. The tab holds the **Exo URL** with its enable checkbox; see [Exo](../llm-providers/exo.md) for setting up a cluster. The other solutions listed (vLLM, SGLang, llama.cpp RPC, LocalAI and GPUStack) are planned and have no settings yet. An OpenAI-compatible server such as vLLM can already be used from the **Custom OpenAI** tab.
 
 ### LLM Settings
 

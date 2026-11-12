@@ -57,6 +57,10 @@ exclude = [
   # loop (auth.mistral.ai <-> v2.auth.mistral.ai, new flow id each hop), so lychee
   # exhausts its redirect budget and reports the last hop as a 307.
   "https://console\\.mistral\\.ai/.*",
+  # Requesty's dashboard is a logged-in app: every route except /sign-up (including
+  # /api-keys, /model-library and /analytics, which Requesty's own docs link to)
+  # answers 404 to unauthenticated requests, although the pages work in a browser.
+  "https://app\\.requesty\\.ai/.+",
 ]
 
 # GitHub token is passed via GITHUB_TOKEN env var (set by lychee-action)
