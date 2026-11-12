@@ -77,4 +77,6 @@ Commit automation: 2026.3 moved the VCS check-in API into the bundled "Version C
 The Plugin Verifier now also checks 2026.3. 2025.3.3 and 2026.1 are Compatible, and the SwingX problem is gone on 2026.3. The verifier still lists the two VCS problems on 2026.3, but it looks for those classes at lib/modules/intellij.platform.vcs.jar, a path 2026.3 doesn't ship, and logs that mismatch itself, so it can't confirm the VCS change either way.
 
 Full test suite passes. Not verified: AC #1, #2 and #5 on IntelliJ IDEA 2026.3 (settings pages open with their section titles; opening the commit UI logs no missing VCS classes). AC #3 stays open because of the verifier limitation above.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1412
 <!-- SECTION:FINAL_SUMMARY:END -->
