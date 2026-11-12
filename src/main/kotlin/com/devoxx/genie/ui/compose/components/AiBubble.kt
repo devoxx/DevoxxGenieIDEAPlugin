@@ -492,10 +492,12 @@ private fun StoppedFooter(hasContent: Boolean) {
 }
 
 /**
- * Compact inline error card: red-tinted background, human-readable error summary and
- * a Retry affordance. The card is part of the message model, so it persists across
- * scrolling and is not a transient overlay. Retry is one-shot: [retryAttempted]
- * disables the affordance after the first click (double-submission guard).
+ * Compact inline error card: red-tinted background, the human-readable error, and Retry and
+ * Copy affordances. The card is part of the message model, so it persists across scrolling
+ * and is not a transient overlay. [errorText] is the full error: a long one is shortened
+ * until the user expands it (see [ErrorCardText]), the text is selectable, and Copy always
+ * takes the full text. Retry is one-shot: [retryAttempted] disables the affordance after
+ * the first click (double-submission guard).
  */
 @Composable
 private fun ErrorCard(
@@ -520,25 +522,42 @@ private fun ErrorCard(
             text = "\u26A0 Request failed",
             style = typography.caption.copy(color = errorRed, fontWeight = FontWeight.Bold),
         )
+        // Collapsed again whenever a different error lands in this card.
+        var expanded by remember(errorText) { mutableStateOf(false) }
         if (!errorText.isNullOrBlank()) {
             Spacer(Modifier.height(4.dp))
-            BasicText(
-                text = errorText,
-                style = typography.caption.copy(color = colors.textPrimary),
-            )
+            SelectionContainer {
+                BasicText(
+                    text = ErrorCardText.displayed(errorText, expanded),
+                    style = typography.caption.copy(color = colors.textPrimary),
+                )
+            }
+            if (ErrorCardText.isExpandable(errorText)) {
+                BasicText(
+                    text = if (expanded) "Show less" else "Show full error",
+                    style = typography.caption.copy(color = DevoxxBlue, fontWeight = FontWeight.SemiBold),
+                    modifier = Modifier.padding(top = 4.dp).clickable { expanded = !expanded },
+                )
+            }
         }
         Spacer(Modifier.height(6.dp))
-        val retryLabel = if (retryAttempted) "\u21BB Retried" else "\u21BB Retry"
-        val retryColor = if (retryAttempted) colors.textSecondary else DevoxxBlue
-        BasicText(
-            text = retryLabel,
-            style = typography.caption.copy(color = retryColor, fontWeight = FontWeight.SemiBold),
-            modifier = if (retryAttempted) {
-                Modifier.padding(2.dp) // disabled after first click — one retry per card
-            } else {
-                Modifier.padding(2.dp).clickable(onClick = onRetryClick)
-            },
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val retryLabel = if (retryAttempted) "\u21BB Retried" else "\u21BB Retry"
+            val retryColor = if (retryAttempted) colors.textSecondary else DevoxxBlue
+            BasicText(
+                text = retryLabel,
+                style = typography.caption.copy(color = retryColor, fontWeight = FontWeight.SemiBold),
+                modifier = if (retryAttempted) {
+                    Modifier.padding(2.dp) // disabled after first click — one retry per card
+                } else {
+                    Modifier.padding(2.dp).clickable(onClick = onRetryClick)
+                },
+            )
+            if (!errorText.isNullOrBlank()) {
+                Spacer(Modifier.width(12.dp))
+                CopyButton(textToCopy = ErrorCardText.copyText(errorText))
+            }
+        }
     }
 }
 

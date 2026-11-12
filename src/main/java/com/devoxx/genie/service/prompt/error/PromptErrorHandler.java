@@ -21,7 +21,7 @@ import java.util.Optional;
 @Slf4j
 public class PromptErrorHandler {
 
-    /** Maximum length of the error summary shown inline in the chat; full detail stays in idea.log. */
+    /** Maximum length of the error summary in a balloon notification; the chat's error card shows the full text. */
     private static final int MAX_INLINE_ERROR_LENGTH = 300;
 
     /**
@@ -62,22 +62,38 @@ public class PromptErrorHandler {
     }
     
     /**
-     * Derives the human-readable, truncated error summary for inline chat display.
-     * Reuses the exact same classification as the toast ({@link #convertToPromptException})
-     * — no second classification layer. Long provider stack traces are truncated; the
-     * full detail remains in idea.log.
+     * The human-readable error summary for a balloon notification: {@link #fullUserFacingMessage}, shortened to
+     * {@value #MAX_INLINE_ERROR_LENGTH} characters so a long provider error doesn't fill the balloon.
      */
     public static @NotNull String userFacingMessage(@NotNull Throwable exception) {
         return userFacingMessage(exception, null);
     }
 
     /**
-     * As {@link #userFacingMessage(Throwable)}, but first tries to translate a known provider error
-     * payload (e.g. Cloudflare AI Gateway's raw JSON) into short, actionable guidance that names the
-     * failing {@code modelName}. Translated messages are already concise and are returned verbatim
-     * (not truncated); anything unrecognised falls back to the truncated generic message.
+     * As {@link #userFacingMessage(Throwable)}, naming the failing {@code modelName} when a known provider error
+     * is translated (see {@link #fullUserFacingMessage}). Translated messages are already concise and are never
+     * shortened.
      */
     public static @NotNull String userFacingMessage(@NotNull Throwable exception, @Nullable String modelName) {
+        Optional<String> friendly = ProviderErrorTranslator.translate(exception, modelName);
+        if (friendly.isPresent()) {
+            return friendly.get();
+        }
+        String message = fullUserFacingMessage(exception, modelName);
+        if (message.length() > MAX_INLINE_ERROR_LENGTH) {
+            message = message.substring(0, MAX_INLINE_ERROR_LENGTH) + "…";
+        }
+        return message;
+    }
+
+    /**
+     * The complete human-readable error text, for the chat's error card, which shortens it on screen and lets the
+     * user expand or copy it. A known provider error payload (e.g. Cloudflare AI Gateway's raw JSON) is translated
+     * into actionable guidance that names {@code modelName}; anything else is the classified message
+     * ({@link #convertToPromptException}, the same classification as the notification), or the exception type
+     * when it has no message.
+     */
+    public static @NotNull String fullUserFacingMessage(@NotNull Throwable exception, @Nullable String modelName) {
         Optional<String> friendly = ProviderErrorTranslator.translate(exception, modelName);
         if (friendly.isPresent()) {
             return friendly.get();
@@ -85,9 +101,6 @@ public class PromptErrorHandler {
         String message = convertToPromptException(exception).getMessage();
         if (message == null || message.isBlank()) {
             message = exception.getClass().getSimpleName();
-        }
-        if (message.length() > MAX_INLINE_ERROR_LENGTH) {
-            message = message.substring(0, MAX_INLINE_ERROR_LENGTH) + "…";
         }
         return message;
     }
@@ -119,7 +132,7 @@ public class PromptErrorHandler {
             if (panel != null && panel.getConversationPanel() != null
                     && panel.getConversationPanel().viewController != null) {
                 String messageId = chatMessageContext.getId();
-                String errorText = userFacingMessage(exception);
+                String errorText = fullUserFacingMessage(exception, null);
                 // Compose mutableStateOf mutations must happen on the EDT — this method is
                 // reached from prompt-execution pool threads (executeQuery().exceptionally,
                 // strategy error handlers), never guaranteed to be the EDT.
