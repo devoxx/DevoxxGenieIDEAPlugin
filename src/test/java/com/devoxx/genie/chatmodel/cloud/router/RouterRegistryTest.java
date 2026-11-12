@@ -126,6 +126,7 @@ class RouterRegistryTest {
         assertThat(deepseek.getOutputCost()).isEqualTo(0.0418);
         assertThat(deepseek.getInputMaxTokens()).isEqualTo(160_000);
         assertThat(def.baseUrl()).isEqualTo("https://api.uberllm.dev/v1");
+        assertThat(def.keyUrl()).isEqualTo("https://uberllm.dev/dashboard/keys");
         assertThat(def.maxTokens()).isNull();
     }
 
