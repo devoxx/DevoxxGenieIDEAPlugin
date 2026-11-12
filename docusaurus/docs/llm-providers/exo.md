@@ -93,7 +93,7 @@ DevoxxGenie only shows models that are **fully downloaded** on your cluster. If 
 ### 1. Enable Exo Provider
 
 1. Open IntelliJ IDEA **Settings** > **Tools** > **DevoxxGenie** > **Large Language Models**
-2. Find **Exo URL** in the Local LLM Providers section
+2. Find **Exo URL** on the **Sharding** tab
 3. **Enable** the checkbox
 4. Set the URL (default: `http://localhost:52415/v1/`)
 
@@ -203,7 +203,7 @@ Exo also supports:
 
 ### "Method Not Allowed" Error
 
-The Exo URL must end with `/v1/`. Update it in Settings > DevoxxGenie > Large Language Models > Exo URL.
+The Exo URL must end with `/v1/`. Update it in Settings > DevoxxGenie > Sharding > Exo URL.
 
 ### Chat Works Once Then Fails
 

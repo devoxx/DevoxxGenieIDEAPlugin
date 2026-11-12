@@ -67,6 +67,11 @@ Compiler errors don't match this filter. When the build fails before the tests r
 `RouterRegistry.isGeneric(provider)` rather than `Type.ROUTER` in shared code (Cloudflare is `Type.ROUTER` but not
 generic). `RouterRegistryTest.everyDefinition_isFullyWired` enforces the wiring.
 
+**OpenAI-compatible local servers** (Nativ, Rapid-MLX) skip the factory too: add a `Type.LOCAL` entry to the
+`ModelProvider` enum and one `LocalProviderDefinition` in `LocalProviderRegistry`. Use
+`LocalProviderRegistry.isGeneric(provider)` in shared code. `LocalProviderRegistryTest.everyDefinition_isFullyWired`
+enforces the wiring.
+
 Steps 3 and 4 are easy to miss — a new factory silently does nothing until it is registered in both places.
 
 ## Important Implementation Details

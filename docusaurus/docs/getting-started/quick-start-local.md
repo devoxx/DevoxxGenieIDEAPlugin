@@ -26,6 +26,7 @@ DevoxxGenie supports several local LLM providers:
 - [Llama.cpp](https://github.com/ggerganov/llama.cpp)
 - [Jan](https://jan.ai/)
 - [Nativ](https://github.com/Blaizzy/nativ) (MLX on Apple Silicon)
+- [Rapid-MLX](https://github.com/raullenchai/Rapid-MLX) (MLX on Apple Silicon)
 - Custom OpenAI-compatible providers
 
 ## Setting Up with Ollama (Recommended)

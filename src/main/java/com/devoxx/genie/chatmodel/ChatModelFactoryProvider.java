@@ -19,14 +19,14 @@ import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
 import com.devoxx.genie.chatmodel.local.acprunners.AcpRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.clirunners.CliRunnersChatModelFactory;
 import com.devoxx.genie.chatmodel.local.customopenai.CustomOpenAIChatModelFactory;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
+import com.devoxx.genie.chatmodel.local.compatible.OpenAiCompatibleChatModelFactory;
 import com.devoxx.genie.chatmodel.local.exo.ExoChatModelFactory;
 import com.devoxx.genie.chatmodel.local.gpt4all.GPT4AllChatModelFactory;
 import com.devoxx.genie.chatmodel.local.jan.JanChatModelFactory;
 import com.devoxx.genie.chatmodel.local.llamacpp.LlamaChatModelFactory;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioChatModelFactory;
-import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaChatModelFactory;
-import com.devoxx.genie.chatmodel.local.rapidmlx.RapidMLXChatModelFactory;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,8 +80,6 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.LLaMA, LlamaChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.LMStudio, LMStudioChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Mistral, MistralChatModelFactory::new);
-        FACTORY_SUPPLIERS.put(ModelProvider.Nativ, NativChatModelFactory::new);
-        FACTORY_SUPPLIERS.put(ModelProvider.RapidMLX, RapidMLXChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Ollama, OllamaChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.OpenAI, OpenAIChatModelFactory::new);
         FACTORY_SUPPLIERS.put(ModelProvider.Grok, GrokChatModelFactory::new);
@@ -92,6 +90,8 @@ public final class ChatModelFactoryProvider {
         FACTORY_SUPPLIERS.put(ModelProvider.ACPRunners, AcpRunnersChatModelFactory::new);
         RouterRegistry.definitions().forEach(def ->
                 FACTORY_SUPPLIERS.put(def.provider(), () -> new RouterChatModelFactory(def)));
+        LocalProviderRegistry.definitions().forEach(def ->
+                FACTORY_SUPPLIERS.put(def.provider(), () -> new OpenAiCompatibleChatModelFactory(def)));
     }
 
     /** Lazily-instantiated factory instances, keyed by the resolved provider. */

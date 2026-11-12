@@ -2,6 +2,7 @@ package com.devoxx.genie.ui.settings.agent;
 
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.intellij.openapi.application.ApplicationManager;
@@ -18,12 +19,12 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 /**
- * Fills a model combo box for a provider. Generic routers fetch their catalogue over the network,
- * so those are loaded on a pooled thread and applied on the EDT; every other provider keeps the
+ * Fills a model combo box for a provider. Generic routers and generic local providers fetch their
+ * catalogue over the network, so those are loaded on a pooled thread and applied on the EDT; every other provider keeps the
  * synchronous path. The settings dialog is modal, hence {@code executeOnPooledThread} +
  * {@code ModalityState.any()} rather than {@code Task.Backgroundable}.
  * <p>
- * While a router load is pending the combo is empty and disabled, and {@link #effectiveModelName()}
+ * While such a load is pending the combo is empty and disabled, and {@link #effectiveModelName()}
  * keeps reporting the saved model so Apply/isModified never see an empty selection. All methods
  * except the background fetch run on the EDT; a generation counter discards stale results.
  */
@@ -81,7 +82,7 @@ final class ModelComboLoader {
             return;
         }
 
-        if (!RouterRegistry.isGeneric(provider)) {
+        if (!RouterRegistry.isGeneric(provider) && !LocalProviderRegistry.isGeneric(provider)) {
             combo.setEnabled(true);
             populate(fetchSorted(provider), modelToSelect);
             return;

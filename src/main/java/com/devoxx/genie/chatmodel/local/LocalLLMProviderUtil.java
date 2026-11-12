@@ -65,7 +65,17 @@ public class LocalLLMProviderUtil {
         return fetchModels(fullUrl, responseType, client, bearerToken);
     }
 
-    private static <T> T fetchModels(String url, Class<T> responseType, OkHttpClient client, String bearerToken) throws IOException {
+    /** Fetches the raw response body of a GET request with the shared HTTP client. */
+    public static String getBodyFromUrl(String url) throws IOException {
+        return getBodyFromUrl(url, HttpClientProvider.getClient());
+    }
+
+    /** Fetches the raw response body of a GET request with a caller-supplied HTTP client. */
+    public static String getBodyFromUrl(String url, OkHttpClient client) throws IOException {
+        return getBody(url, client, null);
+    }
+
+    private static String getBody(String url, OkHttpClient client, String bearerToken) throws IOException {
         Request.Builder requestBuilder = new Request.Builder().url(url);
         if (bearerToken != null && !bearerToken.isBlank()) {
             requestBuilder.header("Authorization", "Bearer " + bearerToken);
@@ -81,23 +91,26 @@ public class LocalLLMProviderUtil {
                 throw new UnsuccessfulRequestException("Response body is null");
             }
 
-            String json = response.body().string();
-
-            // Special handling for LM Studio
-            if (responseType.equals(LMStudioModelEntryDTO[].class)) {
-                JsonElement jsonElement = gson.fromJson(json, JsonElement.class);
-                if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().has("data")) {
-                    return gson.fromJson(jsonElement.getAsJsonObject().get("data"), responseType);
-                } else if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().has("models")) {
-                    return gson.fromJson(jsonElement.getAsJsonObject().get("models"), responseType);
-                } else if (jsonElement.isJsonArray()) {
-                    return gson.fromJson(jsonElement, responseType);
-                } else {
-                    return responseType.cast(new LMStudioModelEntryDTO[0]);
-                }
-            }
-
-            return gson.fromJson(json, responseType);
+            return response.body().string();
         }
+    }
+
+    private static <T> T fetchModels(String url, Class<T> responseType, OkHttpClient client, String bearerToken) throws IOException {
+        String json = getBody(url, client, bearerToken);
+        // Special handling for LM Studio
+        if (responseType.equals(LMStudioModelEntryDTO[].class)) {
+            JsonElement jsonElement = gson.fromJson(json, JsonElement.class);
+            if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().has("data")) {
+                return gson.fromJson(jsonElement.getAsJsonObject().get("data"), responseType);
+            } else if (jsonElement.isJsonObject() && jsonElement.getAsJsonObject().has("models")) {
+                return gson.fromJson(jsonElement.getAsJsonObject().get("models"), responseType);
+            } else if (jsonElement.isJsonArray()) {
+                return gson.fromJson(jsonElement, responseType);
+            } else {
+                return responseType.cast(new LMStudioModelEntryDTO[0]);
+            }
+        }
+
+        return gson.fromJson(json, responseType);
     }
 }

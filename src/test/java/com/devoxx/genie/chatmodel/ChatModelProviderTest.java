@@ -72,7 +72,7 @@ class ChatModelProviderTest {
 
     @Test
     void rapidMLX_preservesLocalBaseUrlAndDiscoveredContext() {
-        when(stateService.getRapidMLXModelUrl()).thenReturn("http://localhost:8000/v1");
+        when(stateService.getLocalProviderUrl(ModelProvider.RapidMLX)).thenReturn("http://localhost:8000/v1");
         LanguageModel languageModel = LanguageModel.builder()
                 .provider(ModelProvider.RapidMLX)
                 .modelName("mlx-community/Qwen3.5-4B-MLX-4bit")

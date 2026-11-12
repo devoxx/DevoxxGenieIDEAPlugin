@@ -4,8 +4,10 @@ import com.devoxx.genie.chatmodel.ChatModelFactory;
 import com.devoxx.genie.chatmodel.ChatModelFactoryProvider;
 import com.devoxx.genie.chatmodel.cloud.router.RouterDefinition;
 import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
-import com.devoxx.genie.chatmodel.local.nativ.NativChatModelFactory;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderDefinition;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.enumarations.AwsBedrockAuthMode;
+import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -18,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
@@ -101,13 +104,7 @@ public class LLMProvidersConfigurable implements Configurable {
         }
         isModified |= isFieldModified(llmSettingsComponent.getGpt4AllModelUrlField(), stateService.getGpt4allModelUrl());
         isModified |= isFieldModified(llmSettingsComponent.getJanModelUrlField(), stateService.getJanModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getNativModelUrlField(), stateService.getNativModelUrl());
-        isModified |= isFieldModified(llmSettingsComponent.getRapidMLXModelUrlField(), stateService.getRapidMLXModelUrl());
-        isModified |= (stateService.getNativFallbackContextLength() != null) != llmSettingsComponent.getNativFallbackContextEnabledCheckBox().isSelected();
-        if (llmSettingsComponent.getNativFallbackContextEnabledCheckBox().isSelected()) {
-            Integer savedNativFallback = stateService.getNativFallbackContextLength();
-            isModified |= savedNativFallback == null || !savedNativFallback.equals(llmSettingsComponent.getNativFallbackContextField().getNumber());
-        }
+        isModified |= isAnyLocalProviderModified(stateService);
 
         isModified |= stateService.isCustomOpenAIApiKeyEnabled() != llmSettingsComponent.getEnableCustomOpenAIApiKeyCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getCustomOpenAIUrlField(), stateService.getCustomOpenAIUrl());
@@ -139,8 +136,6 @@ public class LLMProvidersConfigurable implements Configurable {
         isModified |= stateService.isLmStudioEnabled() != llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected();
         isModified |= stateService.isGpt4AllEnabled() != llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected();
         isModified |= stateService.isJanEnabled() != llmSettingsComponent.getJanEnabledCheckBox().isSelected();
-        isModified |= stateService.isNativEnabled() != llmSettingsComponent.getNativEnabledCheckBox().isSelected();
-        isModified |= stateService.isRapidMLXEnabled() != llmSettingsComponent.getRapidMLXEnabledCheckBox().isSelected();
         isModified |= stateService.isLlamaCPPEnabled() != llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected();
         isModified |= stateService.isExoEnabled() != llmSettingsComponent.getExoEnabledCheckBox().isSelected();
         isModified |= isFieldModified(llmSettingsComponent.getExoModelUrlField(), stateService.getExoModelUrl());
@@ -200,13 +195,6 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setGpt4allModelUrl(llmSettingsComponent.getGpt4AllModelUrlField().getText());
         settings.setJanModelUrl(llmSettingsComponent.getJanModelUrlField().getText());
         settings.setLlamaCPPUrl(llmSettingsComponent.getLlamaCPPModelUrlField().getText());
-        settings.setNativModelUrl(llmSettingsComponent.getNativModelUrlField().getText());
-        settings.setRapidMLXModelUrl(llmSettingsComponent.getRapidMLXModelUrlField().getText());
-        settings.setNativFallbackContextLength(
-                llmSettingsComponent.getNativFallbackContextEnabledCheckBox().isSelected()
-                        ? llmSettingsComponent.getNativFallbackContextField().getNumber()
-                        : null
-        );
 
         settings.setCustomOpenAIUrl(llmSettingsComponent.getCustomOpenAIUrlField().getText());
         settings.setCustomOpenAIModelName(llmSettingsComponent.getCustomOpenAIModelNameField().getText());
@@ -257,8 +245,6 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setLmStudioEnabled(llmSettingsComponent.getLmStudioEnabledCheckBox().isSelected());
         settings.setGpt4AllEnabled(llmSettingsComponent.getGpt4AllEnabledCheckBox().isSelected());
         settings.setJanEnabled(llmSettingsComponent.getJanEnabledCheckBox().isSelected());
-        settings.setNativEnabled(llmSettingsComponent.getNativEnabledCheckBox().isSelected());
-        settings.setRapidMLXEnabled(llmSettingsComponent.getRapidMLXEnabledCheckBox().isSelected());
         settings.setLlamaCPPEnabled(llmSettingsComponent.getLlamaCPPEnabledCheckBox().isSelected());
         settings.setExoEnabled(llmSettingsComponent.getExoEnabledCheckBox().isSelected());
         settings.setExoModelUrl(llmSettingsComponent.getExoModelUrlField().getText());
@@ -282,6 +268,7 @@ public class LLMProvidersConfigurable implements Configurable {
         settings.setShowAzureOpenAIFields(llmSettingsComponent.getEnableAzureOpenAICheckBox().isSelected());
 
         applyRouters(settings);
+        applyLocalProviders(settings);
 
         // Only notify the listener if an API key has changed, so we can refresh the LLM providers list in the UI
         if (isModified) {
@@ -315,6 +302,59 @@ public class LLMProvidersConfigurable implements Configurable {
 
             if (changed) {
                 ChatModelFactoryProvider.getFactoryByProvider(def.provider().name())
+                        .ifPresent(ChatModelFactory::resetModels);
+            }
+        }
+    }
+
+    private boolean isAnyLocalProviderModified(@NotNull DevoxxGenieStateService stateService) {
+        for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
+            ModelProvider provider = def.provider();
+            LLMProvidersComponent.LocalProviderRow row = llmSettingsComponent.getLocalProviderRows().get(provider);
+            if (isFieldModified(row.url(), stateService.getLocalProviderUrl(provider))
+                    || stateService.isLocalProviderEnabled(provider) != row.enabled().isSelected()) {
+                return true;
+            }
+            if (row.fallback() != null) {
+                Integer saved = stateService.getLocalProviderFallbackContext(provider);
+                if ((saved != null) != row.fallbackEnabled().isSelected()
+                        || (saved != null && !saved.equals(row.fallback().getNumber()))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Persists every generic local provider's row, then drops the catalog of each provider whose URL or
+     * flag changed, for the same reasons and in the same order as {@link #applyRouters}.
+     */
+    private void applyLocalProviders(@NotNull DevoxxGenieStateService settings) {
+        for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
+            ModelProvider provider = def.provider();
+            LLMProvidersComponent.LocalProviderRow row = llmSettingsComponent.getLocalProviderRows().get(provider);
+            boolean newEnabled = row.enabled().isSelected();
+            String typedUrl = row.url().getText().trim();
+            String newUrl = typedUrl.isEmpty() ? def.defaultUrl() : typedUrl;
+            Integer newFallback = row.fallback() == null ? null
+                    : (row.fallbackEnabled().isSelected() ? row.fallback().getNumber() : null);
+            // The fallback context window is baked into cached LanguageModels, so it counts as a change too.
+            boolean changed = !newUrl.equals(settings.getLocalProviderUrl(provider))
+                    || newEnabled != settings.isLocalProviderEnabled(provider)
+                    || (row.fallback() != null
+                        && !Objects.equals(newFallback, settings.getLocalProviderFallbackContext(provider)));
+
+            settings.setLocalProviderUrl(provider, row.url().getText());
+            // The saved URL is trimmed and a blank one means the default: show that, or the page stays dirty.
+            row.url().setText(settings.getLocalProviderUrl(provider));
+            settings.setLocalProviderEnabled(provider, newEnabled);
+            if (row.fallback() != null) {
+                settings.setLocalProviderFallbackContext(provider, newFallback);
+            }
+
+            if (changed) {
+                ChatModelFactoryProvider.getFactoryByProvider(provider.name())
                         .ifPresent(ChatModelFactory::resetModels);
             }
         }
@@ -498,15 +538,18 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getGpt4AllModelUrlField().setText(settings.getGpt4allModelUrl());
         llmSettingsComponent.getJanModelUrlField().setText(settings.getJanModelUrl());
         llmSettingsComponent.getLlamaCPPModelUrlField().setText(settings.getLlamaCPPUrl());
-        llmSettingsComponent.getNativModelUrlField().setText(settings.getNativModelUrl());
-        llmSettingsComponent.getRapidMLXModelUrlField().setText(settings.getRapidMLXModelUrl());
-        llmSettingsComponent.getNativFallbackContextEnabledCheckBox().setSelected(settings.getNativFallbackContextLength() != null);
-        llmSettingsComponent.getNativFallbackContextField().setNumber(
-                settings.getNativFallbackContextLength() != null
-                        ? settings.getNativFallbackContextLength()
-                        : NativChatModelFactory.DEFAULT_CONTEXT_LENGTH
-        );
-        llmSettingsComponent.getNativFallbackContextField().setEnabled(settings.getNativFallbackContextLength() != null);
+        for (LocalProviderDefinition def : LocalProviderRegistry.definitions()) {
+            ModelProvider provider = def.provider();
+            LLMProvidersComponent.LocalProviderRow row = llmSettingsComponent.getLocalProviderRows().get(provider);
+            row.enabled().setSelected(settings.isLocalProviderEnabled(provider));
+            row.url().setText(settings.getLocalProviderUrl(provider));
+            if (row.fallback() != null) {
+                Integer saved = settings.getLocalProviderFallbackContext(provider);
+                row.fallbackEnabled().setSelected(saved != null);
+                row.fallback().setNumber(saved != null ? saved : def.defaultContextLength());
+                row.fallback().setEnabled(saved != null);
+            }
+        }
 
         llmSettingsComponent.getCustomOpenAIUrlField().setText(settings.getCustomOpenAIUrl());
         llmSettingsComponent.getCustomOpenAIModelNameField().setText(settings.getCustomOpenAIModelName());
@@ -558,8 +601,6 @@ public class LLMProvidersConfigurable implements Configurable {
         llmSettingsComponent.getLmStudioEnabledCheckBox().setSelected(settings.isLmStudioEnabled());
         llmSettingsComponent.getGpt4AllEnabledCheckBox().setSelected(settings.isGpt4AllEnabled());
         llmSettingsComponent.getJanEnabledCheckBox().setSelected(settings.isJanEnabled());
-        llmSettingsComponent.getNativEnabledCheckBox().setSelected(settings.isNativEnabled());
-        llmSettingsComponent.getRapidMLXEnabledCheckBox().setSelected(settings.isRapidMLXEnabled());
         llmSettingsComponent.getLlamaCPPEnabledCheckBox().setSelected(settings.isLlamaCPPEnabled());
         llmSettingsComponent.getExoEnabledCheckBox().setSelected(settings.isExoEnabled());
         llmSettingsComponent.getExoModelUrlField().setText(settings.getExoModelUrl());

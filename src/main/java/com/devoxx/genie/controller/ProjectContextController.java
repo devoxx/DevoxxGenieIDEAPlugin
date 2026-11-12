@@ -2,6 +2,7 @@ package com.devoxx.genie.controller;
 
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.chatmodel.cloud.router.RouterRegistry;
+import com.devoxx.genie.chatmodel.local.compatible.LocalProviderRegistry;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.ProjectContentService;
 import com.devoxx.genie.ui.panel.ActionButtonsPanel;
@@ -106,8 +107,7 @@ public class ProjectContextController {
                 modelProvider.equals(Jan) ||
                 modelProvider.equals(Bedrock) ||
                 modelProvider.equals(LMStudio) ||
-                modelProvider.equals(Nativ) ||
-                modelProvider.equals(RapidMLX) ||
+                LocalProviderRegistry.isGeneric(modelProvider) ||
                 modelProvider.equals(AzureOpenAI);
                 // Note : NOT GPT4All because the selected context window is not provided in JSON model response
     }

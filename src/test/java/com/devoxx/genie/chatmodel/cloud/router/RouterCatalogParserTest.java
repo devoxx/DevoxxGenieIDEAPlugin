@@ -1,5 +1,6 @@
 package com.devoxx.genie.chatmodel.cloud.router;
 
+import com.devoxx.genie.chatmodel.catalog.CatalogFields;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.service.analytics.ProviderType;
@@ -107,6 +108,24 @@ class RouterCatalogParserTest {
         assertThat(models.get(0).getInputCost()).isZero();
         assertThat(models.get(0).getOutputCost()).isZero();
         assertThat(models.get(1).getInputCost()).isEqualTo(1.0);
+    }
+
+    @Test
+    void arrayFilter_keepsEntryWithEmptyArray() {
+        RouterDefinition arrayFilter = new RouterDefinition(
+                ModelProvider.OpenRouter, "ArrayFilter", "https://example.invalid/v1",
+                List.of("/models"), "arrayKey", "https://example.invalid/keys", null,
+                new CatalogFields(null, List.of("context_window"), null, null, 1, "modes", "chat"),
+                4000);
+        String json = """
+                {"data":[{"id":"has","modes":["chat","embed"]},
+                         {"id":"other","modes":["embed"]},
+                         {"id":"empty","modes":[]}]}
+                """;
+
+        List<LanguageModel> models = RouterCatalogParser.parse(arrayFilter, json);
+
+        assertThat(models).extracting(LanguageModel::getModelName).contains("has", "empty").doesNotContain("other");
     }
 
     @Test
