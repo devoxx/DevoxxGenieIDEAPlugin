@@ -571,6 +571,41 @@ class LlmProviderPanelTest {
     }
 
     @Test
+    void firstRun_selectsOllama_evenWhenAnotherProviderSortsFirst() {
+        // GPT4All and Jan are enabled by default and sort before Ollama, but new users start on Ollama.
+        when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(true);
+        when(stateService.isJanEnabled()).thenReturn(true);
+        when(llmProviderService.getAvailableModelProviders())
+                .thenReturn(List.of(ModelProvider.GPT4All, ModelProvider.Jan, ModelProvider.Ollama));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
+                .thenReturn(Optional.empty());
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        clearInvocations(stateService);
+        panel.setLastSelectedProvider();
+
+        verify(stateService).setSelectedProvider("test-hash", "Ollama");
+        verify(stateService, never()).setSelectedProvider("test-hash", "GPT4All");
+    }
+
+    @Test
+    void firstRun_withoutOllama_selectsTheFirstProvider() {
+        when(stateService.isOllamaEnabled()).thenReturn(false);
+        when(stateService.isLocalProviderEnabled(ModelProvider.GPT4All)).thenReturn(true);
+        when(stateService.isJanEnabled()).thenReturn(true);
+        when(llmProviderService.getAvailableModelProviders())
+                .thenReturn(List.of(ModelProvider.Jan, ModelProvider.GPT4All, ModelProvider.Ollama));
+        factoryProviderMockedStatic.when(() -> ChatModelFactoryProvider.getFactoryByProvider(anyString()))
+                .thenReturn(Optional.empty());
+
+        LlmProviderPanel panel = new LlmProviderPanel(project);
+        clearInvocations(stateService);
+        panel.setLastSelectedProvider();
+
+        verify(stateService).setSelectedProvider("test-hash", "GPT4All");
+    }
+
+    @Test
     void providerSwitchWithoutModelsClearsPersistedModel() {
         // When the newly selected provider yields no models, the stale model of the previous
         // provider must be cleared from state instead of surviving under the new provider.
