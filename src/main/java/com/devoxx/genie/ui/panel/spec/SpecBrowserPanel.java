@@ -572,9 +572,41 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
         }, null);
     }
 
+    /**
+     * Asks whether In Progress tasks left behind by an earlier, interrupted run should be
+     * resumed before the To Do tasks (#1424).
+     *
+     * @return TRUE to include them, FALSE for To Do only, null when the user cancelled
+     */
+    private @org.jetbrains.annotations.Nullable Boolean askIncludeInProgress() {
+        List<TaskSpec> inProgress = SpecService.getInstance(project).getSpecsByStatus("In Progress");
+        if (inProgress.isEmpty()) {
+            return Boolean.FALSE;
+        }
+        StringBuilder msg = new StringBuilder();
+        msg.append(inProgress.size() == 1 ? "1 task is" : inProgress.size() + " tasks are")
+                .append(" still In Progress, probably from an earlier, interrupted run:\n\n");
+        inProgress.stream().limit(10).forEach(t -> msg.append("  • ")
+                .append(t.getId() != null ? t.getId() : "?").append(": ")
+                .append(t.getTitle() != null ? t.getTitle() : "").append('\n'));
+        if (inProgress.size() > 10) {
+            msg.append("  … and ").append(inProgress.size() - 10).append(" more\n");
+        }
+        msg.append("\nResume them before the To Do tasks?");
+        int choice = Messages.showYesNoCancelDialog(project, msg.toString(), "Resume In Progress Tasks",
+                "Resume and Run", "To Do Only", "Cancel", Messages.getQuestionIcon());
+        if (choice == Messages.YES) return Boolean.TRUE;
+        if (choice == Messages.NO) return Boolean.FALSE;
+        return null;
+    }
+
     private void runAllTodoTasks() {
+        Boolean includeInProgress = askIncludeInProgress();
+        if (includeInProgress == null) {
+            return;
+        }
         try {
-            SpecTaskRunnerService.getInstance(project).runAllTodoTasks();
+            SpecTaskRunnerService.getInstance(project).runAllTodoTasks(includeInProgress);
         } catch (RuntimeException e) {
             if (e.getCause() instanceof CircularDependencyException) {
                 NotificationUtil.sendErrorNotification(project,
@@ -605,8 +637,12 @@ public class SpecBrowserPanel extends SimpleToolWindowPanel implements SpecTaskR
     }
 
     private void runAllTodoTasksParallel() {
+        Boolean includeInProgress = askIncludeInProgress();
+        if (includeInProgress == null) {
+            return;
+        }
         try {
-            SpecTaskRunnerService.getInstance(project).runAllTodoTasksParallel();
+            SpecTaskRunnerService.getInstance(project).runAllTodoTasksParallel(includeInProgress);
         } catch (RuntimeException e) {
             if (e.getCause() instanceof CircularDependencyException) {
                 NotificationUtil.sendErrorNotification(project,
