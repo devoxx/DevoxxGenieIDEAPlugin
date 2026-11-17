@@ -229,11 +229,19 @@ public final class TaskDependencySorter {
         return snapshot;
     }
 
+    private static boolean isInProgress(TaskSpec spec) {
+        return spec != null && "In Progress".equalsIgnoreCase(spec.getStatus());
+    }
+
     private static @NotNull Comparator<String> layerComparator(@NotNull Map<String, TaskSpec> selectedById) {
         return (a, b) -> {
             TaskSpec ta = selectedById.get(a);
             TaskSpec tb = selectedById.get(b);
-            int cmp = Integer.compare(
+            // Resumed (In Progress) tasks run before fresh ones; tasks within a layer
+            // are independent, so this never breaks dependency order (#1424).
+            int cmp = Boolean.compare(!isInProgress(ta), !isInProgress(tb));
+            if (cmp != 0) return cmp;
+            cmp = Integer.compare(
                     ta != null ? ta.getOrdinal() : 1000,
                     tb != null ? tb.getOrdinal() : 1000);
             if (cmp != 0) return cmp;

@@ -509,6 +509,10 @@ public class ActionButtonsPanel extends JPanel
                 pendingSpecPrompt = prompt;
                 return;
             }
+            // #1424: a batch task prompt starts with a fresh conversation in this tab. The
+            // runner resets it only now that the prompt really runs — never while this
+            // tab is still executing (that case is queued above and comes back here).
+            SpecTaskRunnerService.getInstance(project).onTaskPromptStarting(prompt, myTabId);
             promptInputArea.setText(prompt);
             onSubmitPrompt(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, Constant.SUBMIT_ACTION));
         });

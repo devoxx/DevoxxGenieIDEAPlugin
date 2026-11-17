@@ -9,6 +9,7 @@ import com.devoxx.genie.service.spec.SpecTaskRunnerService.RunnerState;
 import com.devoxx.genie.ui.listener.PromptSubmissionListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -172,6 +173,8 @@ class SpecTaskRunnerServiceTest {
             when(ctx.specService.getAllSpecs()).thenReturn(List.of(task));
             when(ctx.specService.getSpec("TASK-1")).thenReturn(task);
             when(ctx.stateService.getSpecRunnerMode()).thenReturn("llm");
+            when(ctx.project.getLocationHash()).thenReturn("hash");
+            when(ctx.tabRegistry.getActiveTabId(ctx.project)).thenReturn("tab-7");
 
             SpecTaskRunnerService service = ctx.createService();
             SpecTaskRunnerListener listener = mock(SpecTaskRunnerListener.class);
@@ -188,9 +191,16 @@ class SpecTaskRunnerServiceTest {
             assertThat(service.isCliMode()).isFalse();
 
             // Verify prompt was submitted
-            verify(ctx.promptSubmissionListener).onPromptSubmitted(eq(ctx.project), anyString(), isNull());
-            verify(ctx.chatMemoryService).clearMemory(ctx.project);
-            verify(ctx.fileListManager).clear(ctx.project);
+            // The prompt goes to the active tab; its conversation is reset only when the
+            // tab actually starts the prompt, never at publish time (#1424)
+            org.mockito.ArgumentCaptor<String> prompt = org.mockito.ArgumentCaptor.forClass(String.class);
+            verify(ctx.promptSubmissionListener).onPromptSubmitted(eq(ctx.project), prompt.capture(), eq("tab-7"));
+            verify(ctx.chatMemoryService, never()).clearMemoryByKey(anyString());
+            verify(ctx.chatMemoryService, never()).clearMemory(any());
+
+            assertThat(service.onTaskPromptStarting(prompt.getValue(), "tab-7")).isTrue();
+            verify(ctx.chatMemoryService).clearMemoryByKey("hash-tab-7");
+            verify(ctx.fileListManager).clear(ctx.project, "tab-7");
 
             verify(listener).onRunStarted(1);
             verify(listener).onTaskStarted(eq(task), eq(0), eq(1));
@@ -854,6 +864,7 @@ class SpecTaskRunnerServiceTest {
         final ChatMemoryService chatMemoryService;
         final FileListManager fileListManager;
         final PromptSubmissionListener promptSubmissionListener;
+        final ConversationTabRegistry tabRegistry;
         final Project project;
 
         RunnerMockContext() {
@@ -865,6 +876,12 @@ class SpecTaskRunnerServiceTest {
 
             Application application = mock(Application.class);
             appManagerMock.when(ApplicationManager::getApplication).thenReturn(application);
+            // The runner listens for agent LOOP_LIMIT events on the application bus (#1424).
+            MessageBus appBus = mock(MessageBus.class);
+            when(application.getMessageBus()).thenReturn(appBus);
+            when(appBus.connect()).thenReturn(mock(MessageBusConnection.class));
+            tabRegistry = mock(ConversationTabRegistry.class);
+            when(application.getService(ConversationTabRegistry.class)).thenReturn(tabRegistry);
             // Parallel mode dispatches tasks via executeOnPooledThread with a blocking
             // layerLatch.await(). We make this a no-op because: (1) running inline
             // would deadlock the test thread, and (2) MockedStatic is thread-scoped

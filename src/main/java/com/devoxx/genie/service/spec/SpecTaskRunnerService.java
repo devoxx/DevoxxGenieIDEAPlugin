@@ -1,5 +1,7 @@
 package com.devoxx.genie.service.spec;
 
+import com.devoxx.genie.model.activity.ActivityMessage;
+import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.model.enumarations.ExecutionMode;
 import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.model.spec.TaskSpec;
@@ -9,16 +11,20 @@ import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.window.ConversationTabRegistry;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBusConnection;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Timer;
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -70,6 +76,23 @@ public final class SpecTaskRunnerService implements Disposable {
     // the prompt is still executing.  notifyPromptExecutionCompleted() checks
     // this flag so it can advance immediately instead of starting a grace timer.
     private volatile boolean currentTaskDoneWhileExecuting = false;
+
+    // Set by notifyPromptExecutionCompleted() for the current sequential task. When the
+    // "Done" file change arrives after that (during the grace period), onSpecsChanged()
+    // must advance itself — nothing else will.
+    private volatile boolean currentPromptCompleted = false;
+
+    static final String IN_PROGRESS = "In Progress";
+
+    // Listens for AgentLoopTracker LOOP_LIMIT events while a run is active (#1424).
+    private MessageBusConnection activityConnection;
+
+    // Max tool calls of the main agent if it hit its limit during the current
+    // sequential task, 0 otherwise. Reset each time a task is submitted.
+    private volatile int currentTaskLoopLimit = 0;
+
+    // LLM task prompts published to a chat tab that the tab has not started yet.
+    private final Set<String> promptsAwaitingStart = ConcurrentHashMap.newKeySet();
 
     // Track which tasks in this run have completed (for dependency checking)
     private final Set<String> completedTaskIds = Collections.synchronizedSet(new HashSet<>());
@@ -222,6 +245,7 @@ public final class SpecTaskRunnerService implements Disposable {
         // Register spec change listener
         specChangeListener = this::onSpecsChanged;
         specService.addChangeListener(specChangeListener);
+        subscribeToLoopLimitEvents();
 
         state = RunnerState.RUNNING_TASK;
         notifyRunStarted();
@@ -237,16 +261,37 @@ public final class SpecTaskRunnerService implements Disposable {
      * Convenience: run all To Do tasks.
      */
     public void runAllTodoTasks() {
-        List<TaskSpec> todoTasks = SpecService.getInstance(project).getSpecsByStatus("To Do");
-        runTasks(todoTasks);
+        runAllTodoTasks(false);
+    }
+
+    /**
+     * Run all To Do tasks, optionally resuming In Progress tasks left behind by an
+     * earlier, interrupted run. Resumed tasks run before To Do tasks within each
+     * dependency layer (see {@link TaskDependencySorter}).
+     */
+    public void runAllTodoTasks(boolean includeInProgress) {
+        runTasks(collectRunAllTasks(includeInProgress));
     }
 
     /**
      * Convenience: run all To Do tasks in parallel mode.
      */
     public void runAllTodoTasksParallel() {
-        List<TaskSpec> todoTasks = SpecService.getInstance(project).getSpecsByStatus("To Do");
-        runTasks(todoTasks, ExecutionMode.PARALLEL);
+        runAllTodoTasksParallel(false);
+    }
+
+    public void runAllTodoTasksParallel(boolean includeInProgress) {
+        runTasks(collectRunAllTasks(includeInProgress), ExecutionMode.PARALLEL);
+    }
+
+    private @NotNull List<TaskSpec> collectRunAllTasks(boolean includeInProgress) {
+        SpecService specService = SpecService.getInstance(project);
+        List<TaskSpec> tasks = new ArrayList<>();
+        if (includeInProgress) {
+            tasks.addAll(specService.getSpecsByStatus(IN_PROGRESS));
+        }
+        tasks.addAll(specService.getSpecsByStatus("To Do"));
+        return tasks;
     }
 
     /**
@@ -357,6 +402,7 @@ public final class SpecTaskRunnerService implements Disposable {
 
         log.info("Prompt execution completed for task {}, starting grace timer", current.getId());
         cancelGraceTimer();
+        currentPromptCompleted = true;
 
         graceTimer = new Timer(3000, e -> {
             TaskSpec fresh = SpecService.getInstance(project).getSpec(current.getId());
@@ -366,11 +412,68 @@ public final class SpecTaskRunnerService implements Disposable {
             if (state != RunnerState.WAITING_FOR_COMPLETION) {
                 return;
             }
-            log.warn("Task {} not marked Done after grace period, skipping", current.getId());
-            skipTask(current, "Prompt execution completed but task was not marked Done");
+            String reason = unfinishedReason(currentTaskLoopLimit);
+            log.warn("Task {} not finished after grace period ({}), leaving it In Progress and continuing",
+                    current.getId(), reason);
+            markTaskUnfinished(current.getId(), reason);
+            skipTask(current, reason);
         });
         graceTimer.setRepeats(false);
         graceTimer.start();
+    }
+
+    static @NotNull String unfinishedReason(int loopLimit) {
+        return loopLimit > 0
+                ? "Task left In Progress: agent action limit reached (" + loopLimit + ") before it was marked Done"
+                : "Task left In Progress: prompt execution completed but task was not marked Done";
+    }
+
+    /**
+     * Leaves an unfinished task In Progress and records why the batch moved on, so a
+     * later "Run All To Do" can offer to resume it and the agent sees where it stopped
+     * (Implementation Notes are part of the task context). The file is edited in place
+     * rather than regenerated, so fields TaskSpec does not model survive. The file
+     * write and VFS refresh run off the EDT.
+     */
+    private void markTaskUnfinished(@Nullable String taskId, @NotNull String reason) {
+        if (taskId == null) {
+            return;
+        }
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            SpecService specService = SpecService.getInstance(project);
+            TaskSpec fresh = specService.getSpec(taskId);
+            if (fresh == null || "Done".equalsIgnoreCase(fresh.getStatus())) {
+                return;
+            }
+            String line = "Batch run stopped " + LocalDate.now() + ": " + reason + ".";
+            try {
+                specService.setStatusAndAppendNote(taskId, IN_PROGRESS, line);
+            } catch (IOException e) {
+                log.warn("Failed to mark task {} as unfinished: {}", taskId, e.getMessage());
+            }
+        });
+    }
+
+    private void subscribeToLoopLimitEvents() {
+        disconnectActivityListener();
+        String projectHash = project.getLocationHash();
+        activityConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        activityConnection.subscribe(AppTopics.ACTIVITY_LOG_MSG, (ActivityMessage message) -> {
+            // Only the main agent of this project counts; sub-agents have their own budget.
+            if (message.getAgentType() == AgentType.LOOP_LIMIT
+                    && message.getSubAgentId() == null
+                    && projectHash.equals(message.getProjectLocationHash())
+                    && state == RunnerState.WAITING_FOR_COMPLETION) {
+                currentTaskLoopLimit = message.getMaxCalls();
+            }
+        });
+    }
+
+    private void disconnectActivityListener() {
+        if (activityConnection != null) {
+            activityConnection.disconnect();
+            activityConnection = null;
+        }
     }
 
     private void markTaskCompleted(@NotNull TaskSpec task) {
@@ -464,6 +567,8 @@ public final class SpecTaskRunnerService implements Disposable {
             return;
         }
 
+        currentPromptCompleted = false;
+        currentTaskDoneWhileExecuting = false;
         state = RunnerState.WAITING_FOR_COMPLETION;
         notifyTaskStarted(fresh);
 
@@ -475,16 +580,43 @@ public final class SpecTaskRunnerService implements Disposable {
     }
 
     private void submitTaskViaLlm(@NotNull TaskSpec task) {
-        startFreshConversation();
+        currentTaskLoopLimit = 0;
+        // Target one tab explicitly so the conversation that gets reset is the one that
+        // runs the prompt: chat tabs store their memory under "projectHash-tabId" (#1424).
+        String tabId = resolveActiveTabId();
 
         String taskDetails = SpecContextBuilder.buildContext(task);
         String instruction = SpecContextBuilder.buildAgentInstruction(task);
         String prompt = instruction + "\n\n" + taskDetails +
                 "\n\nPlease implement the task described above, satisfying all acceptance criteria.";
 
+        // Don't clear memory here: the tab may still be executing another prompt, in
+        // which case it queues this one. The tab calls onTaskPromptStarting() when it
+        // actually starts it, and the conversation is reset then.
+        promptsAwaitingStart.add(prompt);
         project.getMessageBus()
                 .syncPublisher(AppTopics.PROMPT_SUBMISSION_TOPIC)
-                .onPromptSubmitted(project, prompt, null);
+                .onPromptSubmitted(project, prompt, tabId);
+    }
+
+    /**
+     * Called by a chat tab right before it executes a prompt. If the prompt is a task
+     * prompt this runner submitted and that has not started yet, the tab's conversation
+     * (memory and attached files) is reset so the task starts fresh.
+     *
+     * @return true if the prompt belongs to this run and the conversation was reset
+     */
+    public boolean onTaskPromptStarting(@NotNull String prompt, @Nullable String tabId) {
+        if (!isRunning() || !promptsAwaitingStart.remove(prompt)) {
+            return false;
+        }
+        startFreshConversation(tabId);
+        return true;
+    }
+
+    private @Nullable String resolveActiveTabId() {
+        // Null when no chat tab exists yet; the prompt then routes the legacy way.
+        return ConversationTabRegistry.getInstance().getActiveTabId(project);
     }
 
     private void submitTaskViaCli(@NotNull TaskSpec task) {
@@ -556,8 +688,17 @@ public final class SpecTaskRunnerService implements Disposable {
             }
 
             if ("Done".equalsIgnoreCase(fresh.getStatus())) {
-                log.info("Task {} detected as Done (deferring advance until prompt completes)", fresh.getId());
                 cancelGraceTimer();
+                if (currentPromptCompleted) {
+                    // Done landed during the grace period: the prompt already finished,
+                    // so no further completion callback will come to advance the run.
+                    log.info("Task {} marked Done after prompt completed, advancing", fresh.getId());
+                    currentPromptCompleted = false;
+                    markTaskCompleted(fresh);
+                    advanceToNextTask();
+                    return;
+                }
+                log.info("Task {} detected as Done (deferring advance until prompt completes)", fresh.getId());
                 currentTaskDoneWhileExecuting = true;
 
                 if (cliMode) {
@@ -710,6 +851,18 @@ public final class SpecTaskRunnerService implements Disposable {
                 continue;
             }
             if ("Done".equalsIgnoreCase(fresh.getStatus())) {
+                // A pending grace timer means the prompt already completed: finish now,
+                // otherwise the layer latch would never count down.
+                if (parallelGraceTimers.containsKey(taskId)) {
+                    log.info("Parallel task {} marked Done after prompt completed, counting as completed", taskId);
+                    cancelParallelGraceTimer(taskId);
+                    markTaskCompleted(fresh);
+                    layerTaskResults.put(taskId, new LayerTaskResult(fresh, true, false, null, 0));
+                    if (activeLayerTaskIds.remove(taskId)) {
+                        layerLatch.countDown();
+                    }
+                    continue;
+                }
                 log.info("Parallel task {} detected as Done (deferring advance until prompt completes)", taskId);
                 cancelParallelGraceTimer(taskId);
                 parallelTaskDoneFlags.put(taskId, true);
@@ -756,12 +909,14 @@ public final class SpecTaskRunnerService implements Disposable {
             if (state != RunnerState.WAITING_FOR_COMPLETION) {
                 return;
             }
-            log.warn("Parallel task {} not marked Done after grace period, skipping", taskId);
+            log.warn("Parallel task {} not marked Done after grace period, leaving it In Progress", taskId);
             skippedCount++;
+            // Loop-limit events cannot be attributed to one task when several run at once.
+            String reason = unfinishedReason(0);
+            markTaskUnfinished(taskId, reason);
             if (fresh != null) {
-                notifyTaskSkipped(fresh, "Prompt execution completed but task was not marked Done");
-                layerTaskResults.put(taskId, new LayerTaskResult(fresh, false, true,
-                        "Prompt execution completed but task was not marked Done", 0));
+                notifyTaskSkipped(fresh, reason);
+                layerTaskResults.put(taskId, new LayerTaskResult(fresh, false, true, reason, 0));
             }
             activeLayerTaskIds.remove(taskId);
             layerLatch.countDown();
@@ -874,6 +1029,8 @@ public final class SpecTaskRunnerService implements Disposable {
             SpecService.getInstance(project).removeChangeListener(specChangeListener);
             specChangeListener = null;
         }
+        disconnectActivityListener();
+        promptsAwaitingStart.clear();
         notifyRunFinished(finalState);
         log.info("Task runner finished: state={}, completed={}, skipped={}, total={}",
                 finalState, completedCount, skippedCount, orderedTasks.size());
@@ -890,10 +1047,15 @@ public final class SpecTaskRunnerService implements Disposable {
 
     // ===== Conversation Management =====
 
-    private void startFreshConversation() {
-        ChatMemoryService.getInstance().clearMemory(project);
-        FileListManager.getInstance().clear(project);
-        log.debug("Started fresh conversation for next task");
+    private void startFreshConversation(@Nullable String tabId) {
+        if (tabId != null) {
+            ChatMemoryService.getInstance().clearMemoryByKey(project.getLocationHash() + "-" + tabId);
+            FileListManager.getInstance().clear(project, tabId);
+        } else {
+            ChatMemoryService.getInstance().clearMemory(project);
+            FileListManager.getInstance().clear(project);
+        }
+        log.debug("Started fresh conversation for next task (tab {})", tabId);
     }
 
     // ===== Listener Notifications =====
@@ -949,6 +1111,8 @@ public final class SpecTaskRunnerService implements Disposable {
             SpecService.getInstance(project).removeChangeListener(specChangeListener);
             specChangeListener = null;
         }
+        disconnectActivityListener();
+        promptsAwaitingStart.clear();
         listeners.clear();
         state = RunnerState.IDLE;
         cliMode = false;

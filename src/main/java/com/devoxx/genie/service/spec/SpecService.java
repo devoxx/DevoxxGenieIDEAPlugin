@@ -278,6 +278,34 @@ public final class SpecService implements Disposable {
     }
 
     /**
+     * Sets a task's status and appends a paragraph to its Implementation Notes by
+     * editing the file text in place. Unlike {@link #updateTask}, every other part of
+     * the file is preserved, including frontmatter fields and markup TaskSpec does not
+     * model (e.g. Backlog.md's {@code type}, {@code modified_files}, section markers).
+     *
+     * @return false if the task or its file is unknown
+     */
+    public boolean setStatusAndAppendNote(@NotNull String id, @NotNull String status, @NotNull String note)
+            throws IOException {
+        writeLock.lock();
+        try {
+            TaskSpec spec = getSpec(id);
+            if (spec == null || spec.getFilePath() == null) {
+                return false;
+            }
+            Path path = Paths.get(spec.getFilePath());
+            String content = Files.readString(path, StandardCharsets.UTF_8);
+            Files.writeString(path, SpecTaskFileEditor.setStatusAndAppendNote(content, status, note),
+                    StandardCharsets.UTF_8);
+            refreshVfs();
+            refresh();
+            return true;
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /**
      * Completes a task by setting status to "Done". The file stays in place.
      * Use archiveTask() to move it to the archive directory.
      */
