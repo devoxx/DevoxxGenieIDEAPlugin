@@ -79,9 +79,7 @@ public final class ChromaEmbeddingService {
     }
 
     private @NotNull String getCollectionName(@NotNull Project project) {
-        return project.getName()
-                      .toLowerCase()
-                      .replaceAll("[^a-z0-9-]", "-");
+        return ChromaCollectionNames.forProject(project.getName());
     }
 
     /** The embedding setup the settings ask for; a full re-index builds the index with it. */
