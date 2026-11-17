@@ -7,6 +7,7 @@ import com.devoxx.genie.service.LLMProviderService;
 import com.devoxx.genie.service.agent.tool.BuiltInToolDescriptions;
 import com.devoxx.genie.service.agent.tool.psi.PsiToolCatalog;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
+import com.devoxx.genie.service.chromadb.ChromaCollectionNames;
 import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -817,7 +818,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         Project[] projects = ProjectManager.getInstance().getOpenProjects();
         if (projects.length == 0) return false;
         Project project = projects[0];
-        String expectedCollection = project.getName().toLowerCase().replaceAll("[^a-z0-9-]", "-");
+        String expectedCollection = ChromaCollectionNames.forProject(project.getName());
         try {
             List<ChromaCollection> collections = ChromaDBManager.getInstance(project).listCollections();
             return collections.stream().anyMatch(c -> expectedCollection.equals(c.name()));
