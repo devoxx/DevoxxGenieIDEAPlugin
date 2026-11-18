@@ -93,4 +93,6 @@ Plan:
 Verification: WebSearchSourcesTest (10), WebSearchPromptExecutionServiceTest (9), WebSearchSourcesE2ETest (2; real strategy + service + Tavily engine against the stub, asserting the links reach the message passed to the chat panel), IdeUriHandlerTest (11); docs build OK; full suite 4298 passed, 24 skipped, 0 failed. Not verified manually: clicking a link in a running IDE.
 
 Stacked on TASK-277.1 (PR #1431).
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1432 (stacked on #1431)
 <!-- SECTION:FINAL_SUMMARY:END -->
