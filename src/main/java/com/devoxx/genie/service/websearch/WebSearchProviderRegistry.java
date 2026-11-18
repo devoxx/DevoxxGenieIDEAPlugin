@@ -63,8 +63,19 @@ public final class WebSearchProviderRegistry {
             FeatureId.WEB_SEARCH_KEENABLE,
             config -> keenableEngine(config, null));
 
+    // Parallel's REST Search API (not its MCP server); requires a key (TASK-277.5, #1423).
+    private static final WebSearchProviderDefinition PARALLEL = new WebSearchProviderDefinition(
+            WebSearchProvider.PARALLEL,
+            "Parallel",
+            "https://platform.parallel.ai",
+            "Web search API built for AI agents. Needs a Parallel API key; searches are billed to your Parallel account.",
+            List.of(new WebSearchCredentialField(CredentialKey.PARALLEL_SEARCH_KEY, "API key",
+                    "https://platform.parallel.ai", true)),
+            FeatureId.WEB_SEARCH_PARALLEL,
+            config -> parallelEngine(config, null));
+
     private static final Map<WebSearchProvider, WebSearchProviderDefinition> DEFINITIONS =
-            byProvider(TAVILY, GOOGLE, KEENABLE);
+            byProvider(TAVILY, GOOGLE, KEENABLE, PARALLEL);
 
     private WebSearchProviderRegistry() {
     }
@@ -98,6 +109,13 @@ public final class WebSearchProviderRegistry {
         return new KeenableWebSearchEngine(config.credential(CredentialKey.KEENABLE_SEARCH_KEY),
                 baseUrl == null ? KeenableWebSearchEngine.DEFAULT_BASE_URL : baseUrl,
                 KeenableWebSearchEngine.defaultHttpClient());
+    }
+
+    /** Builds a Parallel engine; {@code baseUrl} is null in production and points at a stub server in tests. */
+    static @NotNull ParallelWebSearchEngine parallelEngine(@NotNull WebSearchConfig config, String baseUrl) {
+        return new ParallelWebSearchEngine(config.credential(CredentialKey.PARALLEL_SEARCH_KEY),
+                baseUrl == null ? ParallelWebSearchEngine.DEFAULT_BASE_URL : baseUrl,
+                WebSearchHttp.defaultHttpClient());
     }
 
     private static Map<WebSearchProvider, WebSearchProviderDefinition> byProvider(WebSearchProviderDefinition... definitions) {
