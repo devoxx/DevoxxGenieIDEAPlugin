@@ -6,6 +6,7 @@ import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngin
 import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
@@ -35,7 +36,7 @@ public final class WebSearchProviderRegistry {
             WebSearchProvider.GOOGLE,
             "Google Custom Search",
             "https://developers.google.com/custom-search/v1/overview",
-            "Google's Custom Search JSON API. Needs an API key and a Programmable Search Engine ID.",
+            "Google's Custom Search JSON API (closed to new customers). Needs an API key and a Programmable Search Engine ID.",
             List.of(
                     new WebSearchCredentialField(CredentialKey.GOOGLE_SEARCH_KEY, "API key",
                             "https://developers.google.com/custom-search/docs/paid_element#api_key", true),
@@ -45,7 +46,11 @@ public final class WebSearchProviderRegistry {
             config -> GoogleCustomWebSearchEngine.builder()
                     .apiKey(config.credential(CredentialKey.GOOGLE_SEARCH_KEY))
                     .csi(config.credential(CredentialKey.GOOGLE_CSI_KEY))
-                    .build());
+                    .build(),
+            // Confirmed on Google's overview page (2026-11-18): closed to new customers, discontinued 2027-01-01.
+            new WebSearchDeprecation(LocalDate.of(2027, 1, 1),
+                    "https://developers.google.com/custom-search/v1/overview",
+                    "Keenable or Tavily"));
 
     // Engine contributed in #1430. The key is optional: without one Keenable's free public endpoint is used.
     private static final WebSearchProviderDefinition KEENABLE = new WebSearchProviderDefinition(

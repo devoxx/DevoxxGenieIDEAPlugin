@@ -163,6 +163,25 @@ class WebSearchSourcesE2ETest {
         verify(resultTask).complete(argThat(result -> result.getError() == null));
     }
 
+    // TASK-277.4: a failing (soon discontinued) Google API reaches the user as the deprecation message.
+    @Test
+    void failingGoogle_reachesTheUserAsTheDeprecationMessage() {
+        state.setSelectedWebSearchProvider(WebSearchProvider.GOOGLE);
+        state.setGoogleSearchKey("g-key");
+        state.setGoogleCSIKey("cse-id");
+        com.devoxx.genie.service.websearch.WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.GOOGLE, request -> {
+            throw new IllegalStateException("410 Gone");
+        });
+
+        strategy.executeStrategySpecific(searchContext(), panel, resultTask);
+
+        verify(panel, never()).addChatResponse(any());
+        ArgumentCaptor<Throwable> error = ArgumentCaptor.forClass(Throwable.class);
+        promptErrorHandlerMock.verify(() -> PromptErrorHandler.handleException(any(), error.capture(), any()));
+        assertThat(error.getValue().getMessage()).contains("Google Custom Search").contains("January 1, 2027")
+                .doesNotContain("410 Gone");
+    }
+
     @Test
     void noResults_shownInChatAsAClearMessage_notAnErrorCard() {
         tavily.respondWithNoResults();
