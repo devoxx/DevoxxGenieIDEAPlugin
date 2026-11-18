@@ -42,7 +42,7 @@ Web search uses **one provider at a time**. Pick it in the **Provider** dropdown
 |----------|---------------|-------|
 | **Tavily** | A Tavily API key | Search API built for LLMs. |
 | **Keenable** | Nothing (an API key is optional) | Works without signing up; free searches are rate-limited per network. Add a key for higher limits. Available after v1.18.0. |
-| **Google Custom Search** | A Google API key **and** a Programmable Search Engine ID | See the [note on Google](#a-note-on-google-custom-search) below. |
+| **Google Custom Search** *(deprecated)* | A Google API key **and** a Programmable Search Engine ID | Closed to new customers; **stops working on January 1, 2027**. See [Google Custom Search is deprecated](#google-custom-search-is-deprecated). |
 | **None** | — | Web search is off for `/search` and the agent tool. |
 
 New to web search? **Keenable** needs no account; **Tavily** needs a free API key.
@@ -63,9 +63,17 @@ The provider list is pluggable, and more providers are in the works. They are **
 
 Until then, you can already use any search service that offers an MCP server in Agent Mode, by adding it in **Settings → DevoxxGenie → MCP**. It then works as an agent tool, but not for `/search`.
 
-### A note on Google Custom Search
+### Google Custom Search is deprecated
 
-Google has restricted access to its Custom Search JSON API, and new projects may no longer be able to get it. Check [Google's Custom Search JSON API overview](https://developers.google.com/custom-search/v1/overview) for the current status and any end-of-service date. If you are setting up web search for the first time, choose **Tavily** or **Keenable**. If you rely on Google today, plan to switch.
+:::warning
+Google has closed its Custom Search JSON API to new customers and discontinues it on **January 1, 2027**. In Google's words: *"Existing Custom Search JSON API customers have until January 1, 2027 to transition to an alternative solution."* See [Google's Custom Search JSON API overview](https://developers.google.com/custom-search/v1/overview).
+:::
+
+What this means in DevoxxGenie:
+
+- **New setups:** choose **Keenable** (no account needed) or **Tavily**. Google is listed last, marked *(deprecated)*, and is never selected by default.
+- **Already using Google:** it keeps working until January 1, 2027. While it is selected, Settings → Web search shows a warning with the date. Switch to Keenable or Tavily before then.
+- **When Google fails:** `/search`, the agent's `web_search` tool and **Test search** explain that the API is being (or has been) discontinued and suggest another provider, instead of showing a raw error.
 
 ## Setting Up Web Search
 
@@ -101,6 +109,10 @@ To raise the limit, get an API key from [keenable.ai](https://keenable.ai) and p
 Requests identify themselves as DevoxxGenie. The API key is only ever sent to Keenable, never to another site after a redirect.
 
 ### Google Custom Search Setup
+
+:::note
+Only for existing Google Custom Search JSON API customers: Google no longer accepts new ones, and the API stops working on January 1, 2027.
+:::
 
 1. Create a [Google Cloud project](https://console.cloud.google.com/) and enable the Custom Search API
 2. Create an API key
