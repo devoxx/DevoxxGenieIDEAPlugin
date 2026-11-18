@@ -1,7 +1,7 @@
 ---
 sidebar_position: 5
 title: Web Search Integration - DevoxxGenie for IntelliJ IDEA
-description: Ground LLM answers in live web results in DevoxxGenie. Choose a web search provider (Tavily or Google Custom Search) for /search and the agent's web_search tool, with more providers coming soon.
+description: Ground LLM answers in live web results in DevoxxGenie. Choose a web search provider (Tavily, Keenable or Google Custom Search) for /search and the agent's web_search tool.
 keywords: [devoxxgenie, web search, web search provider, tavily, google custom search, keenable, parallel, /search, agent mode, web_search tool]
 image: /img/devoxxgenie-social-card.jpg
 ---
@@ -40,9 +40,12 @@ Web search uses **one provider at a time**. Pick it in the **Provider** dropdown
 
 | Provider | What you need | Notes |
 |----------|---------------|-------|
-| **Tavily** | A Tavily API key | Search API built for LLMs. Recommended for new setups. |
+| **Tavily** | A Tavily API key | Search API built for LLMs. |
+| **Keenable** | Nothing (an API key is optional) | Works without signing up; free searches are rate-limited per network. Add a key for higher limits. Available after v1.18.0. |
 | **Google Custom Search** | A Google API key **and** a Programmable Search Engine ID | See the [note on Google](#a-note-on-google-custom-search) below. |
 | **None** | — | Web search is off for `/search` and the agent tool. |
+
+New to web search? **Keenable** needs no account; **Tavily** needs a free API key.
 
 Only the selected provider's fields are shown. Keys you entered for other providers are kept, so you can switch back without typing them again. Keys are stored in IntelliJ's credential store (PasswordSafe), not in the settings XML.
 
@@ -52,18 +55,17 @@ Earlier versions had a separate checkbox per provider. When you upgrade, DevoxxG
 
 ### More providers coming soon
 
-The provider list is now pluggable, and these providers are in the works. They are **not available yet**; this page will be updated when they ship.
+The provider list is pluggable, and more providers are in the works. They are **not available yet**; this page will be updated when they ship.
 
 | Provider | Status | What it will offer |
 |----------|--------|--------------------|
-| **Keenable** | Planned ([#1428](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1428)) | Works without an API key (rate-limited per IP), with an optional key for higher limits |
 | **Parallel** | Under discussion ([#1423](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1423)) | Web search via Parallel's search service |
 
 Until then, you can already use any search service that offers an MCP server in Agent Mode, by adding it in **Settings → DevoxxGenie → MCP**. It then works as an agent tool, but not for `/search`.
 
 ### A note on Google Custom Search
 
-Google has restricted access to its Custom Search JSON API, and new projects may no longer be able to get it. Check [Google's Custom Search JSON API overview](https://developers.google.com/custom-search/v1/overview) for the current status and any end-of-service date. If you are setting up web search for the first time, choose **Tavily**. If you rely on Google today, plan to switch.
+Google has restricted access to its Custom Search JSON API, and new projects may no longer be able to get it. Check [Google's Custom Search JSON API overview](https://developers.google.com/custom-search/v1/overview) for the current status and any end-of-service date. If you are setting up web search for the first time, choose **Tavily** or **Keenable**. If you rely on Google today, plan to switch.
 
 ## Setting Up Web Search
 
@@ -82,6 +84,21 @@ Google has restricted access to its Custom Search JSON API, and new projects may
 1. Sign up at [app.tavily.com](https://app.tavily.com/home) and copy your API key
 2. Select **Tavily** as the provider
 3. Paste the key into **Tavily API key**
+
+### Keenable Setup
+
+Keenable works with no setup at all:
+
+1. Select **Keenable** as the provider
+2. Click **Test search** to check it, then **Apply**
+
+Without a key, DevoxxGenie uses Keenable's free public search. It is rate-limited per network, so on a shared office or VPN connection you may hit the limit sooner. When that happens you'll see:
+
+> Keenable's free search limit for your network was reached. Try again later, or add a Keenable API key in Settings → DevoxxGenie → Web search for a higher limit.
+
+To raise the limit, get an API key from [keenable.ai](https://keenable.ai) and paste it into **Keenable API key (optional)**. With a key, searches go to Keenable's authenticated endpoint. If the key is wrong, DevoxxGenie tells you it was rejected; clear the field to go back to free keyless search.
+
+Requests identify themselves as DevoxxGenie. The API key is only ever sent to Keenable, never to another site after a redirect.
 
 ### Google Custom Search Setup
 
@@ -298,6 +315,6 @@ You can steer how results are used by being explicit in your prompt:
 
 Planned improvements to web search:
 
-1. **More search providers**: Keenable and Parallel (see [More providers coming soon](#more-providers-coming-soon))
+1. **More search providers**: Parallel (see [More providers coming soon](#more-providers-coming-soon))
 2. **Context-aware searching**: automatically incorporating project context into searches
 3. **Search result caching**: improving performance by caching common searches
