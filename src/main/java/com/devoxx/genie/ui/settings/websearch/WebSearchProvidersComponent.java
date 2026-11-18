@@ -5,6 +5,7 @@ import com.devoxx.genie.service.websearch.WebSearchConfig;
 import com.devoxx.genie.service.websearch.WebSearchCredentialField;
 import com.devoxx.genie.service.websearch.WebSearchProvider;
 import com.devoxx.genie.service.websearch.WebSearchProviderDefinition;
+import com.devoxx.genie.service.websearch.WebSearchProviderException;
 import com.devoxx.genie.service.websearch.WebSearchProviderRegistry;
 import com.devoxx.genie.service.websearch.WebSearchReadiness;
 import com.devoxx.genie.service.websearch.WebSearchService;
@@ -289,6 +290,8 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         List<WebSearchOrganicResult> hits;
         try {
             hits = WebSearchService.search(config, query).results();
+        } catch (WebSearchProviderException e) {
+            return e.getMessage(); // written for the user; never contains credentials
         } catch (Exception e) {
             return "Search with " + providerName + " failed (" + e.getClass().getSimpleName() +
                     "). Check the " + providerName + " settings and network connection.";

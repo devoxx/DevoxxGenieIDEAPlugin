@@ -7,6 +7,7 @@ import com.devoxx.genie.service.prompt.result.PromptResult;
 import com.devoxx.genie.service.prompt.threading.PromptTask;
 import com.devoxx.genie.service.prompt.websearch.WebSearchPromptExecutionService;
 import com.devoxx.genie.service.websearch.WebSearchNotConfiguredException;
+import com.devoxx.genie.service.websearch.WebSearchProviderException;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
@@ -56,8 +57,9 @@ public class WebSearchPromptStrategy extends AbstractPromptExecutionStrategy {
                     PromptErrorHandler.handleException(project, webSearchError, context);
                     resultTask.complete(PromptResult.failure(context, webSearchError));
                 });
-            } catch (WebSearchNotConfiguredException e) {
-                // Provider not selected / credentials missing: show the actionable message as-is.
+            } catch (WebSearchNotConfiguredException | WebSearchProviderException e) {
+                // Not configured, or a provider failure with a user-safe message (rate limit, rejected key):
+                // show the actionable message as-is.
                 WebSearchException webSearchError = new WebSearchException(e.getMessage(), e);
                 PromptErrorHandler.handleException(project, webSearchError, context);
                 resultTask.complete(PromptResult.failure(context, webSearchError));

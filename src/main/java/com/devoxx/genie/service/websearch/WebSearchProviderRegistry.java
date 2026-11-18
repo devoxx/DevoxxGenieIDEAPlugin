@@ -47,7 +47,19 @@ public final class WebSearchProviderRegistry {
                     .csi(config.credential(CredentialKey.GOOGLE_CSI_KEY))
                     .build());
 
-    private static final Map<WebSearchProvider, WebSearchProviderDefinition> DEFINITIONS = byProvider(TAVILY, GOOGLE);
+    // Engine contributed in #1430. The key is optional: without one Keenable's free public endpoint is used.
+    private static final WebSearchProviderDefinition KEENABLE = new WebSearchProviderDefinition(
+            WebSearchProvider.KEENABLE,
+            "Keenable",
+            "https://keenable.ai",
+            "Works without an API key (free, rate-limited per network). Add a key for higher limits.",
+            List.of(new WebSearchCredentialField(CredentialKey.KEENABLE_SEARCH_KEY, "API key (optional)",
+                    "https://keenable.ai", false)),
+            FeatureId.WEB_SEARCH_KEENABLE,
+            config -> keenableEngine(config, null));
+
+    private static final Map<WebSearchProvider, WebSearchProviderDefinition> DEFINITIONS =
+            byProvider(TAVILY, GOOGLE, KEENABLE);
 
     private WebSearchProviderRegistry() {
     }
@@ -74,6 +86,13 @@ public final class WebSearchProviderRegistry {
             builder.baseUrl(baseUrl);
         }
         return builder.build();
+    }
+
+    /** Builds a Keenable engine; {@code baseUrl} is null in production and points at a stub server in tests. */
+    static @NotNull KeenableWebSearchEngine keenableEngine(@NotNull WebSearchConfig config, String baseUrl) {
+        return new KeenableWebSearchEngine(config.credential(CredentialKey.KEENABLE_SEARCH_KEY),
+                baseUrl == null ? KeenableWebSearchEngine.DEFAULT_BASE_URL : baseUrl,
+                KeenableWebSearchEngine.defaultHttpClient());
     }
 
     private static Map<WebSearchProvider, WebSearchProviderDefinition> byProvider(WebSearchProviderDefinition... definitions) {
