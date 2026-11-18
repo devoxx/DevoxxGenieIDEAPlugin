@@ -187,4 +187,6 @@ Docs/tips: web-search.md rewritten (provider choice, setup, readiness messages, 
 Tests: registry wiring test, readiness matrix, migration and XML round-trip, per-call-site tests, MockWebServer end-to-end tests with the real Tavily engine (Google substituted at the registry seam; its engine has no base URL), env-gated live smoke tests. Also fixed the flaky ParallelExploreToolExecutorTest cancel test (thread-local mockConstruction built a real runner on a pool thread). Full suite: 4273 passed, 24 skipped, 0 failed.
 
 Follow-ups: TASK-277.2 (source links), 277.3 (Keenable), 277.4 (verify and deprecate Google), 277.5 (Parallel). The chat Web toggle was removed earlier (63af86b1), so the chat-context web path is currently unreachable from the UI.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1431
 <!-- SECTION:FINAL_SUMMARY:END -->
