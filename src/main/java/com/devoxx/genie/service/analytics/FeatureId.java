@@ -23,6 +23,7 @@ public enum FeatureId {
     SEMANTIC_SEARCH("semantic_search", true),
     WEB_SEARCH_GOOGLE("web_search_google", false),
     WEB_SEARCH_TAVILY("web_search_tavily", false),
+    WEB_SEARCH_KEENABLE("web_search_keenable", false),
     AGENT("agent", false),
     MCP("mcp", false),
     STREAMING("streaming", false),

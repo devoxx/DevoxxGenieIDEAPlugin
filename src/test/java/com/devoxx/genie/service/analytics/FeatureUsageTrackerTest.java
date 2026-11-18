@@ -21,6 +21,7 @@ class FeatureUsageTrackerTest {
         assertThat(FeatureId.SEMANTIC_SEARCH.wireValue()).isEqualTo("semantic_search");
         assertThat(FeatureId.WEB_SEARCH_GOOGLE.wireValue()).isEqualTo("web_search_google");
         assertThat(FeatureId.WEB_SEARCH_TAVILY.wireValue()).isEqualTo("web_search_tavily");
+        assertThat(FeatureId.WEB_SEARCH_KEENABLE.wireValue()).isEqualTo("web_search_keenable");
         assertThat(FeatureId.AGENT.wireValue()).isEqualTo("agent");
         assertThat(FeatureId.MCP.wireValue()).isEqualTo("mcp");
         assertThat(FeatureId.STREAMING.wireValue()).isEqualTo("streaming");
@@ -42,6 +43,7 @@ class FeatureUsageTrackerTest {
         assertThat(FeatureId.RAG.isUsageOnly()).isFalse();
         assertThat(FeatureId.WEB_SEARCH_GOOGLE.isUsageOnly()).isFalse();
         assertThat(FeatureId.WEB_SEARCH_TAVILY.isUsageOnly()).isFalse();
+        assertThat(FeatureId.WEB_SEARCH_KEENABLE.isUsageOnly()).isFalse();
         assertThat(FeatureId.AGENT.isUsageOnly()).isFalse();
         assertThat(FeatureId.MCP.isUsageOnly()).isFalse();
         assertThat(FeatureId.STREAMING.isUsageOnly()).isFalse();

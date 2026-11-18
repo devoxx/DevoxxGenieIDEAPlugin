@@ -1,6 +1,7 @@
 package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.service.websearch.WebSearchConfig;
+import com.devoxx.genie.service.websearch.WebSearchProviderException;
 import com.devoxx.genie.service.websearch.WebSearchReadiness;
 import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -48,6 +49,9 @@ public class WebSearchToolExecutor implements ToolExecutor {
                 return "No results found for query: " + query;
             }
             return formatResults(query, hits);
+        } catch (WebSearchProviderException e) {
+            log.warn("web_search via {} failed ({}) for query '{}'", providerName, e.kind(), query);
+            return "Error: " + e.getMessage();
         } catch (Exception e) {
             log.warn("web_search via {} failed for query '{}': {}", providerName, query, e.getMessage());
             return "Error: Web search failed (" + providerName + ") - " + e.getMessage() +

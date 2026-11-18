@@ -97,23 +97,28 @@ public final class WebSearchService {
     /** Points the real Tavily engine at {@code baseUrl} (a local stub server); other providers are unchanged. */
     @TestOnly
     public static void useTavilyBaseUrlForTesting(@NotNull String baseUrl) {
-        overrideDefinitionsForTesting(provider -> {
-            WebSearchProviderDefinition real = WebSearchProviderRegistry.definition(provider);
-            if (provider != WebSearchProvider.TAVILY) {
-                return real;
-            }
-            return new WebSearchProviderDefinition(real.provider(), real.displayName(), real.signupUrl(),
-                    real.hint(), real.fields(), real.analyticsFeature(),
-                    config -> WebSearchProviderRegistry.tavilyEngine(config, baseUrl));
-        });
+        replaceEngineFactoryForTesting(WebSearchProvider.TAVILY,
+                config -> WebSearchProviderRegistry.tavilyEngine(config, baseUrl));
+    }
+
+    /** Points the real Keenable engine at {@code baseUrl} (a local stub server); other providers are unchanged. */
+    @TestOnly
+    public static void useKeenableBaseUrlForTesting(@NotNull String baseUrl) {
+        replaceEngineFactoryForTesting(WebSearchProvider.KEENABLE,
+                config -> WebSearchProviderRegistry.keenableEngine(config, baseUrl));
     }
 
     /**
-     * Replaces one provider's engine (keeping any other override in place, e.g. the Tavily stub URL).
+     * Replaces one provider's engine (keeping any other override in place, e.g. a stub base URL).
      * Used for providers whose langchain4j engine has no base-URL setting, such as Google.
      */
     @TestOnly
     public static void replaceEngineForTesting(@NotNull WebSearchProvider target, @NotNull WebSearchEngine engine) {
+        replaceEngineFactoryForTesting(target, config -> engine);
+    }
+
+    private static void replaceEngineFactoryForTesting(@NotNull WebSearchProvider target,
+                                                       @NotNull WebSearchProviderDefinition.EngineFactory factory) {
         Function<WebSearchProvider, WebSearchProviderDefinition> current = definitions;
         overrideDefinitionsForTesting(provider -> {
             WebSearchProviderDefinition base = current.apply(provider);
@@ -121,7 +126,7 @@ public final class WebSearchService {
                 return base;
             }
             return new WebSearchProviderDefinition(base.provider(), base.displayName(), base.signupUrl(),
-                    base.hint(), base.fields(), base.analyticsFeature(), config -> engine);
+                    base.hint(), base.fields(), base.analyticsFeature(), factory);
         });
     }
 
