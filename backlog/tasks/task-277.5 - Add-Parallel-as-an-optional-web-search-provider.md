@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-18T08:11:00Z'
-updated_date: '2026-11-18T09:57:00Z'
+updated_date: '2026-11-18T09:58:00Z'
 labels:
   - web-search
 dependencies:
@@ -93,4 +93,6 @@ Docs: Parallel in the provider table + 'Parallel Setup' (fast mode, billed to th
 AC #1 left open: the REST decision is the maintainer's and recorded here, but it has not been communicated/agreed on #1423 yet (comment drafted for maintainer approval).
 
 PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1435 (stacked on #1434). Remaining: AC #1 (communicate the REST decision on #1423; comment drafted for maintainer approval).
+
+2026-11-18: maintainer-approved comment posted on #1423 (https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1423#issuecomment-6975143684) announcing the REST Search API route, fast mode, error handling, source links, and inviting review of #1435. AC #1 stays open until the Parallel side acknowledges on #1423 (or the maintainer decides the posted decision is enough).
 <!-- SECTION:NOTES:END -->
