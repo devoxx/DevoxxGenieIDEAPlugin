@@ -61,7 +61,7 @@ Connect to a wide range of LLM providers:
 - **MCP Support**: Model Context Protocol servers for extended agent-like capabilities, with a built-in Marketplace for discovering servers
 - **Agent Mode** *(v0.9.4+)*: Enable agent mode to explore, edit, run commands and test code using configurable tools and approval controls. Parallel sub-agents allow concurrent investigation of multiple aspects, each configurable with a different LLM from any provider
 - **Command Blacklist**: Guard the agent's `run_command` tool against destructive shell commands (`git reset --hard`, `rm -rf`, ...) — matched commands either force the approval dialog or are blocked outright, even when write approvals are auto-approved
-- **Web Search**: Augment LLM knowledge with live web search results from the provider you choose (Tavily, Keenable or Google Custom Search)
+- **Web Search**: Augment LLM knowledge with live web search results from the provider you choose (Tavily, Keenable, Parallel or Google Custom Search)
 - **Token Cost Calculator**: Calculate token usage and cost before sending prompts
 
 ### Multimodal Capabilities

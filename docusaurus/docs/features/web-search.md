@@ -1,8 +1,8 @@
 ---
 sidebar_position: 5
 title: Web Search Integration - DevoxxGenie for IntelliJ IDEA
-description: Ground LLM answers in live web results in DevoxxGenie. Choose a web search provider (Tavily, Keenable or Google Custom Search) for /search and the agent's web_search tool.
-keywords: [devoxxgenie, web search, web search provider, tavily, google custom search, keenable, parallel, /search, agent mode, web_search tool]
+description: Ground LLM answers in live web results in DevoxxGenie. Choose a web search provider (Tavily, Keenable, Parallel or Google Custom Search) for /search and the agent's web_search tool.
+keywords: [devoxxgenie, web search, web search provider, tavily, keenable, parallel, google custom search, /search, agent mode, web_search tool]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -42,10 +42,11 @@ Web search uses **one provider at a time**. Pick it in the **Provider** dropdown
 |----------|---------------|-------|
 | **Tavily** | A Tavily API key | Search API built for LLMs. |
 | **Keenable** | Nothing (an API key is optional) | Works without signing up; free searches are rate-limited per network. Add a key for higher limits. Available after v1.18.0. |
+| **Parallel** | A Parallel API key | Web search API built for AI agents; billed to your Parallel account. Available after v1.18.0. |
 | **Google Custom Search** *(deprecated)* | A Google API key **and** a Programmable Search Engine ID | Closed to new customers; **stops working on January 1, 2027**. See [Google Custom Search is deprecated](#google-custom-search-is-deprecated). |
 | **None** | — | Web search is off for `/search` and the agent tool. |
 
-New to web search? **Keenable** needs no account; **Tavily** needs a free API key.
+New to web search? **Keenable** needs no account; **Tavily** and **Parallel** need an API key.
 
 Only the selected provider's fields are shown. Keys you entered for other providers are kept, so you can switch back without typing them again. Keys are stored in IntelliJ's credential store (PasswordSafe), not in the settings XML.
 
@@ -53,15 +54,9 @@ Only the selected provider's fields are shown. Keys you entered for other provid
 Earlier versions had a separate checkbox per provider. When you upgrade, DevoxxGenie keeps your choice: if Tavily was enabled it is selected, otherwise Google if it was enabled, otherwise **None**. Your keys are not touched.
 :::
 
-### More providers coming soon
+### Search services with an MCP server
 
-The provider list is pluggable, and more providers are in the works. They are **not available yet**; this page will be updated when they ship.
-
-| Provider | Status | What it will offer |
-|----------|--------|--------------------|
-| **Parallel** | Under discussion ([#1423](https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1423)) | Web search via Parallel's search service |
-
-Until then, you can already use any search service that offers an MCP server in Agent Mode, by adding it in **Settings → DevoxxGenie → MCP**. It then works as an agent tool, but not for `/search`.
+Any search service that offers an MCP server can also be used in Agent Mode by adding it in **Settings → DevoxxGenie → MCP**. It then works as an agent tool, but not for `/search`, **Test search** or the provider choice above.
 
 ### Google Custom Search is deprecated
 
@@ -107,6 +102,14 @@ Without a key, DevoxxGenie uses Keenable's free public search. It is rate-limite
 To raise the limit, get an API key from [keenable.ai](https://keenable.ai) and paste it into **Keenable API key (optional)**. With a key, searches go to Keenable's authenticated endpoint. If the key is wrong, DevoxxGenie tells you it was rejected; clear the field to go back to free keyless search.
 
 Requests identify themselves as DevoxxGenie. The API key is only ever sent to Keenable, never to another site after a redirect.
+
+### Parallel Setup
+
+1. Create an API key at [platform.parallel.ai](https://platform.parallel.ai)
+2. Select **Parallel** as the provider
+3. Paste the key into **Parallel API key**, then click **Test search** and **Apply**
+
+DevoxxGenie uses Parallel's REST Search API in its `fast` mode, which suits interactive searches and is the cheaper tier ([Parallel pricing](https://docs.parallel.ai/getting-started/pricing)). Searches are billed to your Parallel account. If something goes wrong you get a specific message: a rejected key, an account that is out of credit, or the rate limit (try again in a minute).
 
 ### Google Custom Search Setup
 
@@ -327,6 +330,5 @@ You can steer how results are used by being explicit in your prompt:
 
 Planned improvements to web search:
 
-1. **More search providers**: Parallel (see [More providers coming soon](#more-providers-coming-soon))
-2. **Context-aware searching**: automatically incorporating project context into searches
-3. **Search result caching**: improving performance by caching common searches
+1. **Context-aware searching**: automatically incorporating project context into searches
+2. **Search result caching**: improving performance by caching common searches
