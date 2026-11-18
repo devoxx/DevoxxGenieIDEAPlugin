@@ -1,11 +1,11 @@
 ---
 id: TASK-277.5
 title: Add Parallel as an optional web search provider
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-18T08:11:00Z'
-updated_date: '2026-11-18T09:58:00Z'
+updated_date: '2026-11-18T09:59:00Z'
 labels:
   - web-search
 dependencies:
@@ -57,7 +57,7 @@ Agreed direction: implement it like any other registry provider (a search engine
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Integration route (REST API or MCP) and keyless terms agreed on #1423 and recorded in task notes
+- [x] #1 Integration route (REST API or MCP) and keyless terms agreed on #1423 and recorded in task notes
 - [x] #2 Parallel can be selected in Settings -> Web search and works for Test search, /search, the Web toggle and the agent web_search tool
 - [x] #3 No request is sent to Parallel unless it is the selected provider
 - [x] #4 Rate-limit and authentication failures show the user a clear, specific message
@@ -95,4 +95,18 @@ AC #1 left open: the REST decision is the maintainer's and recorded here, but it
 PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1435 (stacked on #1434). Remaining: AC #1 (communicate the REST decision on #1423; comment drafted for maintainer approval).
 
 2026-11-18: maintainer-approved comment posted on #1423 (https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1423#issuecomment-6975143684) announcing the REST Search API route, fast mode, error handling, source links, and inviting review of #1435. AC #1 stays open until the Parallel side acknowledges on #1423 (or the maintainer decides the posted decision is enough).
+
+2026-11-18: maintainer decided the decision posted on #1423 (REST Search API, not MCP; keyless n/a for REST) is sufficient for AC #1. Task closed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Parallel is a web search provider through its REST Search API (POST /v1/search, x-api-key; maintainer decision, posted on #1423), not its MCP server. The key is required (the REST API has no keyless access). It uses "fast" mode ($1 per 1,000 requests instead of $5 for the default "advanced"). Redirects are never followed, so the key stays on Parallel's origin. Results map url/title/excerpts with a host title fallback. 401/403, 402 (out of credit), 429 (retry in a minute), 422 and 5xx are user-safe messages shown by /search, the agent web_search tool and Test search. Nothing is sent unless Parallel is selected. New analytics id web_search_parallel. Shared WebSearchHttp (IDE proxy, User-Agent) now used by Keenable and Parallel.
+
+Docs: Parallel setup + pricing note; the empty "coming soon" section became a note on MCP search services. Tips in tips.json ("Update DevoxxGenie…") and the TipService fallback.
+
+Tests: ParallelWebSearchEngineTest 15, ParallelE2ETest 11, registry/settings coverage, env-gated live smoke (PARALLEL_API_KEY). Full suite 4377 passed, 26 skipped, 0 failed.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1435 (stacked on #1434). Comment on #1423: https://github.com/devoxx/DevoxxGenieIDEAPlugin/issues/1423#issuecomment-6975143684
+<!-- SECTION:FINAL_SUMMARY:END -->
