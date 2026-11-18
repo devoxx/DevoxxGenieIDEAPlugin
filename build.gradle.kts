@@ -300,7 +300,7 @@ dependencies {
     val nettyVersion = "4.2.20.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
-    val logbackVersion = "1.6.6"
+    val logbackVersion = "1.6.7"
     val gitignoreReaderVersion = "2.0.0"
     val quickJs4jVersion = "0.1.1"
     val junitJupiterVersion = "6.1.3"
