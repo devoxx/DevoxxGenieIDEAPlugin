@@ -96,11 +96,48 @@ class WebSearchPromptExecutionServiceTest {
 
         Optional<AiMessage> answer = service.searchWeb(context(chatModel));
 
-        assertThat(answer).map(AiMessage::text).contains("Grounded answer.");
+        assertThat(answer).map(AiMessage::text).hasValueSatisfying(text -> assertThat(text)
+                .startsWith("Grounded answer.")
+                .contains("**Sources**")
+                .contains("1. [Build number ranges](https://plugins.jetbrains.com/docs/build-number-ranges.html)"));
         assertThat(tavily.takeRequest().getBody().readUtf8()).contains("Find the IntelliJ plugin compatibility docs");
         assertThat(chatModel.lastUserText())
                 .contains("Find the IntelliJ plugin compatibility docs")
+                .contains("Build number ranges")
+                .contains("https://plugins.jetbrains.com/docs/build-number-ranges.html")
                 .contains("Use since-build to declare the minimum IDE version.");
+        assertThat(tavily.requestCount()).as("one search per /search").isEqualTo(1);
+    }
+
+    @Test
+    void e2e_noResults_returnsAClearMessage_withoutCallingTheLlm() {
+        state.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);
+        state.setTavilySearchKey("tvly-e2e-key");
+        tavily.respondWithNoResults();
+
+        Optional<AiMessage> answer = service.searchWeb(context(chatModel));
+
+        assertThat(answer).map(AiMessage::text).hasValueSatisfying(text -> assertThat(text)
+                .contains("No web results found for \"Find the IntelliJ plugin compatibility docs\"")
+                .doesNotContain("**Sources**"));
+        assertThat(chatModel.requests).as("no LLM call when there is nothing to ground on").isEmpty();
+    }
+
+    @Test
+    void resultsWithoutLinkableUrls_answerWithoutAnEmptySourcesHeading() {
+        state.setSelectedWebSearchProvider(WebSearchProvider.GOOGLE);
+        state.setGoogleSearchKey("g-key");
+        state.setGoogleCSIKey("cse-id");
+        WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.GOOGLE, request ->
+                dev.langchain4j.web.search.WebSearchResults.from(
+                        dev.langchain4j.web.search.WebSearchInformationResult.from(1L),
+                        List.of(dev.langchain4j.web.search.WebSearchOrganicResult.from(
+                                "Untitled", java.net.URI.create("ftp://example.com/file"), "only a snippet", null))));
+
+        Optional<AiMessage> answer = service.searchWeb(context(chatModel));
+
+        assertThat(answer).map(AiMessage::text).hasValueSatisfying(text -> assertThat(text)
+                .isEqualTo("Grounded answer."));
     }
 
     @Test
@@ -115,7 +152,10 @@ class WebSearchPromptExecutionServiceTest {
             return WebSearchServiceTestSupport.results("Google result", "https://example.com/g");
         });
 
-        assertThat(service.searchWeb(context(chatModel))).isPresent();
+        Optional<AiMessage> answer = service.searchWeb(context(chatModel));
+
+        assertThat(answer).map(AiMessage::text).hasValueSatisfying(text -> assertThat(text)
+                .contains("1. [Google result](https://example.com/g)"));
         assertThat(googleQueries).hasSize(1);
         assertThat(chatModel.lastUserText()).contains("snippet of Google result");
         assertThat(tavily.requestCount()).isZero();
