@@ -116,6 +116,7 @@ class WebSearchProvidersConfigurableTest {
         assertThat(combo.getItemAt(0).label()).isEqualTo("None");
         assertThat(combo.getItemAt(1).label()).isEqualTo("Tavily");
         assertThat(combo.getItemAt(2).label()).isEqualTo("Google Custom Search");
+        assertThat(combo.getItemAt(3).label()).isEqualTo("Keenable");
     }
 
     @Nested
@@ -130,6 +131,34 @@ class WebSearchProvidersConfigurableTest {
             component.setSelectedProvider(WebSearchProvider.TAVILY);
             assertThat(component.isShowingRowsOf(WebSearchProvider.TAVILY)).isTrue();
             assertThat(component.isShowingRowsOf(WebSearchProvider.GOOGLE)).isFalse();
+        }
+
+        @Test
+        void keenableSelected_showsOnlyItsOptionalKeyRow() {
+            component.setSelectedProvider(WebSearchProvider.KEENABLE);
+
+            assertThat(component.isShowingRowsOf(WebSearchProvider.KEENABLE)).isTrue();
+            assertThat(component.isShowingRowsOf(WebSearchProvider.TAVILY)).isFalse();
+            assertThat(component.isShowingRowsOf(WebSearchProvider.GOOGLE)).isFalse();
+        }
+
+        @Test
+        void keenableKey_isAppliedAndPersisted() {
+            component.setSelectedProvider(WebSearchProvider.KEENABLE);
+            component.getCredentialField(CredentialKey.KEENABLE_SEARCH_KEY).setText("kn-key");
+            configurable.apply();
+
+            assertThat(stateService.getSelectedWebSearchProvider()).isEqualTo(WebSearchProvider.KEENABLE);
+            assertThat(stateService.getCredential(CredentialKey.KEENABLE_SEARCH_KEY)).isEqualTo("kn-key");
+            assertThat(configurable.isModified()).isFalse();
+        }
+
+        @Test
+        void keenableWithoutKey_testSearchRunsInsteadOfAskingForAKey() {
+            component.setSelectedProvider(WebSearchProvider.KEENABLE);
+
+            assertThat(com.devoxx.genie.service.websearch.WebSearchService.readiness(component.formConfig()).isReady())
+                    .isTrue();
         }
 
         @Test
@@ -292,7 +321,7 @@ class WebSearchProvidersConfigurableTest {
         @Test
         void detectsCredentialChange_forEveryRegisteredField() {
             for (CredentialKey key : new CredentialKey[]{CredentialKey.TAVILY_SEARCH_KEY,
-                    CredentialKey.GOOGLE_SEARCH_KEY, CredentialKey.GOOGLE_CSI_KEY}) {
+                    CredentialKey.GOOGLE_SEARCH_KEY, CredentialKey.GOOGLE_CSI_KEY, CredentialKey.KEENABLE_SEARCH_KEY}) {
                 configurable.reset();
                 component.getCredentialField(key).setText("changed-" + key);
                 assertThat(configurable.isModified()).as("%s change detected", key).isTrue();

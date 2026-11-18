@@ -1379,7 +1379,11 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         int failed = 0;
         for (CredentialKey key : CredentialKey.values()) {
             try {
-                Field field = DevoxxGenieStateService.class.getDeclaredField(key.getSubKey());
+                Field field = legacyCredentialField(key);
+                if (field == null) {
+                    // Key added after this migration shipped (e.g. Keenable): never stored in XML, nothing to move.
+                    continue;
+                }
                 field.setAccessible(true);
                 Object raw = field.get(this);
                 String legacy = (raw == null) ? "" : raw.toString();
@@ -1416,6 +1420,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
             // saving now would persist the partial state — fine for security but wasteful.
             LOG.warn("Credential migration partially failed: migrated=" + migrated
                     + " skipped=" + skipped + " failed=" + failed + "; will retry on next startup");
+        }
+    }
+
+    /** The legacy plaintext XML field for {@code key}, or null for keys that never had one. */
+    private static @Nullable Field legacyCredentialField(@NotNull CredentialKey key) {
+        try {
+            return DevoxxGenieStateService.class.getDeclaredField(key.getSubKey());
+        } catch (NoSuchFieldException e) {
+            return null;
         }
     }
 

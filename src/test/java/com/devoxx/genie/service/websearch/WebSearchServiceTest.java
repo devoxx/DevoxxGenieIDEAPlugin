@@ -97,6 +97,13 @@ class WebSearchServiceTest {
         }
 
         @Test
+        void keenableWithoutAKey_isReady_becauseItsKeyIsOptional() {
+            WebSearchReadiness readiness = WebSearchService.readiness(config(WebSearchProvider.KEENABLE, Map.of()));
+
+            assertThat(readiness.isReady()).isTrue();
+        }
+
+        @Test
         void credentialsOfAnotherProvider_doNotMakeTheSelectedOneReady() {
             WebSearchReadiness readiness = WebSearchService.readiness(
                     config(WebSearchProvider.GOOGLE, Map.of(CredentialKey.TAVILY_SEARCH_KEY, "tvly-123")));
