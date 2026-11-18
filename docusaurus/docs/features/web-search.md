@@ -115,9 +115,23 @@ The same check applies to `/search`, the agent's `web_search` tool and **Test se
 
 DevoxxGenie sends the text after `/search` to your provider, then asks the LLM to answer from the results.
 
-### Understanding Search Results
+### Sources
 
-When web search is used, the answer is based on the retrieved results. For the best results, ask the model to cite its sources or to say when the results do not answer the question.
+Every `/search` answer ends with a **Sources** list: the title and original URL of each result the answer was based on, as clickable links. Links open in the browser configured in your IDE.
+
+```
+Use since-build in plugin.xml to declare the earliest compatible IDE build…
+
+Sources
+1. Build number ranges  →  https://plugins.jetbrains.com/docs/intellij/build-number-ranges.html
+2. plugins.jetbrains.com  →  https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html
+```
+
+When a result has no title, the site's host name is shown instead. Only `http` and `https` results are listed.
+
+If the provider finds nothing, you get a clear message instead of an answer, and no LLM call is made:
+
+> No web results found for "…". Try different keywords, or check the provider in Settings → DevoxxGenie → Web search.
 
 ## Use Cases
 
@@ -246,6 +260,8 @@ It is less useful for:
 
 #### No Search Results
 
+If `/search` answers *No web results found*:
+
 1. Verify the key with **Test search**
 2. Make sure you haven't exceeded the provider's rate limits
 3. Make your query more specific or use different keywords
@@ -283,6 +299,5 @@ You can steer how results are used by being explicit in your prompt:
 Planned improvements to web search:
 
 1. **More search providers**: Keenable and Parallel (see [More providers coming soon](#more-providers-coming-soon))
-2. **Source links in `/search` answers**: clickable links to the pages an answer is based on
-3. **Context-aware searching**: automatically incorporating project context into searches
-4. **Search result caching**: improving performance by caching common searches
+2. **Context-aware searching**: automatically incorporating project context into searches
+3. **Search result caching**: improving performance by caching common searches
