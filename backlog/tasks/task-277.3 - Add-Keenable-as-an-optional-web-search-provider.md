@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-18T08:10:00Z'
-updated_date: '2026-11-18T09:34:00Z'
+updated_date: '2026-11-18T09:35:00Z'
 labels:
   - web-search
 dependencies:
@@ -112,4 +112,6 @@ Steps:
 - WebSearchProviderException messages are shown verbatim by /search (WebSearchPromptStrategy), the agent tool and Settings Test search; other exceptions keep the class-name-only message in Test search.
 - Tests: KeenableWebSearchEngineTest 15, KeenableE2ETest 10 (agent tool: keyless/keyed endpoints, headers, no key on public endpoint, 429/401 messages, never contacted unless selected; /search: Sources links, 429 message verbatim; Test search: results, 403 message), registry wiring covers KEENABLE, readiness/settings tests, env-gated live smoke (KEENABLE_LIVE_SMOKE=true). Full suite 4331 passed, 25 skipped, 0 failed. Docs build OK.
 - AC #11 intentionally open: TipService fallback tip added (ships with the release); the tips.json tip must be added only after a release containing Keenable is out, because tips.json is fetched live by all installed versions.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1433 (stacked on #1432 -> #1431). Remaining: AC #11 (tips.json tip after the release); close #1430 with thanks once #1433 merges (comment drafted for maintainer approval).
 <!-- SECTION:NOTES:END -->
