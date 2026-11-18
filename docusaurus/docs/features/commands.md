@@ -48,7 +48,7 @@ DevoxxGenie ships with several built-in commands:
 | `/explain` | Explain the selected code |
 | `/review` | Review the selected code and suggest improvements |
 | `/find` | Search for code in your project using RAG |
-| `/search` | Search the web using the enabled Tavily or Google provider |
+| `/search` | Search the web using the provider selected in Settings → Web search |
 | `/help` | Show available commands |
 | `/init` | Generate a DEVOXXGENIE.md project description file |
 
