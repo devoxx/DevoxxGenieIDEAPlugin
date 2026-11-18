@@ -3,6 +3,7 @@ package com.devoxx.genie.ui.settings.websearch;
 import com.devoxx.genie.service.credentials.CredentialKey;
 import com.devoxx.genie.service.websearch.WebSearchProvider;
 import com.devoxx.genie.chatmodel.AbstractLightPlatformTestCase;
+import com.devoxx.genie.ui.settings.common.SearchTestOutcome;
 import com.intellij.testFramework.EdtTestUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.time.Duration;
+import java.util.List;
 
 /**
  * Renders the real Settings → Web search panel to {@code docusaurus/static/img/web-search-settings.png}
@@ -47,6 +50,19 @@ public class WebSearchSettingsScreenshotGenerator extends AbstractLightPlatformT
         component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("tvly-xxxxxxxxxxxxxxxxxxxx");
         component.getMaxSearchResults().setNumber(5);
         component.getTestSearchQuery().setText("IntelliJ Platform plugin compatibility since-build");
+        component.getTestSearch().showOutcome(SearchTestOutcome.results("Tavily returned 3 results", List.of(
+                new WebSearchTestSearch.Hit("Build Number Ranges | IntelliJ Platform Plugin SDK",
+                        "https://plugins.jetbrains.com/docs/intellij/build-number-ranges.html",
+                        "plugins.jetbrains.com",
+                        WebSearchSnippetFormatter.clean("Use the **since-build** and **until-build** attributes in " +
+                                "[plugin.xml](https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html) " +
+                                "to specify the range of IDE versions your plugin is compatible with.")),
+                new WebSearchTestSearch.Hit("Plugin Compatibility with IntelliJ Platform Products",
+                        "https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html",
+                        "plugins.jetbrains.com", "All plugins should declare a dependency on the platform module."),
+                new WebSearchTestSearch.Hit("Verifying plugin compatibility", "https://blog.jetbrains.com/platform/verifier",
+                        "blog.jetbrains.com", "The Plugin Verifier checks binary compatibility."))),
+                Duration.ofMillis(840));
 
         File out = new File(System.getProperty("user.dir"), "docusaurus/static/img/web-search-settings.png");
         render(panel, out);

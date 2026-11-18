@@ -5,11 +5,10 @@ import com.devoxx.genie.service.websearch.WebSearchConfig;
 import com.devoxx.genie.service.websearch.WebSearchCredentialField;
 import com.devoxx.genie.service.websearch.WebSearchProvider;
 import com.devoxx.genie.service.websearch.WebSearchProviderDefinition;
-import com.devoxx.genie.service.websearch.WebSearchProviderException;
 import com.devoxx.genie.service.websearch.WebSearchProviderRegistry;
-import com.devoxx.genie.service.websearch.WebSearchReadiness;
 import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.devoxx.genie.ui.settings.common.SearchTestPanel;
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.ui.UINumericRange;
 import com.intellij.ui.JBColor;
@@ -19,7 +18,6 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
-import dev.langchain4j.web.search.WebSearchOrganicResult;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -70,10 +68,9 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
             stateService.getMaxSearchResults() == null ? WebSearchConfig.DEFAULT_MAX_RESULTS
                     : stateService.getMaxSearchResults(), 1, 10));
 
-    private final JBTextField testSearchQuery = new JBTextField();
-    private final JButton testSearchButton = new JButton("Test search");
-    private final JTextArea testSearchResults = new JTextArea(7, 40);
-    private final JProgressBar testSearchProgress = new JProgressBar();
+    /** Test search over the unsaved form (TASK-277.7: shared with the RAG settings' test). */
+    private final SearchTestPanel<WebSearchTestSearch.Hit> testSearch =
+            new SearchTestPanel<>("Test search", new WebSearchTestSearch(this::formConfig));
 
     public WebSearchProvidersComponent() {
         for (WebSearchProviderDefinition definition : WebSearchProviderRegistry.all()) {
@@ -177,26 +174,16 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
     private void addTestSearchSection(GridBagConstraints gbc) {
         addSection(panel, gbc, "Test web search");
-        JPanel queryRow = new JPanel(new BorderLayout(5, 0));
-        queryRow.add(testSearchQuery, BorderLayout.CENTER);
-        queryRow.add(testSearchButton, BorderLayout.EAST);
-        addSettingRow(panel, gbc, "Test query", queryRow);
-        testSearchResults.setEditable(false);
-        testSearchResults.setLineWrap(true);
-        testSearchResults.setWrapStyleWord(true);
-        testSearchProgress.setIndeterminate(true);
-        testSearchProgress.setVisible(false);
-        JPanel output = new JPanel(new BorderLayout(0, 5));
-        output.add(testSearchProgress, BorderLayout.NORTH);
-        output.add(new JScrollPane(testSearchResults), BorderLayout.CENTER);
+        addSettingRow(panel, gbc, "Test query", testSearch.getQueryRow());
         gbc.gridx = 0;
         gbc.gridwidth = 2;
-        panel.add(output, gbc);
+        panel.add(testSearch, gbc);
         gbc.gridy++;
-        testSearchButton.addActionListener(e -> runTestSearch());
-        testSearchQuery.addActionListener(e -> {
-            if (testSearchButton.isEnabled()) runTestSearch();
-        });
+    }
+
+    /** The test query field (used to prefill the docs screenshot). */
+    public @NotNull JBTextField getTestSearchQuery() {
+        return testSearch.getQueryField();
     }
 
     // --- form state ------------------------------------------------------------------------------
@@ -250,85 +237,6 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         deprecationWarning.setVisible(warning != null);
         panel.revalidate();
         panel.repaint();
-    }
-
-    // --- test search -----------------------------------------------------------------------------
-
-    private void runTestSearch() {
-        String query = testSearchQuery.getText().trim();
-        if (query.isEmpty()) {
-            testSearchResults.setText("Enter a query to test web search.");
-            return;
-        }
-        // Snapshot the form on the EDT so newly entered credentials can be tested before Apply.
-        WebSearchConfig config = formConfig();
-        WebSearchReadiness readiness = WebSearchService.readiness(config);
-        if (!readiness.isReady()) {
-            testSearchResults.setText(readiness.message());
-            return;
-        }
-        testSearchButton.setEnabled(false);
-        testSearchProgress.setVisible(true);
-        testSearchResults.setText("Searching...");
-        new SwingWorker<String, Void>() {
-            @Override
-            protected String doInBackground() {
-                return performTestSearch(config, query);
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    testSearchResults.setText(get());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    testSearchResults.setText("Search interrupted.");
-                } catch (java.util.concurrent.ExecutionException e) {
-                    testSearchResults.setText("Search failed. Check the provider settings and network connection.");
-                } finally {
-                    testSearchProgress.setVisible(false);
-                    testSearchButton.setEnabled(true);
-                    testSearchResults.setCaretPosition(0);
-                }
-            }
-        }.execute();
-    }
-
-    /**
-     * Runs the test search for {@code config} and renders the results as text. Never throws: failures
-     * become a message. Provider exceptions may contain request URLs or credentials, so only the
-     * exception type is shown.
-     */
-    static @NotNull String performTestSearch(@NotNull WebSearchConfig config, @NotNull String query) {
-        WebSearchReadiness readiness = WebSearchService.readiness(config);
-        if (!readiness.isReady()) {
-            return readiness.message();
-        }
-        String providerName = WebSearchService.definition(config.provider()).displayName();
-        List<WebSearchOrganicResult> hits;
-        try {
-            hits = WebSearchService.search(config, query).results();
-        } catch (WebSearchProviderException e) {
-            return e.getMessage(); // written for the user; never contains credentials
-        } catch (Exception e) {
-            return "Search with " + providerName + " failed (" + e.getClass().getSimpleName() +
-                    "). Check the " + providerName + " settings and network connection.";
-        }
-        if (hits == null || hits.isEmpty()) {
-            return "No results found.";
-        }
-        StringBuilder text = new StringBuilder();
-        for (WebSearchOrganicResult hit : hits.subList(0, Math.min(config.maxResults(), hits.size()))) {
-            text.append(hit.title() == null ? "(no title)" : hit.title()).append("\n");
-            if (hit.url() != null) text.append(hit.url()).append("\n");
-            if (hit.snippet() != null) {
-                String snippet = hit.snippet();
-                text.append(snippet, 0, Math.min(snippet.length(), 1000));
-                if (snippet.length() > 1000) text.append("...");
-            }
-            text.append("\n\n");
-        }
-        return text.toString();
     }
 
     @Override

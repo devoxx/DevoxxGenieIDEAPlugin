@@ -10,6 +10,7 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.xmlb.XmlSerializer;
@@ -76,6 +77,8 @@ class WebSearchProvidersConfigurableTest {
         applicationManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class);
         applicationManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(application);
         lenient().when(application.getService(CredentialService.class)).thenReturn(credentials);
+        // JBScrollPane (Mac scrollbar animation) asks for the default modality state (TASK-277.7).
+        lenient().when(application.getDefaultModalityState()).thenReturn(ModalityState.nonModal());
 
         stateService = new DevoxxGenieStateService();
         lenient().when(application.getService(DevoxxGenieStateService.class)).thenReturn(stateService);
@@ -198,7 +201,7 @@ class WebSearchProvidersConfigurableTest {
         void parallelWithoutKey_isNotReady_andTestSearchAsksForTheKey() {
             component.setSelectedProvider(WebSearchProvider.PARALLEL);
 
-            assertThat(WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q"))
+            assertThat(WebSearchTestSearchAccess.run(component.formConfig(), "q"))
                     .contains("Parallel is missing its API key");
         }
 
@@ -403,7 +406,7 @@ class WebSearchProvidersConfigurableTest {
                 component.setSelectedProvider(WebSearchProvider.TAVILY);
                 component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("unsaved-tavily-key");
 
-                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "devoxx genie");
+                String output = WebSearchTestSearchAccess.run(component.formConfig(), "devoxx genie");
 
                 assertThat(output).contains("Stub hit").contains("https://example.com/stub").contains("Snippet from the stub.");
                 assertThat(tavily.takeRequest().getBody().readUtf8()).contains("unsaved-tavily-key").contains("devoxx genie");
@@ -420,7 +423,7 @@ class WebSearchProvidersConfigurableTest {
                 component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).setText("c");
                 component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("tavily-present-but-unselected");
 
-                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+                String output = WebSearchTestSearchAccess.run(component.formConfig(), "q");
 
                 assertThat(output).contains("Google hit");
                 assertThat(tavily.requestCount()).isZero();
@@ -434,7 +437,7 @@ class WebSearchProvidersConfigurableTest {
                 component.setSelectedProvider(WebSearchProvider.TAVILY);
                 component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("tvly-leaky-key");
 
-                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+                String output = WebSearchTestSearchAccess.run(component.formConfig(), "q");
 
                 assertThat(output).startsWith("Search with Tavily failed").doesNotContain("tvly-leaky-key");
             }
@@ -446,7 +449,7 @@ class WebSearchProvidersConfigurableTest {
                 component.setSelectedProvider(WebSearchProvider.GOOGLE);
                 component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("g");
 
-                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+                String output = WebSearchTestSearchAccess.run(component.formConfig(), "q");
 
                 assertThat(output).contains("Google").contains("Search Engine ID");
                 assertThat(tavily.requestCount()).isZero();
@@ -462,7 +465,7 @@ class WebSearchProvidersConfigurableTest {
             component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("g");
             component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).setText("c");
 
-            String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+            String output = WebSearchTestSearchAccess.run(component.formConfig(), "q");
 
             assertThat(output).contains("Google Custom Search failed").contains("January 1, 2027")
                     .doesNotContain("API not enabled");
@@ -478,7 +481,7 @@ class WebSearchProvidersConfigurableTest {
                 component.setSelectedProvider(WebSearchProvider.TAVILY);
                 component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("k");
 
-                WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+                WebSearchTestSearchAccess.run(component.formConfig(), "q");
 
                 usage.verifyNoInteractions();
             }
@@ -488,7 +491,7 @@ class WebSearchProvidersConfigurableTest {
         void testSearchWithNoProvider_asksToChooseOne() {
             component.setSelectedProvider(null);
 
-            assertThat(WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q"))
+            assertThat(WebSearchTestSearchAccess.run(component.formConfig(), "q"))
                     .contains("No web search provider is selected");
         }
     }
