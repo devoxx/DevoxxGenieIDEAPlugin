@@ -91,4 +91,6 @@ Google Custom Search is now deprecated in DevoxxGenie, ahead of Google discontin
 Verification: WebSearchDeprecationTest (7), WebSearchServiceTest$DeprecatedProviders (3) + provider order, settings Visibility (warning shown/hidden, default None) and TestSearch (failing Google), E2E agent tool and /search with a failing substituted Google engine; docs build OK; full suite 4348 passed, 25 skipped, 0 failed.
 
 Stacked on TASK-277.3 (#1433).
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1434 (stacked on #1433)
 <!-- SECTION:FINAL_SUMMARY:END -->
