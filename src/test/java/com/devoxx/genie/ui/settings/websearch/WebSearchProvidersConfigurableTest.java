@@ -116,7 +116,8 @@ class WebSearchProvidersConfigurableTest {
         assertThat(combo.getItemAt(0).label()).isEqualTo("None");
         assertThat(combo.getItemAt(1).label()).isEqualTo("Tavily");
         assertThat(combo.getItemAt(2).label()).isEqualTo("Keenable");
-        assertThat(combo.getItemAt(3).label()).isEqualTo("Google Custom Search (deprecated)");
+        assertThat(combo.getItemAt(3).label()).isEqualTo("Parallel");
+        assertThat(combo.getItemAt(4).label()).isEqualTo("Google Custom Search (deprecated)");
     }
 
     @Nested
@@ -182,6 +183,23 @@ class WebSearchProvidersConfigurableTest {
         void freshSettings_defaultToNoProvider_notGoogle() {
             assertThat(new DevoxxGenieStateService().getSelectedWebSearchProvider()).isNull();
             assertThat(component.getSelectedProvider()).isNull();
+        }
+
+        @Test
+        void parallelSelected_showsOnlyItsRequiredKeyRow_andNoDeprecationWarning() {
+            component.setSelectedProvider(WebSearchProvider.PARALLEL);
+
+            assertThat(component.isShowingRowsOf(WebSearchProvider.PARALLEL)).isTrue();
+            assertThat(component.isShowingRowsOf(WebSearchProvider.KEENABLE)).isFalse();
+            assertThat(component.getDeprecationWarning().isVisible()).isFalse();
+        }
+
+        @Test
+        void parallelWithoutKey_isNotReady_andTestSearchAsksForTheKey() {
+            component.setSelectedProvider(WebSearchProvider.PARALLEL);
+
+            assertThat(WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q"))
+                    .contains("Parallel is missing its API key");
         }
 
         @Test
@@ -344,7 +362,8 @@ class WebSearchProvidersConfigurableTest {
         @Test
         void detectsCredentialChange_forEveryRegisteredField() {
             for (CredentialKey key : new CredentialKey[]{CredentialKey.TAVILY_SEARCH_KEY,
-                    CredentialKey.GOOGLE_SEARCH_KEY, CredentialKey.GOOGLE_CSI_KEY, CredentialKey.KEENABLE_SEARCH_KEY}) {
+                    CredentialKey.GOOGLE_SEARCH_KEY, CredentialKey.GOOGLE_CSI_KEY, CredentialKey.KEENABLE_SEARCH_KEY,
+                    CredentialKey.PARALLEL_SEARCH_KEY}) {
                 configurable.reset();
                 component.getCredentialField(key).setText("changed-" + key);
                 assertThat(configurable.isModified()).as("%s change detected", key).isTrue();
@@ -447,6 +466,22 @@ class WebSearchProvidersConfigurableTest {
 
             assertThat(output).contains("Google Custom Search failed").contains("January 1, 2027")
                     .doesNotContain("API not enabled");
+        }
+
+        // TASK-277.6: trying the settings must not look like real usage.
+        @Test
+        void analytics_testSearch_isNeverCounted() throws Exception {
+            try (TavilyStubServer tavily = new TavilyStubServer();
+                 MockedStatic<com.devoxx.genie.service.analytics.FeatureUsageTracker> usage =
+                         Mockito.mockStatic(com.devoxx.genie.service.analytics.FeatureUsageTracker.class)) {
+                tavily.respondWithHit("Stub hit", "https://example.com/stub", "s");
+                component.setSelectedProvider(WebSearchProvider.TAVILY);
+                component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("k");
+
+                WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+
+                usage.verifyNoInteractions();
+            }
         }
 
         @Test

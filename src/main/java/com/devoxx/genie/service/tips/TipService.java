@@ -40,6 +40,7 @@ public final class TipService {
             new Tip("Type /search to augment your prompt with a live web search.", 1),
             new Tip("Pick a web search provider in Settings → Web search to ground answers in live results.", 1),
             new Tip("No search API key? Pick Keenable in Settings → Web search: it works without signing up.", 1),
+            new Tip("Have a Parallel API key? Pick Parallel in Settings → Web search for /search and the agent.", 1),
             new Tip("Use Test search in Settings → Web search to check your provider and key before you apply them.", 1),
             new Tip("In Agent Mode, enable the web_search tool so the agent can look up docs and release notes itself.", 1),
             new Tip("Watch the live token count and cost estimate as you build a prompt.", 1),

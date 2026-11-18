@@ -140,6 +140,13 @@ public final class WebSearchService {
                 config -> WebSearchProviderRegistry.keenableEngine(config, baseUrl));
     }
 
+    /** Points the real Parallel engine at {@code baseUrl} (a local stub server); other providers are unchanged. */
+    @TestOnly
+    public static void useParallelBaseUrlForTesting(@NotNull String baseUrl) {
+        replaceEngineFactoryForTesting(WebSearchProvider.PARALLEL,
+                config -> WebSearchProviderRegistry.parallelEngine(config, baseUrl));
+    }
+
     /**
      * Replaces one provider's engine (keeping any other override in place, e.g. a stub base URL).
      * Used for providers whose langchain4j engine has no base-URL setting, such as Google.

@@ -161,6 +161,55 @@ class WebSearchPromptExecutionServiceTest {
         assertThat(tavily.requestCount()).isZero();
     }
 
+    // --- TASK-277.6: usage analytics -----------------------------------------------------------
+
+    @Test
+    void analytics_completedSearch_countsOneUseOfTheSelectedProvider() {
+        state.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);
+        state.setTavilySearchKey("tvly-e2e-key");
+        tavily.respondWithHit("t", "https://example.com/t", "c");
+        ChatMessageContext context = context(chatModel);
+
+        try (MockedStatic<com.devoxx.genie.service.analytics.FeatureUsageTracker> usage =
+                     mockStatic(com.devoxx.genie.service.analytics.FeatureUsageTracker.class)) {
+            service.searchWeb(context);
+
+            usage.verify(() -> com.devoxx.genie.service.analytics.FeatureUsageTracker.webSearchUsed(
+                    com.devoxx.genie.service.analytics.FeatureId.WEB_SEARCH_TAVILY, false, context.getLanguageModel()));
+            usage.verifyNoMoreInteractions();
+        }
+    }
+
+    @Test
+    void analytics_searchWithNoResults_stillCountsAsAUse() {
+        state.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);
+        state.setTavilySearchKey("tvly-e2e-key");
+        tavily.respondWithNoResults();
+
+        try (MockedStatic<com.devoxx.genie.service.analytics.FeatureUsageTracker> usage =
+                     mockStatic(com.devoxx.genie.service.analytics.FeatureUsageTracker.class)) {
+            service.searchWeb(context(chatModel));
+
+            usage.verify(() -> com.devoxx.genie.service.analytics.FeatureUsageTracker.webSearchUsed(
+                    eq(com.devoxx.genie.service.analytics.FeatureId.WEB_SEARCH_TAVILY), eq(false), any()));
+        }
+    }
+
+    @Test
+    void analytics_notConfiguredOrFailedSearch_isNotCounted() {
+        try (MockedStatic<com.devoxx.genie.service.analytics.FeatureUsageTracker> usage =
+                     mockStatic(com.devoxx.genie.service.analytics.FeatureUsageTracker.class)) {
+            state.setSelectedWebSearchProvider(WebSearchProvider.TAVILY); // no key
+            assertThatThrownBy(() -> service.searchWeb(context(chatModel)));
+
+            state.setTavilySearchKey("tvly-e2e-key");
+            tavily.respondWithStatus(500, "boom");
+            assertThatThrownBy(() -> service.searchWeb(context(chatModel)));
+
+            usage.verifyNoInteractions();
+        }
+    }
+
     @Test
     void selectedProviderWithBlankKey_failsWithAClearMessage_andSendsNothing() {
         state.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);

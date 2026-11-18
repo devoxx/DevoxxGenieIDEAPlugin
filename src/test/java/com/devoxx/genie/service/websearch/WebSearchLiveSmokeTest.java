@@ -54,6 +54,15 @@ class WebSearchLiveSmokeTest {
         assertHasResultsWithUrls(WebSearchService.search(config, QUERY));
     }
 
+    @Test
+    @EnabledIfEnvironmentVariable(named = "PARALLEL_API_KEY", matches = ".+")
+    void parallel_returnsResultsWithUrls() {
+        WebSearchConfig config = new WebSearchConfig(WebSearchProvider.PARALLEL,
+                Map.of(CredentialKey.PARALLEL_SEARCH_KEY, System.getenv("PARALLEL_API_KEY")), 3);
+
+        assertHasResultsWithUrls(WebSearchService.search(config, QUERY));
+    }
+
     private static void assertHasResultsWithUrls(WebSearchResults results) {
         assertThat(results.results()).isNotEmpty();
         for (WebSearchOrganicResult hit : results.results()) {

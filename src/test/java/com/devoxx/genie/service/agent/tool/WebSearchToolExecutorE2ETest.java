@@ -140,6 +140,38 @@ class WebSearchToolExecutorE2ETest {
                 .contains("January 1, 2027").contains("Keenable").contains("Tavily");
     }
 
+    // TASK-277.6: agent tool searches count for the provider and for the agent tool.
+    @Test
+    void analytics_completedToolSearch_countsTheProviderAndTheAgentTool() {
+        state.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);
+        state.setTavilySearchKey("tvly-e2e-key");
+        tavily.respondWithHit("t", "https://example.com/t", "c");
+
+        try (MockedStatic<com.devoxx.genie.service.analytics.FeatureUsageTracker> usage =
+                     mockStatic(com.devoxx.genie.service.analytics.FeatureUsageTracker.class)) {
+            executor.execute(search("q"), null);
+
+            usage.verify(() -> com.devoxx.genie.service.analytics.FeatureUsageTracker.webSearchUsed(
+                    com.devoxx.genie.service.analytics.FeatureId.WEB_SEARCH_TAVILY, true, null));
+            usage.verifyNoMoreInteractions();
+        }
+    }
+
+    @Test
+    void analytics_failedOrNotConfiguredToolSearch_isNotCounted() {
+        try (MockedStatic<com.devoxx.genie.service.analytics.FeatureUsageTracker> usage =
+                     mockStatic(com.devoxx.genie.service.analytics.FeatureUsageTracker.class)) {
+            state.setSelectedWebSearchProvider(WebSearchProvider.TAVILY); // no key
+            executor.execute(search("q"), null);
+
+            state.setTavilySearchKey("tvly-e2e-key");
+            tavily.respondWithStatus(500, "boom");
+            executor.execute(search("q"), null);
+
+            usage.verifyNoInteractions();
+        }
+    }
+
     @Test
     void noProviderSelected_sendsNoRequest() {
         state.setSelectedWebSearchProvider(null);

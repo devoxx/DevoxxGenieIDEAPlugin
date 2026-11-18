@@ -14,7 +14,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -38,7 +37,7 @@ public class KeenableWebSearchEngine implements WebSearchEngine {
 
     static final String DEFAULT_BASE_URL = "https://api.keenable.ai";
     static final String TITLE_HEADER = "DevoxxGenie";
-    static final String USER_AGENT = "DevoxxGenie";
+    static final String USER_AGENT = WebSearchHttp.USER_AGENT;
     private static final int MAX_RESULTS = 50;
     private static final int MAX_REDIRECTS = 5;
     private static final String SETTINGS = WebSearchReadiness.SETTINGS_PATH;
@@ -57,16 +56,9 @@ public class KeenableWebSearchEngine implements WebSearchEngine {
         this.httpClient = httpClient;
     }
 
-    /** Redirects are followed by hand (to control the key); the JVM proxy selector is the IDE's proxy setup. */
+    /** Redirects are followed by hand (to control the key); see {@link WebSearchHttp#defaultHttpClient()}. */
     static @NotNull HttpClient defaultHttpClient() {
-        HttpClient.Builder builder = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(15))
-                .followRedirects(HttpClient.Redirect.NEVER);
-        ProxySelector proxySelector = ProxySelector.getDefault();
-        if (proxySelector != null) {
-            builder.proxy(proxySelector);
-        }
-        return builder.build();
+        return WebSearchHttp.defaultHttpClient();
     }
 
     boolean usesApiKey() {

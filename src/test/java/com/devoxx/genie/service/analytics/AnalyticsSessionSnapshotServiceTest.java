@@ -81,6 +81,7 @@ class AnalyticsSessionSnapshotServiceTest {
         state.setMcpEnabled(true);
         state.setAgentModeEnabled(true);
         state.setStreamMode(true);
+        state.setIsWebSearchEnabled(true);
         state.setSelectedWebSearchProvider(com.devoxx.genie.service.websearch.WebSearchProvider.TAVILY);
 
         withState(snapshot::snapshotIfNeeded);
@@ -94,11 +95,47 @@ class AnalyticsSessionSnapshotServiceTest {
     // TASK-277.1: one provider is selected at a time, so exactly that provider's feature is emitted.
     @Test
     void snapshotEmitsOnlyTheSelectedWebSearchProvider() {
+        state.setIsWebSearchEnabled(true);
         state.setSelectedWebSearchProvider(com.devoxx.genie.service.websearch.WebSearchProvider.GOOGLE);
 
         withState(snapshot::snapshotIfNeeded);
 
         assertThat(analytics.enabledEvents).containsExactly(FeatureId.WEB_SEARCH_GOOGLE);
+    }
+
+    // TASK-277.6: a selected provider only counts as enabled when something can actually use it.
+    @Test
+    void selectedProvider_withWebSearchOffAndAgentToolOff_isNotReported() {
+        state.setIsWebSearchEnabled(false);
+        state.setWebSearchAgentToolEnabled(false);
+        state.setSelectedWebSearchProvider(com.devoxx.genie.service.websearch.WebSearchProvider.KEENABLE);
+
+        withState(snapshot::snapshotIfNeeded);
+
+        assertThat(analytics.enabledEvents).doesNotContain(FeatureId.WEB_SEARCH_KEENABLE);
+    }
+
+    @Test
+    void selectedProvider_withOnlyTheAgentToolOn_isReported() {
+        state.setIsWebSearchEnabled(false);
+        state.setWebSearchAgentToolEnabled(true);
+        state.setSelectedWebSearchProvider(com.devoxx.genie.service.websearch.WebSearchProvider.PARALLEL);
+
+        withState(snapshot::snapshotIfNeeded);
+
+        assertThat(analytics.enabledEvents)
+                .contains(FeatureId.WEB_SEARCH_PARALLEL, FeatureId.WEB_SEARCH_AGENT_TOOL);
+    }
+
+    @Test
+    void webSearchOn_butNoProviderSelected_reportsNoProvider() {
+        state.setIsWebSearchEnabled(true);
+        state.setSelectedWebSearchProvider(null);
+
+        withState(snapshot::snapshotIfNeeded);
+
+        assertThat(analytics.enabledEvents).doesNotContain(FeatureId.WEB_SEARCH_TAVILY, FeatureId.WEB_SEARCH_GOOGLE,
+                FeatureId.WEB_SEARCH_KEENABLE, FeatureId.WEB_SEARCH_PARALLEL);
     }
 
     @Test

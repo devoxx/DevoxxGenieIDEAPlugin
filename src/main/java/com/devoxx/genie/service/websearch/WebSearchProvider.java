@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public enum WebSearchProvider {
     TAVILY,
     KEENABLE,
+    PARALLEL,
     GOOGLE;
 
     /** Resolves a persisted name; unknown names (for example from a newer plugin version) resolve to null. */

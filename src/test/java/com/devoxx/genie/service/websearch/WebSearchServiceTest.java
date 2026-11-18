@@ -30,7 +30,8 @@ class WebSearchServiceTest {
     @Test
     void providersAreListedWithTheDeprecatedOneLast() {
         assertThat(WebSearchProviderRegistry.all()).extracting(WebSearchProviderDefinition::provider)
-                .containsExactly(WebSearchProvider.TAVILY, WebSearchProvider.KEENABLE, WebSearchProvider.GOOGLE);
+                .containsExactly(WebSearchProvider.TAVILY, WebSearchProvider.KEENABLE, WebSearchProvider.PARALLEL,
+                        WebSearchProvider.GOOGLE);
     }
 
     private static WebSearchConfig config(WebSearchProvider provider, Map<CredentialKey, String> credentials) {
