@@ -468,6 +468,22 @@ class WebSearchProvidersConfigurableTest {
                     .doesNotContain("API not enabled");
         }
 
+        // TASK-277.6: trying the settings must not look like real usage.
+        @Test
+        void analytics_testSearch_isNeverCounted() throws Exception {
+            try (TavilyStubServer tavily = new TavilyStubServer();
+                 MockedStatic<com.devoxx.genie.service.analytics.FeatureUsageTracker> usage =
+                         Mockito.mockStatic(com.devoxx.genie.service.analytics.FeatureUsageTracker.class)) {
+                tavily.respondWithHit("Stub hit", "https://example.com/stub", "s");
+                component.setSelectedProvider(WebSearchProvider.TAVILY);
+                component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("k");
+
+                WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+
+                usage.verifyNoInteractions();
+            }
+        }
+
         @Test
         void testSearchWithNoProvider_asksToChooseOne() {
             component.setSelectedProvider(null);

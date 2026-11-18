@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.agent.tool;
 
+import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.websearch.WebSearchConfig;
 import com.devoxx.genie.service.websearch.WebSearchProviderException;
 import com.devoxx.genie.service.websearch.WebSearchReadiness;
@@ -44,6 +45,9 @@ public class WebSearchToolExecutor implements ToolExecutor {
 
         try {
             WebSearchResults results = WebSearchService.search(config, query);
+            // TASK-277.6: count the completed search for the provider and the agent tool.
+            FeatureUsageTracker.webSearchUsed(WebSearchService.definition(config.provider()).analyticsFeature(),
+                    true, null);
             List<WebSearchOrganicResult> hits = results.results();
             if (hits == null || hits.isEmpty()) {
                 return "No results found for query: " + query;

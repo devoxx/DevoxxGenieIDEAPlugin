@@ -132,7 +132,10 @@ public final class AnalyticsSessionSnapshotService implements DevoxxGenieSetting
         emitIfEnabled(state.getMcpEnabled(), FeatureId.MCP);
         emitIfEnabled(state.getAgentModeEnabled(), FeatureId.AGENT);
         emitIfEnabled(state.getStreamMode(), FeatureId.STREAMING);
-        FeatureId webSearchFeature = WebSearchService.selectedAnalyticsFeature(state);
+        // TASK-277.6: a selected provider is only "enabled" if /search (master switch) or the agent tool can use it.
+        boolean webSearchUsable = WebSearchService.isEnabled(state)
+                || Boolean.TRUE.equals(state.getWebSearchAgentToolEnabled());
+        FeatureId webSearchFeature = webSearchUsable ? WebSearchService.selectedAnalyticsFeature(state) : null;
         if (webSearchFeature != null) {
             sink.trackFeatureEnabled(webSearchFeature);
         }

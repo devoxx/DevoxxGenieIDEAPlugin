@@ -1,6 +1,5 @@
 package com.devoxx.genie.service.analytics;
 
-import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -49,12 +48,8 @@ public final class FeatureUsageTracker {
             if (context.isRagActivated()) {
                 emit(FeatureId.RAG, providerType, ZERO_BUCKET);
             }
-            if (context.isWebSearchActivated() && state != null) {
-                FeatureId webSearchFeature = WebSearchService.selectedAnalyticsFeature(state);
-                if (webSearchFeature != null) {
-                    emit(webSearchFeature, providerType, ZERO_BUCKET);
-                }
-            }
+            // Web search is counted where a search actually runs (webSearchUsed), not per prompt: the
+            // old Web-toggle flag is never set any more, and counting here too would double count.
             if (context.getCommandName() != null && !context.getCommandName().isEmpty()) {
                 emit(FeatureId.CUSTOM_PROMPT, providerType, ZERO_BUCKET);
             }
@@ -88,6 +83,32 @@ public final class FeatureUsageTracker {
             emit(FeatureId.AGENT, resolveProviderType(context), Buckets.standard(toolCallCount));
         } catch (Exception e) {
             log.debug("FeatureUsageTracker.agentCompleted skipped: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Counts one completed web search (TASK-277.6): {@code feature_used} for the provider's feature id
+     * (e.g. {@code web_search_keenable}) and, for agent tool calls, also for
+     * {@link FeatureId#WEB_SEARCH_AGENT_TOOL}. Called only after the provider returned results (possibly none);
+     * never for failed or unconfigured searches or the settings Test search. Sends no query, URL or key.
+     *
+     * @param providerFeature the selected provider's analytics feature; null emits nothing
+     * @param viaAgentTool    true for the agent web_search tool, false for /search
+     * @param model           the chat model, for provider_type; null (agent tool) reports {@code none}
+     */
+    public static void webSearchUsed(@Nullable FeatureId providerFeature, boolean viaAgentTool,
+                                     @Nullable LanguageModel model) {
+        if (providerFeature == null) {
+            return;
+        }
+        try {
+            ProviderType type = resolveProviderType(model);
+            emit(providerFeature, type, ZERO_BUCKET);
+            if (viaAgentTool) {
+                emit(FeatureId.WEB_SEARCH_AGENT_TOOL, type, ZERO_BUCKET);
+            }
+        } catch (Exception e) {
+            log.debug("FeatureUsageTracker.webSearchUsed skipped: {}", e.getMessage());
         }
     }
 

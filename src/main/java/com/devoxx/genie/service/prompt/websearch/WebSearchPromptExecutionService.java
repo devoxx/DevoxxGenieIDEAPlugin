@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.websearch;
 
 import com.devoxx.genie.chatmodel.ChatModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
+import com.devoxx.genie.service.analytics.FeatureUsageTracker;
 import com.devoxx.genie.service.websearch.WebSearchConfig;
 import com.devoxx.genie.service.websearch.WebSearchNotConfiguredException;
 import com.devoxx.genie.service.websearch.WebSearchService;
@@ -57,6 +58,9 @@ public class WebSearchPromptExecutionService {
 
         WebSearchConfig config = WebSearchConfig.fromState(DevoxxGenieStateService.getInstance());
         List<WebSearchOrganicResult> results = WebSearchService.search(config, query).results();
+        // TASK-277.6: one completed search (even with no results); failures above never get here.
+        FeatureUsageTracker.webSearchUsed(WebSearchService.definition(config.provider()).analyticsFeature(), false,
+                chatMessageContext.getLanguageModel());
         if (results == null || results.isEmpty()) {
             return Optional.of(AiMessage.from(WebSearchSources.noResultsMessage(query)));
         }
