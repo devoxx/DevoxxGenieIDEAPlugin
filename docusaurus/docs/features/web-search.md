@@ -77,7 +77,7 @@ What this means in DevoxxGenie:
 3. Choose a **Provider**
 4. Enter that provider's credentials (see below)
 5. Optionally set **Max search results** (1–10, default 5)
-6. Type a query under **Test web search** and click **Test search** to check the setup. The test uses what is in the form, so you can try a key **before** you click Apply.
+6. Type a query under **Test web search** and press **Enter** or click **Test search** to check the setup. The test uses what is in the form, so you can try a key **before** you click Apply. A status line shows which provider answered, how many results came back and how long it took, or a clear error, such as a rejected or missing key. Each result is listed with its title and site. Select a result to see its cleaned-up snippet and full URL, and double-click it or click the URL to open the page in your browser.
 7. Click **Apply**
 
 ![Web Search Settings](/img/web-search-settings.png)

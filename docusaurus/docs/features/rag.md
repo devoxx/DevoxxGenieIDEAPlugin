@@ -175,6 +175,16 @@ When Agent mode + RAG are both on, DevoxxGenie also injects a `<RAG_INSTRUCTION>
 
 The tool is registered automatically whenever RAG is enabled and Agent mode is on. To override that — e.g. to force the agent to use lexical search only — uncheck `semantic_search` under **Settings → DevoxxGenie → Agent Mode → Built-in Tools**. The setting is independent of the master RAG switch, so you can keep passive injection active for non-agent prompts while excluding `semantic_search` from the agent's toolbox.
 
+### Testing retrieval from Settings
+
+To check what RAG finds before you rely on it in a prompt, use **Test semantic search** at the bottom of **Settings → DevoxxGenie → RAG**. Type a query and press **Enter** or click **Search**. The search uses the saved RAG settings, so click **Apply** first if you changed any.
+
+- The status line shows how many matches were found and how long the search took, or why nothing came back (for example, the project isn't indexed yet, or the minimum score is too high).
+- Each match is one row: its similarity score, file name and folder, best match first. Select a row to see the exact chunk that was embedded.
+- Double-click a match, or click its path above the preview, to open the file at that chunk. Settings is a modal dialog, so the file opens in the editor behind it.
+
+The same test block is used under **Settings → DevoxxGenie → Web search** to try a web search provider.
+
 ### Example Queries
 
 These types of queries benefit most from RAG (in either mode):
