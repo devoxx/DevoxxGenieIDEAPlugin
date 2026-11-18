@@ -124,6 +124,22 @@ class WebSearchToolExecutorE2ETest {
         assertThat(tavily.requestCount()).isZero();
     }
 
+    // TASK-277.4: Google's Custom Search JSON API is discontinued on 2027-01-01.
+    @Test
+    void failingGoogle_tellsTheAgentAboutTheDeprecation() {
+        state.setSelectedWebSearchProvider(WebSearchProvider.GOOGLE);
+        state.setGoogleSearchKey("g-key");
+        state.setGoogleCSIKey("cse-id");
+        WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.GOOGLE, request -> {
+            throw new IllegalStateException("403 This project does not have access to Custom Search JSON API");
+        });
+
+        String result = executor.execute(search("anything"), null);
+
+        assertThat(result).startsWith("Error: Google Custom Search failed")
+                .contains("January 1, 2027").contains("Keenable").contains("Tavily");
+    }
+
     @Test
     void noProviderSelected_sendsNoRequest() {
         state.setSelectedWebSearchProvider(null);

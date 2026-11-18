@@ -31,6 +31,11 @@ class WebSearchProviderRegistryTest {
                 .as("analytics allowlist contains %s", definition.analyticsFeature().wireValue())
                 .contains(definition.analyticsFeature().wireValue());
         assertThat(definition.engineFactory()).isNotNull();
+        if (definition.deprecation() != null) {
+            assertThat(definition.deprecation().endDate()).as("%s deprecation date", provider).isNotNull();
+            assertThat(definition.deprecation().detailsUrl()).startsWith("https://");
+            assertThat(definition.deprecation().alternatives()).isNotBlank();
+        }
 
         Map<CredentialKey, String> credentials = new HashMap<>();
         for (WebSearchCredentialField field : definition.fields()) {
