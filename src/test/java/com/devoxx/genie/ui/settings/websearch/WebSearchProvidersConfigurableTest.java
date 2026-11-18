@@ -303,6 +303,18 @@ class WebSearchProvidersConfigurableTest {
             component.getEnableWebSearchCheckbox().setSelected(false);
             assertThat(component.getTavilySearchEnabledCheckBox().isSelected()).isFalse();
             assertThat(component.getGoogleSearchEnabledCheckBox().isSelected()).isFalse();
+            assertThat(component.getKeenableSearchEnabledCheckBox().isSelected()).isFalse();
+        }
+
+        @Test
+        void shouldDisableOthersWhenKeenableSelected() {
+            WebSearchProvidersComponent component = getComponent();
+            component.getEnableWebSearchCheckbox().setSelected(true);
+            component.getTavilySearchEnabledCheckBox().setSelected(true);
+
+            component.getKeenableSearchEnabledCheckBox().setSelected(true);
+            assertThat(component.getTavilySearchEnabledCheckBox().isSelected()).isFalse();
+            assertThat(component.getGoogleSearchEnabledCheckBox().isSelected()).isFalse();
         }
     }
 

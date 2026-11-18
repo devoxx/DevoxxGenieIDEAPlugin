@@ -4,6 +4,7 @@ import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import dev.langchain4j.web.search.WebSearchEngine;
 import dev.langchain4j.web.search.WebSearchRequest;
 import dev.langchain4j.web.search.WebSearchOrganicResult;
+import com.devoxx.genie.service.prompt.websearch.KeenableWebSearchEngine;
 import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngine;
 import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
 import com.intellij.ui.components.JBTextField;
@@ -36,6 +37,11 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
     private final JCheckBox googleSearchEnabledCheckBox = new JCheckBox("", stateService.isGoogleSearchEnabled());
     private final JPasswordField googleSearchApiKeyField =
             new JPasswordField(stateService.getGoogleSearchKey());
+
+    @Getter
+    private final JCheckBox keenableSearchEnabledCheckBox = new JCheckBox("", stateService.isKeenableSearchEnabled());
+    private final JPasswordField keenableSearchApiKeyField =
+            new JPasswordField(stateService.getKeenableSearchKey());
 
     private final JPasswordField googleCSIApiKeyField =
             new JPasswordField(stateService.getGoogleCSIKey());
@@ -74,7 +80,7 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         JBLabel infoLabel = new JBLabel();
         infoLabel.setText(
                 "<html><body style='width: 100%;'>" +
-                        "Post your prompt on the web using either Google search or Tavily search." +
+                        "Post your prompt on the web using Tavily, Google Custom Search, or Keenable." +
                         "</body></html>");
 
         infoLabel.setForeground(UIUtil.getContextHelpForeground());
@@ -92,6 +98,9 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
         addSettingRow(panel, gbc, "Google Custom Search Engine ID",
                 createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"));
+
+        addProviderSettingRow(panel, gbc, "Keenable API Key (optional)", keenableSearchEnabledCheckBox,
+                createTextWithPasswordButton(keenableSearchApiKeyField, "https://docs.keenable.ai/api-reference/search"));
 
         addSettingRow(panel, gbc, "Max search results", maxSearchResults);
 
@@ -128,15 +137,22 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         String query = testSearchQuery.getText().trim();
         boolean tavily = tavilySearchEnabledCheckBox.isSelected();
         boolean google = googleSearchEnabledCheckBox.isSelected();
-        String apiKey = new String((tavily ? tavilySearchApiKeyField : googleSearchApiKeyField).getPassword()).trim();
+        boolean keenable = keenableSearchEnabledCheckBox.isSelected();
+        String apiKey = new String((tavily ? tavilySearchApiKeyField
+                : keenable ? keenableSearchApiKeyField
+                : googleSearchApiKeyField).getPassword()).trim();
         String csi = new String(googleCSIApiKeyField.getPassword()).trim();
         int limit = maxSearchResults.getNumber();
         if (query.isEmpty()) {
             testSearchResults.setText("Enter a query to test web search.");
             return;
         }
-        if ((!tavily && !google) || apiKey.isEmpty() || (!tavily && csi.isEmpty())) {
-            testSearchResults.setText("Select a provider and enter its API key (and Search Engine ID for Google).");
+        if (!tavily && !google && !keenable) {
+            testSearchResults.setText("Select a provider to test web search.");
+            return;
+        }
+        if ((tavily && apiKey.isEmpty()) || (google && (apiKey.isEmpty() || csi.isEmpty()))) {
+            testSearchResults.setText("Enter the API key (and Search Engine ID for Google) for the selected provider.");
             return;
         }
         testSearchButton.setEnabled(false);
@@ -146,9 +162,14 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() {
-                WebSearchEngine engine = tavily
-                        ? TavilyWebSearchEngine.builder().apiKey(apiKey).build()
-                        : GoogleCustomWebSearchEngine.builder().apiKey(apiKey).csi(csi).build();
+                WebSearchEngine engine;
+                if (tavily) {
+                    engine = TavilyWebSearchEngine.builder().apiKey(apiKey).build();
+                } else if (google) {
+                    engine = GoogleCustomWebSearchEngine.builder().apiKey(apiKey).csi(csi).build();
+                } else {
+                    engine = new KeenableWebSearchEngine(apiKey);
+                }
                 var hits = engine.search(WebSearchRequest.builder()
                         .searchTerms(query).maxResults(limit).build()).results();
                 if (hits == null || hits.isEmpty()) return "No results found.";
@@ -190,21 +211,25 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
     public void addListeners() {
         enableWebSearchCheckbox.addItemListener(e -> {
             stateService.setIsWebSearchEnabled(e.getStateChange() == ItemEvent.SELECTED);
-            // Disable both providers when the feature is disabled
+            // Disable every provider when the feature is disabled
             if (!enableWebSearchCheckbox.isSelected()) {
                 tavilySearchEnabledCheckBox.setSelected(false);
                 googleSearchEnabledCheckBox.setSelected(false);
+                keenableSearchEnabledCheckBox.setSelected(false);
                 updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
                 updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+                updateUrlFieldState(keenableSearchEnabledCheckBox, keenableSearchApiKeyField);
             }
         });
 
         tavilySearchEnabledCheckBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                // Disable Google Search if Tavily is selected
                 googleSearchEnabledCheckBox.setSelected(false);
                 stateService.setGoogleSearchEnabled(false);
                 updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+                keenableSearchEnabledCheckBox.setSelected(false);
+                stateService.setKeenableSearchEnabled(false);
+                updateUrlFieldState(keenableSearchEnabledCheckBox, keenableSearchApiKeyField);
             }
             stateService.setTavilySearchEnabled(tavilySearchEnabledCheckBox.isSelected());
             updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
@@ -212,13 +237,28 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
         googleSearchEnabledCheckBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                // Disable Tavily if Google Search is selected
                 tavilySearchEnabledCheckBox.setSelected(false);
                 stateService.setTavilySearchEnabled(false);
                 updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
+                keenableSearchEnabledCheckBox.setSelected(false);
+                stateService.setKeenableSearchEnabled(false);
+                updateUrlFieldState(keenableSearchEnabledCheckBox, keenableSearchApiKeyField);
             }
             stateService.setGoogleSearchEnabled(googleSearchEnabledCheckBox.isSelected());
             updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+        });
+
+        keenableSearchEnabledCheckBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                tavilySearchEnabledCheckBox.setSelected(false);
+                stateService.setTavilySearchEnabled(false);
+                updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
+                googleSearchEnabledCheckBox.setSelected(false);
+                stateService.setGoogleSearchEnabled(false);
+                updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+            }
+            stateService.setKeenableSearchEnabled(keenableSearchEnabledCheckBox.isSelected());
+            updateUrlFieldState(keenableSearchEnabledCheckBox, keenableSearchApiKeyField);
         });
     }
 

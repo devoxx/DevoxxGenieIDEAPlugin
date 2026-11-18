@@ -83,6 +83,8 @@ public interface DevoxxGenieSettingsService {
 
     String getTavilySearchKey();
 
+    String getKeenableSearchKey();
+
     Integer getMaxSearchResults();
 
     String getSelectedProvider(String projectLocation);
@@ -196,6 +198,8 @@ public interface DevoxxGenieSettingsService {
     void setGoogleCSIKey(String key);
 
     void setTavilySearchKey(String key);
+
+    void setKeenableSearchKey(String key);
 
     void setMaxSearchResults(Integer results);
 

@@ -346,6 +346,7 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     private boolean tavilySearchEnabled = false;
     private boolean googleSearchEnabled = false;
+    private boolean keenableSearchEnabled = false;
 
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("googleSearchKey")
     private String googleSearchKey = "";
@@ -353,6 +354,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private String googleCSIKey = "";
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("tavilySearchKey")
     private String tavilySearchKey = "";
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("keenableSearchKey")
+    private String keenableSearchKey = "";
     private Integer maxSearchResults = MAX_SEARCH_RESULTS;
 
     /**
@@ -1284,6 +1287,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     @Transient @Override public @NotNull String getTavilySearchKey()       { return creds().getCredential(CredentialKey.TAVILY_SEARCH_KEY); }
     @Transient @Override public void          setTavilySearchKey(String v) { creds().setCredential(CredentialKey.TAVILY_SEARCH_KEY, v); }
+
+    @Transient @Override public @NotNull String getKeenableSearchKey()       { return creds().getCredential(CredentialKey.KEENABLE_SEARCH_KEY); }
+    @Transient @Override public void          setKeenableSearchKey(String v) { creds().setCredential(CredentialKey.KEENABLE_SEARCH_KEY, v); }
 
     // ------------------------------------------------------------------
     // One-shot migration from plaintext XML fields into PasswordSafe.

@@ -1,8 +1,8 @@
 ---
 sidebar_position: 5
 title: Web Search Integration - DevoxxGenie for IntelliJ IDEA
-description: Augment LLM responses with real-time web search results using Google Custom Search or Tavily integration in DevoxxGenie.
-keywords: [devoxxgenie, web search, google custom search, tavily, search augmented, real-time search, llm web access, agent mode, web_search tool]
+description: Augment LLM responses with real-time web search results using Google Custom Search, Tavily, or Keenable in DevoxxGenie.
+keywords: [devoxxgenie, web search, google custom search, tavily, keenable, search augmented, real-time search, llm web access, agent mode, web_search tool]
 image: /img/devoxxgenie-social-card.jpg
 ---
 
@@ -27,7 +27,7 @@ This feature is particularly valuable for:
 
 ## Supported Search Providers
 
-DevoxxGenie supports two web search providers:
+DevoxxGenie supports three web search providers. The settings page keeps them mutually exclusive, and the default is unchanged: nothing is enabled until you choose one.
 
 ### Google Custom Search
 
@@ -42,6 +42,15 @@ DevoxxGenie supports two web search providers:
 - Specialized for developer-focused searches
 - Requires a Tavily API key
 - Uses the provider's search behavior; the plugin exposes a maximum-result count, not search-type presets
+
+### Keenable
+
+- Web search API for agents, with structured title, URL and snippet results
+- Works without an API key on the public endpoint; an optional key uses the authenticated endpoint
+- Enable it in Settings → Web search; it does not replace Tavily or Google unless you select it
+- Docs: https://docs.keenable.ai/api-reference/search
+
+Google's Custom Search JSON API is discontinued on January 1, 2027 ([Google's overview](https://developers.google.com/custom-search/v1/overview)). Existing Google setups in DevoxxGenie keep working until then. Keenable is an optional additional provider for users who want a replacement that does not need a Custom Search Engine ID.
 
 ## Enabling Web Search
 
@@ -154,7 +163,7 @@ In addition to the chat-mode toggle, DevoxxGenie exposes web search as a first-c
 
 1. Open **Settings → DevoxxGenie → Agent Mode**
 2. Under **Built-in Tools**, check **web_search**
-3. Configure and **enable** a search provider (Tavily or Google Custom Search) in **Settings → DevoxxGenie → Web Search** — the agent tool reuses its credentials and provider-enabled setting. Google also requires a Custom Search Engine ID.
+3. Configure and **enable** a search provider (Tavily, Google Custom Search, or Keenable) in **Settings → DevoxxGenie → Web Search** — the agent tool reuses its credentials and provider-enabled setting. Google also requires a Custom Search Engine ID. Keenable can be enabled without a key.
 
 If no enabled provider has the required credentials, the tool returns a descriptive error string and the agent falls back to other tools. No modal dialogs or broken agent loops.
 
@@ -172,7 +181,7 @@ Found 3 results for "langchain4j ChromaDB 0.6 migration":
 2. ...
 ```
 
-The tool returns raw structured results — title, URL, and snippet — so the agent can reason over sources without an extra summarisation step. Provider selection respects the enabled-provider settings: Tavily is used when enabled with a non-empty key; otherwise Google is used when enabled with both a key and Search Engine ID. A stored key alone does not enable a provider. The settings UI makes the provider choices mutually exclusive.
+The tool returns raw structured results — title, URL, and snippet — so the agent can reason over sources without an extra summarisation step. Provider selection respects the enabled-provider settings: Tavily is used when enabled with a non-empty key; otherwise Google is used when enabled with both a key and Search Engine ID; otherwise Keenable is used when enabled (a key is optional). A stored key alone does not enable a provider. The settings UI makes the provider choices mutually exclusive.
 
 When a search result looks promising, the agent can follow up with the `fetch_page` tool, which fetches the full content of a webpage given a URL — making `web_search` → `fetch_page` a natural two-step pattern for retrieving and reading external documentation.
 
@@ -235,7 +244,7 @@ When using web search:
 
 1. **Search queries**: Your queries are sent to the search provider
 2. **API keys**: Your API keys are stored securely in IntelliJ's credential store
-3. **Data usage**: Check the privacy policies of Google or Tavily for their data handling practices
+3. **Data usage**: Check the privacy policies of Google, Tavily, or Keenable for their data handling practices
 4. **Code privacy**: Consider not including sensitive code in searches
 
 ## Troubleshooting
@@ -265,7 +274,7 @@ If search results aren't helpful:
 If you encounter API key problems:
 
 1. Verify the key in DevoxxGenie settings
-2. Check that the key is active in your Google Cloud or Tavily account
+2. Check that the key is active in your Google Cloud, Tavily, or Keenable account
 3. Ensure billing is set up if required
 4. Check for any restrictions on the key (IP, usage limits)
 

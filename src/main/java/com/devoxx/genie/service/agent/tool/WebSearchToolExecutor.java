@@ -7,8 +7,7 @@ import dev.langchain4j.web.search.WebSearchEngine;
 import dev.langchain4j.web.search.WebSearchOrganicResult;
 import dev.langchain4j.web.search.WebSearchRequest;
 import dev.langchain4j.web.search.WebSearchResults;
-import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngine;
-import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
+import com.devoxx.genie.service.prompt.websearch.WebSearchEngineFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +16,7 @@ import java.util.List;
 
 /**
  * Agent tool that performs a live web search using whichever provider the user has
- * configured in Settings → DevoxxGenie → Web search (Tavily or Google Custom Search).
+ * configured in Settings → DevoxxGenie → Web search (Tavily, Google Custom Search, or Keenable).
  *
  * <p>Returns raw structured results (title, URL, snippet) so the agent can reason
  * over sources directly without an extra LLM summarisation step.
@@ -38,8 +37,8 @@ public class WebSearchToolExecutor implements ToolExecutor {
 
         WebSearchEngine engine = createWebSearchEngine();
         if (engine == null) {
-            return "Error: No web search API key configured. " +
-                   "Please configure a Tavily or Google Custom Search key in " +
+            return "Error: No web search provider configured. " +
+                   "Please enable Tavily, Google Custom Search, or Keenable in " +
                    "Settings → DevoxxGenie → Web search.";
         }
 
@@ -66,22 +65,7 @@ public class WebSearchToolExecutor implements ToolExecutor {
 
     @Nullable
     WebSearchEngine createWebSearchEngine() {
-        DevoxxGenieStateService s = DevoxxGenieStateService.getInstance();
-        if (s.isTavilySearchEnabled()
-                && s.getTavilySearchKey() != null && !s.getTavilySearchKey().isBlank()) {
-            return TavilyWebSearchEngine.builder()
-                    .apiKey(s.getTavilySearchKey())
-                    .build();
-        }
-        if (s.isGoogleSearchEnabled()
-                && s.getGoogleSearchKey() != null && !s.getGoogleSearchKey().isBlank()
-                && s.getGoogleCSIKey()    != null && !s.getGoogleCSIKey().isBlank()) {
-            return GoogleCustomWebSearchEngine.builder()
-                    .apiKey(s.getGoogleSearchKey())
-                    .csi(s.getGoogleCSIKey())
-                    .build();
-        }
-        return null;
+        return WebSearchEngineFactory.create(DevoxxGenieStateService.getInstance());
     }
 
     @NotNull

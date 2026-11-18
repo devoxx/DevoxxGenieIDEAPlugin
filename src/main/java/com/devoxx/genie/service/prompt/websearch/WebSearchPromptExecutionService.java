@@ -10,8 +10,6 @@ import dev.langchain4j.rag.content.retriever.WebSearchContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.web.search.WebSearchEngine;
-import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngine;
-import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -89,21 +87,10 @@ public class WebSearchPromptExecutionService {
      */
     private @Nullable WebSearchEngine createWebSearchEngine() {
         log.debug("Creating web search engine");
-        DevoxxGenieStateService stateService = DevoxxGenieStateService.getInstance();
-
-        if (stateService.isTavilySearchEnabled()) {
-            return TavilyWebSearchEngine.builder()
-                .apiKey(stateService.getTavilySearchKey())
-                .build();
-        } else if (stateService.isGoogleSearchEnabled() &&
-                stateService.getGoogleSearchKey() != null &&
-                stateService.getGoogleCSIKey() != null) {
-            return GoogleCustomWebSearchEngine.builder()
-                .apiKey(stateService.getGoogleSearchKey())
-                .csi(stateService.getGoogleCSIKey())
-                .build();
+        WebSearchEngine engine = WebSearchEngineFactory.create(DevoxxGenieStateService.getInstance());
+        if (engine == null) {
+            log.debug("Web search engine not found or all disabled");
         }
-        log.debug("Web search engine not found or all disabled");
-        return null;
+        return engine;
     }
 }

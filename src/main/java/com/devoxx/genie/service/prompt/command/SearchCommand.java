@@ -2,6 +2,7 @@ package com.devoxx.genie.service.prompt.command;
 
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.panel.PromptOutputPanel;
+import com.devoxx.genie.service.prompt.websearch.WebSearchEngineFactory;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +14,7 @@ import static com.devoxx.genie.model.Constant.SEARCH_COMMAND;
 
 /**
  * Command processor for the /search command.
- * Triggers a web search using the configured Tavily or Google Custom Search engine.
+ * Triggers a web search using the configured Tavily, Google Custom Search, or Keenable engine.
  * Requires Web Search to be enabled and at least one provider configured in settings.
  */
 public class SearchCommand implements PromptCommand {
@@ -47,11 +48,6 @@ public class SearchCommand implements PromptCommand {
         if (!Boolean.TRUE.equals(state.getIsWebSearchEnabled())) {
             return false;
         }
-        boolean tavilyReady = state.isTavilySearchEnabled()
-                && state.getTavilySearchKey() != null && !state.getTavilySearchKey().isBlank();
-        boolean googleReady = state.isGoogleSearchEnabled()
-                && state.getGoogleSearchKey() != null && !state.getGoogleSearchKey().isBlank()
-                && state.getGoogleCSIKey() != null && !state.getGoogleCSIKey().isBlank();
-        return tavilyReady || googleReady;
+        return WebSearchEngineFactory.isConfigured(state);
     }
 }

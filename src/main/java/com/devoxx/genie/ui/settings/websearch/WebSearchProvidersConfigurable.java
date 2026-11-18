@@ -69,6 +69,9 @@ public class WebSearchProvidersConfigurable implements Configurable {
         isModified |= isFieldModified(webSearchProvidersComponent.getGoogleSearchApiKeyField(), stateService.getGoogleSearchKey());
         isModified |= isFieldModified(webSearchProvidersComponent.getGoogleCSIApiKeyField(), stateService.getGoogleCSIKey());
 
+        isModified |= stateService.isKeenableSearchEnabled() != webSearchProvidersComponent.getKeenableSearchEnabledCheckBox().isSelected();
+        isModified |= isFieldModified(webSearchProvidersComponent.getKeenableSearchApiKeyField(), stateService.getKeenableSearchKey());
+
         isModified |= webSearchProvidersComponent.getMaxSearchResults().getNumber() != stateService.getMaxSearchResults();
 
         return isModified;
@@ -89,6 +92,8 @@ public class WebSearchProvidersConfigurable implements Configurable {
         settings.setGoogleSearchEnabled(webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().isSelected());
         settings.setGoogleSearchKey(new String(webSearchProvidersComponent.getGoogleSearchApiKeyField().getPassword()));
         settings.setGoogleCSIKey(new String(webSearchProvidersComponent.getGoogleCSIApiKeyField().getPassword()));
+        settings.setKeenableSearchEnabled(webSearchProvidersComponent.getKeenableSearchEnabledCheckBox().isSelected());
+        settings.setKeenableSearchKey(new String(webSearchProvidersComponent.getKeenableSearchApiKeyField().getPassword()));
         settings.setMaxSearchResults(webSearchProvidersComponent.getMaxSearchResults().getNumber());
 
         // Re-arm the feature-enablement analytics snapshot (task-209).
@@ -122,6 +127,8 @@ public class WebSearchProvidersConfigurable implements Configurable {
         webSearchProvidersComponent.getGoogleSearchApiKeyField().setText(settings.getGoogleSearchKey());
 
         webSearchProvidersComponent.getGoogleCSIApiKeyField().setText(settings.getGoogleCSIKey());
+        webSearchProvidersComponent.getKeenableSearchEnabledCheckBox().setSelected(settings.isKeenableSearchEnabled());
+        webSearchProvidersComponent.getKeenableSearchApiKeyField().setText(settings.getKeenableSearchKey());
         webSearchProvidersComponent.getMaxSearchResults().setValue(settings.getMaxSearchResults());
     }
 }
