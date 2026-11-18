@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-18T08:10:00Z'
-updated_date: '2026-11-18T09:35:00Z'
+updated_date: '2026-11-18T09:36:00Z'
 labels:
   - web-search
 dependencies:
@@ -114,4 +114,6 @@ Steps:
 - AC #11 intentionally open: TipService fallback tip added (ships with the release); the tips.json tip must be added only after a release containing Keenable is out, because tips.json is fetched live by all installed versions.
 
 PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1433 (stacked on #1432 -> #1431). Remaining: AC #11 (tips.json tip after the release); close #1430 with thanks once #1433 merges (comment drafted for maintainer approval).
+
+2026-11-18: maintainer-approved comment posted on #1430 (https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1430#issuecomment-6974654844): explains the port to #1433, credits the contributor, reports the cross-host redirect bug, invites review; #1430 to be closed once #1433 merges.
 <!-- SECTION:NOTES:END -->
