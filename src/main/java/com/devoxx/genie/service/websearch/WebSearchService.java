@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -25,6 +26,9 @@ public final class WebSearchService {
 
     private static volatile Function<WebSearchProvider, WebSearchProviderDefinition> definitions =
             WebSearchProviderRegistry::definition;
+
+    /** Decides whether a deprecated provider's end date has passed; fixed in tests. */
+    private static volatile Clock clock = Clock.systemDefaultZone();
 
     private WebSearchService() {
     }
@@ -71,7 +75,35 @@ public final class WebSearchService {
         if (!readiness.isReady()) {
             throw new WebSearchNotConfiguredException(readiness);
         }
-        return definition(config.provider()).engineFactory().create(config);
+        WebSearchProviderDefinition definition = definition(config.provider());
+        WebSearchEngine engine = definition.engineFactory().create(config);
+        WebSearchDeprecation deprecation = definition.deprecation();
+        return deprecation == null ? engine : explainingFailures(engine, definition.displayName(), deprecation);
+    }
+
+    /**
+     * Turns every failure of a deprecated provider into a {@link WebSearchProviderException} that mentions the
+     * shutdown, so users learn why it fails and what to switch to. The original exception stays the cause;
+     * its message (which may echo request details) is not shown.
+     */
+    private static @NotNull WebSearchEngine explainingFailures(@NotNull WebSearchEngine engine,
+                                                               @NotNull String providerName,
+                                                               @NotNull WebSearchDeprecation deprecation) {
+        return request -> {
+            try {
+                return engine.search(request);
+            } catch (RuntimeException e) {
+                throw new WebSearchProviderException(WebSearchProviderException.Kind.FAILED,
+                        deprecation.failureMessage(providerName, e.getClass().getSimpleName(), clock), e);
+            }
+        };
+    }
+
+    /** The settings warning for {@code provider}, or null when it is not deprecated. */
+    public static @Nullable String deprecationWarning(@NotNull WebSearchProvider provider) {
+        WebSearchProviderDefinition definition = definition(provider);
+        return definition.deprecation() == null ? null
+                : definition.deprecation().warning(definition.displayName(), clock);
     }
 
     /** Runs one search with the selected provider. */
@@ -122,16 +154,18 @@ public final class WebSearchService {
         Function<WebSearchProvider, WebSearchProviderDefinition> current = definitions;
         overrideDefinitionsForTesting(provider -> {
             WebSearchProviderDefinition base = current.apply(provider);
-            if (provider != target) {
-                return base;
-            }
-            return new WebSearchProviderDefinition(base.provider(), base.displayName(), base.signupUrl(),
-                    base.hint(), base.fields(), base.analyticsFeature(), factory);
+            return provider == target ? base.withEngineFactory(factory) : base;
         });
+    }
+
+    @TestOnly
+    public static void useClockForTesting(@NotNull Clock testClock) {
+        clock = testClock;
     }
 
     @TestOnly
     public static void resetDefinitionsForTesting() {
         definitions = WebSearchProviderRegistry::definition;
+        clock = Clock.systemDefaultZone();
     }
 }

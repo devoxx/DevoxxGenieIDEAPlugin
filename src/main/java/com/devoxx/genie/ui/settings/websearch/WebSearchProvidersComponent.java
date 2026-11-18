@@ -10,7 +10,9 @@ import com.devoxx.genie.service.websearch.WebSearchProviderRegistry;
 import com.devoxx.genie.service.websearch.WebSearchReadiness;
 import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.ui.UINumericRange;
+import com.intellij.ui.JBColor;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBLabel;
@@ -55,6 +57,9 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
     private final ComboBox<ProviderChoice> providerComboBox = new ComboBox<>(choices());
 
+    /** Shown only while a deprecated provider (Google) is selected (TASK-277.4). */
+    private final JBLabel deprecationWarning = new JBLabel();
+
     /** One password field per credential of every provider, keyed by where it is stored. */
     private final Map<CredentialKey, JPasswordField> credentialFields = new EnumMap<>(CredentialKey.class);
 
@@ -77,6 +82,7 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
             }
         }
         setSelectedProvider(stateService.getSelectedWebSearchProvider());
+        updateProviderRowsVisibility();
         addListeners();
     }
 
@@ -84,7 +90,9 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         List<ProviderChoice> choices = new ArrayList<>();
         choices.add(NONE);
         for (WebSearchProviderDefinition definition : WebSearchProviderRegistry.all()) {
-            choices.add(new ProviderChoice(definition.provider(), definition.displayName()));
+            String label = definition.deprecation() == null
+                    ? definition.displayName() : definition.displayName() + " (deprecated)";
+            choices.add(new ProviderChoice(definition.provider(), label));
         }
         return choices.toArray(ProviderChoice[]::new);
     }
@@ -118,6 +126,13 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         gbc.gridy++;
         addSettingRow(panel, gbc, "Enable feature", enableWebSearchCheckbox);
         addSettingRow(panel, gbc, "Provider", providerComboBox);
+
+        deprecationWarning.setForeground(JBColor.RED);
+        deprecationWarning.setIcon(AllIcons.General.Warning);
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        panel.add(deprecationWarning, gbc);
+        gbc.gridy++;
 
         for (WebSearchProviderDefinition definition : WebSearchProviderRegistry.all()) {
             addProviderRows(gbc, definition);
@@ -230,6 +245,9 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
     private void updateProviderRowsVisibility() {
         WebSearchProvider selected = getSelectedProvider();
         providerRows.forEach((provider, rows) -> rows.forEach(row -> row.setVisible(provider == selected)));
+        String warning = selected == null ? null : WebSearchService.deprecationWarning(selected);
+        deprecationWarning.setText(warning == null ? "" : "<html><body style='width: 100%;'>" + warning + "</body></html>");
+        deprecationWarning.setVisible(warning != null);
         panel.revalidate();
         panel.repaint();
     }

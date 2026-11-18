@@ -27,6 +27,12 @@ class WebSearchServiceTest {
         WebSearchService.resetDefinitionsForTesting();
     }
 
+    @Test
+    void providersAreListedWithTheDeprecatedOneLast() {
+        assertThat(WebSearchProviderRegistry.all()).extracting(WebSearchProviderDefinition::provider)
+                .containsExactly(WebSearchProvider.TAVILY, WebSearchProvider.KEENABLE, WebSearchProvider.GOOGLE);
+    }
+
     private static WebSearchConfig config(WebSearchProvider provider, Map<CredentialKey, String> credentials) {
         return new WebSearchConfig(provider, credentials, 5);
     }
@@ -165,6 +171,50 @@ class WebSearchServiceTest {
     }
 
     @Nested
+    class DeprecatedProviders {
+
+        private final WebSearchConfig google = new WebSearchConfig(WebSearchProvider.GOOGLE,
+                Map.of(CredentialKey.GOOGLE_SEARCH_KEY, "g", CredentialKey.GOOGLE_CSI_KEY, "c"), 3);
+
+        @Test
+        void successfulSearch_passesThroughUnchanged() {
+            WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.GOOGLE,
+                    request -> results("Google hit", "https://example.com/g"));
+
+            assertThat(WebSearchService.search(google, "q").results())
+                    .extracting(WebSearchOrganicResult::title).containsExactly("Google hit");
+        }
+
+        @Test
+        void anyFailure_becomesAProviderErrorPointingToTheDeprecation() {
+            WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.GOOGLE, request -> {
+                throw new IllegalStateException("403 Forbidden: secret-g-key not allowed");
+            });
+
+            assertThatThrownBy(() -> WebSearchService.search(google, "q"))
+                    .isInstanceOfSatisfying(WebSearchProviderException.class, e -> {
+                        assertThat(e.kind()).isEqualTo(WebSearchProviderException.Kind.FAILED);
+                        assertThat(e.getMessage()).contains("Google Custom Search")
+                                .contains("January 1, 2027").contains("Keenable")
+                                .doesNotContain("secret-g-key");
+                        assertThat(e.getCause()).isInstanceOf(IllegalStateException.class);
+                    });
+        }
+
+        @Test
+        void nonDeprecatedProviders_areNotWrapped() {
+            IllegalStateException original = new IllegalStateException("tavily boom");
+            WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.TAVILY, request -> {
+                throw original;
+            });
+            WebSearchConfig tavily = new WebSearchConfig(WebSearchProvider.TAVILY,
+                    Map.of(CredentialKey.TAVILY_SEARCH_KEY, "t"), 3);
+
+            assertThatThrownBy(() -> WebSearchService.search(tavily, "q")).isSameAs(original);
+        }
+    }
+
+    @Nested
     class FromState {
 
         @Test
@@ -239,12 +289,10 @@ class WebSearchServiceTest {
     static WebSearchProviderDefinition definitionWithEngine(WebSearchProvider provider,
                                                             WebSearchEngine engine,
                                                             List<WebSearchProvider> built) {
-        WebSearchProviderDefinition real = WebSearchProviderRegistry.definition(provider);
-        return new WebSearchProviderDefinition(real.provider(), real.displayName(), real.signupUrl(), real.hint(),
-                real.fields(), real.analyticsFeature(), config -> {
-                    built.add(provider);
-                    return engine;
-                });
+        return WebSearchProviderRegistry.definition(provider).withEngineFactory(config -> {
+            built.add(provider);
+            return engine;
+        });
     }
 
     static WebSearchResults results(String title, String url) {

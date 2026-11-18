@@ -115,8 +115,8 @@ class WebSearchProvidersConfigurableTest {
         assertThat(combo.getItemAt(0).provider()).isNull();
         assertThat(combo.getItemAt(0).label()).isEqualTo("None");
         assertThat(combo.getItemAt(1).label()).isEqualTo("Tavily");
-        assertThat(combo.getItemAt(2).label()).isEqualTo("Google Custom Search");
-        assertThat(combo.getItemAt(3).label()).isEqualTo("Keenable");
+        assertThat(combo.getItemAt(2).label()).isEqualTo("Keenable");
+        assertThat(combo.getItemAt(3).label()).isEqualTo("Google Custom Search (deprecated)");
     }
 
     @Nested
@@ -159,6 +159,29 @@ class WebSearchProvidersConfigurableTest {
 
             assertThat(com.devoxx.genie.service.websearch.WebSearchService.readiness(component.formConfig()).isReady())
                     .isTrue();
+        }
+
+        @Test
+        void googleSelected_showsTheDeprecationWarning_withDateAndAlternatives() {
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+
+            assertThat(component.getDeprecationWarning().isVisible()).isTrue();
+            assertThat(component.getDeprecationWarning().getText())
+                    .contains("January 1, 2027").contains("Keenable").contains("Tavily");
+        }
+
+        @Test
+        void deprecationWarning_isHidden_forOtherProvidersAndNone() {
+            for (WebSearchProvider provider : new WebSearchProvider[]{WebSearchProvider.TAVILY, WebSearchProvider.KEENABLE, null}) {
+                component.setSelectedProvider(provider);
+                assertThat(component.getDeprecationWarning().isVisible()).as("warning for %s", provider).isFalse();
+            }
+        }
+
+        @Test
+        void freshSettings_defaultToNoProvider_notGoogle() {
+            assertThat(new DevoxxGenieStateService().getSelectedWebSearchProvider()).isNull();
+            assertThat(component.getSelectedProvider()).isNull();
         }
 
         @Test
@@ -409,6 +432,21 @@ class WebSearchProvidersConfigurableTest {
                 assertThat(output).contains("Google").contains("Search Engine ID");
                 assertThat(tavily.requestCount()).isZero();
             }
+        }
+
+        @Test
+        void e2e_failingGoogleTestSearch_pointsToTheDeprecation() {
+            WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.GOOGLE, request -> {
+                throw new IllegalStateException("API not enabled");
+            });
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+            component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("g");
+            component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).setText("c");
+
+            String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+
+            assertThat(output).contains("Google Custom Search failed").contains("January 1, 2027")
+                    .doesNotContain("API not enabled");
         }
 
         @Test
