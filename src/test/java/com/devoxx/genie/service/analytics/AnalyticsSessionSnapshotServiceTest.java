@@ -81,15 +81,24 @@ class AnalyticsSessionSnapshotServiceTest {
         state.setMcpEnabled(true);
         state.setAgentModeEnabled(true);
         state.setStreamMode(true);
-        state.setGoogleSearchEnabled(true);
-        state.setTavilySearchEnabled(true);
+        state.setSelectedWebSearchProvider(com.devoxx.genie.service.websearch.WebSearchProvider.TAVILY);
 
         withState(snapshot::snapshotIfNeeded);
 
         assertThat(analytics.enabledEvents).containsExactlyInAnyOrder(
                 FeatureId.RAG, FeatureId.MCP, FeatureId.AGENT,
-                FeatureId.STREAMING, FeatureId.WEB_SEARCH_GOOGLE, FeatureId.WEB_SEARCH_TAVILY);
+                FeatureId.STREAMING, FeatureId.WEB_SEARCH_TAVILY);
         assertThat(analytics.countsEvents).hasSize(1);
+    }
+
+    // TASK-277.1: one provider is selected at a time, so exactly that provider's feature is emitted.
+    @Test
+    void snapshotEmitsOnlyTheSelectedWebSearchProvider() {
+        state.setSelectedWebSearchProvider(com.devoxx.genie.service.websearch.WebSearchProvider.GOOGLE);
+
+        withState(snapshot::snapshotIfNeeded);
+
+        assertThat(analytics.enabledEvents).containsExactly(FeatureId.WEB_SEARCH_GOOGLE);
     }
 
     @Test

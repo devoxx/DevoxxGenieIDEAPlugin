@@ -1,5 +1,7 @@
 package com.devoxx.genie.ui.settings.agent;
 
+import com.devoxx.genie.service.websearch.WebSearchConfig;
+import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.agent.SubAgentConfig;
 import com.devoxx.genie.model.enumarations.ModelProvider;
@@ -195,7 +197,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 addFullWidthRow(contentPanel, gbc, buildToolRow(enableWebSearchToolCheckbox, "web_search"));
                 addHelpText(contentPanel, gbc,
                         "Registers a 'web_search' tool so the agent can query the web directly. " +
-                        "Requires a Tavily or Google Custom Search API key in Settings → Web search.");
+                        "Requires a web search provider (with its API key) in Settings → Web search.");
                 if (!isAnyWebSearchKeyConfigured()) {
                     addFullWidthRow(contentPanel, gbc, buildWebSearchWarningPanel());
                 }
@@ -782,19 +784,14 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
                 "wildcard. A match either forces the approval dialog or blocks the command outright.");
     }
 
-    private static boolean isAnyWebSearchKeyConfigured() {
-        DevoxxGenieStateService s = DevoxxGenieStateService.getInstance();
-        boolean tavily = s.isTavilySearchEnabled()
-                && s.getTavilySearchKey() != null && !s.getTavilySearchKey().isBlank();
-        boolean google = s.isGoogleSearchEnabled()
-                && s.getGoogleSearchKey() != null && !s.getGoogleSearchKey().isBlank()
-                && s.getGoogleCSIKey()    != null && !s.getGoogleCSIKey().isBlank();
-        return tavily || google;
+    /** Same readiness rule the web_search tool applies at run time (TASK-277.1). */
+    static boolean isAnyWebSearchKeyConfigured() {
+        return WebSearchService.readiness(WebSearchConfig.fromState(DevoxxGenieStateService.getInstance())).isReady();
     }
 
     private static JPanel buildWebSearchWarningPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        JBLabel warning = new JBLabel("No web search API key configured.");
+        JBLabel warning = new JBLabel("No web search provider is ready.");
         warning.setForeground(JBColor.RED);
         panel.add(warning);
         HyperlinkLabel link = new HyperlinkLabel("Open Web search settings");

@@ -128,6 +128,55 @@ class ChatMessageContextUtilTest {
         assertTrue(attachedFiles.isEmpty());
     }
 
+    // --- TASK-277.1: the chat Web toggle -------------------------------------------------------
+
+    private ChatMessageContext createContextWithWebToggle(boolean toggleOn,
+                                                          com.devoxx.genie.service.websearch.WebSearchProvider provider) {
+        when(stateService.getWebSearchActivated()).thenReturn(toggleOn);
+        when(stateService.getSelectedWebSearchProvider()).thenReturn(provider);
+        com.devoxx.genie.model.LanguageModel model = com.devoxx.genie.model.LanguageModel.builder()
+                .provider(com.devoxx.genie.model.enumarations.ModelProvider.CLIRunners)
+                .modelName("cli")
+                .build();
+        return ChatMessageContextUtil.createContext(new com.devoxx.genie.model.ChatContextParameters(
+                project, "what changed in IntelliJ 2026.2?", model, null, "submit",
+                null, "full project", true, TAB_ID));
+    }
+
+    @Test
+    void webToggleOn_withSelectedProvider_requestsWebSearch() {
+        ChatMessageContext context = createContextWithWebToggle(true,
+                com.devoxx.genie.service.websearch.WebSearchProvider.TAVILY);
+
+        assertTrue(context.isWebSearchRequested());
+        assertTrue(context.isWebSearchActivated());
+    }
+
+    @Test
+    void webToggleOn_withoutSelectedProvider_doesNotRequestWebSearch() {
+        ChatMessageContext context = createContextWithWebToggle(true, null);
+
+        assertFalse(context.isWebSearchRequested());
+    }
+
+    @Test
+    void webToggleOff_neverRequestsWebSearch() {
+        ChatMessageContext context = createContextWithWebToggle(false,
+                com.devoxx.genie.service.websearch.WebSearchProvider.GOOGLE);
+
+        assertFalse(context.isWebSearchRequested());
+    }
+
+    @Test
+    void webToggle_readsNoCredentials_whenBuildingThePromptContext() {
+        createContextWithWebToggle(true, com.devoxx.genie.service.websearch.WebSearchProvider.TAVILY);
+
+        verify(stateService, never()).getTavilySearchKey();
+        verify(stateService, never()).getGoogleSearchKey();
+        verify(stateService, never()).getGoogleCSIKey();
+        verify(stateService, never()).getCredential(any());
+    }
+
     private ChatMessageContext newContext() {
         return ChatMessageContext.builder().project(project).tabId(TAB_ID).build();
     }

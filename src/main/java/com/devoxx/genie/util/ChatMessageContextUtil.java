@@ -7,6 +7,7 @@ import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.model.request.EditorInfo;
 import dev.langchain4j.data.message.UserMessage;
 import com.devoxx.genie.service.FileListManager;
+import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.ui.component.button.EditorFileButtonManager;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.util.EditorUtil;
@@ -51,7 +52,9 @@ public class ChatMessageContextUtil {
                 // task-209: mirror the chat-panel toggles onto the context so analytics reads them at completion.
                 .ragActivated(ragActivated)
                 .webSearchActivated(webSearchActivated)
-                .webSearchRequested(webSearchActivated && (stateService.isGoogleSearchEnabled() || stateService.isTavilySearchEnabled()))
+                // TASK-277.1: a selected provider routes to web search; missing credentials then fail there with
+                // a clear message (no PasswordSafe read here, this runs for every prompt).
+                .webSearchRequested(webSearchActivated && WebSearchService.isProviderSelected(stateService))
                 .executionTimeMs(0)
                 .cost(0)
                 .build();

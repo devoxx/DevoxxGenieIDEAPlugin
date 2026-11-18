@@ -8,11 +8,14 @@ import dev.langchain4j.rag.content.retriever.WebSearchContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.web.search.WebSearchEngine;
-import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngine;
-import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
+import com.devoxx.genie.service.credentials.CredentialKey;
+import com.devoxx.genie.service.websearch.WebSearchConfig;
+import com.devoxx.genie.service.websearch.WebSearchProvider;
+import com.devoxx.genie.service.websearch.WebSearchService;
 
 import java.time.Duration;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Standalone diagnostic CLI for the web search integration. Exercises the same Tavily/Google +
@@ -101,24 +104,14 @@ public final class WebSearchCli {
         System.out.printf("%nAnswer (%dms):%n%s%n", elapsed, answer);
     }
 
+    /** Builds the engine through the same registry the plugin uses (TASK-277.1). */
     private static WebSearchEngine buildSearchEngine(String provider) {
-        return switch (provider) {
-            case "tavily" -> {
-                String key = requireEnv("TAVILY_API_KEY");
-                System.out.println("Search     : Tavily");
-                yield TavilyWebSearchEngine.builder()
-                        .apiKey(key)
-                        .build();
-            }
-            case "google" -> {
-                String apiKey = requireEnv("GOOGLE_API_KEY");
-                String csiKey = requireEnv("GOOGLE_CSI_KEY");
-                System.out.println("Search     : Google Custom Search");
-                yield GoogleCustomWebSearchEngine.builder()
-                        .apiKey(apiKey)
-                        .csi(csiKey)
-                        .build();
-            }
+        WebSearchConfig config = switch (provider) {
+            case "tavily" -> new WebSearchConfig(WebSearchProvider.TAVILY,
+                    Map.of(CredentialKey.TAVILY_SEARCH_KEY, requireEnv("TAVILY_API_KEY")), 5);
+            case "google" -> new WebSearchConfig(WebSearchProvider.GOOGLE, Map.of(
+                    CredentialKey.GOOGLE_SEARCH_KEY, requireEnv("GOOGLE_API_KEY"),
+                    CredentialKey.GOOGLE_CSI_KEY, requireEnv("GOOGLE_CSI_KEY")), 5);
             default -> {
                 System.err.println("Unknown search provider: " + provider + " (use 'tavily' or 'google')");
                 printUsage();
@@ -126,6 +119,8 @@ public final class WebSearchCli {
                 yield null;
             }
         };
+        System.out.println("Search     : " + WebSearchService.definition(config.provider()).displayName());
+        return WebSearchService.createEngine(config);
     }
 
     private static ChatModel buildChatModel() {
