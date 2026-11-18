@@ -3,9 +3,10 @@ id: TASK-277
 title: >-
   Pluggable web search providers: one registry covering current and future
   search engines
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-18T08:10:00Z'
+updated_date: '2026-11-18T11:19:00Z'
 labels:
   - web-search
 dependencies: []
@@ -31,7 +32,19 @@ Subtasks, in order: (1) registry + central service, no behaviour change; (2) sou
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 All five subtasks are Done or explicitly archived with a reason
-- [ ] #2 Adding a new web search provider requires only an enum entry, a registry definition and an engine class, enforced by a wiring test
-- [ ] #3 Web Search documentation describes how to choose a provider
+- [x] #1 All five subtasks are Done or explicitly archived with a reason
+- [x] #2 Adding a new web search provider requires only an enum entry, a registry definition and an engine class, enforced by a wiring test
+- [x] #3 Web Search documentation describes how to choose a provider
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Web search is now one registry of providers that every search path uses (/search, the agent web_search tool, the chat Web toggle and Settings Test search), following the RouterRegistry and LocalProviderRegistry pattern.
+
+- 277.1 registry + WebSearchService (#1431); 277.2 source links in /search answers (#1432); 277.3 Keenable provider (#1433); 277.4 Google Custom Search deprecated before its 2027-01-01 shutdown (#1434); 277.5 Parallel provider (#1435 merged into a stale stacked branch, re-landed in #1436); 277.6 per-provider usage analytics (#1436); 277.7 readable Settings test-search results, shared with the RAG test (#1437).
+- AC #2: a new provider needs an enum entry, a registry definition and an engine class; `WebSearchProviderRegistryTest.everyDefinition_isFullyWired` enforces this for every provider.
+- AC #3: docusaurus/docs/features/web-search.md "Choosing a Provider" plus per-provider setup sections.
+
+None of this is released yet: all of it is after the v1.18.0 tag. Follow-up: TASK-277.7 AC #3 and #10 (opening results in the browser or editor) are awaiting an in-IDE check; GitHub issues #1423 and #1428 are to be closed with comments once the maintainer approves the wording.
+<!-- SECTION:FINAL_SUMMARY:END -->
