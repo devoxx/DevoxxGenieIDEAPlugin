@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +35,7 @@ import com.devoxx.genie.ui.compose.model.MessageUiModel
 import com.devoxx.genie.ui.compose.model.TerminalState
 import com.devoxx.genie.ui.compose.theme.*
 import com.mikepenz.markdown.compose.Markdown
+import com.devoxx.genie.ui.compose.util.IdeUriHandler
 import com.mikepenz.markdown.compose.components.MarkdownComponent
 import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.model.DefaultMarkdownColors
@@ -177,6 +180,8 @@ private fun codeBlockWithCopy(isDark: Boolean): MarkdownComponent = { model ->
     }
 }
 
+private val ideUriHandler = IdeUriHandler()
+
 @Composable
 private fun MarkdownContent(
     content: String,
@@ -221,20 +226,23 @@ private fun MarkdownContent(
         table = baseStyle,
     )
 
-    SelectionContainer {
-        Markdown(
-            content = content,
-            colors = mdColors,
-            typography = mdTypography,
-            components = markdownComponents(
-                codeBlock = codeBlockWithCopy(colors.isDark),
-                codeFence = codeFenceWithCopy(colors.isDark),
-            ),
-            // Keep the previously rendered content visible while the updated markdown is
-            // re-parsed. Without this every streaming update swaps the bubble to a blank
-            // loading state first — full-text flicker.
-            retainState = true,
-        )
+    // Links (e.g. the /search Sources list) open via IntelliJ's BrowserUtil, not java.awt.Desktop (TASK-277.2).
+    CompositionLocalProvider(LocalUriHandler provides ideUriHandler) {
+        SelectionContainer {
+            Markdown(
+                content = content,
+                colors = mdColors,
+                typography = mdTypography,
+                components = markdownComponents(
+                    codeBlock = codeBlockWithCopy(colors.isDark),
+                    codeFence = codeFenceWithCopy(colors.isDark),
+                ),
+                // Keep the previously rendered content visible while the updated markdown is
+                // re-parsed. Without this every streaming update swaps the bubble to a blank
+                // loading state first — full-text flicker.
+                retainState = true,
+            )
+        }
     }
 }
 
