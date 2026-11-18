@@ -1,7 +1,6 @@
 package com.devoxx.genie.ui.settings.rag;
 
 import com.devoxx.genie.service.rag.ProjectIndexerService;
-import com.devoxx.genie.service.rag.SemanticSearchService;
 import com.devoxx.genie.service.rag.SearchResult;
 import com.devoxx.genie.service.rag.embedding.EmbeddingFingerprint;
 import com.intellij.icons.AllIcons;
@@ -19,6 +18,7 @@ import com.devoxx.genie.service.rag.validator.ValidationResult;
 import com.devoxx.genie.service.rag.validator.ValidatorStatus;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.ProjectScanSettingsService;
+import com.devoxx.genie.ui.settings.common.SearchTestPanel;
 import com.devoxx.genie.ui.settings.rag.table.ButtonEditor;
 import com.devoxx.genie.ui.settings.rag.table.ButtonRenderer;
 import com.devoxx.genie.ui.util.NotificationUtil;
@@ -63,10 +63,8 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private static final int INSET_VALUE = 5;
     private static final String RAG_SETTINGS_SECTION_TITLE = "Retrieval-augmented Generation (RAG) settings";
 
-    private final JBTextField testQueryField = new JBTextField();
-    private final JButton testQueryButton = new JButton("Search");
-    private final RagSearchResultsPanel testQueryResults = new RagSearchResultsPanel();
-    private final JProgressBar testQueryProgress = new JProgressBar();
+    /** Shared with the Web search settings' test (TASK-277.7). */
+    private final SearchTestPanel<SearchResult> testQuery;
 
     private JProgressBar progressBar;
     private JLabel progressLabel;
@@ -124,6 +122,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     public RAGSettingsComponent(Project project) {
         this.project = project;
+        this.testQuery = new SearchTestPanel<>("Search", new RagSearchTestAdapter(project));
         this.validationPanel = new JPanel();
         this.validationHandler = new RAGSettingsHandler(project, validationPanel, this);
         this.ragExcludedDirsPanel = new RagExcludedDirectoriesPanel(
@@ -225,60 +224,14 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
     private void addTestQuerySection(JPanel panel, GridBagConstraints gbc) {
         addSection(panel, gbc, "Test semantic search");
         addHelpText(panel, gbc, "Search the current project's index using saved RAG settings. Apply setting changes before testing.");
-        JPanel queryRow = new JPanel(new BorderLayout(5, 0));
-        queryRow.add(testQueryField, BorderLayout.CENTER);
-        queryRow.add(testQueryButton, BorderLayout.EAST);
-        addSettingRow(panel, gbc, "Test query", queryRow);
-        testQueryProgress.setIndeterminate(true);
-        testQueryProgress.setVisible(false);
-        JPanel output = new JPanel(new BorderLayout(0, 5));
-        output.add(testQueryProgress, BorderLayout.NORTH);
-        output.add(testQueryResults, BorderLayout.CENTER);
+        addSettingRow(panel, gbc, "Test query", testQuery.getQueryRow());
         gbc.gridx = 0;
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
         gbc.weighty = 0;
-        panel.add(output, gbc);
+        panel.add(testQuery, gbc);
         gbc.gridy++;
-        testQueryButton.addActionListener(e -> runTestQuery());
-        testQueryField.addActionListener(e -> {
-            if (testQueryButton.isEnabled()) runTestQuery();
-        });
-    }
-
-    private void runTestQuery() {
-        String query = testQueryField.getText().trim();
-        if (query.isEmpty()) {
-            testQueryResults.showMessage("Enter a query to search the project index.");
-            return;
-        }
-        testQueryButton.setEnabled(false);
-        testQueryProgress.setVisible(true);
-        testQueryResults.showMessage("Searching the project index...");
-        new SwingWorker<List<SearchResult>, Void>() {
-            @Override
-            protected List<SearchResult> doInBackground() {
-                return SemanticSearchService.getInstance().search(project, query);
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    testQueryResults.showResults(query, get(), project.getBasePath());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    testQueryResults.showMessage("Search interrupted.");
-                } catch (java.util.concurrent.ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    testQueryResults.showMessage("Search failed: " +
-                            (cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()));
-                } finally {
-                    testQueryProgress.setVisible(false);
-                    testQueryButton.setEnabled(true);
-                }
-            }
-        }.execute();
     }
 
     private @NotNull GridBagConstraints createDefaultGbc() {
