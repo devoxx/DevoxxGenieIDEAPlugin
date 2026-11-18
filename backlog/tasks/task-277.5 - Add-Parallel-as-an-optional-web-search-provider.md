@@ -91,4 +91,6 @@ So for AC #1: route = REST (maintainer decision); keyless terms = not applicable
 Tests: ParallelWebSearchEngineTest 15, ParallelE2ETest 11 (agent tool, /search via real strategy, Test search; never contacted unless selected; missing key -> readiness message, nothing sent), registry wiring covers PARALLEL, settings rows/readiness, env-gated live smoke (PARALLEL_API_KEY). Full suite 4377 passed, 26 skipped, 0 failed. Docs build OK.
 Docs: Parallel in the provider table + 'Parallel Setup' (fast mode, billed to the user's account, error messages); the empty 'More providers coming soon' section became 'Search services with an MCP server'. Tips: TipService fallback + tips.json (worded 'Update DevoxxGenie and pick Parallel...', same pattern as Keenable).
 AC #1 left open: the REST decision is the maintainer's and recorded here, but it has not been communicated/agreed on #1423 yet (comment drafted for maintainer approval).
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1435 (stacked on #1434). Remaining: AC #1 (communicate the REST decision on #1423; comment drafted for maintainer approval).
 <!-- SECTION:NOTES:END -->
