@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-18T10:43:00Z'
-updated_date: '2026-11-18T11:16:00Z'
+updated_date: '2026-11-18T11:17:00Z'
 labels: []
 dependencies: []
 references:
@@ -16,6 +16,7 @@ references:
   - src/main/java/com/devoxx/genie/ui/settings/rag/RagSearchTestAdapter.java
   - >-
     src/main/java/com/devoxx/genie/ui/settings/websearch/WebSearchTestSearch.java
+  - https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1437
 modified_files:
   - >-
     src/test/java/com/devoxx/genie/ui/settings/websearch/WebSearchSnippetFormatterTest.java
@@ -104,4 +105,6 @@ The Settings "Test web search" area now reads like search results instead of a r
 - Docs: web-search.md setup step, new "Testing retrieval from Settings" section in rag.md, regenerated web-search-settings.png with a results state.
 
 Verified by the user in a running IDE: the web search test query and results. Not explicitly verified in the IDE (left unticked as #3 and #10): opening a web result in the browser, and opening a RAG match from the modal Settings dialog (it opens in the editor behind Settings).
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1437
 <!-- SECTION:FINAL_SUMMARY:END -->
