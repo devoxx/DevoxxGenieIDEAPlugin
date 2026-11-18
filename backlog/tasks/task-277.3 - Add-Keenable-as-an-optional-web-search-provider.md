@@ -1,11 +1,11 @@
 ---
 id: TASK-277.3
 title: Add Keenable as an optional web search provider
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-18T08:10:00Z'
-updated_date: '2026-11-18T09:36:00Z'
+updated_date: '2026-11-18T09:48:00Z'
 labels:
   - web-search
 dependencies:
@@ -77,7 +77,7 @@ Constraints agreed with the maintainer: build on the provider registry (depends 
 - [x] #8 End-to-end tests run the Keenable engine through the central service against a local stub server: keyless and keyed endpoints, headers, rate-limit (429) and auth (401/403) responses
 - [x] #9 Optional live keyless smoke test, skipped unless explicitly enabled by an environment variable
 - [x] #10 docs/features/web-search.md moves Keenable from 'More providers coming soon' into 'Choosing a Provider' with setup steps
-- [ ] #11 A Keenable tip is added to docusaurus/static/api/tips.json and the TipService fallback list, published only once a release containing Keenable is out (tips.json is fetched live by all installed versions)
+- [x] #11 A Keenable tip is added to docusaurus/static/api/tips.json and the TipService fallback list, published only once a release containing Keenable is out (tips.json is fetched live by all installed versions)
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -116,4 +116,18 @@ Steps:
 PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1433 (stacked on #1432 -> #1431). Remaining: AC #11 (tips.json tip after the release); close #1430 with thanks once #1433 merges (comment drafted for maintainer approval).
 
 2026-11-18: maintainer-approved comment posted on #1430 (https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1430#issuecomment-6974654844): explains the port to #1433, credits the contributor, reports the cross-host redirect bug, invites review; #1430 to be closed once #1433 merges.
+
+2026-11-18 (maintainer request): Keenable tip added to docusaurus/static/api/tips.json now, ahead of the release. tips.json deploys on push to master (deploy-docs.yml) and is fetched live by all versions, so the tip is worded to stay true on older versions: "No search API key? Update DevoxxGenie and pick Keenable in Settings → Web search: it works without signing up." TipsJsonTest + TipServiceTest pass. #1430 closed with a pointer to #1433 (maintainer request).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Keenable is an optional web search provider (registry definition with an optional API key): keyless searches use its free public endpoint, a key switches to the authenticated one, and nothing is sent unless it is selected. Engine contributed by Karl-Gustav Kallasmaa in #1430 (first commit authored by him; co-author on the Keenable commits), hardened here: API key dropped on any origin change (their cross-host test failed because both stubs were 127.0.0.1), Gson body, User-Agent, IDE proxy, user-safe 429/401/403/other messages shown by /search, the agent tool and Test search.
+
+Also fixed a latent PasswordSafe migration bug: a CredentialKey without a legacy XML field counted as a failed migration, which would have made not-yet-migrated users retry forever and never wipe plaintext keys.
+
+Docs: Keenable setup, keyless limits and how to add a key; tips in the TipService fallback and tips.json (worded "Update DevoxxGenie and pick Keenable…" because tips.json is live for all versions). Tests: engine 15, E2E 10, migration 3, registry/settings; full suite 4331 passed at the time, 0 failed.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1433 (stacked on #1432 -> #1431). #1430 closed in favour of #1433.
+<!-- SECTION:FINAL_SUMMARY:END -->
