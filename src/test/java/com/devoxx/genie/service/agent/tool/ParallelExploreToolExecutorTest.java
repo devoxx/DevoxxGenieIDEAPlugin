@@ -349,9 +349,15 @@ class ParallelExploreToolExecutorTest {
     // --- Cancellation tests ---
 
     @Test
-    void cancel_setsFlag_andCancelsActiveRunners() {
-        ExecutorService directExecutor = Executors.newSingleThreadExecutor();
-        when(threadPoolManager.getSubAgentPool()).thenReturn(directExecutor);
+    void cancel_setsFlag_andCancelsActiveRunners() throws Exception {
+        // mockConstruction only intercepts constructors on the thread that opened it, so execute() must
+        // run on this test thread; cancel() comes from a helper thread once the sub-agent is running.
+        // (The old version called execute() from a pool thread, which built a REAL SubAgentRunner: the
+        // cancel check was silently skipped and the real run leaked threads that ThreadLeakTracker caught.)
+        // Both pools are owned by this test and terminated before it returns.
+        ExecutorService subAgentPool = Executors.newSingleThreadExecutor();
+        ExecutorService cancellerPool = Executors.newSingleThreadExecutor();
+        when(threadPoolManager.getSubAgentPool()).thenReturn(subAgentPool);
 
         CountDownLatch started = new CountDownLatch(1);
         CountDownLatch blocked = new CountDownLatch(1);
@@ -363,34 +369,37 @@ class ParallelExploreToolExecutorTest {
                     return "done";
                 }))) {
 
-            // Run execute in a separate thread so we can cancel during execution
-            Future<?> executeFuture = Executors.newSingleThreadExecutor().submit(() -> {
-                ToolExecutionRequest request = ToolExecutionRequest.builder()
-                        .name("parallel_explore")
-                        .arguments("{\"queries\": [\"long running query\"]}")
-                        .build();
-                executor.execute(request, null);
+            Future<Boolean> canceller = cancellerPool.submit(() -> {
+                try {
+                    if (!started.await(5, TimeUnit.SECONDS)) {
+                        return false;
+                    }
+                    executor.cancel();
+                    return true;
+                } finally {
+                    blocked.countDown(); // let the sub-agent finish so execute() returns
+                }
             });
 
-            try {
-                started.await(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            executor.execute(ToolExecutionRequest.builder()
+                    .name("parallel_explore")
+                    .arguments("{\"queries\": [\"long running query\"]}")
+                    .build(), null);
 
-            // Cancel
-            executor.cancel();
-
-            // Verify cancel was called on the runner
-            if (!mocked.constructed().isEmpty()) {
-                verify(mocked.constructed().get(0)).cancel();
-            }
-
-            blocked.countDown();
-            executeFuture.cancel(true);
+            assertThat(canceller.get(10, TimeUnit.SECONDS))
+                    .as("sub-agent started and cancel() was called while it ran").isTrue();
+            assertThat(mocked.constructed()).hasSize(1);
+            verify(mocked.constructed().get(0)).cancel();
         } finally {
-            directExecutor.shutdownNow();
+            shutdownAndAwait(cancellerPool);
+            shutdownAndAwait(subAgentPool);
         }
+    }
+
+    private static void shutdownAndAwait(ExecutorService pool) throws InterruptedException {
+        pool.shutdownNow();
+        assertThat(pool.awaitTermination(10, TimeUnit.SECONDS))
+                .as("test thread pool terminated").isTrue();
     }
 
     // --- Result formatting tests ---

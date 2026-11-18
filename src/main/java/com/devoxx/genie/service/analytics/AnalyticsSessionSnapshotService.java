@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.analytics;
 
+import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.model.Command;
 import com.devoxx.genie.model.mcp.MCPServer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -131,8 +132,10 @@ public final class AnalyticsSessionSnapshotService implements DevoxxGenieSetting
         emitIfEnabled(state.getMcpEnabled(), FeatureId.MCP);
         emitIfEnabled(state.getAgentModeEnabled(), FeatureId.AGENT);
         emitIfEnabled(state.getStreamMode(), FeatureId.STREAMING);
-        emitIfEnabled(state.isGoogleSearchEnabled(), FeatureId.WEB_SEARCH_GOOGLE);
-        emitIfEnabled(state.isTavilySearchEnabled(), FeatureId.WEB_SEARCH_TAVILY);
+        FeatureId webSearchFeature = WebSearchService.selectedAnalyticsFeature(state);
+        if (webSearchFeature != null) {
+            sink.trackFeatureEnabled(webSearchFeature);
+        }
         emitIfEnabled(hasAnyCustomPrompt(state), FeatureId.CUSTOM_PROMPT);
 
         // Additional enablement signals (task-241): reasoning output, debug logging, and

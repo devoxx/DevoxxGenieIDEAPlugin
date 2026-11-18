@@ -1,47 +1,68 @@
 package com.devoxx.genie.ui.settings.websearch;
 
+import com.devoxx.genie.service.credentials.CredentialKey;
+import com.devoxx.genie.service.websearch.WebSearchConfig;
+import com.devoxx.genie.service.websearch.WebSearchCredentialField;
+import com.devoxx.genie.service.websearch.WebSearchProvider;
+import com.devoxx.genie.service.websearch.WebSearchProviderDefinition;
+import com.devoxx.genie.service.websearch.WebSearchProviderRegistry;
+import com.devoxx.genie.service.websearch.WebSearchReadiness;
+import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
-import dev.langchain4j.web.search.WebSearchEngine;
-import dev.langchain4j.web.search.WebSearchRequest;
-import dev.langchain4j.web.search.WebSearchOrganicResult;
-import dev.langchain4j.web.search.google.customsearch.GoogleCustomWebSearchEngine;
-import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
-import com.intellij.ui.components.JBTextField;
 import com.intellij.ide.ui.UINumericRange;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import dev.langchain4j.web.search.WebSearchOrganicResult;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * Settings → Web search. The provider dropdown and each provider's credential rows are generated
+ * from {@link WebSearchProviderRegistry}, so a new provider needs no change here.
+ *
+ * <p>Except for the master switch (see {@link WebSearchProvidersConfigurable}), nothing here writes
+ * to settings until Apply: Test search uses the unsaved form via {@link #formConfig()}.
+ */
 @Getter
 public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
-    @Getter
+    /** One dropdown entry; {@code provider == null} is "None". */
+    public record ProviderChoice(@Nullable WebSearchProvider provider, @NotNull String label) {
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    static final ProviderChoice NONE = new ProviderChoice(null, "None");
+
     private final JCheckBox enableWebSearchCheckbox =
-            new JCheckBox("", stateService.getIsWebSearchEnabled());
+            new JCheckBox("", Boolean.TRUE.equals(stateService.getIsWebSearchEnabled()));
 
-    @Getter
-    private final JCheckBox tavilySearchEnabledCheckBox = new JCheckBox("", stateService.isTavilySearchEnabled());
+    private final ComboBox<ProviderChoice> providerComboBox = new ComboBox<>(choices());
 
-    private final JPasswordField tavilySearchApiKeyField =
-            new JPasswordField(stateService.getTavilySearchKey());
+    /** One password field per credential of every provider, keyed by where it is stored. */
+    private final Map<CredentialKey, JPasswordField> credentialFields = new EnumMap<>(CredentialKey.class);
 
-    @Getter
-    private final JCheckBox googleSearchEnabledCheckBox = new JCheckBox("", stateService.isGoogleSearchEnabled());
-    private final JPasswordField googleSearchApiKeyField =
-            new JPasswordField(stateService.getGoogleSearchKey());
+    /** The rows (labels, fields, hint) that belong to each provider; only the selected provider's are visible. */
+    private final Map<WebSearchProvider, List<JComponent>> providerRows = new EnumMap<>(WebSearchProvider.class);
 
-    private final JPasswordField googleCSIApiKeyField =
-            new JPasswordField(stateService.getGoogleCSIKey());
-
-    private final JBIntSpinner maxSearchResults =
-            new JBIntSpinner(new UINumericRange(stateService.getMaxSearchResults(), 1, 10));
+    private final JBIntSpinner maxSearchResults = new JBIntSpinner(new UINumericRange(
+            stateService.getMaxSearchResults() == null ? WebSearchConfig.DEFAULT_MAX_RESULTS
+                    : stateService.getMaxSearchResults(), 1, 10));
 
     private final JBTextField testSearchQuery = new JBTextField();
     private final JButton testSearchButton = new JButton("Test search");
@@ -49,7 +70,22 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
     private final JProgressBar testSearchProgress = new JProgressBar();
 
     public WebSearchProvidersComponent() {
+        for (WebSearchProviderDefinition definition : WebSearchProviderRegistry.all()) {
+            for (WebSearchCredentialField field : definition.fields()) {
+                credentialFields.put(field.key(), new JPasswordField(stateService.getCredential(field.key())));
+            }
+        }
+        setSelectedProvider(stateService.getSelectedWebSearchProvider());
         addListeners();
+    }
+
+    private static ProviderChoice[] choices() {
+        List<ProviderChoice> choices = new ArrayList<>();
+        choices.add(NONE);
+        for (WebSearchProviderDefinition definition : WebSearchProviderRegistry.all()) {
+            choices.add(new ProviderChoice(definition.provider(), definition.displayName()));
+        }
+        return choices.toArray(ProviderChoice[]::new);
     }
 
     @Override
@@ -69,35 +105,58 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
 
         addSection(panel, gbc, "Web Search Providers");
 
-        // Add description
         gbc.gridy++;
-        JBLabel infoLabel = new JBLabel();
-        infoLabel.setText(
-                "<html><body style='width: 100%;'>" +
-                        "Post your prompt on the web using either Google search or Tavily search." +
-                        "</body></html>");
-
+        JBLabel infoLabel = new JBLabel("<html><body style='width: 100%;'>" +
+                "Ground answers in live web results. Choose one provider; it is used by /search, " +
+                "the agent's web_search tool and the test below." +
+                "</body></html>");
         infoLabel.setForeground(UIUtil.getContextHelpForeground());
         infoLabel.setBorder(JBUI.Borders.emptyBottom(10));
         panel.add(infoLabel, gbc);
 
         gbc.gridy++;
         addSettingRow(panel, gbc, "Enable feature", enableWebSearchCheckbox);
+        addSettingRow(panel, gbc, "Provider", providerComboBox);
 
-        addProviderSettingRow(panel, gbc, "Tavily Web Search API Key", tavilySearchEnabledCheckBox,
-                createTextWithPasswordButton(tavilySearchApiKeyField, "https://app.tavily.com/home"));
-
-        addProviderSettingRow(panel, gbc, "Google Web Search API Key", googleSearchEnabledCheckBox,
-                createTextWithPasswordButton(googleSearchApiKeyField, "https://developers.google.com/custom-search/docs/paid_element#api_key"));
-
-        addSettingRow(panel, gbc, "Google Custom Search Engine ID",
-                createTextWithPasswordButton(googleCSIApiKeyField, "https://programmablesearchengine.google.com/controlpanel/create"));
+        for (WebSearchProviderDefinition definition : WebSearchProviderRegistry.all()) {
+            addProviderRows(gbc, definition);
+        }
+        updateProviderRowsVisibility();
 
         addSettingRow(panel, gbc, "Max search results", maxSearchResults);
 
         addTestSearchSection(gbc);
 
         return panel;
+    }
+
+    private void addProviderRows(@NotNull GridBagConstraints gbc, @NotNull WebSearchProviderDefinition definition) {
+        List<JComponent> rows = new ArrayList<>();
+
+        JBLabel hint = new JBLabel("<html><body style='width: 100%;'>" + definition.hint() + "</body></html>");
+        hint.setForeground(UIUtil.getContextHelpForeground());
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        panel.add(hint, gbc);
+        gbc.gridy++;
+        rows.add(hint);
+
+        for (WebSearchCredentialField field : definition.fields()) {
+            JLabel label = new JLabel(definition.displayName() + " " + field.label());
+            JComponent input = createTextWithPasswordButton(credentialFields.get(field.key()), field.helpUrl());
+            gbc.gridwidth = 1;
+            gbc.gridx = 0;
+            gbc.weightx = 0;
+            panel.add(label, gbc);
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            panel.add(input, gbc);
+            gbc.weightx = 0;
+            gbc.gridy++;
+            rows.add(label);
+            rows.add(input);
+        }
+        providerRows.put(definition.provider(), rows);
     }
 
     private void addTestSearchSection(GridBagConstraints gbc) {
@@ -124,46 +183,78 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         });
     }
 
+    // --- form state ------------------------------------------------------------------------------
+
+    public @Nullable WebSearchProvider getSelectedProvider() {
+        Object selected = providerComboBox.getSelectedItem();
+        return selected instanceof ProviderChoice choice ? choice.provider() : null;
+    }
+
+    public void setSelectedProvider(@Nullable WebSearchProvider provider) {
+        for (int i = 0; i < providerComboBox.getItemCount(); i++) {
+            if (providerComboBox.getItemAt(i).provider() == provider) {
+                providerComboBox.setSelectedIndex(i);
+                return;
+            }
+        }
+        providerComboBox.setSelectedItem(NONE);
+    }
+
+    public @NotNull JPasswordField getCredentialField(@NotNull CredentialKey key) {
+        JPasswordField field = credentialFields.get(key);
+        if (field == null) {
+            throw new IllegalArgumentException("No web search credential field for " + key);
+        }
+        return field;
+    }
+
+    /** The settings exactly as currently typed in the form (not yet applied). */
+    public @NotNull WebSearchConfig formConfig() {
+        WebSearchProvider provider = getSelectedProvider();
+        Map<CredentialKey, String> credentials = new EnumMap<>(CredentialKey.class);
+        if (provider != null) {
+            for (WebSearchCredentialField field : WebSearchService.definition(provider).fields()) {
+                credentials.put(field.key(), new String(getCredentialField(field.key()).getPassword()));
+            }
+        }
+        return new WebSearchConfig(provider, credentials, maxSearchResults.getNumber());
+    }
+
+    /** True when the provider's rows are currently shown (for tests and the visibility rule). */
+    boolean isShowingRowsOf(@NotNull WebSearchProvider provider) {
+        List<JComponent> rows = providerRows.get(provider);
+        return rows != null && !rows.isEmpty() && rows.get(0).isVisible();
+    }
+
+    private void updateProviderRowsVisibility() {
+        WebSearchProvider selected = getSelectedProvider();
+        providerRows.forEach((provider, rows) -> rows.forEach(row -> row.setVisible(provider == selected)));
+        panel.revalidate();
+        panel.repaint();
+    }
+
+    // --- test search -----------------------------------------------------------------------------
+
     private void runTestSearch() {
         String query = testSearchQuery.getText().trim();
-        boolean tavily = tavilySearchEnabledCheckBox.isSelected();
-        boolean google = googleSearchEnabledCheckBox.isSelected();
-        String apiKey = new String((tavily ? tavilySearchApiKeyField : googleSearchApiKeyField).getPassword()).trim();
-        String csi = new String(googleCSIApiKeyField.getPassword()).trim();
-        int limit = maxSearchResults.getNumber();
         if (query.isEmpty()) {
             testSearchResults.setText("Enter a query to test web search.");
             return;
         }
-        if ((!tavily && !google) || apiKey.isEmpty() || (!tavily && csi.isEmpty())) {
-            testSearchResults.setText("Select a provider and enter its API key (and Search Engine ID for Google).");
+        // Snapshot the form on the EDT so newly entered credentials can be tested before Apply.
+        WebSearchConfig config = formConfig();
+        WebSearchReadiness readiness = WebSearchService.readiness(config);
+        if (!readiness.isReady()) {
+            testSearchResults.setText(readiness.message());
             return;
         }
         testSearchButton.setEnabled(false);
         testSearchProgress.setVisible(true);
         testSearchResults.setText("Searching...");
-        // Snapshot the form on the EDT so newly entered credentials can be tested before Apply.
         new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() {
-                WebSearchEngine engine = tavily
-                        ? TavilyWebSearchEngine.builder().apiKey(apiKey).build()
-                        : GoogleCustomWebSearchEngine.builder().apiKey(apiKey).csi(csi).build();
-                var hits = engine.search(WebSearchRequest.builder()
-                        .searchTerms(query).maxResults(limit).build()).results();
-                if (hits == null || hits.isEmpty()) return "No results found.";
-                StringBuilder text = new StringBuilder();
-                for (WebSearchOrganicResult hit : hits.subList(0, Math.min(limit, hits.size()))) {
-                    text.append(hit.title() == null ? "(no title)" : hit.title()).append("\n");
-                    if (hit.url() != null) text.append(hit.url()).append("\n");
-                    if (hit.snippet() != null) {
-                        String snippet = hit.snippet();
-                        text.append(snippet, 0, Math.min(snippet.length(), 1000));
-                        if (snippet.length() > 1000) text.append("...");
-                    }
-                    text.append("\n\n");
-                }
-                return text.toString();
+                return performTestSearch(config, query);
             }
 
             @Override
@@ -174,9 +265,7 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
                     Thread.currentThread().interrupt();
                     testSearchResults.setText("Search interrupted.");
                 } catch (java.util.concurrent.ExecutionException e) {
-                    // Provider exceptions may contain request URLs or credentials.
-                    testSearchResults.setText("Search failed (" + e.getCause().getClass().getSimpleName() +
-                            "). Check the API key, provider settings, and network connection.");
+                    testSearchResults.setText("Search failed. Check the provider settings and network connection.");
                 } finally {
                     testSearchProgress.setVisible(false);
                     testSearchButton.setEnabled(true);
@@ -186,44 +275,53 @@ public class WebSearchProvidersComponent extends AbstractSettingsComponent {
         }.execute();
     }
 
-    @Override
-    public void addListeners() {
-        enableWebSearchCheckbox.addItemListener(e -> {
-            stateService.setIsWebSearchEnabled(e.getStateChange() == ItemEvent.SELECTED);
-            // Disable both providers when the feature is disabled
-            if (!enableWebSearchCheckbox.isSelected()) {
-                tavilySearchEnabledCheckBox.setSelected(false);
-                googleSearchEnabledCheckBox.setSelected(false);
-                updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
-                updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
+    /**
+     * Runs the test search for {@code config} and renders the results as text. Never throws: failures
+     * become a message. Provider exceptions may contain request URLs or credentials, so only the
+     * exception type is shown.
+     */
+    static @NotNull String performTestSearch(@NotNull WebSearchConfig config, @NotNull String query) {
+        WebSearchReadiness readiness = WebSearchService.readiness(config);
+        if (!readiness.isReady()) {
+            return readiness.message();
+        }
+        String providerName = WebSearchService.definition(config.provider()).displayName();
+        List<WebSearchOrganicResult> hits;
+        try {
+            hits = WebSearchService.search(config, query).results();
+        } catch (Exception e) {
+            return "Search with " + providerName + " failed (" + e.getClass().getSimpleName() +
+                    "). Check the " + providerName + " settings and network connection.";
+        }
+        if (hits == null || hits.isEmpty()) {
+            return "No results found.";
+        }
+        StringBuilder text = new StringBuilder();
+        for (WebSearchOrganicResult hit : hits.subList(0, Math.min(config.maxResults(), hits.size()))) {
+            text.append(hit.title() == null ? "(no title)" : hit.title()).append("\n");
+            if (hit.url() != null) text.append(hit.url()).append("\n");
+            if (hit.snippet() != null) {
+                String snippet = hit.snippet();
+                text.append(snippet, 0, Math.min(snippet.length(), 1000));
+                if (snippet.length() > 1000) text.append("...");
             }
-        });
-
-        tavilySearchEnabledCheckBox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                // Disable Google Search if Tavily is selected
-                googleSearchEnabledCheckBox.setSelected(false);
-                stateService.setGoogleSearchEnabled(false);
-                updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
-            }
-            stateService.setTavilySearchEnabled(tavilySearchEnabledCheckBox.isSelected());
-            updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
-        });
-
-        googleSearchEnabledCheckBox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                // Disable Tavily if Google Search is selected
-                tavilySearchEnabledCheckBox.setSelected(false);
-                stateService.setTavilySearchEnabled(false);
-                updateUrlFieldState(tavilySearchEnabledCheckBox, tavilySearchApiKeyField);
-            }
-            stateService.setGoogleSearchEnabled(googleSearchEnabledCheckBox.isSelected());
-            updateUrlFieldState(googleSearchEnabledCheckBox, googleSearchApiKeyField);
-        });
+            text.append("\n\n");
+        }
+        return text.toString();
     }
 
-    private void updateUrlFieldState(@NotNull JCheckBox checkbox,
-                                     @NotNull JComponent urlComponent) {
-        urlComponent.setEnabled(checkbox.isSelected());
+    @Override
+    public void addListeners() {
+        // The master switch is mirrored into settings immediately so the chat's Web switch follows it
+        // (WebSearchProvidersConfigurable compares against a snapshot for that reason). The provider
+        // choice is kept when the feature is switched off, so switching it back on restores it.
+        enableWebSearchCheckbox.addItemListener(e ->
+                stateService.setIsWebSearchEnabled(e.getStateChange() == ItemEvent.SELECTED));
+
+        providerComboBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                updateProviderRowsVisibility();
+            }
+        });
     }
 }

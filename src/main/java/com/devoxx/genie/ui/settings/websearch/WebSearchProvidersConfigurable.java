@@ -1,5 +1,8 @@
 package com.devoxx.genie.ui.settings.websearch;
 
+import com.devoxx.genie.service.credentials.CredentialKey;
+import com.devoxx.genie.service.websearch.WebSearchCredentialField;
+import com.devoxx.genie.service.websearch.WebSearchProviderRegistry;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.options.Configurable;
@@ -8,6 +11,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.List;
 
 import static com.intellij.openapi.options.Configurable.isFieldModified;
 
@@ -26,7 +30,7 @@ public class WebSearchProvidersConfigurable implements Configurable {
     public WebSearchProvidersConfigurable(Project project) {
         this.project = project;
         webSearchProvidersComponent = new WebSearchProvidersComponent();
-        initialIsWebSearchEnabled = DevoxxGenieStateService.getInstance().getIsWebSearchEnabled();
+        initialIsWebSearchEnabled = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getIsWebSearchEnabled());
     }
 
     /**
@@ -62,14 +66,13 @@ public class WebSearchProvidersConfigurable implements Configurable {
         // the checkbox and would make this check always return false.
         boolean isModified = webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected() != initialIsWebSearchEnabled;
 
-        isModified |= stateService.isTavilySearchEnabled() != webSearchProvidersComponent.getTavilySearchEnabledCheckBox().isSelected();
-        isModified |= isFieldModified(webSearchProvidersComponent.getTavilySearchApiKeyField(), stateService.getTavilySearchKey());
+        isModified |= webSearchProvidersComponent.getSelectedProvider() != stateService.getSelectedWebSearchProvider();
+        for (CredentialKey key : credentialKeys()) {
+            isModified |= isFieldModified(webSearchProvidersComponent.getCredentialField(key), stateService.getCredential(key));
+        }
 
-        isModified |= stateService.isGoogleSearchEnabled() != webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().isSelected();
-        isModified |= isFieldModified(webSearchProvidersComponent.getGoogleSearchApiKeyField(), stateService.getGoogleSearchKey());
-        isModified |= isFieldModified(webSearchProvidersComponent.getGoogleCSIApiKeyField(), stateService.getGoogleCSIKey());
-
-        isModified |= webSearchProvidersComponent.getMaxSearchResults().getNumber() != stateService.getMaxSearchResults();
+        isModified |= !java.util.Objects.equals(
+                webSearchProvidersComponent.getMaxSearchResults().getNumber(), stateService.getMaxSearchResults());
 
         return isModified;
     }
@@ -84,11 +87,11 @@ public class WebSearchProvidersConfigurable implements Configurable {
         boolean isWebSearchEnabled = webSearchProvidersComponent.getEnableWebSearchCheckbox().isSelected();
 
         settings.setIsWebSearchEnabled(isWebSearchEnabled);
-        settings.setTavilySearchEnabled(webSearchProvidersComponent.getTavilySearchEnabledCheckBox().isSelected());
-        settings.setTavilySearchKey(new String(webSearchProvidersComponent.getTavilySearchApiKeyField().getPassword()));
-        settings.setGoogleSearchEnabled(webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().isSelected());
-        settings.setGoogleSearchKey(new String(webSearchProvidersComponent.getGoogleSearchApiKeyField().getPassword()));
-        settings.setGoogleCSIKey(new String(webSearchProvidersComponent.getGoogleCSIApiKeyField().getPassword()));
+        settings.setSelectedWebSearchProvider(webSearchProvidersComponent.getSelectedProvider());
+        // Keep every provider's keys (not only the selected one) so switching back needs no re-entry.
+        for (CredentialKey key : credentialKeys()) {
+            settings.setCredential(key, new String(webSearchProvidersComponent.getCredentialField(key).getPassword()));
+        }
         settings.setMaxSearchResults(webSearchProvidersComponent.getMaxSearchResults().getNumber());
 
         // Re-arm the feature-enablement analytics snapshot (task-209).
@@ -102,6 +105,14 @@ public class WebSearchProvidersConfigurable implements Configurable {
                 .onWebSearchStateChange(isWebSearchEnabled);
     }
 
+    /** Every credential of every registered provider, in registry order. */
+    private static List<CredentialKey> credentialKeys() {
+        return WebSearchProviderRegistry.all().stream()
+                .flatMap(definition -> definition.fields().stream())
+                .map(WebSearchCredentialField::key)
+                .toList();
+    }
+
     /**
      * Reset the text area to the default value
      */
@@ -111,17 +122,14 @@ public class WebSearchProvidersConfigurable implements Configurable {
 
         // Refresh snapshot before resetting the checkbox (the checkbox's ItemListener will fire
         // and update stateService, but the snapshot stays anchored to the persisted value).
-        initialIsWebSearchEnabled = settings.getIsWebSearchEnabled();
+        initialIsWebSearchEnabled = Boolean.TRUE.equals(settings.getIsWebSearchEnabled());
 
-        webSearchProvidersComponent.getEnableWebSearchCheckbox().setSelected(settings.getIsWebSearchEnabled());
+        webSearchProvidersComponent.getEnableWebSearchCheckbox().setSelected(Boolean.TRUE.equals(settings.getIsWebSearchEnabled()));
 
-        webSearchProvidersComponent.getTavilySearchEnabledCheckBox().setSelected(settings.isTavilySearchEnabled());
-        webSearchProvidersComponent.getTavilySearchApiKeyField().setText(settings.getTavilySearchKey());
-
-        webSearchProvidersComponent.getGoogleSearchEnabledCheckBox().setSelected(settings.isGoogleSearchEnabled());
-        webSearchProvidersComponent.getGoogleSearchApiKeyField().setText(settings.getGoogleSearchKey());
-
-        webSearchProvidersComponent.getGoogleCSIApiKeyField().setText(settings.getGoogleCSIKey());
+        webSearchProvidersComponent.setSelectedProvider(settings.getSelectedWebSearchProvider());
+        for (CredentialKey key : credentialKeys()) {
+            webSearchProvidersComponent.getCredentialField(key).setText(settings.getCredential(key));
+        }
         webSearchProvidersComponent.getMaxSearchResults().setValue(settings.getMaxSearchResults());
     }
 }

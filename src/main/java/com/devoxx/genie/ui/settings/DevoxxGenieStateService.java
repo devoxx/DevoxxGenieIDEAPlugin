@@ -17,6 +17,7 @@ import com.devoxx.genie.model.spec.CliToolConfig;
 import com.devoxx.genie.service.DevoxxGenieSettingsService;
 import com.devoxx.genie.service.credentials.CredentialKey;
 import com.devoxx.genie.service.credentials.CredentialService;
+import com.devoxx.genie.service.websearch.WebSearchProvider;
 import com.devoxx.genie.util.DefaultLLMSettingsUtil;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
@@ -344,8 +345,15 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     // Search API Keys
     private Boolean isWebSearchEnabled = ENABLE_WEB_SEARCH;
 
+    // Legacy per-provider checkboxes (pre TASK-277.1). Only read to migrate into webSearchProvider, and
+    // kept in sync by setSelectedWebSearchProvider so a downgraded plugin still finds its provider.
     private boolean tavilySearchEnabled = false;
     private boolean googleSearchEnabled = false;
+
+    // The selected web search provider (WebSearchProvider name). null = not migrated yet (derive from the
+    // legacy checkboxes); "" = explicitly none. Use get/setSelectedWebSearchProvider.
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("webSearchProvider")
+    private String webSearchProvider = null;
 
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) @OptionTag("googleSearchKey")
     private String googleSearchKey = "";
@@ -739,6 +747,8 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
         janModelUrl = JAN_MODEL_URL;
         isJanEnabled = true;
         initializeDefaultCostsIfEmpty();
+        // TASK-277.1: the two web search checkboxes become one selected provider.
+        migrateLegacyWebSearchProvider();
         // Migrate legacy customPrompts -> commands (issue #1040) before populating defaults.
         migrateLegacyCustomPrompts(state);
         initializeUserPrompt();
@@ -1284,6 +1294,49 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     @Transient @Override public @NotNull String getTavilySearchKey()       { return creds().getCredential(CredentialKey.TAVILY_SEARCH_KEY); }
     @Transient @Override public void          setTavilySearchKey(String v) { creds().setCredential(CredentialKey.TAVILY_SEARCH_KEY, v); }
+
+    /** Generic credential access, used by registry-driven settings (e.g. web search providers). */
+    @Transient public @NotNull String getCredential(@NotNull CredentialKey key)          { return creds().getCredential(key); }
+    @Transient public void          setCredential(@NotNull CredentialKey key, String v) { creds().setCredential(key, v); }
+
+    /**
+     * The selected web search provider, or null when none is selected. Before the selection has been
+     * saved once it is derived from the legacy checkboxes (Tavily wins, as it did when both were on).
+     */
+    @Transient
+    public @Nullable WebSearchProvider getSelectedWebSearchProvider() {
+        if (webSearchProvider == null) {
+            return legacyWebSearchProvider();
+        }
+        return WebSearchProvider.fromName(webSearchProvider);
+    }
+
+    @Transient
+    public void setSelectedWebSearchProvider(@Nullable WebSearchProvider provider) {
+        webSearchProvider = provider == null ? "" : provider.name();
+        tavilySearchEnabled = provider == WebSearchProvider.TAVILY;
+        googleSearchEnabled = provider == WebSearchProvider.GOOGLE;
+    }
+
+    private @Nullable WebSearchProvider legacyWebSearchProvider() {
+        if (tavilySearchEnabled) {
+            return WebSearchProvider.TAVILY;
+        }
+        return googleSearchEnabled ? WebSearchProvider.GOOGLE : null;
+    }
+
+    /** One-shot TASK-277.1 migration: pin the legacy checkbox choice. Reads no credentials. */
+    private void migrateLegacyWebSearchProvider() {
+        if (webSearchProvider == null) {
+            setSelectedWebSearchProvider(legacyWebSearchProvider());
+        }
+    }
+
+    /** Test hook: sets the raw persisted value, to simulate settings saved by older/newer plugin versions. */
+    @org.jetbrains.annotations.TestOnly
+    void setRawWebSearchProviderForTesting(@Nullable String raw) {
+        webSearchProvider = raw;
+    }
 
     // ------------------------------------------------------------------
     // One-shot migration from plaintext XML fields into PasswordSafe.

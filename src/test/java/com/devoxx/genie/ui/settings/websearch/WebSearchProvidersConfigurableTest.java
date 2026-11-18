@@ -1,5 +1,10 @@
 package com.devoxx.genie.ui.settings.websearch;
 
+import com.devoxx.genie.service.credentials.CredentialKey;
+import com.devoxx.genie.service.credentials.CredentialService;
+import com.devoxx.genie.service.websearch.TavilyStubServer;
+import com.devoxx.genie.service.websearch.WebSearchProvider;
+import com.devoxx.genie.service.websearch.WebSearchServiceTestSupport;
 import com.devoxx.genie.ui.listener.WebSearchStateListener;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
@@ -7,6 +12,9 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
+import com.intellij.util.xmlb.XmlSerializer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -19,13 +27,35 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
+/**
+ * Settings → Web search (TASK-277.1): one provider choice, registry-driven credential rows, Test search
+ * against the unsaved form, and persistence across a restart.
+ */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class WebSearchProvidersConfigurableTest {
+
+    /** PasswordSafe stand-in shared by every state instance, as the real application service is. */
+    static final class InMemoryCredentialService implements CredentialService {
+        private final Map<String, String> store = new ConcurrentHashMap<>();
+
+        @Override public @NotNull String getCredential(@NotNull CredentialKey key) { return getCredential(key.getSubKey()); }
+        @Override public void setCredential(@NotNull CredentialKey key, @Nullable String value) { setCredential(key.getSubKey(), value); }
+        @Override public void removeCredential(@NotNull CredentialKey key) { removeCredential(key.getSubKey()); }
+        @Override public @NotNull String getCredential(@NotNull String subKey) { return store.getOrDefault(subKey, ""); }
+        @Override public void setCredential(@NotNull String subKey, @Nullable String value) {
+            if (value == null || value.isEmpty()) store.remove(subKey); else store.put(subKey, value);
+        }
+        @Override public void removeCredential(@NotNull String subKey) { store.remove(subKey); }
+        @Override public boolean isAvailable() { return false; }
+    }
 
     @Mock
     private Application application;
@@ -36,17 +66,19 @@ class WebSearchProvidersConfigurableTest {
     private MockedStatic<ApplicationManager> applicationManagerMockedStatic;
     private MockedStatic<DevoxxGenieStateService> stateServiceMockedStatic;
 
+    private final InMemoryCredentialService credentials = new InMemoryCredentialService();
     private DevoxxGenieStateService stateService;
     private WebSearchProvidersConfigurable configurable;
+    private WebSearchProvidersComponent component;
 
     @BeforeEach
     void setUp() {
-        stateService = new DevoxxGenieStateService();
-
         applicationManagerMockedStatic = Mockito.mockStatic(ApplicationManager.class);
         applicationManagerMockedStatic.when(ApplicationManager::getApplication).thenReturn(application);
-        lenient().when(application.getService(DevoxxGenieStateService.class)).thenReturn(stateService);
+        lenient().when(application.getService(CredentialService.class)).thenReturn(credentials);
 
+        stateService = new DevoxxGenieStateService();
+        lenient().when(application.getService(DevoxxGenieStateService.class)).thenReturn(stateService);
         stateServiceMockedStatic = Mockito.mockStatic(DevoxxGenieStateService.class);
         stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(stateService);
 
@@ -55,11 +87,18 @@ class WebSearchProvidersConfigurableTest {
         lenient().when(project.getMessageBus()).thenReturn(messageBus);
         lenient().when(messageBus.syncPublisher(AppTopics.WEB_SEARCH_STATE_TOPIC)).thenReturn(noopListener);
 
+        newConfigurable();
+    }
+
+    private void newConfigurable() {
         configurable = new WebSearchProvidersConfigurable(project);
+        configurable.createComponent();
+        component = getComponent();
     }
 
     @AfterEach
     void tearDown() {
+        WebSearchServiceTestSupport.reset();
         stateServiceMockedStatic.close();
         applicationManagerMockedStatic.close();
     }
@@ -70,76 +109,129 @@ class WebSearchProvidersConfigurableTest {
     }
 
     @Test
-    void shouldCreateComponent() {
-        assertThat(configurable.createComponent()).isNotNull();
+    void providerChoices_areNonePlusEveryRegisteredProvider() {
+        var combo = component.getProviderComboBox();
+        assertThat(combo.getItemCount()).isEqualTo(1 + WebSearchProvider.values().length);
+        assertThat(combo.getItemAt(0).provider()).isNull();
+        assertThat(combo.getItemAt(0).label()).isEqualTo("None");
+        assertThat(combo.getItemAt(1).label()).isEqualTo("Tavily");
+        assertThat(combo.getItemAt(2).label()).isEqualTo("Google Custom Search");
+    }
+
+    @Nested
+    class Visibility {
+
+        @Test
+        void onlyTheSelectedProvidersCredentialRowsAreShown() {
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+            assertThat(component.isShowingRowsOf(WebSearchProvider.GOOGLE)).isTrue();
+            assertThat(component.isShowingRowsOf(WebSearchProvider.TAVILY)).isFalse();
+
+            component.setSelectedProvider(WebSearchProvider.TAVILY);
+            assertThat(component.isShowingRowsOf(WebSearchProvider.TAVILY)).isTrue();
+            assertThat(component.isShowingRowsOf(WebSearchProvider.GOOGLE)).isFalse();
+        }
+
+        @Test
+        void noneSelected_showsNoCredentialRows() {
+            component.setSelectedProvider(null);
+            for (WebSearchProvider provider : WebSearchProvider.values()) {
+                assertThat(component.isShowingRowsOf(provider)).as("%s rows", provider).isFalse();
+            }
+        }
+
+        @Test
+        void changingTheProviderInTheForm_doesNotWriteSettingsBeforeApply() {
+            stateService.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+            component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("typed-not-applied");
+
+            assertThat(stateService.getSelectedWebSearchProvider()).isEqualTo(WebSearchProvider.TAVILY);
+            assertThat(stateService.getGoogleSearchKey()).isEmpty();
+            assertThat(configurable.isModified()).isTrue();
+        }
+
+        @Test
+        void switchingWebSearchOff_keepsTheProviderChoice() {
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+            component.getEnableWebSearchCheckbox().setSelected(true);
+            component.getEnableWebSearchCheckbox().setSelected(false);
+
+            assertThat(component.getSelectedProvider()).isEqualTo(WebSearchProvider.GOOGLE);
+        }
     }
 
     @Nested
     class Apply {
 
         @Test
-        void shouldApplyWebSearchEnabled() {
-            WebSearchProvidersComponent component = getComponent();
+        void appliesEnableSwitch() {
             component.getEnableWebSearchCheckbox().setSelected(true);
             configurable.apply();
             assertThat(stateService.getIsWebSearchEnabled()).isTrue();
-        }
 
-        @Test
-        void shouldApplyWebSearchDisabled() {
-            stateService.setIsWebSearchEnabled(true);
-            WebSearchProvidersComponent component = getComponent();
             component.getEnableWebSearchCheckbox().setSelected(false);
             configurable.apply();
             assertThat(stateService.getIsWebSearchEnabled()).isFalse();
         }
 
         @Test
-        void shouldApplyTavilyEnabled() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getTavilySearchEnabledCheckBox().setSelected(true);
+        void appliesSelectedProvider_andKeepsLegacyFlagsInSync() {
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
             configurable.apply();
-            assertThat(stateService.isTavilySearchEnabled()).isTrue();
-        }
 
-        @Test
-        void shouldApplyTavilyApiKey() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getTavilySearchApiKeyField().setText("tavily-key-123");
-            configurable.apply();
-            assertThat(stateService.getTavilySearchKey()).isEqualTo("tavily-key-123");
-        }
-
-        @Test
-        void shouldApplyGoogleSearchEnabled() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getGoogleSearchEnabledCheckBox().setSelected(true);
-            configurable.apply();
+            assertThat(stateService.getSelectedWebSearchProvider()).isEqualTo(WebSearchProvider.GOOGLE);
             assertThat(stateService.isGoogleSearchEnabled()).isTrue();
+            assertThat(stateService.isTavilySearchEnabled()).isFalse();
         }
 
         @Test
-        void shouldApplyGoogleSearchApiKey() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getGoogleSearchApiKeyField().setText("google-key-456");
+        void appliesNone() {
+            stateService.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);
+            component.setSelectedProvider(null);
             configurable.apply();
+
+            assertThat(stateService.getSelectedWebSearchProvider()).isNull();
+        }
+
+        @Test
+        void appliesEveryProvidersCredentials_soSwitchingBackNeedsNoReentry() {
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+            component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("tavily-key-123");
+            component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("google-key-456");
+            component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).setText("csi-key-789");
+            configurable.apply();
+
+            assertThat(stateService.getTavilySearchKey()).isEqualTo("tavily-key-123");
             assertThat(stateService.getGoogleSearchKey()).isEqualTo("google-key-456");
-        }
-
-        @Test
-        void shouldApplyGoogleCSIKey() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getGoogleCSIApiKeyField().setText("csi-key-789");
-            configurable.apply();
             assertThat(stateService.getGoogleCSIKey()).isEqualTo("csi-key-789");
         }
 
         @Test
-        void shouldApplyMaxSearchResults() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getMaxSearchResults().setNumber(5);
+        void clearingAKey_removesIt() {
+            stateService.setTavilySearchKey("old-key");
+            configurable.reset();
+            component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("");
             configurable.apply();
-            assertThat(stateService.getMaxSearchResults()).isEqualTo(5);
+
+            assertThat(stateService.getTavilySearchKey()).isEmpty();
+        }
+
+        @Test
+        void appliesMaxSearchResults() {
+            component.getMaxSearchResults().setNumber(7);
+            configurable.apply();
+            assertThat(stateService.getMaxSearchResults()).isEqualTo(7);
+        }
+
+        @Test
+        void afterApply_nothingIsModified() {
+            component.setSelectedProvider(WebSearchProvider.TAVILY);
+            component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("k");
+            component.getMaxSearchResults().setNumber(4);
+            configurable.apply();
+
+            assertThat(configurable.isModified()).isFalse();
         }
     }
 
@@ -147,59 +239,36 @@ class WebSearchProvidersConfigurableTest {
     class Reset {
 
         @Test
-        void shouldResetWebSearchEnabled() {
+        void resetsFormFromSettings() {
             stateService.setIsWebSearchEnabled(true);
+            stateService.setSelectedWebSearchProvider(WebSearchProvider.GOOGLE);
+            stateService.setGoogleSearchKey("g-key");
+            stateService.setGoogleCSIKey("cse-id");
+            stateService.setTavilySearchKey("t-key");
+            stateService.setMaxSearchResults(8);
+
             configurable.reset();
-            WebSearchProvidersComponent component = getComponent();
+
             assertThat(component.getEnableWebSearchCheckbox().isSelected()).isTrue();
+            assertThat(component.getSelectedProvider()).isEqualTo(WebSearchProvider.GOOGLE);
+            assertThat(new String(component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).getPassword())).isEqualTo("g-key");
+            assertThat(new String(component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).getPassword())).isEqualTo("cse-id");
+            assertThat(new String(component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).getPassword())).isEqualTo("t-key");
+            assertThat(component.getMaxSearchResults().getNumber()).isEqualTo(8);
+            assertThat(configurable.isModified()).isFalse();
         }
 
         @Test
-        void shouldResetTavilyEnabled() {
-            stateService.setTavilySearchEnabled(true);
+        void resetDiscardsUnappliedEdits() {
+            stateService.setSelectedWebSearchProvider(WebSearchProvider.TAVILY);
             configurable.reset();
-            WebSearchProvidersComponent component = getComponent();
-            assertThat(component.getTavilySearchEnabledCheckBox().isSelected()).isTrue();
-        }
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+            component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("unsaved");
 
-        @Test
-        void shouldResetTavilyKey() {
-            stateService.setTavilySearchKey("my-tavily-key");
             configurable.reset();
-            WebSearchProvidersComponent component = getComponent();
-            assertThat(new String(component.getTavilySearchApiKeyField().getPassword())).isEqualTo("my-tavily-key");
-        }
 
-        @Test
-        void shouldResetGoogleSearchEnabled() {
-            stateService.setGoogleSearchEnabled(true);
-            configurable.reset();
-            WebSearchProvidersComponent component = getComponent();
-            assertThat(component.getGoogleSearchEnabledCheckBox().isSelected()).isTrue();
-        }
-
-        @Test
-        void shouldResetGoogleSearchKey() {
-            stateService.setGoogleSearchKey("google-key");
-            configurable.reset();
-            WebSearchProvidersComponent component = getComponent();
-            assertThat(new String(component.getGoogleSearchApiKeyField().getPassword())).isEqualTo("google-key");
-        }
-
-        @Test
-        void shouldResetGoogleCSIKey() {
-            stateService.setGoogleCSIKey("csi-key");
-            configurable.reset();
-            WebSearchProvidersComponent component = getComponent();
-            assertThat(new String(component.getGoogleCSIApiKeyField().getPassword())).isEqualTo("csi-key");
-        }
-
-        @Test
-        void shouldResetMaxSearchResults() {
-            stateService.setMaxSearchResults(7);
-            configurable.reset();
-            WebSearchProvidersComponent component = getComponent();
-            assertThat(component.getMaxSearchResults().getNumber()).isEqualTo(7);
+            assertThat(component.getSelectedProvider()).isEqualTo(WebSearchProvider.TAVILY);
+            assertThat(component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).getPassword()).isEmpty();
         }
     }
 
@@ -207,102 +276,152 @@ class WebSearchProvidersConfigurableTest {
     class IsModified {
 
         @Test
-        void shouldDetectWebSearchEnabledChange() {
-            // isModified() for the enable checkbox compares the checkbox state against the
-            // snapshot (initialIsWebSearchEnabled) taken when the configurable was created.
-            // Changing the checkbox fires the ItemListener which also updates stateService,
-            // but isModified() still sees a difference because the snapshot stays at the
-            // original value.
-            WebSearchProvidersComponent component = getComponent();
-            boolean original = component.getEnableWebSearchCheckbox().isSelected();
-            component.getEnableWebSearchCheckbox().setSelected(!original);
+        void detectsEnableSwitchChange() {
+            configurable.reset();
+            component.getEnableWebSearchCheckbox().setSelected(!component.getEnableWebSearchCheckbox().isSelected());
             assertThat(configurable.isModified()).isTrue();
         }
 
         @Test
-        void shouldDetectTavilyEnabledChange() {
-            WebSearchProvidersComponent component = getComponent();
-            // Change the state directly, not the checkbox (to avoid listener side effects)
-            stateService.setTavilySearchEnabled(!component.getTavilySearchEnabledCheckBox().isSelected());
+        void detectsProviderChange() {
+            configurable.reset();
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
             assertThat(configurable.isModified()).isTrue();
         }
 
         @Test
-        void shouldDetectGoogleEnabledChange() {
-            WebSearchProvidersComponent component = getComponent();
-            // Change state directly to avoid listener side effects
-            stateService.setGoogleSearchEnabled(!component.getGoogleSearchEnabledCheckBox().isSelected());
-            assertThat(configurable.isModified()).isTrue();
+        void detectsCredentialChange_forEveryRegisteredField() {
+            for (CredentialKey key : new CredentialKey[]{CredentialKey.TAVILY_SEARCH_KEY,
+                    CredentialKey.GOOGLE_SEARCH_KEY, CredentialKey.GOOGLE_CSI_KEY}) {
+                configurable.reset();
+                component.getCredentialField(key).setText("changed-" + key);
+                assertThat(configurable.isModified()).as("%s change detected", key).isTrue();
+            }
         }
 
         @Test
-        void shouldDetectMaxSearchResultsChange() {
-            stateService.setMaxSearchResults(3);
-            WebSearchProvidersComponent component = getComponent();
-            component.getMaxSearchResults().setNumber(8);
-            assertThat(configurable.isModified()).isTrue();
-        }
-
-        @Test
-        void shouldDetectTavilyKeyChange() {
-            stateService.setTavilySearchKey("old-key");
-            WebSearchProvidersComponent component = getComponent();
-            component.getTavilySearchApiKeyField().setText("new-key");
-            assertThat(configurable.isModified()).isTrue();
-        }
-
-        @Test
-        void shouldDetectGoogleKeyChange() {
-            stateService.setGoogleSearchKey("old-key");
-            WebSearchProvidersComponent component = getComponent();
-            component.getGoogleSearchApiKeyField().setText("new-key");
-            assertThat(configurable.isModified()).isTrue();
-        }
-
-        @Test
-        void shouldDetectGoogleCSIKeyChange() {
-            stateService.setGoogleCSIKey("old-csi");
-            WebSearchProvidersComponent component = getComponent();
-            component.getGoogleCSIApiKeyField().setText("new-csi");
+        void detectsMaxSearchResultsChange() {
+            configurable.reset();
+            component.getMaxSearchResults().setNumber(component.getMaxSearchResults().getNumber() == 3 ? 4 : 3);
             assertThat(configurable.isModified()).isTrue();
         }
     }
 
     @Nested
-    class WebSearchComponentListeners {
+    class TestSearch {
 
         @Test
-        void shouldDisableTavilyWhenGoogleSelected() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getEnableWebSearchCheckbox().setSelected(true);
-            component.getTavilySearchEnabledCheckBox().setSelected(true);
+        void formConfig_reflectsTheUnsavedForm() {
+            component.setSelectedProvider(WebSearchProvider.TAVILY);
+            component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("unsaved-key");
+            component.getMaxSearchResults().setNumber(2);
 
-            // Now select Google - should disable Tavily
-            component.getGoogleSearchEnabledCheckBox().setSelected(true);
-            assertThat(component.getTavilySearchEnabledCheckBox().isSelected()).isFalse();
+            var config = component.formConfig();
+
+            assertThat(config.provider()).isEqualTo(WebSearchProvider.TAVILY);
+            assertThat(config.credential(CredentialKey.TAVILY_SEARCH_KEY)).isEqualTo("unsaved-key");
+            assertThat(config.credentials()).doesNotContainKey(CredentialKey.GOOGLE_SEARCH_KEY);
+            assertThat(config.maxResults()).isEqualTo(2);
         }
 
         @Test
-        void shouldDisableGoogleWhenTavilySelected() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getEnableWebSearchCheckbox().setSelected(true);
-            component.getGoogleSearchEnabledCheckBox().setSelected(true);
+        void e2e_testSearchUsesTheUnsavedProviderAndKey_againstTheStub() throws Exception {
+            stateService.setSelectedWebSearchProvider(WebSearchProvider.GOOGLE); // saved choice differs
+            try (TavilyStubServer tavily = new TavilyStubServer()) {
+                tavily.respondWithHit("Stub hit", "https://example.com/stub", "Snippet from the stub.");
+                component.setSelectedProvider(WebSearchProvider.TAVILY);
+                component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("unsaved-tavily-key");
 
-            // Now select Tavily - should disable Google
-            component.getTavilySearchEnabledCheckBox().setSelected(true);
-            assertThat(component.getGoogleSearchEnabledCheckBox().isSelected()).isFalse();
+                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "devoxx genie");
+
+                assertThat(output).contains("Stub hit").contains("https://example.com/stub").contains("Snippet from the stub.");
+                assertThat(tavily.takeRequest().getBody().readUtf8()).contains("unsaved-tavily-key").contains("devoxx genie");
+            }
         }
 
         @Test
-        void shouldDisableBothProvidersWhenWebSearchDisabled() {
-            WebSearchProvidersComponent component = getComponent();
-            component.getEnableWebSearchCheckbox().setSelected(true);
-            component.getTavilySearchEnabledCheckBox().setSelected(true);
+        void e2e_testSearchWithGoogleSelected_neverContactsTavily() throws Exception {
+            try (TavilyStubServer tavily = new TavilyStubServer()) {
+                WebSearchServiceTestSupport.replaceEngine(WebSearchProvider.GOOGLE,
+                        request -> WebSearchServiceTestSupport.results("Google hit", "https://example.com/g"));
+                component.setSelectedProvider(WebSearchProvider.GOOGLE);
+                component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("g");
+                component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).setText("c");
+                component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("tavily-present-but-unselected");
 
-            // Disable web search entirely
-            component.getEnableWebSearchCheckbox().setSelected(false);
-            assertThat(component.getTavilySearchEnabledCheckBox().isSelected()).isFalse();
-            assertThat(component.getGoogleSearchEnabledCheckBox().isSelected()).isFalse();
+                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+
+                assertThat(output).contains("Google hit");
+                assertThat(tavily.requestCount()).isZero();
+            }
+        }
+
+        @Test
+        void e2e_providerError_isShownWithoutLeakingTheResponse() throws Exception {
+            try (TavilyStubServer tavily = new TavilyStubServer()) {
+                tavily.respondWithStatus(401, "{\"detail\":\"secret-echo tvly-leaky-key\"}");
+                component.setSelectedProvider(WebSearchProvider.TAVILY);
+                component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("tvly-leaky-key");
+
+                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+
+                assertThat(output).startsWith("Search with Tavily failed").doesNotContain("tvly-leaky-key");
+            }
+        }
+
+        @Test
+        void testSearchWithMissingKey_explainsWhatIsMissing_andSendsNothing() throws Exception {
+            try (TavilyStubServer tavily = new TavilyStubServer()) {
+                component.setSelectedProvider(WebSearchProvider.GOOGLE);
+                component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("g");
+
+                String output = WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q");
+
+                assertThat(output).contains("Google").contains("Search Engine ID");
+                assertThat(tavily.requestCount()).isZero();
+            }
+        }
+
+        @Test
+        void testSearchWithNoProvider_asksToChooseOne() {
+            component.setSelectedProvider(null);
+
+            assertThat(WebSearchProvidersComponent.performTestSearch(component.formConfig(), "q"))
+                    .contains("No web search provider is selected");
+        }
+    }
+
+    @Nested
+    class RoundTrip {
+
+        @Test
+        void applyThenRestart_restoresProviderAndCredentials() {
+            component.getEnableWebSearchCheckbox().setSelected(true);
+            component.setSelectedProvider(WebSearchProvider.GOOGLE);
+            component.getCredentialField(CredentialKey.GOOGLE_SEARCH_KEY).setText("g-key");
+            component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).setText("cse-id");
+            component.getCredentialField(CredentialKey.TAVILY_SEARCH_KEY).setText("t-key");
+            component.getMaxSearchResults().setNumber(6);
+            configurable.apply();
+
+            // "Restart": serialize the saved settings, load them into a fresh state, reopen the page.
+            DevoxxGenieStateService deserialized = XmlSerializer.deserialize(
+                    XmlSerializer.serialize(stateService.getState()), DevoxxGenieStateService.class);
+            DevoxxGenieStateService restarted = new DevoxxGenieStateService();
+            restarted.loadState(deserialized);
+            stateService = restarted;
+            stateServiceMockedStatic.when(DevoxxGenieStateService::getInstance).thenReturn(restarted);
+            newConfigurable();
+            configurable.reset();
+
+            assertThat(restarted.getSelectedWebSearchProvider()).isEqualTo(WebSearchProvider.GOOGLE);
+            assertThat(restarted.getGoogleSearchKey()).isEqualTo("g-key");
+            assertThat(restarted.getGoogleCSIKey()).isEqualTo("cse-id");
+            assertThat(restarted.getTavilySearchKey()).isEqualTo("t-key");
+            assertThat(restarted.getMaxSearchResults()).isEqualTo(6);
+            assertThat(component.getSelectedProvider()).isEqualTo(WebSearchProvider.GOOGLE);
+            assertThat(new String(component.getCredentialField(CredentialKey.GOOGLE_CSI_KEY).getPassword())).isEqualTo("cse-id");
+            assertThat(configurable.isModified()).isFalse();
         }
     }
 

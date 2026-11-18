@@ -167,7 +167,7 @@ public final class BuiltInToolDescriptions {
                         "Returns ranked results with titles, URLs, and content snippets. " +
                         "Use when the answer requires information beyond the project codebase — " +
                         "e.g. library docs, API references, recent releases, or general knowledge. " +
-                        "Requires a Tavily or Google Custom Search API key configured in " +
+                        "Requires a web search provider configured in " +
                         "Settings → DevoxxGenie → Web search.");
 
         // --- PSI (code intelligence) tools ---

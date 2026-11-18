@@ -155,6 +155,25 @@ class WebSearchPromptStrategyTest {
         }));
     }
 
+    // TASK-277.1: a missing provider/key must reach the user as the actionable message, not a generic error.
+    @Test
+    void executeStrategySpecific_notConfigured_reportsTheReadinessMessageVerbatim() {
+        var readiness = new com.devoxx.genie.service.websearch.WebSearchReadiness(
+                com.devoxx.genie.service.websearch.WebSearchReadiness.Status.MISSING_CREDENTIALS,
+                com.devoxx.genie.service.websearch.WebSearchProvider.TAVILY, java.util.List.of("API key"));
+        when(mockWebSearchService.searchWeb(mockContext))
+                .thenThrow(new com.devoxx.genie.service.websearch.WebSearchNotConfiguredException(readiness));
+
+        strategy.executeStrategySpecific(mockContext, mockPanel, mockResultTask);
+
+        verify(mockPanel, never()).addChatResponse(any());
+        promptErrorHandlerMock.verify(() -> PromptErrorHandler.handleException(any(), argThat(error ->
+                error.getMessage().equals(readiness.message())
+                        && error.getMessage().contains("Tavily")
+                        && error.getMessage().contains("API key")), any()));
+        verify(mockResultTask).complete(argThat(result -> result.getError() != null));
+    }
+
     @Test
     void executeStrategySpecific_setsExecutionTime() {
         AiMessage aiMessage = AiMessage.from("Result");

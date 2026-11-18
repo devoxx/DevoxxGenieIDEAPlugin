@@ -120,9 +120,11 @@ See [MCP Support](../features/mcp_expanded.md) for details.
 Configure web search integration:
 
 - Enable/disable web search
-- Set up Google Custom Search
-- Configure Tavily search integration
+- Choose one provider (Tavily or Google Custom Search; more coming soon) and enter its credentials
+- Test the provider with **Test search** before applying
 - Set search result limits
+
+See [Web Search](../features/web-search.md) for details.
 
 ### Scan & Copy Project
 

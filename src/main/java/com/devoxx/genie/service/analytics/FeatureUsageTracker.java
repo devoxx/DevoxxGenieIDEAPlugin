@@ -1,5 +1,6 @@
 package com.devoxx.genie.service.analytics;
 
+import com.devoxx.genie.service.websearch.WebSearchService;
 import com.devoxx.genie.model.LanguageModel;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -49,11 +50,9 @@ public final class FeatureUsageTracker {
                 emit(FeatureId.RAG, providerType, ZERO_BUCKET);
             }
             if (context.isWebSearchActivated() && state != null) {
-                if (state.isGoogleSearchEnabled()) {
-                    emit(FeatureId.WEB_SEARCH_GOOGLE, providerType, ZERO_BUCKET);
-                }
-                if (state.isTavilySearchEnabled()) {
-                    emit(FeatureId.WEB_SEARCH_TAVILY, providerType, ZERO_BUCKET);
+                FeatureId webSearchFeature = WebSearchService.selectedAnalyticsFeature(state);
+                if (webSearchFeature != null) {
+                    emit(webSearchFeature, providerType, ZERO_BUCKET);
                 }
             }
             if (context.getCommandName() != null && !context.getCommandName().isEmpty()) {
