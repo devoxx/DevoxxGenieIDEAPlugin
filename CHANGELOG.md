@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.19.0 - 2026-11-18
+
+A minor release about web search. **Web search providers now come from one registry**, so `/search`, the agent's `web_search` tool, the chat's Web toggle and Settings all use the same provider and readiness rules. **Keenable** (works without an API key) and **Parallel** join Tavily, and **Google Custom Search is marked as deprecated** ahead of Google's 2027-01-01 shutdown. `/search` answers now list their sources, and the Settings test searches for web search and RAG show readable results.
+
+### Added
+- feat(websearch): **one web search provider registry**. `WebSearchProviderRegistry` and `WebSearchService` replace seven copies of the Tavily/Google logic that disagreed (for example, `/search` accepted Tavily with no key). Settings → Web search gets a single **Provider** dropdown, migrated from the old checkboxes. A missing key never sends a request and shows a message naming the provider. Adding a provider takes one enum entry, one definition and one engine, and `everyDefinition_isFullyWired` checks the wiring (task-277.1, #1431)
+- feat(websearch): **`/search` answers end with a Sources list** of numbered links to the results the answer used, for every provider. If the provider finds nothing, `/search` says so without calling the LLM. Links in every chat answer now open through IntelliJ's browser support, and only `http`, `https` and `mailto` links open (task-277.2, #1423, #1432)
+- feat(websearch): **Keenable as a web search provider**, contributed by @KGKallasmaa. It works without an API key on Keenable's free endpoint (rate-limited per network); a free key switches to the authenticated endpoint with 100K searches per month. The key is dropped on any cross-origin redirect, requests use the IDE's proxy settings, and 429/401/403 errors get specific messages. Also fixes a latent credential-migration bug: a credential without a legacy settings field counted as a failed migration, which would have stopped plaintext keys from ever being wiped (task-277.3, #1428, #1430, #1433)
+- feat(websearch): **Parallel as a web search provider** through its REST Search API, with an API key (task-277.5, #1423, #1436)
+- feat(settings): **readable Test search results in Settings**. Web search's test used to print raw provider output, Markdown included, into one text box. It now lists each hit by title and site, previews the cleaned-up snippet with the URL as a link, and shows a status line with the provider, result count and time taken, or a clearly styled error. Double-click a result to open it. RAG's **Test semantic search** uses the same component: same rows and chunk preview, and double-clicking a match now opens the file at that chunk (task-277.7, #1437)
+
+### Changed
+- feat(websearch): **Google Custom Search is deprecated**. Google has closed its Custom Search JSON API to new customers and discontinues it on January 1, 2027. The Settings dropdown shows it as *Google Custom Search (deprecated)*, listed last, with a warning while it's selected. A failing Google search now explains the shutdown and suggests Keenable or Tavily, instead of showing a raw error. New setups default to no provider (task-277.4, #1428, #1434)
+
+### Fixed
+- fix(analytics): web search usage is counted per provider for `/search` and the agent's `web_search` tool; failed or unconfigured searches and Settings test searches are not counted (task-277.6, #1436)
+- fix(spec): **Run All To Do lifecycle issues**. Chat memory is now reset per task in the tab that runs it (it used to keep history from earlier tasks). Both Run All actions ask whether to resume In Progress tasks. A task stopped by the agent action limit is set to In Progress with a note saying why, and the batch continues. A task marked Done during the grace period no longer hangs the run (#1424, #1426)
+- fix(rag): RAG indexing works for projects whose name has no ASCII letters (e.g. Cyrillic), or is too short or too long for ChromaDB. Valid names are kept unchanged, so existing indexes keep working; other names get an ASCII part plus a hash (#1421, #1427)
+- fix(router): the Requesty hint explains how to use the EU endpoint now that router base URLs are editable (#1416)
+
+### Documentation
+- docs: LLM providers are grouped like the settings tabs, with a new Routers page; router base URLs and the Routers and Sharding tabs are documented
+- docs(websearch): provider choice, Keenable and Parallel setup, the Google deprecation, `/search` sources and the Settings test results; RAG docs gain a "Testing retrieval from Settings" section
+- docs(blog): announce DevoxxGenie 1.18.0
+
+### Dependencies
+- build(deps): upgrade AWS SDK BOM 2.57.11 → 2.59.1, logback-classic 1.6.6 → 1.6.7 and the Gradle wrapper 9.9.0 → 9.9.1 (#1417, #1422, #1425, #1429)
+- build(deps): docusaurus follow-redirects 1.16.1 → 1.16.3 and joi 17.13.8 → 17.13.9 (#1419, #1420)
+- ci: skip Claude Code Review on Dependabot PRs, which it refuses to run on (#1418)
+
+### Contributors
+- @stephanj
+- @KGKallasmaa
+
 ## v1.18.0 - 2026-11-12
 
 A minor release about providers. **LLM routers now run on one generic provider with their own Routers settings tab**, and OrcaRouter, UberLLM, Requesty and DemonRoute join OpenRouter. **Local OpenAI-compatible servers get the same treatment**: Nativ, Rapid-MLX, GPT4All, llama.cpp and Jan now share one generic local provider that reads each server's real models and context window. It also fixes support for **IntelliJ IDEA 2026.3**, where the settings pages failed to load.

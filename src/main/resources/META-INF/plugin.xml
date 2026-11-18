@@ -68,6 +68,17 @@
     ]]></description>
 
     <change-notes><![CDATA[
+                <h2>v1.19.0</h2>
+        <UL>
+                    <LI>feat(websearch): <b>web search providers from one registry</b>: one Provider dropdown in Settings, used by /search, the agent's web_search tool and the chat's Web toggle (#1431)</LI>
+                    <LI>feat(websearch): <b>Keenable</b> as a web search provider: no API key needed, or 100K searches a month with a free key; thanks to @KGKallasmaa (#1430, #1433)</LI>
+                    <LI>feat(websearch): <b>Parallel</b> as a web search provider (#1436)</LI>
+                    <LI>feat(websearch): /search answers end with a Sources list of links (#1432)</LI>
+                    <LI>feat(settings): the web search and RAG test searches in Settings show readable results; double-click to open a page or file (#1437)</LI>
+                    <LI>Google Custom Search is <b>deprecated</b>: Google shuts the API down on January 1, 2027. Switch to Keenable, Tavily or Parallel (#1434)</LI>
+                    <LI>fix(spec): Run All To Do resets chat memory per task, can resume In Progress tasks, and no longer hangs (#1426)</LI>
+                    <LI>fix(rag): indexing works for projects with non-ASCII names (#1427)</LI>
+                </UL>
                 <h2>v1.18.0</h2>
         <UL>
                     <LI>feat(router): <b>LLM routers on one generic provider, with a new Routers settings tab</b> (the former Cloud tab is now <b>Cloud Direct</b>): OpenRouter, OrcaRouter, UberLLM, Requesty and DemonRoute. Routers forward your prompts and code to other providers, so check their terms before enabling one. Requesty (contributed by Thibault Jaigu, #1303) and DemonRoute were not tested live; OrcaRouter had its model list checked but not its chat requests (#1384, #1385, #1401)</LI>
