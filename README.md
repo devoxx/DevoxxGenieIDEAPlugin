@@ -25,7 +25,7 @@ Devoxx Genie is a fully Java-based LLM Code Assistant plugin for IntelliJ IDEA, 
 
 With [Agent Mode](https://genie.devoxx.com/docs/features/agent-mode), MCPs and frontier models like Claude Opus 4.6, Gemini Pro, DevoxxGenie isn't just another developer tool — it's a glimpse into the future of agentic programming. One thing's clear: we're in the midst of a paradigm shift in AI-Augmented Programming (AAP) 🐒
 
-We also support RAG-based prompt context based on your vectorized project files, diff-based review of every file an agent run changes, and LLM-driven web search with [Google](https://developers.google.com/custom-search) and [Tavily](https://tavily.com/).
+We also support RAG-based prompt context based on your vectorized project files, diff-based review of every file an agent run changes, and LLM-driven web search with [Keenable](https://keenable.ai) (no key needed, or 100K free searches a month with a free key), [Parallel](https://parallel.ai) and [Tavily](https://tavily.com/), with source links in every `/search` answer.
 
 [<img width="200" alt="Marketplace" src="https://github.com/devoxx/DevoxxGenieIDEAPlugin/assets/179457/1c24d692-37ea-445d-8015-2c25f63e2f90">](https://plugins.jetbrains.com/plugin/24169-devoxxgenie)
 221+ Active Users
@@ -144,7 +144,7 @@ Select multiple tasks (or click "Run All To Do") and the **Agent Loop** executes
 - **👀 [Chat History](https://genie.devoxx.com/docs/features/chat-interface)**: Your chats are stored locally, allowing you to easily restore them in the future.
 - **🧠 [Project Scanner](https://genie.devoxx.com/docs/features/project-scanner)**: Add source code (full project or by package) to prompt context when using Anthropic, OpenAI or Gemini.
 - **💰 [Token Cost Calculator](https://genie.devoxx.com/docs/configuration/token-cost)**: Calculate the cost when using Cloud LLM providers.
-- **🔍 [Web Search](https://genie.devoxx.com/docs/features/web-search)**: Search the web for a given query using Google or Tavily.
+- **🔍 [Web Search](https://genie.devoxx.com/docs/features/web-search)**: Ground answers in live web results with `/search` or the agent's `web_search` tool. Choose one provider in Settings: Keenable (works without an API key; a free key gives 100K searches a month), Parallel or Tavily. Google Custom Search is deprecated, because Google shuts the API down on January 1, 2027.
 - **🏎️ [Streaming responses](https://genie.devoxx.com/docs/features/chat-interface)**: See each token as it's received from the LLM in real-time.
 - **🧐 [Abstract Syntax Tree (AST) context](https://genie.devoxx.com/docs/features/project-scanner)**: Automatically include parent class and class/field references in the prompt for better code analysis.
 - **💬 [Chat Memory Size](https://genie.devoxx.com/docs/features/chat-memory)**: Set the size of your chat memory, by default its set to a total of 10 messages (system + user & AI msgs).

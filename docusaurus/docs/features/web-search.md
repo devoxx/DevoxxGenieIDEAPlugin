@@ -99,7 +99,7 @@ Without a key, DevoxxGenie uses Keenable's free public search. It is rate-limite
 
 > Keenable's free search limit for your network was reached. Try again later, or add a Keenable API key in Settings → DevoxxGenie → Web search for a higher limit.
 
-To raise the limit, get an API key from [keenable.ai](https://keenable.ai) and paste it into **Keenable API key (optional)**. With a key, searches go to Keenable's authenticated endpoint. If the key is wrong, DevoxxGenie tells you it was rejected; clear the field to go back to free keyless search.
+To raise the limit, get a free API key from [keenable.ai](https://keenable.ai), which gives you 100K searches per month, and paste it into **Keenable API key (optional)**. With a key, searches go to Keenable's authenticated endpoint. If the key is wrong, DevoxxGenie tells you it was rejected; clear the field to go back to free keyless search.
 
 Requests identify themselves as DevoxxGenie. The API key is only ever sent to Keenable, never to another site after a redirect.
 
