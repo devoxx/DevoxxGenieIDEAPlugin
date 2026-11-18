@@ -35,7 +35,8 @@ public enum CredentialKey {
     GOOGLE_CSI_KEY       ("googleCSIKey"),
     TAVILY_SEARCH_KEY    ("tavilySearchKey"),
     // Added after the plaintext-to-PasswordSafe migration: no legacy XML field exists for it (TASK-277.3).
-    KEENABLE_SEARCH_KEY  ("keenableSearchKey");
+    KEENABLE_SEARCH_KEY  ("keenableSearchKey"),
+    PARALLEL_SEARCH_KEY  ("parallelSearchKey");
 
     /** PasswordSafe service-name prefix. Entries appear as "DevoxxGenie — &lt;subKey&gt;". */
     public static final String SERVICE_NAME = "DevoxxGenie";

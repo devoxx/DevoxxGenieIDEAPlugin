@@ -55,6 +55,7 @@
     { "text": "Use Test search in Settings → Web search to check your provider and key before you apply them.", "weight": 1 },
     { "text": "In Agent Mode, enable the web_search tool so the agent can look up docs and release notes itself.", "weight": 1 },
     { "text": "/search answers from live results; ask for recent releases or docs that postdate your model.", "weight": 1 },
-    { "text": "No search API key? Update DevoxxGenie and pick Keenable in Settings → Web search: it works without signing up.", "weight": 1 }
+    { "text": "No search API key? Update DevoxxGenie and pick Keenable in Settings → Web search: it works without signing up.", "weight": 1 },
+    { "text": "Using Parallel for web research? Update DevoxxGenie and pick Parallel in Settings → Web search for /search and the agent.", "weight": 1 }
   ]
 }

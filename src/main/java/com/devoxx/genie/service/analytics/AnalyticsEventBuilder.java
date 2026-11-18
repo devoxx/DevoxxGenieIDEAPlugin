@@ -45,7 +45,7 @@ public final class AnalyticsEventBuilder {
     /** Closed enum-value allowlists keyed by param name. Params absent here are free-form (subject to shape/length checks). */
     static final Map<String, Set<String>> ENUM_VALUE_ALLOWLIST = Map.of(
             "feature_id", Set.of(
-                    "rag", "semantic_search", "web_search_google", "web_search_tavily", "web_search_keenable",
+                    "rag", "semantic_search", "web_search_google", "web_search_tavily", "web_search_keenable", "web_search_parallel",
                     "agent", "mcp", "streaming", "project_context_full",
                     "project_context_selected", "devoxxgenie_md", "custom_prompt",
                     "thinking", "mcp_debug_logs", "agent_debug_logs",
