@@ -281,7 +281,7 @@ dependencies {
     // persisted configurations still load. SSE-only servers (issue #1151) are not supported.
     val lg4j_version = "1.23.0"
     val lg4j_beta_version = "1.23.0-beta33"
-    val awsSdkVersion = "2.59.1"
+    val awsSdkVersion = "2.59.2"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.54.1.0"
     val dockerJavaVersion = "3.7.1"
@@ -297,7 +297,7 @@ dependencies {
     // coroutines fork bundled in IJ 2025.3.3, crashing the code-highlighter's awaitDispose
     // with NoSuchMethodError when a streamed code block is disposed (e.g. after an MCP call).
     val markdownRendererVersion = "0.38.1"
-    val nettyVersion = "4.2.20.Final"
+    val nettyVersion = "4.2.21.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.6.7"
