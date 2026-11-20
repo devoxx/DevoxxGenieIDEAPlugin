@@ -110,7 +110,7 @@ public class AgentToolProviderFactory {
         // tracker wrap the code mode provider, otherwise it wraps the approved provider directly.
         int maxToolCalls = settings.getAgentMaxToolCalls() != null
                 ? settings.getAgentMaxToolCalls()
-                : 25;
+                : Constant.AGENT_MAX_TOOL_CALLS;
 
         AgentLoopTracker tracker;
         if (Boolean.TRUE.equals(settings.getCodeModeEnabled())) {

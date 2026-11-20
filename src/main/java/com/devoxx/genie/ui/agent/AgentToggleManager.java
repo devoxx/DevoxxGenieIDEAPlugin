@@ -1,5 +1,6 @@
 package com.devoxx.genie.ui.agent;
 
+import com.devoxx.genie.model.Constant;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ui.JBColor;
 import lombok.Getter;
@@ -82,7 +83,7 @@ public class AgentToggleManager {
     }
 
     private @NotNull String buildEnabledTooltip(@NotNull DevoxxGenieStateService stateService) {
-        int maxCalls = stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : 25;
+        int maxCalls = stateService.getAgentMaxToolCalls() != null ? stateService.getAgentMaxToolCalls() : Constant.AGENT_MAX_TOOL_CALLS;
         boolean autoApprove = Boolean.TRUE.equals(stateService.getAgentAutoApproveReadOnly());
 
         return "<html><b>Agent Mode: ON</b><br><br>" +

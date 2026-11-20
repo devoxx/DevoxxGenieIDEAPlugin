@@ -62,6 +62,11 @@ public class AgentLoopTracker implements ToolProvider {
         this.subAgentId = subAgentId;
     }
 
+    /** The tool-call limit this tracker enforces. */
+    int getMaxToolCalls() {
+        return maxToolCalls;
+    }
+
     @Override
     public ToolProviderResult provideTools(ToolProviderRequest request) {
         ToolProviderResult result = delegate.provideTools(request);
