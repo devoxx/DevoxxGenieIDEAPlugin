@@ -1,0 +1,6 @@
+Публикация в Nexus:
+NEXUS_USER=user NEXUS_PASSWORD=pass ./gradlew publish
+# URL по умолчанию — плейсхолдер, переопределение:
+./gradlew publish -PnexusUrl="https://nexus.mycompany.com/repository/maven-releases/"
+
+./gradlew buildPluginWithLocalIdea - сборка с локальной idea

@@ -32,6 +32,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -606,12 +608,20 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     }
 
     // Inline completion settings
-    private String inlineCompletionProvider = "";  // "", "Ollama", or "LMStudio"
+    private String inlineCompletionProvider = "";  // "", "Ollama", "LMStudio", or "CustomOpenAI"
     private String inlineCompletionModel = "";
     private Integer inlineCompletionMaxTokens = 64;
     private Integer inlineCompletionTimeoutMs = 5000;
     private Double inlineCompletionTemperature = 0.0;
     private Integer inlineCompletionDebounceMs = 300;
+
+    // Inline completion: OpenAI-compatible endpoint (llama.cpp, LiteLLM, ...) and
+    // PSI-derived context enrichment. The API key lives in PasswordSafe
+    // (CredentialKey.CUSTOM_OPEN_AI_FIM_KEY), see getInlineCompletionCustomApiKey().
+    private String inlineCompletionCustomUrl = "http://localhost:4000/v1";
+    private Boolean inlineCompletionContextEnabled = true;
+    private Integer inlineCompletionContextBudget = 2048;
+    private Integer inlineCompletionContextMaxClasses = 4;
 
 
     // Model config cache
@@ -656,7 +666,70 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     private List<Runnable> loadListeners = new ArrayList<>();
 
     public DevoxxGenieStateService() {
+        applyDevDefaults();
         initializeUserPrompt();
+    }
+
+    /**
+     * Applies developer-only startup defaults from a {@code dev-defaults.properties} resource
+     * when it is present in the plugin classpath — i.e. only in builds produced by
+     * {@code ./gradlew buildPluginDev}. Keys must match field names of this class; values are
+     * coerced by field type (String/Integer/Double/Boolean). Persisted IDE settings take
+     * precedence: they are copied over this instance in {@link #loadState}.
+     */
+    private void applyDevDefaults() {
+        try (InputStream in = DevoxxGenieStateService.class.getClassLoader()
+                .getResourceAsStream("dev-defaults.properties")) {
+            if (in == null) {
+                return;
+            }
+            Properties devDefaults = new Properties();
+            devDefaults.load(in);
+            for (String key : devDefaults.stringPropertyNames()) {
+                applyDevDefault(key, devDefaults.getProperty(key));
+            }
+        } catch (IOException | RuntimeException e) {
+            // A broken dev file must never break plugin startup.
+            LOG.debug("Failed to apply dev-defaults.properties: {}", e.getMessage());
+        }
+    }
+
+    private void applyDevDefault(@NotNull String key, @Nullable String value) {
+        if (value == null) {
+            return;
+        }
+        try {
+            Field field = DevoxxGenieStateService.class.getDeclaredField(key);
+            field.setAccessible(true);
+            Object coerced = coerce(field.getType(), value);
+            if (coerced == null) {
+                LOG.debug("dev-defaults.properties: unsupported type for field '{}'", key);
+                return;
+            }
+            field.set(this, coerced);
+            LOG.debug("dev-defaults.properties: {} = {}", key, value);
+        } catch (NoSuchFieldException e) {
+            LOG.debug("dev-defaults.properties: unknown field '{}' ignored", key);
+        } catch (IllegalAccessException e) {
+            LOG.debug("dev-defaults.properties: cannot set field '{}': {}", key, e.getMessage());
+        }
+    }
+
+    @Nullable
+    private static Object coerce(@NotNull Class<?> type, @NotNull String value) {
+        if (type == String.class) {
+            return value;
+        }
+        if (type == Boolean.class || type == boolean.class) {
+            return Boolean.valueOf(value);
+        }
+        if (type == Integer.class || type == int.class) {
+            return Integer.valueOf(value);
+        }
+        if (type == Double.class || type == double.class) {
+            return Double.valueOf(value);
+        }
+        return null;
     }
 
     private void initializeUserPrompt() {
@@ -1282,6 +1355,9 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
 
     @Transient @Override public @NotNull String getCustomOpenAIApiKey()       { return creds().getCredential(CredentialKey.CUSTOM_OPEN_AI_KEY); }
     @Transient @Override public void          setCustomOpenAIApiKey(String v) { creds().setCredential(CredentialKey.CUSTOM_OPEN_AI_KEY, v); }
+
+    @Transient public @NotNull String getInlineCompletionCustomApiKey()       { return creds().getCredential(CredentialKey.CUSTOM_OPEN_AI_FIM_KEY); }
+    @Transient public void          setInlineCompletionCustomApiKey(String v) { creds().setCredential(CredentialKey.CUSTOM_OPEN_AI_FIM_KEY, v); }
 
     @Transient @Override public @NotNull String getCloudflareKey()       { return creds().getCredential(CredentialKey.CLOUDFLARE_KEY); }
     @Transient @Override public void          setCloudflareKey(String v) { creds().setCredential(CredentialKey.CLOUDFLARE_KEY, v); }

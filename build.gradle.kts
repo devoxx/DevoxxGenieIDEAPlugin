@@ -1,4 +1,5 @@
 import java.util.*
+import org.gradle.language.jvm.tasks.ProcessResources
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -11,6 +12,7 @@ plugins {
     kotlin("plugin.lombok") version "2.4.21"
     kotlin("plugin.compose") version "2.4.21"
     id("org.jetbrains.intellij.platform") version "2.13.1"
+    `maven-publish`
     jacoco
 }
 
@@ -170,9 +172,11 @@ tasks.register<JavaExec>("webSearch") {
 }
 
 val generatedBlogResourcesDir = layout.buildDirectory.dir("generated-resources/blog")
+val devDefaultsDir = layout.buildDirectory.dir("generated-resources/dev-defaults")
 
 sourceSets.named("main") {
     resources.srcDir(generatedBlogResourcesDir)
+    resources.srcDir(devDefaultsDir)
 }
 
 tasks.register("generateBlogIndex") {
@@ -255,13 +259,92 @@ tasks.named("processResources") {
     dependsOn("generateBlogIndex")
 }
 
+// Developer-only build with personal startup defaults baked in.
+// Usage: ./gradlew buildPluginDev  — builds against the locally installed IntelliJ IDEA and
+// copies config/dev-defaults.properties into the plugin resources before packaging.
+// Regular builds (buildPlugin/verifyPlugin/publishPlugin/test) always exclude the file, so
+// production artifacts are unaffected even if a stale copy is left behind in the
+// generated-resources dir.
+val devDefaultsEnabled = providers.gradleProperty("devDefaults").isPresent
+
+tasks.register<Copy>("applyDevDefaults") {
+    group = "build"
+    description = "Copies config/dev-defaults.properties into the plugin resources"
+    from("config/dev-defaults.properties")
+    into(devDefaultsDir)
+    doFirst {
+        if (!file("config/dev-defaults.properties").exists()) {
+            throw GradleException("config/dev-defaults.properties not found")
+        }
+    }
+}
+
+tasks.register<Delete>("removeDevDefaults") {
+    group = "build"
+    description = "Removes the copied dev-defaults.properties from the generated resources"
+    delete(devDefaultsDir)
+}
+
+tasks.named<ProcessResources>("processResources") {
+    if (devDefaultsEnabled) {
+        dependsOn("applyDevDefaults")
+    } else {
+        exclude("dev-defaults.properties")
+    }
+}
+
+tasks.register<GradleBuild>("buildPluginDev") {
+    group = "build"
+    description = "Builds the plugin against the locally installed IntelliJ IDEA with the " +
+            "developer defaults from config/dev-defaults.properties"
+    tasks = listOf("buildPlugin")
+    startParameter.projectProperties = mapOf(
+        "devDefaults" to "true",
+        "localPath" to (providers.gradleProperty("localIdeaPath")
+            .orElse("/Applications/IntelliJ IDEA.app")).get()
+    )
+    finalizedBy("removeDevDefaults")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("pluginZip") {
+            artifact(tasks.named<Zip>("buildPlugin"))
+        }
+    }
+    repositories {
+        maven {
+            name = "nexus"
+            url = uri(providers.gradleProperty("nexusUrl")
+                .orElse("https://nexus.example.com/repository/maven-releases/"))
+            credentials {
+                username = providers.environmentVariable("NEXUS_USER").orNull
+                password = providers.environmentVariable("NEXUS_PASSWORD").orNull
+            }
+        }
+    }
+}
+
 dependencies {
     intellijPlatform {
         // Starting with 2025.3 (build 253) IntelliJ IDEA is a single unified product: the
         // separate Community (IC) Maven artifact is no longer published, so create("IC", ...)
         // can no longer resolve. Use the unified intellijIdea(...) accessor instead.
         // Allow overriding IDE version via property: ./gradlew runIde -PideVersion=2026.1
-        intellijIdea(providers.gradleProperty("ideVersion").orElse("2025.3.3"))
+        // Or use a locally installed IDE: ./gradlew buildPlugin -PlocalPath="/Applications/IntelliJ IDEA.app"
+        if (providers.gradleProperty("localPath").isPresent) {
+            local(providers.gradleProperty("localPath"))
+            // With a locally installed IDE the classpath only covers lib/*.jar plus the
+            // modules declared below; VCS and JCEF live in plugin dirs (plugins/*/lib/modules).
+            bundledModule("intellij.platform.vcs")
+            bundledModule("intellij.platform.vcs.core")
+            bundledModule("intellij.platform.ui.jcef")
+            bundledModule("intellij.libraries.jcef")
+            bundledModule("intellij.jcef.frontend")
+            bundledModule("intellij.platform.testRunner")
+        } else {
+            intellijIdea(providers.gradleProperty("ideVersion").orElse("2025.3.3"))
+        }
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.intellij.plugins.markdown")  // Required by markdown renderer
         // Use the Compose + Skiko runtime BUNDLED in the IDE (Jewel infrastructure, IJP 251+).
@@ -281,7 +364,7 @@ dependencies {
     // persisted configurations still load. SSE-only servers (issue #1151) are not supported.
     val lg4j_version = "1.23.0"
     val lg4j_beta_version = "1.23.0-beta33"
-    val awsSdkVersion = "2.59.2"
+    val awsSdkVersion = "2.59.1"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.54.1.0"
     val dockerJavaVersion = "3.7.1"
@@ -297,7 +380,7 @@ dependencies {
     // coroutines fork bundled in IJ 2025.3.3, crashing the code-highlighter's awaitDispose
     // with NoSuchMethodError when a streamed code block is disposed (e.g. after an MCP call).
     val markdownRendererVersion = "0.38.1"
-    val nettyVersion = "4.2.21.Final"
+    val nettyVersion = "4.2.20.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
     val logbackVersion = "1.6.7"

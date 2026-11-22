@@ -1,0 +1,5 @@
+vllm serve mlx-community/Qwen3-Coder-30B-A3B-Instruct-4bit \
+  --host 127.0.0.1 --port 1236 \
+  --max-model-len 2048 \
+  --gpu-memory-utilization 0.9 \
+  --api-key api-key

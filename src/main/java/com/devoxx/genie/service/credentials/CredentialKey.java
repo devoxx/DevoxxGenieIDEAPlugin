@@ -31,10 +31,11 @@ public enum CredentialKey {
     AWS_SECRET_KEY       ("awsSecretKey"),
     AWS_BEARER_TOKEN     ("awsBearerToken"),
     CUSTOM_OPEN_AI_KEY   ("customOpenAIApiKey"),
+    // Added after the plaintext-to-PasswordSafe migration: no legacy XML field exists for these.
+    CUSTOM_OPEN_AI_FIM_KEY ("inlineCompletionCustomApiKey"),
     GOOGLE_SEARCH_KEY    ("googleSearchKey"),
     GOOGLE_CSI_KEY       ("googleCSIKey"),
     TAVILY_SEARCH_KEY    ("tavilySearchKey"),
-    // Added after the plaintext-to-PasswordSafe migration: no legacy XML field exists for it (TASK-277.3).
     KEENABLE_SEARCH_KEY  ("keenableSearchKey"),
     PARALLEL_SEARCH_KEY  ("parallelSearchKey");
 

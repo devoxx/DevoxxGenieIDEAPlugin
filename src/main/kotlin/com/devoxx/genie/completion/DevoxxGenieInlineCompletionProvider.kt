@@ -8,6 +8,7 @@ import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSin
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestion
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestionUpdateManager
 import com.intellij.codeInsight.lookup.LookupManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -58,8 +59,29 @@ class DevoxxGenieInlineCompletionProvider : DebouncedInlineCompletionProvider() 
 
         val completionText = withContext(Dispatchers.IO) {
             val context = EditorContextExtractor.extract(document, offset)
-            InlineCompletionService.getInstance()
-                .getCompletion(context.prefix, context.suffix)
+            val service = InlineCompletionService.getInstance()
+            val completion = service.getCachedCompletion(context.prefix, context.suffix) ?: run {
+                val state = DevoxxGenieStateService.getInstance()
+                var prefix = context.prefix
+                if (state.inlineCompletionContextEnabled != false) {
+                    val currentFile = request.editor.virtualFile
+                    if (currentFile != null) {
+                        prefix = FimContextEnricher.enrich(
+                            project,
+                            currentFile,
+                            prefix,
+                            offset,
+                            state.inlineCompletionContextBudget ?: 2048,
+                            state.inlineCompletionContextMaxClasses ?: 4
+                        )
+                    }
+                }
+                service.getCompletion(prefix, context.suffix)
+            }
+            completion?.let { raw ->
+                LOG.debug("FIM raw completion ({} chars): {}", raw.length, raw.take(200))
+            }
+            completion
         }
 
         if (completionText.isNullOrEmpty()) {
@@ -109,5 +131,6 @@ class DevoxxGenieInlineCompletionProvider : DebouncedInlineCompletionProvider() 
 
     companion object {
         private const val MAX_FILE_SIZE = 500_000L
+        private val LOG = Logger.getInstance(DevoxxGenieInlineCompletionProvider::class.java)
     }
 }

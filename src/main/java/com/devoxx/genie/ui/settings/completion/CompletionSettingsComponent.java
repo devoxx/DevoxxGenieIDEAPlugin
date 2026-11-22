@@ -1,7 +1,10 @@
 package com.devoxx.genie.ui.settings.completion;
 
+import com.devoxx.genie.chatmodel.local.LocalLLMProviderUtil;
 import com.devoxx.genie.chatmodel.local.lmstudio.LMStudioModelService;
 import com.devoxx.genie.chatmodel.local.ollama.OllamaModelService;
+import com.devoxx.genie.model.gpt4all.Model;
+import com.devoxx.genie.model.gpt4all.ResponseDTO;
 import com.devoxx.genie.model.lmstudio.LMStudioModelEntryDTO;
 import com.devoxx.genie.model.ollama.OllamaModelEntryDTO;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
@@ -9,14 +12,17 @@ import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBLabel;
+import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class CompletionSettingsComponent extends AbstractSettingsComponent {
@@ -26,6 +32,7 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
     private static final String NONE = "None";
     private static final String OLLAMA = "Ollama";
     private static final String LMSTUDIO = "LM Studio";
+    private static final String CUSTOM_OPEN_AI = "Custom OpenAI";
 
     private final JComboBox<String> providerComboBox;
     private final JComboBox<String> modelComboBox;
@@ -33,11 +40,16 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
     private final JBIntSpinner maxTokensSpinner;
     private final JBIntSpinner timeoutSpinner;
     private final JBIntSpinner debounceSpinner;
+    private final JTextField customUrlField;
+    private final JPasswordField customApiKeyField;
+    private final JCheckBox contextEnabledCheckBox;
+    private final JBIntSpinner contextBudgetSpinner;
+    private final JBIntSpinner contextMaxFilesSpinner;
 
     public CompletionSettingsComponent() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
 
-        providerComboBox = new JComboBox<>(new String[]{NONE, OLLAMA, LMSTUDIO});
+        providerComboBox = new JComboBox<>(new String[]{NONE, OLLAMA, LMSTUDIO, CUSTOM_OPEN_AI});
         providerComboBox.setSelectedItem(providerToDisplayName(state.getInlineCompletionProvider()));
 
         modelComboBox = new JComboBox<>();
@@ -46,6 +58,18 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
         maxTokensSpinner = new JBIntSpinner(state.getInlineCompletionMaxTokens(), 16, 256, 8);
         timeoutSpinner = new JBIntSpinner(state.getInlineCompletionTimeoutMs(), 1000, 30000, 500);
         debounceSpinner = new JBIntSpinner(state.getInlineCompletionDebounceMs(), 100, 2000, 50);
+
+        customUrlField = new JTextField(
+                state.getInlineCompletionCustomUrl() != null ? state.getInlineCompletionCustomUrl() : "http://localhost:4000/v1");
+        customApiKeyField = new JPasswordField(state.getInlineCompletionCustomApiKey());
+        contextEnabledCheckBox = new JCheckBox("Include referenced class signatures in the completion context",
+                state.getInlineCompletionContextEnabled() != false);
+        contextBudgetSpinner = new JBIntSpinner(
+                state.getInlineCompletionContextBudget() != null ? state.getInlineCompletionContextBudget() : 2048,
+                256, 16384, 256);
+        contextMaxFilesSpinner = new JBIntSpinner(
+                state.getInlineCompletionContextMaxClasses() != null ? state.getInlineCompletionContextMaxClasses() : 4,
+                1, 10, 1);
 
         setupPanel();
         loadModelsForProvider(state.getInlineCompletionModel());
@@ -83,6 +107,42 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
         addHelpText(contentPanel, gbc,
                 "Requires a FIM-trained model. Recommended: starcoder2:3b, qwen2.5-coder:7b, " +
                 "deepseek-coder:6.7b-base. For Ollama install with: ollama pull starcoder2:3b");
+
+        // --- Custom OpenAI-compatible endpoint ---
+        JPanel customUrlRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        customUrlRow.add(new JBLabel("Endpoint URL:"));
+        customUrlField.setColumns(34);
+        customUrlRow.add(customUrlField);
+        addFullWidthRow(contentPanel, gbc, customUrlRow);
+
+        JPanel customKeyRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        customKeyRow.add(new JBLabel("API key:"));
+        customApiKeyField.setColumns(24);
+        customKeyRow.add(customApiKeyField);
+        addFullWidthRow(contentPanel, gbc, customKeyRow);
+        addHelpText(contentPanel, gbc,
+                "OpenAI-compatible FIM endpoint (/v1/completions), e.g. llama.cpp " +
+                "(http://127.0.0.1:1234/v1) or a LiteLLM gateway (http://localhost:4000/v1). " +
+                "The API key is sent as an Authorization bearer header when non-empty.");
+
+        // --- Context ---
+        addSection(contentPanel, gbc, "Context");
+        addFullWidthRow(contentPanel, gbc, contextEnabledCheckBox);
+
+        JPanel contextBudgetRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        contextBudgetRow.add(new JBLabel("Context budget (chars):"));
+        contextBudgetRow.add(contextBudgetSpinner);
+        addFullWidthRow(contentPanel, gbc, contextBudgetRow);
+
+        JPanel contextFilesRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        contextFilesRow.add(new JBLabel("Max classes:"));
+        contextFilesRow.add(contextMaxFilesSpinner);
+        addFullWidthRow(contentPanel, gbc, contextFilesRow);
+        addHelpText(contentPanel, gbc,
+                "Prepends signatures (declaration + public methods) of the classes referenced in " +
+                "the method under the cursor, resolved via PSI. Language-agnostic; standard " +
+                "libraries and test frameworks are skipped. The current file's cursor window is " +
+                "already part of the request and is never duplicated.");
 
         // --- Performance ---
         addSection(contentPanel, gbc, "Performance");
@@ -187,7 +247,33 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
                     .map(LMStudioModelEntryDTO::resolveModelName)
                     .collect(Collectors.toList());
         }
+        if (CUSTOM_OPEN_AI.equals(provider)) {
+            return fetchCustomOpenAIModelNames();
+        }
         return Collections.emptyList();
+    }
+
+    private List<String> fetchCustomOpenAIModelNames() throws Exception {
+        String url = customUrlField.getText().trim();
+        if (url.isBlank()) {
+            return Collections.emptyList();
+        }
+        String modelsUrl = (url.endsWith("/") ? url : url + "/") + "models";
+        String token = new String(customApiKeyField.getPassword());
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(Duration.ofSeconds(3))
+                .readTimeout(Duration.ofSeconds(5))
+                .retryOnConnectionFailure(false)
+                .build();
+        ResponseDTO response = LocalLLMProviderUtil.getModelsFromUrl(modelsUrl, ResponseDTO.class, client,
+                token.isBlank() ? null : token);
+        if (response == null || response.getData() == null) {
+            return Collections.emptyList();
+        }
+        return response.getData().stream()
+                .filter(model -> model != null && model.getId() != null && !model.getId().isBlank())
+                .map(Model::getId)
+                .collect(Collectors.toList());
     }
 
     private void updateModelComboBox(List<String> modelNames, String selectedModel) {
@@ -230,22 +316,27 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
 
     private void updateEnabledState() {
         boolean enabled = !NONE.equals(getSelectedProvider());
+        boolean customSelected = CUSTOM_OPEN_AI.equals(getSelectedProvider());
         modelComboBox.setEnabled(enabled);
         refreshButton.setEnabled(enabled);
         maxTokensSpinner.setEnabled(enabled);
         timeoutSpinner.setEnabled(enabled);
         debounceSpinner.setEnabled(enabled);
+        customUrlField.setEnabled(customSelected);
+        customApiKeyField.setEnabled(customSelected);
     }
 
     private static String displayNameToProvider(String displayName) {
         if (OLLAMA.equals(displayName)) return "Ollama";
         if (LMSTUDIO.equals(displayName)) return "LMStudio";
+        if (CUSTOM_OPEN_AI.equals(displayName)) return "CustomOpenAI";
         return "";
     }
 
     private static String providerToDisplayName(String provider) {
         if ("Ollama".equals(provider)) return OLLAMA;
         if ("LMStudio".equals(provider)) return LMSTUDIO;
+        if ("CustomOpenAI".equals(provider)) return CUSTOM_OPEN_AI;
         return NONE;
     }
 
@@ -256,7 +347,12 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
                 !state.getInlineCompletionModel().equals(getSelectedModel()) ||
                 !state.getInlineCompletionMaxTokens().equals(maxTokensSpinner.getNumber()) ||
                 !state.getInlineCompletionTimeoutMs().equals(timeoutSpinner.getNumber()) ||
-                !state.getInlineCompletionDebounceMs().equals(debounceSpinner.getNumber());
+                !state.getInlineCompletionDebounceMs().equals(debounceSpinner.getNumber()) ||
+                !Objects.equals(state.getInlineCompletionCustomUrl(), customUrlField.getText().trim()) ||
+                !Objects.equals(state.getInlineCompletionCustomApiKey(), new String(customApiKeyField.getPassword())) ||
+                !Objects.equals(state.getInlineCompletionContextEnabled(), contextEnabledCheckBox.isSelected()) ||
+                !Objects.equals(state.getInlineCompletionContextBudget(), contextBudgetSpinner.getNumber()) ||
+                !Objects.equals(state.getInlineCompletionContextMaxClasses(), contextMaxFilesSpinner.getNumber());
     }
 
     public void apply() {
@@ -266,6 +362,11 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
         state.setInlineCompletionMaxTokens(maxTokensSpinner.getNumber());
         state.setInlineCompletionTimeoutMs(timeoutSpinner.getNumber());
         state.setInlineCompletionDebounceMs(debounceSpinner.getNumber());
+        state.setInlineCompletionCustomUrl(customUrlField.getText().trim());
+        state.setInlineCompletionCustomApiKey(new String(customApiKeyField.getPassword()));
+        state.setInlineCompletionContextEnabled(contextEnabledCheckBox.isSelected());
+        state.setInlineCompletionContextBudget(contextBudgetSpinner.getNumber());
+        state.setInlineCompletionContextMaxClasses(contextMaxFilesSpinner.getNumber());
     }
 
     public void reset() {
@@ -274,6 +375,11 @@ public class CompletionSettingsComponent extends AbstractSettingsComponent {
         maxTokensSpinner.setNumber(state.getInlineCompletionMaxTokens());
         timeoutSpinner.setNumber(state.getInlineCompletionTimeoutMs());
         debounceSpinner.setNumber(state.getInlineCompletionDebounceMs());
+        customUrlField.setText(state.getInlineCompletionCustomUrl());
+        customApiKeyField.setText(state.getInlineCompletionCustomApiKey());
+        contextEnabledCheckBox.setSelected(state.getInlineCompletionContextEnabled() != false);
+        contextBudgetSpinner.setNumber(state.getInlineCompletionContextBudget());
+        contextMaxFilesSpinner.setNumber(state.getInlineCompletionContextMaxClasses());
         loadModelsForProvider(state.getInlineCompletionModel());
         updateEnabledState();
     }

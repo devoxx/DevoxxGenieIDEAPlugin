@@ -21,9 +21,23 @@ public final class InlineCompletionService {
     private final CompletionCache cache = new CompletionCache();
     private final OllamaFimProvider ollamaProvider = new OllamaFimProvider();
     private final LMStudioFimProvider lmStudioProvider = new LMStudioFimProvider();
+    private final CustomOpenAIFimProvider customOpenAIProvider = new CustomOpenAIFimProvider();
 
     public static @NotNull InlineCompletionService getInstance() {
         return ApplicationManager.getApplication().getService(InlineCompletionService.class);
+    }
+
+    /**
+     * Look up a cached completion for the given raw prefix/suffix context without triggering
+     * context enrichment or a network request. The cache key only depends on the prefix tail
+     * and suffix head, so enrichment (which prepends context) does not change the key.
+     *
+     * @param prefix text before the cursor
+     * @param suffix text after the cursor
+     * @return cached completion text, or null when not cached
+     */
+    public @Nullable String getCachedCompletion(@NotNull String prefix, @NotNull String suffix) {
+        return cache.get(prefix, suffix);
     }
 
     /**
@@ -91,6 +105,7 @@ public final class InlineCompletionService {
     public void cancelActiveRequests() {
         ollamaProvider.cancelActiveCall();
         lmStudioProvider.cancelActiveCall();
+        customOpenAIProvider.cancelActiveCall();
     }
 
     /**
@@ -104,6 +119,7 @@ public final class InlineCompletionService {
         return switch (providerName) {
             case "Ollama" -> ollamaProvider;
             case "LMStudio" -> lmStudioProvider;
+            case "CustomOpenAI" -> customOpenAIProvider;
             default -> null;
         };
     }
@@ -115,6 +131,8 @@ public final class InlineCompletionService {
                     ? state.getOllamaModelUrl() : "http://localhost:11434/";
             case "LMStudio" -> state.getLmstudioModelUrl() != null
                     ? state.getLmstudioModelUrl() : "http://localhost:1234/v1/";
+            case "CustomOpenAI" -> state.getInlineCompletionCustomUrl() != null
+                    ? state.getInlineCompletionCustomUrl() : "http://localhost:4000/v1";
             default -> "";
         };
     }
