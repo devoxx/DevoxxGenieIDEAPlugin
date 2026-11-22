@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-09-28",
+  "lastUpdated": "2026-11-22",
   "_sources": {
     "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
@@ -16,6 +16,15 @@
   },
   "providers": {
     "Anthropic": [
+      {
+        "modelName": "claude-fable-5-2",
+        "displayName": "Claude Fable 5.2",
+        "inputCost": 8,
+        "outputCost": 40,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
       {
         "modelName": "claude-fable-5-1",
         "displayName": "Claude Fable 5.1",
@@ -57,6 +66,15 @@
         "displayName": "Claude Sonnet 5",
         "inputCost": 2,
         "outputCost": 10,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "claude-haiku-5-5",
+        "displayName": "Claude Haiku 5.5",
+        "inputCost": 0.1,
+        "outputCost": 0.5,
         "inputMaxTokens": 1000000,
         "outputMaxTokens": 128000,
         "apiKeyUsed": true
@@ -691,6 +709,13 @@
     ],
     "Bedrock": [
       {
+        "modelName": "anthropic.claude-fable-5-2",
+        "displayName": "Claude Fable 5.2",
+        "inputCost": 8,
+        "outputCost": 40,
+        "inputMaxTokens": 1000000
+      },
+      {
         "modelName": "anthropic.claude-fable-5-1",
         "displayName": "Claude Fable 5.1",
         "inputCost": 10,
@@ -723,6 +748,13 @@
         "displayName": "Claude Sonnet 5",
         "inputCost": 2,
         "outputCost": 10,
+        "inputMaxTokens": 1000000
+      },
+      {
+        "modelName": "anthropic.claude-haiku-5-5",
+        "displayName": "Claude Haiku 5.5",
+        "inputCost": 0.1,
+        "outputCost": 0.5,
         "inputMaxTokens": 1000000
       },
       {

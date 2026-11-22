@@ -190,6 +190,58 @@ public final class LLMModelRegistryService {
                         .inputMaxTokens(200_000)
                         .apiKeyUsed(true)
                         .build());
+
+        String claude55Haiku = "claude-haiku-5-5";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude55Haiku,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude55Haiku)
+                        .displayName("Claude Haiku 5.5")
+                        .inputCost(0.10)
+                        .outputCost(0.50)
+                        .inputMaxTokens(1_000_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude55Sonnet = "claude-sonnet-5-5";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude55Sonnet,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude55Sonnet)
+                        .displayName("Claude Sonnet 5.5")
+                        .inputCost(2)
+                        .outputCost(10)
+                        .inputMaxTokens(1_000_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude55Opus = "claude-opus-5-5";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude55Opus,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude55Opus)
+                        .displayName("Claude Opus 5.5")
+                        .inputCost(4)
+                        .outputCost(20)
+                        .inputMaxTokens(1_000_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
+
+        String claude52Fable = "claude-fable-5-2";
+        models.put(ModelProvider.Anthropic.getName() + "-" + claude52Fable,
+                LanguageModel.builder()
+                        .provider(ModelProvider.Anthropic)
+                        .modelName(claude52Fable)
+                        .displayName("Claude Fable 5.2")
+                        .inputCost(8)
+                        .outputCost(40)
+                        .inputMaxTokens(1_000_000)
+                        .outputMaxTokens(128_000)
+                        .apiKeyUsed(true)
+                        .build());
     }
 
     private void addOpenAiModels() {
