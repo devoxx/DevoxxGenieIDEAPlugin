@@ -106,6 +106,27 @@ public class OpenAiChatModelFactoryTest extends AbstractLightPlatformTestCase {
     }
 
     @Test
+    void createChatModel_gpt6AndGpt56_omitTemperatureAndTopP() throws Exception {
+        OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
+
+        Method method = OpenAIChatModelFactory.class.getDeclaredMethod("createChatContextParameters", CustomChatModel.class);
+        method.setAccessible(true);
+
+        for (String modelName : List.of("gpt-6.2-astra", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-6-luna",
+                "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna")) {
+            CustomChatModel customChatModel = new CustomChatModel();
+            customChatModel.setModelName(modelName);
+            customChatModel.setTemperature(0.7);
+            customChatModel.setTopP(0.9);
+
+            ChatRequestParameters params = (ChatRequestParameters) method.invoke(factory, customChatModel);
+
+            assertThat(params.temperature()).as(modelName).isNull();
+            assertThat(params.topP()).as(modelName).isNull();
+        }
+    }
+
+    @Test
     void createChatModel_gpt4_includesTopP() throws Exception {
         OpenAIChatModelFactory factory = new OpenAIChatModelFactory();
 

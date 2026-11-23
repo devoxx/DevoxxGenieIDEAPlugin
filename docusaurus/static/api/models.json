@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastUpdated": "2026-09-28",
+  "lastUpdated": "2026-11-22",
   "_sources": {
     "Anthropic": "https://platform.claude.com/docs/en/docs/about-claude/models",
     "OpenAI": "https://platform.openai.com/docs/models",
@@ -16,6 +16,15 @@
   },
   "providers": {
     "Anthropic": [
+      {
+        "modelName": "claude-fable-5-2",
+        "displayName": "Claude Fable 5.2",
+        "inputCost": 8,
+        "outputCost": 40,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
       {
         "modelName": "claude-fable-5-1",
         "displayName": "Claude Fable 5.1",
@@ -57,6 +66,15 @@
         "displayName": "Claude Sonnet 5",
         "inputCost": 2,
         "outputCost": 10,
+        "inputMaxTokens": 1000000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "claude-haiku-5-5",
+        "displayName": "Claude Haiku 5.5",
+        "inputCost": 0.1,
+        "outputCost": 0.5,
         "inputMaxTokens": 1000000,
         "outputMaxTokens": 128000,
         "apiKeyUsed": true
@@ -135,6 +153,96 @@
       }
     ],
     "OpenAI": [
+      {
+        "modelName": "gpt-6.2-astra",
+        "displayName": "GPT 6.2 Astra",
+        "inputCost": 8,
+        "outputCost": 40,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-6.2-sol",
+        "displayName": "GPT 6.2 Sol",
+        "inputCost": 2,
+        "outputCost": 10,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-6.1-sol",
+        "displayName": "GPT 6.1 Sol",
+        "inputCost": 2,
+        "outputCost": 10,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-6.1-terra",
+        "displayName": "GPT 6.1 Terra",
+        "inputCost": 1,
+        "outputCost": 5,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-6-astra",
+        "displayName": "GPT 6 Astra",
+        "inputCost": 10,
+        "outputCost": 50,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-6-sol",
+        "displayName": "GPT 6 Sol",
+        "inputCost": 2,
+        "outputCost": 10,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-6-luna",
+        "displayName": "GPT 6 Luna",
+        "inputCost": 0.1,
+        "outputCost": 0.5,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-5.6-sol",
+        "displayName": "GPT 5.6 Sol",
+        "inputCost": 4,
+        "outputCost": 20,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-5.6-terra",
+        "displayName": "GPT 5.6 Terra",
+        "inputCost": 2,
+        "outputCost": 12,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gpt-5.6-luna",
+        "displayName": "GPT 5.6 Luna",
+        "inputCost": 0.2,
+        "outputCost": 1.2,
+        "inputMaxTokens": 1050000,
+        "outputMaxTokens": 128000,
+        "apiKeyUsed": true
+      },
       {
         "modelName": "gpt-5.5",
         "displayName": "GPT 5.5",
@@ -244,15 +352,6 @@
         "apiKeyUsed": true
       },
       {
-        "modelName": "o4-mini",
-        "displayName": "o4-mini",
-        "inputCost": 1.10,
-        "outputCost": 4.40,
-        "inputMaxTokens": 200000,
-        "outputMaxTokens": 100000,
-        "apiKeyUsed": true
-      },
-      {
         "modelName": "o3",
         "displayName": "o3",
         "inputCost": 2.00,
@@ -266,24 +365,6 @@
         "displayName": "o3-pro",
         "inputCost": 20.00,
         "outputCost": 80.00,
-        "inputMaxTokens": 200000,
-        "outputMaxTokens": 100000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "o3-mini",
-        "displayName": "o3-mini",
-        "inputCost": 1.10,
-        "outputCost": 4.40,
-        "inputMaxTokens": 200000,
-        "outputMaxTokens": 100000,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "o1",
-        "displayName": "o1",
-        "inputCost": 15.00,
-        "outputCost": 60.00,
         "inputMaxTokens": 200000,
         "outputMaxTokens": 100000,
         "apiKeyUsed": true
@@ -449,10 +530,64 @@
     ],
     "Google": [
       {
-        "modelName": "gemini-3.5-flash",
-        "displayName": "Gemini 3.5 Flash",
-        "inputCost": 1.50,
-        "outputCost": 9,
+        "modelName": "gemini-4-argon",
+        "displayName": "Gemini 4 Argon",
+        "inputCost": 2,
+        "outputCost": 10,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-4-neon",
+        "displayName": "Gemini 4 Neon",
+        "inputCost": 3,
+        "outputCost": 15,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-4-carbon",
+        "displayName": "Gemini 4 Carbon",
+        "inputCost": 2,
+        "outputCost": 10,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-4-hydrogen",
+        "displayName": "Gemini 4 Hydrogen",
+        "inputCost": 1.5,
+        "outputCost": 7.5,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-3.8-flash",
+        "displayName": "Gemini 3.8 Flash",
+        "inputCost": 0.75,
+        "outputCost": 3.75,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-3.6-flash",
+        "displayName": "Gemini 3.6 Flash",
+        "inputCost": 0.75,
+        "outputCost": 3.75,
+        "inputMaxTokens": 1048576,
+        "outputMaxTokens": 65536,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "gemini-3.5-flash-lite",
+        "displayName": "Gemini 3.5 Flash-Lite",
+        "inputCost": 0.3,
+        "outputCost": 2.5,
         "inputMaxTokens": 1048576,
         "outputMaxTokens": 65536,
         "apiKeyUsed": true
@@ -480,24 +615,6 @@
         "displayName": "Gemini 3 Flash Preview",
         "inputCost": 0.5,
         "outputCost": 3,
-        "inputMaxTokens": 1048576,
-        "outputMaxTokens": 65536,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "gemini-2.5-pro",
-        "displayName": "Gemini 2.5 Pro",
-        "inputCost": 1.25,
-        "outputCost": 10,
-        "inputMaxTokens": 1048576,
-        "outputMaxTokens": 65536,
-        "apiKeyUsed": true
-      },
-      {
-        "modelName": "gemini-2.5-flash",
-        "displayName": "Gemini 2.5 Flash",
-        "inputCost": 0.30,
-        "outputCost": 2.50,
         "inputMaxTokens": 1048576,
         "outputMaxTokens": 65536,
         "apiKeyUsed": true
@@ -691,6 +808,13 @@
     ],
     "Bedrock": [
       {
+        "modelName": "anthropic.claude-fable-5-2",
+        "displayName": "Claude Fable 5.2",
+        "inputCost": 8,
+        "outputCost": 40,
+        "inputMaxTokens": 1000000
+      },
+      {
         "modelName": "anthropic.claude-fable-5-1",
         "displayName": "Claude Fable 5.1",
         "inputCost": 10,
@@ -723,6 +847,13 @@
         "displayName": "Claude Sonnet 5",
         "inputCost": 2,
         "outputCost": 10,
+        "inputMaxTokens": 1000000
+      },
+      {
+        "modelName": "anthropic.claude-haiku-5-5",
+        "displayName": "Claude Haiku 5.5",
+        "inputCost": 0.1,
+        "outputCost": 0.5,
         "inputMaxTokens": 1000000
       },
       {
@@ -923,6 +1054,30 @@
       }
     ],
     "Grok": [
+      {
+        "modelName": "grok-4.7",
+        "displayName": "Grok 4.7",
+        "inputCost": 2,
+        "outputCost": 6,
+        "inputMaxTokens": 500000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "grok-4.6",
+        "displayName": "Grok 4.6",
+        "inputCost": 2,
+        "outputCost": 6,
+        "inputMaxTokens": 500000,
+        "apiKeyUsed": true
+      },
+      {
+        "modelName": "grok-4.5",
+        "displayName": "Grok 4.5",
+        "inputCost": 2,
+        "outputCost": 6,
+        "inputMaxTokens": 500000,
+        "apiKeyUsed": true
+      },
       {
         "modelName": "grok-4.3",
         "displayName": "Grok 4.3",

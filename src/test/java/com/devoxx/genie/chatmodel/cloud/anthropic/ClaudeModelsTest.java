@@ -25,4 +25,12 @@ class ClaudeModelsTest {
         assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-opus-4-20250514-v1:0")).isFalse();
         assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-3-7-sonnet-20250219-v1:0")).isFalse();
     }
+
+    @Test
+    void rejectsTemperatureForHaiku55AndFable52() {
+        assertThat(ClaudeModels.rejectsTemperature("claude-haiku-5-5")).isTrue();
+        assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-haiku-5-5")).isTrue();
+        assertThat(ClaudeModels.rejectsTemperature("claude-fable-5-2")).isTrue();
+        assertThat(ClaudeModels.rejectsTemperature("anthropic.claude-fable-5-2")).isTrue();
+    }
 }

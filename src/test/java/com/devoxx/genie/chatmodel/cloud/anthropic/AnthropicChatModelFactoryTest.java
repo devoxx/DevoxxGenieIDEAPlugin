@@ -78,7 +78,8 @@ public class AnthropicChatModelFactoryTest extends AbstractLightPlatformTestCase
         var factory = new AnthropicChatModelFactory();
 
         assertThat(List.of("claude-opus-4-7", "claude-opus-4-8", "claude-opus-5", "claude-opus-5-5",
-                "claude-sonnet-5", "claude-fable-5", "claude-fable-5-1")).allSatisfy(modelName -> {
+                "claude-sonnet-5", "claude-haiku-5-5", "claude-fable-5", "claude-fable-5-1",
+                "claude-fable-5-2")).allSatisfy(modelName -> {
             var customChatModel = customChatModelWithTemperature(modelName);
 
             assertThat(factory.createChatModel(customChatModel).defaultRequestParameters().temperature()).isNull();

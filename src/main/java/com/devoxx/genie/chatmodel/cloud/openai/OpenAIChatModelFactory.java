@@ -52,8 +52,10 @@ public class OpenAIChatModelFactory implements ChatModelFactory {
     private ChatRequestParameters createChatContextParameters(@NotNull CustomChatModel customChatModel) {
         String modelName = customChatModel.getModelName().toLowerCase();
 
-        if (modelName.startsWith("o1") || modelName.startsWith("o3")) {
-            // o1 and o3 models do not support temperature and topP
+        if (modelName.startsWith("o1") || modelName.startsWith("o3")
+                || modelName.startsWith("gpt-6") || modelName.startsWith("gpt-5.6")) {
+            // o1/o3 reject temperature and topP; GPT-5.6 and GPT-6 are reasoning models whose docs
+            // list no sampling parameters, so send neither and let the API use its defaults
             return ChatRequestParameters.builder().build();
         } else if (modelName.startsWith("gpt-5.5")) {
             double temperature = customChatModel.getTemperature();
