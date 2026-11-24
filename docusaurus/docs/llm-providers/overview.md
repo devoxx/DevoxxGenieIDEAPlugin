@@ -33,6 +33,7 @@ Supported local providers:
 - [Nativ](local-models.md#nativ) (MLX on Apple Silicon)
 - [Exo](exo.md) (Distributed AI cluster, settings tab **Sharding**)
 - [Rapid-MLX](local-models.md#rapid-mlx) (MLX on Apple Silicon)
+- [Magnitude](local-models.md#magnitude) (Apple Silicon, NVIDIA, AMD, Intel or CPU)
 - [Custom OpenAI-compatible](local-models.md#custom-openai-compatible-providers)
 
 ### Cloud LLM Providers
@@ -92,6 +93,7 @@ Save frequently used models with the star next to the chat model selector. The c
 | Jan | High | Low | Free | Basic | No |
 | Nativ | High | Low | Free | Optimized for Apple Silicon | Some models |
 | Rapid-MLX | High | Low | Free | Optimized for Apple Silicon | Some models |
+| Magnitude | High | Low | Free | Kernels tuned to your hardware | Some models |
 | **Cloud Providers** |
 | OpenAI | Low | Low | Pay-per-token | Excellent | GPT-4V+ |
 | Anthropic | Low | Low | Pay-per-token | Excellent | Claude 3+ |

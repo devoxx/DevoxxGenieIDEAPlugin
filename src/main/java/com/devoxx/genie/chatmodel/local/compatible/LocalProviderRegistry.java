@@ -69,7 +69,21 @@ public final class LocalProviderRegistry {
             false,
             false);
 
-    private static final List<LocalProviderDefinition> DEFINITIONS = List.of(JAN, LLAMA_CPP, GPT4ALL, NATIV, RAPID_MLX);
+    // Magnitude serves its OpenAI-compatible API under /inference/v1 on port 10100. Its docs name only the model
+    // id in the /models reply, so the context window comes from the fallback field.
+    private static final LocalProviderDefinition MAGNITUDE = new LocalProviderDefinition(
+            ModelProvider.Magnitude,
+            "http://localhost:10100/inference/v1/",
+            "https://github.com/magnitudedev/magnitude",
+            "Run models with the Magnitude desktop app or <code>magnitude serve</code>. It listens on port 10100 and serves its OpenAI-compatible API under <code>/inference/v1</code>. Magnitude loads a model on the first request, so the first reply takes longer.",
+            null,
+            8000,
+            "Magnitude's <code>/inference/v1/models</code> does not report a context length; DevoxxGenie assumes 8000 tokens unless you set it here. The Magnitude app shows each model's context under Details.",
+            false,
+            false);
+
+    private static final List<LocalProviderDefinition> DEFINITIONS =
+            List.of(JAN, LLAMA_CPP, GPT4ALL, NATIV, RAPID_MLX, MAGNITUDE);
 
     private LocalProviderRegistry() {
     }

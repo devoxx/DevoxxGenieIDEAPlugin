@@ -53,6 +53,7 @@ class ChatModelFactoryProviderTest {
                 Arguments.of("Mistral", MistralChatModelFactory.class),
                 Arguments.of("Nativ", OpenAiCompatibleChatModelFactory.class),
                 Arguments.of("RapidMLX", OpenAiCompatibleChatModelFactory.class),
+                Arguments.of("Magnitude", OpenAiCompatibleChatModelFactory.class),
                 Arguments.of("Ollama", OllamaChatModelFactory.class),
                 Arguments.of("OpenAI", OpenAIChatModelFactory.class),
                 Arguments.of("OpenRouter", RouterChatModelFactory.class),
