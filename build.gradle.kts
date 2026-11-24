@@ -279,14 +279,14 @@ dependencies {
     // 2024-11-05 HTTP+SSE transport with no replacement. MCP servers are reached over stdio or
     // Streamable HTTP only; the HTTP_SSE transport type is kept as an alias for HTTP so that
     // persisted configurations still load. SSE-only servers (issue #1151) are not supported.
-    val lg4j_version = "1.23.0"
-    val lg4j_beta_version = "1.23.0-beta33"
-    val awsSdkVersion = "2.59.2"
+    val lg4j_version = "1.24.0"
+    val lg4j_beta_version = "1.24.0-beta34"
+    val awsSdkVersion = "2.59.7"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.54.1.0"
     val dockerJavaVersion = "3.7.1"
     val jtokkitVersion = "1.1.0"
-    val commonmarkVersion = "0.32.0"
+    val commonmarkVersion = "0.33.0"
     val jsoupVersion = "1.24.1"
     // 0.38.1 is built with Kotlin 2.2.21 / CMP 1.9.2: the newest line that still runs on the
     // 2.2.20 stdlib bundled in IJ 2025.3. (0.39.x+ requires Kotlin 2.3 stdlib → 261+ only.)
@@ -300,7 +300,7 @@ dependencies {
     val nettyVersion = "4.2.21.Final"
     val composeCompileVersion = "1.7.3"
     val skikoVersion = "0.8.18"
-    val logbackVersion = "1.6.7"
+    val logbackVersion = "1.6.8"
     val gitignoreReaderVersion = "2.0.0"
     val quickJs4jVersion = "0.1.1"
     val junitJupiterVersion = "6.1.3"
