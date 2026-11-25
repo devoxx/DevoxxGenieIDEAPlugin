@@ -11,6 +11,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -50,6 +53,12 @@ public class AcpTransport implements AutoCloseable {
     /** Maximum time in seconds to wait for the agent process to shut down gracefully. */
     public static final long SHUTDOWN_WAIT_SECONDS = 5;
 
+    /** Upper bound in milliseconds for the reader's idle back-off between polls of the agent's stdout. */
+    static final long READER_MAX_IDLE_MILLIS = 20;
+
+    /** How long close() lets the agent's descendants exit after SIGTERM before killing them forcibly. */
+    static final long DESCENDANT_GRACE_MILLIS = 500;
+
     @Getter
     private Process process;
     private BufferedWriter writer;
@@ -88,21 +97,70 @@ public class AcpTransport implements AutoCloseable {
 
         writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        this.readerThread = new Thread(() -> readLoop(reader), "acp-reader");
+        Process started = process;
+        this.readerThread = new Thread(() -> readLoop(started), "acp-reader");
         this.readerThread.setDaemon(true);
         this.readerThread.start();
     }
 
-    private void readLoop(BufferedReader reader) {
+    /**
+     * Reads newline-delimited JSON-RPC messages from the agent's stdout until {@link #close()} is called
+     * or the agent process has exited and its output is drained.
+     *
+     * <p>The loop polls {@link InputStream#available()} rather than blocking in {@code read()}. A thread
+     * blocked in a native pipe read can't be woken by closing the stream or by interrupting it: the read
+     * returns only once every process holding the pipe's write end has exited. A grandchild the agent
+     * spawned can outlive the kill in {@link #close()} and keep the pipe open: one that was detached, or
+     * one forked after the {@code descendants()} snapshot, gets reparented and can't be found any more.
+     * A blocking reader would then leak until that process exits on its own.
+     */
+    private void readLoop(Process proc) {
+        InputStream in = proc.getInputStream();
+        ByteArrayOutputStream pending = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        long idleMillis = 1;
         try {
-            String line;
-            while (running && (line = reader.readLine()) != null) {
-                handleLine(line);
+            while (running) {
+                int available = in.available();
+                if (available > 0) {
+                    int read = in.read(buffer, 0, Math.min(available, buffer.length));
+                    if (read < 0) {
+                        break;
+                    }
+                    dispatchLines(buffer, read, pending);
+                    idleMillis = 1;
+                } else if (!proc.isAlive()) {
+                    // The agent has exited and everything it wrote has been read; don't wait for EOF,
+                    // which never comes while an orphaned descendant still holds the pipe.
+                    break;
+                } else {
+                    Thread.sleep(idleMillis);
+                    idleMillis = Math.min(idleMillis * 2, READER_MAX_IDLE_MILLIS);
+                }
             }
+            if (running && pending.size() > 0) {
+                // Like BufferedReader.readLine(), deliver a final line that has no trailing newline.
+                handleLine(pending.toString(StandardCharsets.UTF_8));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (IOException e) {
             handleReadError(e);
         }
+    }
+
+    /** Splits {@code buffer[0, length)} on '\n', dispatching each complete line and keeping the remainder. */
+    private void dispatchLines(byte[] buffer, int length, ByteArrayOutputStream pending) {
+        int lineStart = 0;
+        for (int i = 0; i < length; i++) {
+            if (buffer[i] == '\n') {
+                pending.write(buffer, lineStart, i - lineStart);
+                handleLine(pending.toString(StandardCharsets.UTF_8));
+                pending.reset();
+                lineStart = i + 1;
+            }
+        }
+        pending.write(buffer, lineStart, length - lineStart);
     }
 
     private void handleLine(String line) {
@@ -252,8 +310,9 @@ public class AcpTransport implements AutoCloseable {
     }
 
     /**
-     * Stops the transport by cancelling all pending requests, terminating the
-     * agent process, and waiting up to {@link #SHUTDOWN_WAIT_SECONDS} for graceful shutdown.
+     * Stops the transport: cancels all pending requests, terminates the agent process (waiting up to
+     * {@link #SHUTDOWN_WAIT_SECONDS} for a graceful exit before killing it forcibly) and its descendants
+     * (allowed {@link #DESCENDANT_GRACE_MILLIS} after the agent exits), and stops the reader thread.
      */
     @Override
     public void close() {
@@ -261,58 +320,7 @@ public class AcpTransport implements AutoCloseable {
         pendingRequests.forEach((id, future) -> future.cancel(true));
         pendingRequests.clear();
         if (process != null) {
-            // Destroy descendants first so they can't keep stdout/stderr open
-            try {
-                process.descendants().forEach(ph -> {
-                    try {
-                        ph.destroy();
-                    } catch (Exception ignored) {
-                        // best-effort
-                    }
-                });
-            } catch (Exception ignored) {
-                // best-effort
-            }
-            process.destroy();
-            // Close stdout explicitly: the child may have spawned grandchildren that
-            // inherit the pipe, leaving the reader thread blocked on readLine() even
-            // after destroy(). Closing the stream unblocks it with an IOException.
-            try {
-                process.getInputStream().close();
-            } catch (IOException ignored) {
-                // best-effort
-            }
-            try {
-                if (!process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS)) {
-                    try {
-                        process.descendants().forEach(ph -> {
-                            try {
-                                ph.destroyForcibly();
-                            } catch (Exception ignored) {
-                                // best-effort
-                            }
-                        });
-                    } catch (Exception ignored) {
-                        // best-effort
-                    }
-                    process.destroyForcibly();
-                    process.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                try {
-                    process.descendants().forEach(ph -> {
-                        try {
-                            ph.destroyForcibly();
-                        } catch (Exception ignored) {
-                            // best-effort
-                        }
-                    });
-                } catch (Exception ignored) {
-                    // best-effort
-                }
-                process.destroyForcibly();
-            }
+            terminateProcessTree(process);
         }
         if (readerThread != null) {
             readerThread.interrupt();
@@ -322,6 +330,78 @@ public class AcpTransport implements AutoCloseable {
                 Thread.currentThread().interrupt();
             }
             readerThread = null;
+        }
+    }
+
+    private static void terminateProcessTree(Process root) {
+        // Snapshot the descendants before killing the root: once it dies they are reparented and no longer
+        // show up in root.descendants(), so a child that outlives SIGTERM could not be found again.
+        List<ProcessHandle> descendants = snapshotDescendants(root);
+        descendants.forEach(ph -> destroyQuietly(ph, false));
+        root.destroy();
+        // Release our end of the agent's stdout; the reader thread polls and does not depend on this.
+        try {
+            root.getInputStream().close();
+        } catch (IOException ignored) {
+            // best-effort
+        }
+
+        try {
+            boolean rootExited = root.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS);
+            if (!rootExited) {
+                descendants.addAll(snapshotDescendants(root));
+            }
+            // Give descendants a short grace rather than the full shutdown wait: one that has exited can
+            // still read as alive (a zombie) until init reaps it, which in a container without an init
+            // never happens, and close() must not stall on it.
+            long graceDeadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(DESCENDANT_GRACE_MILLIS);
+            for (ProcessHandle ph : descendants) {
+                waitForExit(ph, graceDeadline);
+            }
+            descendants.forEach(ph -> destroyQuietly(ph, true));
+            if (!rootExited) {
+                root.destroyForcibly();
+                root.waitFor(SHUTDOWN_WAIT_SECONDS, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            descendants.addAll(snapshotDescendants(root));
+            descendants.forEach(ph -> destroyQuietly(ph, true));
+            root.destroyForcibly();
+        }
+    }
+
+    private static List<ProcessHandle> snapshotDescendants(Process root) {
+        try {
+            return new ArrayList<>(root.descendants().toList());
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Waits until {@code ph} has exited or {@code deadline} passes. Polls {@link ProcessHandle#isAlive()}
+     * because {@link ProcessHandle#onExit()} on a process that is not our direct child polls at 300 ms+
+     * intervals, which would make every close() take that long.
+     */
+    private static void waitForExit(ProcessHandle ph, long deadline) throws InterruptedException {
+        while (ph.isAlive() && deadline - System.nanoTime() > 0) {
+            Thread.sleep(10);
+        }
+    }
+
+    /** Destroys {@code ph} if it is still alive; a no-op for a process that has exited or whose PID was reused. */
+    private static void destroyQuietly(ProcessHandle ph, boolean forcibly) {
+        try {
+            if (ph.isAlive()) {
+                if (forcibly) {
+                    ph.destroyForcibly();
+                } else {
+                    ph.destroy();
+                }
+            }
+        } catch (Exception ignored) {
+            // best-effort
         }
     }
 }
