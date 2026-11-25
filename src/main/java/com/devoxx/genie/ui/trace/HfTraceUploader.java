@@ -125,6 +125,9 @@ public final class HfTraceUploader {
                     outcome = service.upload(conversations, finalToken, s, trace, project.getName(), indicator::isCanceled);
                 } catch (HubApiException e) {
                     error = e.getMessage();
+                    if (e.statusCode() == 401 || e.statusCode() == 403) {
+                        error += " You can change the token in Settings → DevoxxGenie → Debug → Hugging Face upload.";
+                    }
                 } catch (RuntimeException e) {
                     log.warn("Hugging Face trace upload failed", e);
                     error = "Upload failed: " + e.getMessage();
