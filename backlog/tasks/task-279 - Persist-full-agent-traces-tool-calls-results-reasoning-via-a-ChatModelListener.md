@@ -37,7 +37,8 @@ The goal is to record the full agent trace durably, so it can later be replayed,
 Approach (option 1 from the investigation):
 - Add a `ChatModelListener`, a "trace recorder", next to `MCPListenerService` and `RawTrafficListenerService` in `ChatModelFactory.getListener()`.
 - On each `onResponse`, append the returned `AiMessage` to a new SQLite table keyed by conversation id: text, thinking/reasoning when the provider returns it, and tool execution requests with id, name and arguments. Also store the model name and a timestamp.
-- Take tool results from the next request's `ToolExecutionResultMessage`s, or from `AgentLoopTracker`, whichever gives reliable id matching. Either way, recording must not depend on the agent-debug-logs setting.
+- The feature is opt-in and **off by default**: the listener is only registered once the user explicitly enables trace recording in Settings, the same way `RawTrafficListenerService` is gated.
+- Take tool results from the next request's `ToolExecutionResultMessage`s, or from `AgentLoopTracker`, whichever gives reliable id matching. Once enabled, recording must not depend on the agent-debug-logs setting.
 - The listener has to know which conversation and tab a call belongs to. Today `ChatService` assigns the conversation id only after the response completes, so this needs a correlation design, e.g. passing the conversation/tab id through `ChatRequest` attributes or the listener context.
 <!-- SECTION:DESCRIPTION:END -->
 
@@ -46,7 +47,7 @@ Approach (option 1 from the investigation):
 - [ ] #1 A new `trace_events` table (or equivalent) in `conversations.db` is created by a schema migration that leaves existing databases and the `conversations`/`chat_messages` tables unchanged
 - [ ] #2 Each agent turn records, in order: the user message, every assistant step (text, reasoning when available, tool calls with id/name/arguments, model, timestamp) and every tool result (tool-call id, tool name, result text, error flag)
 - [ ] #3 Trace events are linked to the right conversation id, including with several chat tabs open at once and for sub-agent (`parallel_explore`) calls, which are tagged with their sub-agent id
-- [ ] #4 Recording works whether agent debug logs are on or off, and can be switched off with a setting (default to be decided; consider privacy, since tool results can include file contents and command output)
+- [ ] #4 Trace recording is opt-in: a new setting, **off by default**, that the user must explicitly turn on. When it is off, the listener is not registered and nothing is written to `trace_events`. The setting explains that traces can include prompts, file contents, command output and secrets. When it is on, recording works whether agent debug logs are on or off
 - [ ] #5 Very large tool results are truncated at a configurable limit, and trace rows are included in the existing 50 MB cleanup and in conversation delete/clear-all
 - [ ] #6 Recording never blocks the EDT or the streaming response; write failures are logged and do not break the chat
 - [ ] #7 Unit tests cover the listener-to-row mapping, tool-call/result id matching, conversation correlation and the schema migration (using the test-only `ConversationStorageService(String dbPath)` constructor)
