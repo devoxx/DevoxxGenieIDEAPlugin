@@ -525,6 +525,21 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
     /** Let TruffleHog verify candidate secrets against the issuing service (sends them there). */
     private Boolean agentTraceTruffleHogVerify = false;
 
+    // Hugging Face upload of agent traces (task-280). The token lives in PasswordSafe
+    // (CredentialKey.HUGGING_FACE_TOKEN), never here.
+    /** Target dataset, {@code namespace/name}; blank until the first upload's setup dialog. */
+    private String agentTraceHfTarget = "";
+    /** Visibility used when the dataset has to be created. */
+    private Boolean agentTraceHfPrivate = true;
+    /** Folder inside the dataset; files are {@code <folder>/<conversationId>.jsonl}. */
+    private String agentTraceHfPathInRepo = "devoxxgenie";
+    /** Put the IDE project name in the STS session header. */
+    private Boolean agentTraceHfIncludeProjectName = true;
+    /** Ask for confirmation before each upload. */
+    private Boolean agentTraceHfConfirmBeforeUpload = true;
+    /** Custom Hub endpoint; blank = https://huggingface.co. */
+    private String agentTraceHfHubUrl = "";
+
     private Boolean showToolActivityInChat = false;
     private List<String> disabledAgentTools = new ArrayList<>();
 
