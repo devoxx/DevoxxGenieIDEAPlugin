@@ -6,14 +6,18 @@ import com.devoxx.genie.model.agent.AgentType;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
 import com.devoxx.genie.service.agent.SubAgentRunner;
 import com.devoxx.genie.service.prompt.threading.ThreadPoolManager;
+import com.devoxx.genie.service.trace.AgentTraceBuffer;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.invocation.InvocationContext;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import dev.langchain4j.service.tool.ToolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +52,22 @@ public class ParallelExploreToolExecutor implements ToolExecutor, AgentLoopTrack
 
     @Override
     public String execute(ToolExecutionRequest request, Object memoryId) {
+        return explore(request, null);
+    }
+
+    /**
+     * The new LangChain4j tool contract: the invocation context tells us which AiServices call
+     * (and so which chat tab) launched the sub-agents, so their steps can be added to the
+     * parent's agent trace (task-279) when trace recording is on.
+     */
+    @Override
+    public ToolExecutionResult executeWithContext(ToolExecutionRequest request, InvocationContext context) {
+        String parentTraceKey = context == null ? null
+                : AgentTraceBuffer.getInstance().keyForInvocation(context.invocationId());
+        return ToolExecutionResult.builder().resultText(explore(request, parentTraceKey)).build();
+    }
+
+    private String explore(ToolExecutionRequest request, @Nullable String parentTraceKey) {
         List<String> queries = ToolArgumentParser.getStringArray(request.arguments(), "queries");
 
         if (queries.isEmpty()) {
@@ -78,7 +98,7 @@ public class ParallelExploreToolExecutor implements ToolExecutor, AgentLoopTrack
             final int index = i;
             final String query = effectiveQueries.get(i);
 
-            SubAgentRunner runner = new SubAgentRunner(project, index, cancelled);
+            SubAgentRunner runner = new SubAgentRunner(project, index, cancelled, parentTraceKey);
             activeRunners.add(runner);
 
             publishEvent(AgentType.SUB_AGENT_STARTED, "sub-agent-" + (index + 1),

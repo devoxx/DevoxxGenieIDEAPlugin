@@ -1,6 +1,7 @@
 package com.devoxx.genie.ui.settings.debug;
 
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -37,9 +38,13 @@ public class DebugSettingsConfigurable implements Configurable {
     }
 
     @Override
-    public void apply() {
+    public void apply() throws ConfigurationException {
         if (component == null) {
             return;
+        }
+        String error = component.validate();
+        if (error != null) {
+            throw new ConfigurationException(error);
         }
         boolean nowEnabled = component.isAnyLoggingSelected();
         component.apply();

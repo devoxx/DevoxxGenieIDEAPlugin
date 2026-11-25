@@ -4,16 +4,20 @@ import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
+import com.devoxx.genie.service.trace.AgentTraceBuffer;
+import com.devoxx.genie.service.trace.AgentTraceService;
 import com.devoxx.genie.ui.listener.ConversationEventListener;
 import com.devoxx.genie.ui.panel.conversation.ConversationManager;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.project.Project;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+@Slf4j
 public class ChatService implements ConversationEventListener {
 
     private final ConversationStorageService storageService;
@@ -41,6 +45,10 @@ public class ChatService implements ConversationEventListener {
     public void dispose() {
         if (messageBusConnection != null) {
             messageBusConnection.disconnect();
+        }
+        if (tabId != null) {
+            // task-279: a tab closed mid-turn never saves its turn; drop the buffered trace.
+            AgentTraceBuffer.getInstance().discard(project.getLocationHash() + "-" + tabId);
         }
     }
     
@@ -107,6 +115,16 @@ public class ChatService implements ConversationEventListener {
 
         // Save or update the conversation
         storageService.addConversation(project, conversation);
+
+        // task-279: hand this turn's agent trace (if one was recorded) to the background writer.
+        try {
+            String memoryKey = chatMessageContext.getMemoryKey();
+            if (AgentTraceBuffer.getInstance().hasTurn(memoryKey)) {
+                AgentTraceService.getInstance().persistTurn(project, memoryKey, conversation.getId());
+            }
+        } catch (RuntimeException e) {
+            log.warn("Could not persist agent trace: {}", e.toString());
+        }
     }
     
     /**
