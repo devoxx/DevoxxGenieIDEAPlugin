@@ -516,6 +516,20 @@ public class ConversationStorageService {
         return queryTrace("SELECT * FROM trace_events WHERE conversationId = ? ORDER BY id", conversationId);
     }
 
+    /** Whether any trace event is stored for the conversation (cheap check for the upload button). */
+    public boolean hasTraceEvents(@NotNull String conversationId) {
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(
+                     "SELECT 1 FROM trace_events WHERE conversationId = ? LIMIT 1")) {
+            ps.setString(1, conversationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error checking trace events", e);
+        }
+    }
+
     private @NotNull List<StoredTraceEvent> queryTrace(@NotNull String sql, @NotNull String key) {
         List<StoredTraceEvent> result = new ArrayList<>();
         try (Connection connection = getConnection();

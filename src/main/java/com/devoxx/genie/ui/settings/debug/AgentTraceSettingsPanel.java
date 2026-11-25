@@ -1,11 +1,17 @@
 package com.devoxx.genie.ui.settings.debug;
 
+import com.devoxx.genie.service.credentials.CredentialKey;
+import com.devoxx.genie.service.credentials.CredentialService;
 import com.devoxx.genie.service.trace.TruffleHogMode;
+import com.devoxx.genie.service.trace.hf.HfDatasetTarget;
+import com.devoxx.genie.service.trace.hf.HfTokenResolver;
+import com.devoxx.genie.service.trace.hf.HfUploadSettings;
 import com.devoxx.genie.service.trace.TruffleHogOnFindings;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.ui.JBIntSpinner;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.JBTextField;
@@ -36,6 +42,17 @@ public class AgentTraceSettingsPanel {
     private final JComboBox<TruffleHogOnFindings> onFindingsCombo = new JComboBox<>(TruffleHogOnFindings.values());
     private final JBTextField truffleHogPathField = new JBTextField();
     private final JBCheckBox verifyCheckBox = new JBCheckBox("Let TruffleHog verify secrets (sends candidate secrets to the issuing service)");
+    // Hugging Face upload (task-280)
+    private final JBTextField hfTargetField = new JBTextField();
+    private final JBCheckBox hfPrivateCheckBox = new JBCheckBox("Create the dataset as private");
+    private final JBTextField hfPathField = new JBTextField();
+    private final JBCheckBox hfIncludeProjectCheckBox = new JBCheckBox("Include the project name in the trace header");
+    private final JBCheckBox hfConfirmCheckBox = new JBCheckBox("Ask for confirmation before each upload");
+    private final JBPasswordField hfTokenField = new JBPasswordField();
+    private final JButton hfRemoveTokenButton = new JButton("Remove saved token");
+    private final JBLabel hfTokenStatus = new JBLabel();
+    /** Set when "Remove saved token" was clicked; applied on Apply. */
+    private boolean hfRemoveTokenPending;
     private final List<JComponent> dependents;
 
     public AgentTraceSettingsPanel() {
@@ -85,8 +102,51 @@ public class AgentTraceSettingsPanel {
                 "after a successful scan; <b>Off</b> relies on regex redaction only. Install it from " +
                 "github.com/trufflesecurity/trufflehog (e.g. <code>brew install trufflehog</code>)."));
 
+        add(Box.createVerticalStrut(16));
+        JBLabel hfHeader = new JBLabel("Hugging Face upload");
+        hfHeader.setFont(hfHeader.getFont().deriveFont(Font.BOLD));
+        add(hfHeader);
+        add(Box.createVerticalStrut(6));
+        add(help("The chat window shows an <b>Upload to Hugging Face</b> button while trace recording is on. "
+                + "It converts the conversation to the Hub's Session Trace format and uploads it to the "
+                + "dataset below, where it opens in the agent trace viewer. Uploading again overwrites the "
+                + "conversation's file."));
+        add(Box.createVerticalStrut(6));
+        hfTargetField.getEmptyText().setText("user/devoxxgenie-traces (asked on first upload)");
+        hfPathField.getEmptyText().setText(HfUploadSettings.DEFAULT_PATH_IN_REPO);
+        hfTokenField.getEmptyText().setText("hf_… (leave empty to keep the current token)");
+        JPanel hfForm = new JPanel(new GridBagLayout());
+        hfForm.setAlignmentX(Component.LEFT_ALIGNMENT);
+        GridBagConstraints h = new GridBagConstraints();
+        h.anchor = GridBagConstraints.WEST;
+        h.insets = JBUI.insets(2, 0, 2, 8);
+        h.fill = GridBagConstraints.HORIZONTAL;
+        int hRow = 0;
+        hRow = formRow(hfForm, h, hRow, "Dataset:", hfTargetField);
+        hRow = formRow(hfForm, h, hRow, "Folder in dataset:", hfPathField);
+        hRow = formRow(hfForm, h, hRow, "Access token (write):", hfTokenField);
+        h.fill = GridBagConstraints.NONE;
+        JPanel tokenRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        tokenRow.add(hfTokenStatus);
+        tokenRow.add(Box.createHorizontalStrut(8));
+        tokenRow.add(hfRemoveTokenButton);
+        h.gridx = 1; h.gridy = hRow++;
+        hfForm.add(tokenRow, h);
+        for (JBCheckBox box : List.of(hfPrivateCheckBox, hfIncludeProjectCheckBox, hfConfirmCheckBox)) {
+            h.gridx = 0; h.gridy = hRow++; h.gridwidth = 2;
+            hfForm.add(box, h);
+        }
+        add(hfForm);
+        hfRemoveTokenButton.addActionListener(e -> {
+            hfRemoveTokenPending = true;
+            hfTokenField.setText("");
+            updateTokenStatus();
+        });
+
         dependents = List.of(maxToolResultCharsSpinner, redactHomeCheckBox, customPatternsArea,
-                truffleHogModeCombo, onFindingsCombo, truffleHogPathField, verifyCheckBox);
+                truffleHogModeCombo, onFindingsCombo, truffleHogPathField, verifyCheckBox,
+                hfTargetField, hfPathField, hfTokenField, hfRemoveTokenButton, hfPrivateCheckBox,
+                hfIncludeProjectCheckBox, hfConfirmCheckBox);
         enabledCheckBox.addActionListener(e -> updateEnabledState());
         truffleHogModeCombo.addActionListener(e -> updateEnabledState());
         reset();
@@ -156,8 +216,34 @@ public class AgentTraceSettingsPanel {
                 .toList();
     }
 
+    private void updateTokenStatus() {
+        boolean stored = !hfRemoveTokenPending && !storedToken().isEmpty();
+        if (stored) {
+            hfTokenStatus.setText("A token is saved in the IDE credential store.");
+        } else {
+            HfTokenResolver.ResolvedToken other = hfRemoveTokenPending ? null : HfTokenResolver.system().resolve();
+            hfTokenStatus.setText(other == null
+                    ? (hfRemoveTokenPending ? "The saved token will be removed on Apply." : "No token saved; you'll be asked on first upload.")
+                    : other.source() == HfTokenResolver.Source.ENVIRONMENT ? "Using the HF_TOKEN environment variable."
+                    : "Using the token from 'hf auth login'.");
+        }
+        hfRemoveTokenButton.setVisible(!storedToken().isEmpty() && !hfRemoveTokenPending);
+    }
+
+    private static String storedToken() {
+        try {
+            return CredentialService.getInstance().getCredential(CredentialKey.HUGGING_FACE_TOKEN);
+        } catch (RuntimeException e) {
+            return "";
+        }
+    }
+
     /** Returns an error message for the first invalid custom pattern, or {@code null} when all compile. */
     public String validatePatterns() {
+        String target = hfTargetField.getText().trim();
+        if (!target.isEmpty() && HfDatasetTarget.parse(target) == null) {
+            return "Invalid Hugging Face dataset \"" + target + "\": use the form user/name (storage buckets aren't supported yet).";
+        }
         for (String p : customPatterns()) {
             try {
                 Pattern.compile(p);
@@ -177,7 +263,14 @@ public class AgentTraceSettingsPanel {
                 || truffleHogModeCombo.getSelectedItem() != TruffleHogMode.fromSetting(s.getAgentTraceTruffleHogMode())
                 || onFindingsCombo.getSelectedItem() != TruffleHogOnFindings.fromSetting(s.getAgentTraceTruffleHogOnFindings())
                 || !truffleHogPathField.getText().trim().equals(Objects.requireNonNullElse(s.getAgentTraceTruffleHogPath(), "").trim())
-                || verifyCheckBox.isSelected() != Boolean.TRUE.equals(s.getAgentTraceTruffleHogVerify());
+                || verifyCheckBox.isSelected() != Boolean.TRUE.equals(s.getAgentTraceTruffleHogVerify())
+                || !hfTargetField.getText().trim().equals(Objects.requireNonNullElse(s.getAgentTraceHfTarget(), "").trim())
+                || !hfPathField.getText().trim().equals(Objects.requireNonNullElse(s.getAgentTraceHfPathInRepo(), HfUploadSettings.DEFAULT_PATH_IN_REPO))
+                || hfPrivateCheckBox.isSelected() != !Boolean.FALSE.equals(s.getAgentTraceHfPrivate())
+                || hfIncludeProjectCheckBox.isSelected() != !Boolean.FALSE.equals(s.getAgentTraceHfIncludeProjectName())
+                || hfConfirmCheckBox.isSelected() != !Boolean.FALSE.equals(s.getAgentTraceHfConfirmBeforeUpload())
+                || hfTokenField.getPassword().length > 0
+                || hfRemoveTokenPending;
     }
 
     public void apply() {
@@ -192,6 +285,21 @@ public class AgentTraceSettingsPanel {
         s.setAgentTraceTruffleHogOnFindings((onFindings == null ? TruffleHogOnFindings.REDACT : onFindings).settingValue());
         s.setAgentTraceTruffleHogPath(truffleHogPathField.getText().trim());
         s.setAgentTraceTruffleHogVerify(verifyCheckBox.isSelected());
+        HfDatasetTarget target = HfDatasetTarget.parse(hfTargetField.getText());
+        s.setAgentTraceHfTarget(target == null ? "" : target.repoId());
+        s.setAgentTraceHfPathInRepo(hfPathField.getText().trim());
+        s.setAgentTraceHfPrivate(hfPrivateCheckBox.isSelected());
+        s.setAgentTraceHfIncludeProjectName(hfIncludeProjectCheckBox.isSelected());
+        s.setAgentTraceHfConfirmBeforeUpload(hfConfirmCheckBox.isSelected());
+        String token = new String(hfTokenField.getPassword()).trim();
+        if (!token.isEmpty()) {
+            CredentialService.getInstance().setCredential(CredentialKey.HUGGING_FACE_TOKEN, token);
+        } else if (hfRemoveTokenPending) {
+            CredentialService.getInstance().removeCredential(CredentialKey.HUGGING_FACE_TOKEN);
+        }
+        hfTokenField.setText("");
+        hfRemoveTokenPending = false;
+        updateTokenStatus();
     }
 
     public void reset() {
@@ -204,6 +312,14 @@ public class AgentTraceSettingsPanel {
         onFindingsCombo.setSelectedItem(TruffleHogOnFindings.fromSetting(s.getAgentTraceTruffleHogOnFindings()));
         truffleHogPathField.setText(Objects.requireNonNullElse(s.getAgentTraceTruffleHogPath(), ""));
         verifyCheckBox.setSelected(Boolean.TRUE.equals(s.getAgentTraceTruffleHogVerify()));
+        hfTargetField.setText(Objects.requireNonNullElse(s.getAgentTraceHfTarget(), ""));
+        hfPathField.setText(Objects.requireNonNullElse(s.getAgentTraceHfPathInRepo(), HfUploadSettings.DEFAULT_PATH_IN_REPO));
+        hfPrivateCheckBox.setSelected(!Boolean.FALSE.equals(s.getAgentTraceHfPrivate()));
+        hfIncludeProjectCheckBox.setSelected(!Boolean.FALSE.equals(s.getAgentTraceHfIncludeProjectName()));
+        hfConfirmCheckBox.setSelected(!Boolean.FALSE.equals(s.getAgentTraceHfConfirmBeforeUpload()));
+        hfTokenField.setText("");
+        hfRemoveTokenPending = false;
+        updateTokenStatus();
         updateEnabledState();
     }
 }

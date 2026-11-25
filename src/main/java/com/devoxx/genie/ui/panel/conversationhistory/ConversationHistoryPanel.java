@@ -4,8 +4,10 @@ import com.devoxx.genie.model.conversation.Conversation;
 import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.service.conversations.PendingConversationDeletionManager;
 import com.devoxx.genie.service.prompt.memory.ChatMemoryManager;
+import com.devoxx.genie.service.trace.TraceSettings;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
+import com.devoxx.genie.ui.trace.TraceExportActions;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
@@ -93,11 +95,25 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                // Left click only: the right button opens the trace context menu (task-280).
+                if (!SwingUtilities.isLeftMouseButton(e)) {
+                    return;
+                }
                 int row = table.rowAtPoint(e.getPoint());
                 int column = table.columnAtPoint(e.getPoint());
                 if (row >= 0 && column != 0) {
                     openConversationAt(row);
                 }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                maybeShowTraceMenu(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                maybeShowTraceMenu(e);
             }
 
             @Override
@@ -179,8 +195,16 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         scrollPane.setBorder(JBUI.Borders.empty());
         add(scrollPane, BorderLayout.CENTER);
 
-        // Add delete all button
-        add(createActionButton("Delete All", TrashIcon, e -> showDeleteAllConfirmationDialog()), BorderLayout.SOUTH);
+        // Bottom buttons: Delete All, plus trace export/upload while trace recording is on (task-280)
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+        bottom.add(createActionButton("Delete All", TrashIcon, e -> showDeleteAllConfirmationDialog()));
+        if (TraceSettings.current().enabled()) {
+            bottom.add(createActionButton("Export All Traces…", AllIcons.Actions.Download,
+                    e -> runTraceAction(() -> TraceExportActions.export(project, tableModel.getConversations()))));
+            bottom.add(createActionButton("Upload All to Hugging Face", AllIcons.Actions.Upload,
+                    e -> runTraceAction(() -> TraceExportActions.upload(project, tableModel.getConversations()))));
+        }
+        add(bottom, BorderLayout.SOUTH);
 
         loadConversations();
     }
@@ -219,6 +243,39 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         }
     }
 
+    /** Right-click menu on a conversation: preview, export or upload its agent trace (task-280). */
+    private void maybeShowTraceMenu(MouseEvent e) {
+        if (!e.isPopupTrigger()) {
+            return;
+        }
+        int row = table.rowAtPoint(e.getPoint());
+        if (row < 0 || row >= tableModel.getRowCount()) {
+            return;
+        }
+        table.setRowSelectionInterval(row, row);
+        Conversation conversation = tableModel.getConversationAt(row);
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem preview = new JMenuItem("Preview as Trace");
+        preview.addActionListener(a -> runTraceAction(() -> TraceExportActions.preview(project, conversation)));
+        JMenuItem export = new JMenuItem("Export as Trace…");
+        export.addActionListener(a -> runTraceAction(() -> TraceExportActions.export(project, List.of(conversation))));
+        JMenuItem upload = new JMenuItem("Upload to Hugging Face…");
+        upload.addActionListener(a -> runTraceAction(() -> TraceExportActions.upload(project, List.of(conversation))));
+        menu.add(preview);
+        menu.add(export);
+        menu.addSeparator();
+        menu.add(upload);
+        menu.show(table, e.getX(), e.getY());
+    }
+
+    /** Closes the history popup first: the actions open dialogs or editor tabs that would otherwise hide behind it. */
+    private void runTraceAction(Runnable action) {
+        if (activePopup != null && !activePopup.isDisposed()) {
+            activePopup.cancel();
+        }
+        ApplicationManager.getApplication().invokeLater(action);
+    }
+
     /** Opens the conversation at {@code row}: restores chat memory, notifies, closes the popup. */
     private void openConversationAt(int row) {
         if (row < 0 || row >= tableModel.getRowCount()) {
@@ -253,6 +310,11 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     private static class ConversationTableModel extends AbstractTableModel {
         private transient List<Conversation> conversations = new ArrayList<>();
         private final String[] columnNames = {"Delete", "Title", "Time"};
+
+        /** Snapshot of the listed conversations (task-280: "Export/Upload All"). */
+        public List<Conversation> getConversations() {
+            return List.copyOf(conversations);
+        }
 
         public void setConversations(List<Conversation> conversations) {
             // Create new list to ensure clean state

@@ -79,6 +79,8 @@ fun ConversationScreen(
                         onOpenAgentSettings = onOpenAgentSettings,
                         onOpenLogs = onOpenLogs,
                         isRestoring = s.isRestoringConversation,
+                        traceUpload = viewModel.traceUpload,
+                        onTraceUploadClick = viewModel.onTraceUploadClick,
                     )
                 }
             }

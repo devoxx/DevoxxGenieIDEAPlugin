@@ -82,8 +82,11 @@ public final class AgentTraceService {
                 if (local == null) {
                     local = new AgentTraceService(
                             AgentTraceBuffer.getInstance(),
-                            (conversationId, turnId, events, status) -> ConversationStorageService.getInstance()
-                                    .addTraceTurn(conversationId, turnId, events, status),
+                            (conversationId, turnId, events, status) -> {
+                                ConversationStorageService.getInstance()
+                                        .addTraceTurn(conversationId, turnId, events, status);
+                                publishTraceWritten(conversationId);
+                            },
                             new TruffleHogScanner(),
                             AppExecutorUtil.createBoundedApplicationPoolExecutor("DevoxxGenie Agent Trace Writer", 1),
                             new BalloonNotifier(),
@@ -185,6 +188,15 @@ public final class AgentTraceService {
             return;
         }
         sink.write(conversationId, turn.turnId(), completed.events(), TraceScanStatus.REDACTED);
+    }
+
+    private static void publishTraceWritten(@NotNull String conversationId) {
+        try {
+            com.intellij.openapi.application.ApplicationManager.getApplication().getMessageBus()
+                    .syncPublisher(AgentTraceListener.TOPIC).traceWritten(conversationId);
+        } catch (RuntimeException e) {
+            log.debug("Could not publish traceWritten: {}", e.toString());
+        }
     }
 
     private boolean isAvailable(@NotNull String binary) {
