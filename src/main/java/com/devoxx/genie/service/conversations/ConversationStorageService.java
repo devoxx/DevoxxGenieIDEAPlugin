@@ -2,6 +2,12 @@ package com.devoxx.genie.service.conversations;
 
 import com.devoxx.genie.model.conversation.ChatMessage;
 import com.devoxx.genie.model.conversation.Conversation;
+import com.devoxx.genie.service.trace.StoredTraceEvent;
+import com.devoxx.genie.service.trace.TraceEvent;
+import com.devoxx.genie.service.trace.TraceScanStatus;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
@@ -158,6 +164,29 @@ public class ConversationStorageService {
             // Add indices for better performance
             statement.execute("CREATE INDEX IF NOT EXISTS idx_conversations_project ON conversations(projectHash)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_messages_conversation ON chat_messages(conversationId)");
+
+            // task-279: full agent traces (opt-in). A separate table so the existing
+            // conversations/chat_messages schema and the rewrite-on-save of chat_messages are untouched.
+            statement.execute("""
+                        CREATE TABLE IF NOT EXISTS trace_events (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            conversationId TEXT NOT NULL,
+                            turnId TEXT NOT NULL,
+                            role TEXT NOT NULL,
+                            content TEXT,
+                            reasoning TEXT,
+                            toolCalls TEXT,
+                            toolCallId TEXT,
+                            toolName TEXT,
+                            isError INTEGER DEFAULT 0,
+                            model TEXT,
+                            subAgentId TEXT,
+                            timestamp INTEGER,
+                            scanStatus TEXT
+                        )
+                    """);
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_trace_conversation ON trace_events(conversationId)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_trace_turn ON trace_events(turnId)");
         } catch (SQLException e) {
             log.error("Error creating table", e);
             throw new RuntimeException("Error creating table", e);
@@ -299,7 +328,12 @@ public class ConversationStorageService {
         try (Connection connection = getConnection()) {
             connection.setAutoCommit(false);
             try {
-                // Delete messages first due to foreign key constraint
+                // Delete trace events and messages first due to foreign key constraint
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM trace_events WHERE conversationId = ?")) {
+                    ps.setString(1, conversation.getId());
+                    ps.executeUpdate();
+                }
                 try (PreparedStatement ps = connection.prepareStatement(
                         "DELETE FROM chat_messages WHERE conversationId = ?")) {
                     ps.setString(1, conversation.getId());
@@ -341,7 +375,17 @@ public class ConversationStorageService {
         try (Connection connection = getConnection()) {
             connection.setAutoCommit(false);
             try {
-                // Delete all messages for conversations in this project
+                // Delete all trace events and messages for conversations in this project
+                try (PreparedStatement ps = connection.prepareStatement(
+                        """
+                                DELETE FROM trace_events
+                                WHERE conversationId IN (
+                                    SELECT id FROM conversations WHERE projectHash = ?
+                                )
+                                """)) {
+                    ps.setString(1, project.getLocationHash());
+                    ps.executeUpdate();
+                }
                 try (PreparedStatement ps = connection.prepareStatement(
                         """
                                 DELETE FROM chat_messages
@@ -393,6 +437,11 @@ public class ConversationStorageService {
                     int msgDeleted = ps.executeUpdate();
                     log.info("Deleted {} orphaned chat messages", msgDeleted);
                 }
+                try (PreparedStatement ps = connection.prepareStatement(
+                        "DELETE FROM trace_events WHERE conversationId NOT IN (SELECT id FROM conversations)")) {
+                    int traceDeleted = ps.executeUpdate();
+                    log.info("Deleted {} orphaned trace events", traceDeleted);
+                }
             } catch (SQLException e) {
                 connection.rollback();
                 throw e;
@@ -406,6 +455,120 @@ public class ConversationStorageService {
         }
     }
     
+    // ---------------------------------------------------------------------------------------
+    // Agent traces (task-279)
+    // ---------------------------------------------------------------------------------------
+
+    private static final ObjectMapper TRACE_JSON = new ObjectMapper();
+    private static final TypeReference<List<TraceEvent.ToolCall>> TOOL_CALLS_TYPE = new TypeReference<>() {};
+
+    /**
+     * Appends one recorded turn to {@code trace_events}. Callers pass already-redacted (and, when enabled, TruffleHog-scanned) events.
+     * The rows are written in list order, which is the order they are read back in.
+     */
+    public void addTraceTurn(@NotNull String conversationId, @NotNull String turnId,
+                             @NotNull List<TraceEvent> events, @NotNull TraceScanStatus status) {
+        if (events.isEmpty()) {
+            return;
+        }
+        writeLock.lock();
+        try (Connection connection = getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement ps = connection.prepareStatement("""
+                    INSERT INTO trace_events
+                    (conversationId, turnId, role, content, reasoning, toolCalls, toolCallId, toolName,
+                     isError, model, subAgentId, timestamp, scanStatus)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """)) {
+                for (TraceEvent e : events) {
+                    ps.setString(1, conversationId);
+                    ps.setString(2, turnId);
+                    ps.setString(3, e.role().name());
+                    ps.setString(4, e.content());
+                    ps.setString(5, e.reasoning());
+                    ps.setString(6, toolCallsToJson(e.toolCalls()));
+                    ps.setString(7, e.toolCallId());
+                    ps.setString(8, e.toolName());
+                    ps.setInt(9, e.error() ? 1 : 0);
+                    ps.setString(10, e.model());
+                    ps.setString(11, e.subAgentId());
+                    ps.setLong(12, e.timestampMs());
+                    ps.setString(13, status.name());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error adding trace turn", e);
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    /** All trace events of a conversation, in recorded order. */
+    public @NotNull List<StoredTraceEvent> getTraceEvents(@NotNull String conversationId) {
+        return queryTrace("SELECT * FROM trace_events WHERE conversationId = ? ORDER BY id", conversationId);
+    }
+
+    private @NotNull List<StoredTraceEvent> queryTrace(@NotNull String sql, @NotNull String key) {
+        List<StoredTraceEvent> result = new ArrayList<>();
+        try (Connection connection = getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, key);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    TraceEvent event = new TraceEvent(
+                            TraceEvent.Role.valueOf(rs.getString("role")),
+                            rs.getString("content"),
+                            rs.getString("reasoning"),
+                            toolCallsFromJson(rs.getString("toolCalls")),
+                            rs.getString("toolCallId"),
+                            rs.getString("toolName"),
+                            rs.getInt("isError") == 1,
+                            rs.getString("model"),
+                            rs.getString("subAgentId"),
+                            rs.getLong("timestamp"));
+                    String status = rs.getString("scanStatus");
+                    result.add(new StoredTraceEvent(rs.getLong("id"), rs.getString("conversationId"),
+                            rs.getString("turnId"), event,
+                            status == null ? TraceScanStatus.NOT_SCANNED : TraceScanStatus.valueOf(status)));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error reading trace events", e);
+        }
+        return result;
+    }
+
+    private static String toolCallsToJson(@NotNull List<TraceEvent.ToolCall> calls) {
+        if (calls.isEmpty()) {
+            return null;
+        }
+        try {
+            return TRACE_JSON.writeValueAsString(calls);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Cannot serialize tool calls", e);
+        }
+    }
+
+    private static @NotNull List<TraceEvent.ToolCall> toolCallsFromJson(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return TRACE_JSON.readValue(json, TOOL_CALLS_TYPE);
+        } catch (JsonProcessingException e) {
+            log.warn("Unreadable toolCalls JSON in trace_events: {}", e.getOriginalMessage());
+            return List.of();
+        }
+    }
+
     /**
      * Migrate database to newer schema if needed.
      * This method handles adding new columns and populating existing records

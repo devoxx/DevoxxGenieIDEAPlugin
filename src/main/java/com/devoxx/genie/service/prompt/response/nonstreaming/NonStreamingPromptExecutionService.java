@@ -4,6 +4,7 @@ import com.devoxx.genie.model.enumarations.ModelProvider;
 import com.devoxx.genie.model.request.ChatMessageContext;
 import com.devoxx.genie.service.FileListManager;
 import com.devoxx.genie.service.agent.AgentLoopTracker;
+import com.devoxx.genie.service.trace.AgentTraceRecorder;
 import com.devoxx.genie.service.agent.AgentToolProviderFactory;
 import com.devoxx.genie.service.agent.ToolErrorRecovery;
 import com.devoxx.genie.service.analytics.FeatureUsageTracker;
@@ -251,6 +252,8 @@ public class NonStreamingPromptExecutionService {
             SteeringMessageQueue steeringQueue = SteeringMessageQueue.getInstance();
             assistantBuilder.chatRequestTransformer(new SteeringMessageInjector(steeringQueue, memoryKey, chatMemory));
             steeringQueue.activate(memoryKey);
+            // task-279: opt-in agent trace recording (no-op unless enabled in Settings).
+            AgentTraceRecorder.registerForTurn(assistantBuilder, memoryKey);
             assistant = assistantBuilder.build();
 
             AiMessage queryResponse = assistant.chat(cleanText);

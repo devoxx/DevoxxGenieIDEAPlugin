@@ -12,6 +12,7 @@ import com.devoxx.genie.service.analytics.Buckets;
 import com.devoxx.genie.service.analytics.FeatureId;
 import com.devoxx.genie.service.analytics.ProviderType;
 import com.devoxx.genie.service.prompt.memory.TaskPreservingMessageWindowChatMemory;
+import com.devoxx.genie.service.trace.AgentTraceRecorder;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
 import com.intellij.openapi.project.Project;
 import dev.langchain4j.memory.ChatMemory;
@@ -51,11 +52,19 @@ public class SubAgentRunner {
     private @Nullable AgentLoopTracker tracker;
     private String resolvedProviderName;
     private String resolvedModelName;
+    /** Memory key of the parent turn being trace-recorded (task-279), or {@code null}. */
+    private final @Nullable String parentTraceKey;
 
     public SubAgentRunner(@NotNull Project project, int agentIndex, @NotNull AtomicBoolean cancelled) {
+        this(project, agentIndex, cancelled, null);
+    }
+
+    public SubAgentRunner(@NotNull Project project, int agentIndex, @NotNull AtomicBoolean cancelled,
+                          @Nullable String parentTraceKey) {
         this.project = project;
         this.agentIndex = agentIndex;
         this.cancelled = cancelled;
+        this.parentTraceKey = parentTraceKey;
     }
 
     /**
@@ -93,7 +102,8 @@ public class SubAgentRunner {
                 return SUB_AGENT + (agentIndex + 1) + " cancelled.";
             }
 
-            SubAssistant assistant = ToolErrorRecovery.configure(AiServices.builder(SubAssistant.class)
+            SubAssistant assistant = ToolErrorRecovery.configure(AgentTraceRecorder.registerForSubAgent(
+                            AiServices.builder(SubAssistant.class), parentTraceKey, subAgentLabel)
                             .chatModel(model)
                             .toolProvider(tracker)
                             // Issue #1188: override Langchain4j's default of 100 round trips so the

@@ -21,6 +21,7 @@ public class DebugSettingsComponent {
     private final JBCheckBox rawRequestResponseLoggingCheckBox;
     private final JBCheckBox mcpLoggingCheckBox;
     private final JBCheckBox agentDebugLogsCheckBox;
+    private final AgentTraceSettingsPanel agentTracePanel = new AgentTraceSettingsPanel();
 
     public DebugSettingsComponent() {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
@@ -62,6 +63,16 @@ public class DebugSettingsComponent {
                         "filterable to \"Show Agents Only\". " +
                         "Also available in Settings → DevoxxGenie → Agent Mode (both edit the same setting).");
 
+        panel.add(Box.createVerticalStrut(24));
+        JBLabel traceHeader = new JBLabel("Agent Trace Recording");
+        traceHeader.setFont(traceHeader.getFont().deriveFont(java.awt.Font.BOLD));
+        traceHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(traceHeader);
+        panel.add(Box.createVerticalStrut(8));
+        JPanel tracePanel = agentTracePanel.getPanel();
+        tracePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(tracePanel);
+
         panel.add(Box.createVerticalGlue());
     }
 
@@ -86,7 +97,8 @@ public class DebugSettingsComponent {
         DevoxxGenieStateService state = DevoxxGenieStateService.getInstance();
         return rawRequestResponseLoggingCheckBox.isSelected() != Boolean.TRUE.equals(state.getRawRequestResponseLoggingEnabled())
                 || mcpLoggingCheckBox.isSelected() != Boolean.TRUE.equals(state.getMcpDebugLogsEnabled())
-                || agentDebugLogsCheckBox.isSelected() != Boolean.TRUE.equals(state.getAgentDebugLogsEnabled());
+                || agentDebugLogsCheckBox.isSelected() != Boolean.TRUE.equals(state.getAgentDebugLogsEnabled())
+                || agentTracePanel.isModified();
     }
 
     public void apply() {
@@ -94,6 +106,12 @@ public class DebugSettingsComponent {
         state.setRawRequestResponseLoggingEnabled(rawRequestResponseLoggingCheckBox.isSelected());
         state.setMcpDebugLogsEnabled(mcpLoggingCheckBox.isSelected());
         state.setAgentDebugLogsEnabled(agentDebugLogsCheckBox.isSelected());
+        agentTracePanel.apply();
+    }
+
+    /** Error message for invalid input that must block {@link #apply()}, or {@code null}. */
+    public String validate() {
+        return agentTracePanel.validatePatterns();
     }
 
     public void reset() {
@@ -101,6 +119,7 @@ public class DebugSettingsComponent {
         rawRequestResponseLoggingCheckBox.setSelected(Boolean.TRUE.equals(state.getRawRequestResponseLoggingEnabled()));
         mcpLoggingCheckBox.setSelected(Boolean.TRUE.equals(state.getMcpDebugLogsEnabled()));
         agentDebugLogsCheckBox.setSelected(Boolean.TRUE.equals(state.getAgentDebugLogsEnabled()));
+        agentTracePanel.reset();
     }
 
     public boolean isAnyLoggingSelected() {

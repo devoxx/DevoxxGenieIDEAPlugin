@@ -7,7 +7,11 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
+import com.devoxx.genie.service.trace.AgentTraceBuffer;
+import com.devoxx.genie.service.trace.TraceSettings;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
+import dev.langchain4j.invocation.InvocationContext;
+import dev.langchain4j.service.tool.ToolExecutionResult;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -568,5 +573,62 @@ class ParallelExploreToolExecutorTest {
         String json = "{\"queries\": \"not an array\"}";
         List<String> result = ToolArgumentParser.getStringArray(json, "queries");
         assertThat(result).isEmpty();
+    }
+
+    // --- task-279: agent trace propagation to sub-agents ---
+
+    @Test
+    void executeWithContext_passesTheParentTraceKeyToEverySubAgent() {
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        when(threadPoolManager.getSubAgentPool()).thenReturn(pool);
+        UUID invocationId = UUID.randomUUID();
+        AgentTraceBuffer.getInstance().startTurn("hash-tab9", invocationId, TraceSettings.disabled());
+        InvocationContext context = mock(InvocationContext.class);
+        when(context.invocationId()).thenReturn(invocationId);
+
+        try (MockedConstruction<SubAgentRunner> mocked = mockConstruction(SubAgentRunner.class,
+                (runner, ctx) -> {
+                    assertThat(ctx.arguments()).hasSize(4);
+                    assertThat(ctx.arguments().get(3)).isEqualTo("hash-tab9");
+                    when(runner.execute(any())).thenReturn("ok");
+                })) {
+            ToolExecutionRequest request = ToolExecutionRequest.builder()
+                    .name("parallel_explore")
+                    .arguments("{\"queries\": [\"a\", \"b\"]}")
+                    .build();
+
+            ToolExecutionResult result = executor.executeWithContext(request, context);
+
+            assertThat(result.resultText()).contains("Sub-Agent #2");
+            assertThat(mocked.constructed()).hasSize(2);
+        } finally {
+            AgentTraceBuffer.getInstance().discard("hash-tab9");
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
+    void executeWithContext_unknownInvocation_passesNoTraceKey() {
+        ExecutorService pool = Executors.newSingleThreadExecutor();
+        when(threadPoolManager.getSubAgentPool()).thenReturn(pool);
+        InvocationContext context = mock(InvocationContext.class);
+        when(context.invocationId()).thenReturn(UUID.randomUUID());
+
+        try (MockedConstruction<SubAgentRunner> mocked = mockConstruction(SubAgentRunner.class,
+                (runner, ctx) -> {
+                    assertThat(ctx.arguments().get(3)).isNull();
+                    when(runner.execute(any())).thenReturn("ok");
+                })) {
+            ToolExecutionRequest request = ToolExecutionRequest.builder()
+                    .name("parallel_explore")
+                    .arguments("{\"queries\": [\"a\"]}")
+                    .build();
+
+            executor.executeWithContext(request, context);
+
+            assertThat(mocked.constructed()).hasSize(1);
+        } finally {
+            pool.shutdownNow();
+        }
     }
 }

@@ -505,6 +505,26 @@ public final class DevoxxGenieStateService implements PersistentStateComponent<D
      * redacted. Opt-in because it can surface complete prompt/response text.
      */
     private Boolean rawRequestResponseLoggingEnabled = false;
+
+    // Agent trace recording (task-279). Opt-in: when enabled, every agent turn (user message,
+    // assistant steps with reasoning and tool calls, tool results) is stored in conversations.db
+    // after secret redaction and an optional TruffleHog scan.
+    private Boolean agentTraceRecordingEnabled = false;
+    /** Max characters kept per tool result; 0 = no limit. */
+    private Integer agentTraceMaxToolResultChars = 50_000;
+    /** Replace the home directory with {@code ~} and the OS username with {@code <user>}. */
+    private Boolean agentTraceRedactHomeDirectory = true;
+    /** Extra regular expressions whose matches are replaced with {@code [REDACTED]}. */
+    private List<String> agentTraceCustomRedactionPatterns = new ArrayList<>();
+    /** {@code auto}, {@code required} or {@code off} — see {@code TruffleHogMode}. */
+    private String agentTraceTruffleHogMode = "auto";
+    /** {@code redact} or {@code skip} — see {@code TruffleHogOnFindings}. */
+    private String agentTraceTruffleHogOnFindings = "redact";
+    /** Path to the trufflehog binary; blank = look it up on PATH. */
+    private String agentTraceTruffleHogPath = "";
+    /** Let TruffleHog verify candidate secrets against the issuing service (sends them there). */
+    private Boolean agentTraceTruffleHogVerify = false;
+
     private Boolean showToolActivityInChat = false;
     private List<String> disabledAgentTools = new ArrayList<>();
 
