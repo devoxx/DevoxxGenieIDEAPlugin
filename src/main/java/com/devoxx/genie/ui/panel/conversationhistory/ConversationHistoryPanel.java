@@ -8,6 +8,7 @@ import com.devoxx.genie.service.trace.TraceSettings;
 import com.devoxx.genie.ui.listener.ConversationSelectionListener;
 import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.trace.TraceExportActions;
+import com.devoxx.genie.ui.trace.view.AgentRunViewer;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
@@ -56,6 +57,8 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     /** Row currently under the mouse pointer, or -1; drives the hover highlight. */
     private int hoveredRow = -1;
+    /** Conversations with a recorded agent trace, loaded with the list so the menu never queries on the EDT. */
+    private Set<String> tracedConversationIds = Set.of();
 
     public ConversationHistoryPanel(Project project) {
         this(project, null);
@@ -231,6 +234,11 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
             conversations.removeIf(c -> pendingDeletion.contains(c.getId()));
         }
         conversations.sort((c1, c2) -> c2.getTimestamp().compareTo(c1.getTimestamp()));
+        try {
+            tracedConversationIds = storageService.getConversationIdsWithTraces();
+        } catch (RuntimeException e) {
+            tracedConversationIds = Set.of(); // The menu then just offers no run view.
+        }
         hoveredRow = -1;
         tableModel.setConversations(conversations);
         tableModel.fireTableDataChanged();
@@ -243,7 +251,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         }
     }
 
-    /** Right-click menu on a conversation: preview, export or upload its agent trace (task-280). */
+    /** Right-click menu on a conversation: view its agent run (TASK-283), export or upload its trace (task-280). */
     private void maybeShowTraceMenu(MouseEvent e) {
         if (!e.isPopupTrigger()) {
             return;
@@ -255,13 +263,17 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         table.setRowSelectionInterval(row, row);
         Conversation conversation = tableModel.getConversationAt(row);
         JPopupMenu menu = new JPopupMenu();
-        JMenuItem preview = new JMenuItem("Preview as Trace");
-        preview.addActionListener(a -> runTraceAction(() -> TraceExportActions.preview(project, conversation)));
+        // The raw JSONL preview is a button inside the run view.
+        JMenuItem viewRun = new JMenuItem("View Agent Run");
+        viewRun.addActionListener(a -> runTraceAction(() -> AgentRunViewer.open(project, conversation)));
         JMenuItem export = new JMenuItem("Export as Trace…");
         export.addActionListener(a -> runTraceAction(() -> TraceExportActions.export(project, List.of(conversation))));
         JMenuItem upload = new JMenuItem("Upload to Hugging Face…");
         upload.addActionListener(a -> runTraceAction(() -> TraceExportActions.upload(project, List.of(conversation))));
-        menu.add(preview);
+        if (tracedConversationIds.contains(conversation.getId())) {
+            menu.add(viewRun);
+            menu.addSeparator();
+        }
         menu.add(export);
         menu.addSeparator();
         menu.add(upload);

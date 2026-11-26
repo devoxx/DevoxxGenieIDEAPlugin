@@ -154,6 +154,18 @@ class ConversationTraceStorageTest {
     }
 
     @Test
+    void conversationIdsWithTraces_listsOnlyTracedConversations() {
+        storage.addConversation(project, conversation("1"));
+        storage.addConversation(project, conversation("2"));
+        assertThat(storage.getConversationIdsWithTraces()).isEmpty();
+
+        storage.addTraceTurn("1", "turn-a", agentTurn(), TraceScanStatus.CLEAN);
+        storage.addTraceTurn("1", "turn-b", agentTurn(), TraceScanStatus.CLEAN);
+
+        assertThat(storage.getConversationIdsWithTraces()).containsExactly("1");
+    }
+
+    @Test
     void emptyTurn_writesNothing() {
         storage.addTraceTurn("1", "turn-a", List.of(), TraceScanStatus.CLEAN);
         assertThat(storage.getTraceEvents("1")).isEmpty();

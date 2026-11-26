@@ -511,6 +511,21 @@ public class ConversationStorageService {
         }
     }
 
+    /** Ids of the conversations that have at least one recorded trace row (TASK-283). */
+    public @NotNull java.util.Set<String> getConversationIdsWithTraces() {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT DISTINCT conversationId FROM trace_events")) {
+            while (rs.next()) {
+                ids.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error reading traced conversation ids", e);
+        }
+        return ids;
+    }
+
     /** All trace events of a conversation, in recorded order. */
     public @NotNull List<StoredTraceEvent> getTraceEvents(@NotNull String conversationId) {
         return queryTrace("SELECT * FROM trace_events WHERE conversationId = ? ORDER BY id", conversationId);
