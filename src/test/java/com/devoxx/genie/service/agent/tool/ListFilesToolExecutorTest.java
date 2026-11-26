@@ -480,12 +480,94 @@ class ListFilesToolExecutorTest {
         assertThat(result).contains("[FILE] Main.java");
     }
 
+    // --- TASK-285: no read action around the whole walk; skip excluded folders ---
+
+    @Test
+    void execute_listsEachDirectoryInItsOwnShortReadAction() {
+        java.util.concurrent.atomic.AtomicInteger readDepth = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.List<Integer> depthWhileListing = new java.util.ArrayList<>();
+        java.util.concurrent.atomic.AtomicInteger readActions = new java.util.concurrent.atomic.AtomicInteger();
+
+        VirtualFile projectBase = createMockDir("project");
+        VirtualFile src = createMockDir("src");
+        VirtualFile file = createMockFile("Main.java");
+        when(projectBase.getChildren()).thenAnswer(i -> {
+            depthWhileListing.add(readDepth.get());
+            return new VirtualFile[]{src};
+        });
+        when(src.getChildren()).thenAnswer(i -> {
+            depthWhileListing.add(readDepth.get());
+            return new VirtualFile[]{file};
+        });
+
+        ListFilesToolExecutor tracking = new ListFilesToolExecutor(project) {
+            @Override
+            <T> T readAction(@org.jetbrains.annotations.NotNull com.intellij.openapi.util.Computable<T> computation) {
+                readActions.incrementAndGet();
+                if (readDepth.incrementAndGet() > 1) {
+                    throw new AssertionError("nested read action: the walk must not run inside one");
+                }
+                try {
+                    return computation.compute();
+                } finally {
+                    readDepth.decrementAndGet();
+                }
+            }
+
+            @Override
+            VirtualFile getProjectBaseDir() {
+                return projectBase;
+            }
+
+            @Override
+            boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {
+                return true;
+            }
+
+            @Override
+            String getRelativePath(VirtualFile f, VirtualFile ancestor) {
+                return f.getName();
+            }
+        };
+
+        String result = tracking.execute(ToolExecutionRequest.builder()
+                .name("list_files").arguments("{\"recursive\":true}").build(), null);
+
+        assertThat(result).contains("[DIR]  src").contains("[FILE] Main.java");
+        assertThat(depthWhileListing).containsOnly(1);
+        assertThat(readActions.get()).as("one short read action per lookup, not one for the whole walk").isGreaterThan(1);
+    }
+
+    @Test
+    void foldersExcludedInTheIde_areNotListed() {
+        VirtualFile dir = createMockDir("project");
+        VirtualFile generated = createMockDir("generated-sources");
+        when(dir.getChildren()).thenReturn(new VirtualFile[]{generated});
+
+        ListFilesToolExecutor withExclusions = new ListFilesToolExecutor(project) {
+            @Override
+            boolean isExcludedFromListing(@org.jetbrains.annotations.NotNull VirtualFile d) {
+                return d == generated;
+            }
+
+            @Override
+            String getRelativePath(VirtualFile f, VirtualFile ancestor) {
+                return f.getName();
+            }
+        };
+        StringBuilder result = new StringBuilder();
+        withExclusions.listDirectory(dir, dir, true, result, new int[]{0});
+
+        assertThat(result.toString()).doesNotContain("generated-sources");
+        verify(generated, never()).getChildren();
+    }
+
     // --- SKIP_DIRS constant test ---
 
     @Test
     void skipDirs_containsExpectedDirectories() {
         assertThat(ListFilesToolExecutor.SKIP_DIRS).containsExactlyInAnyOrder(
-                ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle"
+                ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle", ".intellijPlatform"
         );
     }
 

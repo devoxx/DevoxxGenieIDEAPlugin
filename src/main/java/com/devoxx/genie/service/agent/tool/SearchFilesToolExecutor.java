@@ -1,6 +1,8 @@
 package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.util.ReadAccess;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -24,7 +26,9 @@ public class SearchFilesToolExecutor implements ToolExecutor {
     static final int MAX_RESULTS = 50;
     static final int MAX_LINE_LENGTH = 200;
     static final Set<String> SKIP_DIRS = Set.of(
-            ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle"
+            ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle",
+            // IntelliJ Platform Gradle plugin: downloaded IDEs and plugin sandboxes (TASK-285)
+            ".intellijPlatform"
     );
 
     private final Project project;
@@ -53,14 +57,40 @@ public class SearchFilesToolExecutor implements ToolExecutor {
                     ? FileSystems.getDefault().getPathMatcher("glob:" + filePattern)
                     : null;
 
-            return ReadAccess.compute(() -> {
-                VirtualFile projectBase = getProjectBaseDir();
-                return searchFiles(patternStr, path, regex, fileMatcher, projectBase);
-            });
+            // No read action around the whole search (TASK-285): it blocked every write action, and
+            // the EDT waiting for one, for as long as the search ran. Only VFS lookups take a short one.
+            VirtualFile projectBase = readAction(this::getProjectBaseDir);
+            return searchFiles(patternStr, path, regex, fileMatcher, projectBase);
         } catch (Exception e) {
             log.error("Error searching files", e);
             return "Error: Failed to search files - " + e.getMessage();
         }
+    }
+
+    /**
+     * Runs {@code computation} in a short read action. Kept per VFS lookup so write actions can run
+     * between them. A seam so tests can observe what runs under the read lock; without an IntelliJ
+     * application (plain unit tests) it just runs the computation.
+     */
+    <T> T readAction(@NotNull com.intellij.openapi.util.Computable<T> computation) {
+        return ApplicationManager.getApplication() == null ? computation.compute() : ReadAccess.compute(computation);
+    }
+
+    /** Whether the IDE excludes or ignores {@code dir} in this project (e.g. excluded build output). */
+    boolean isExcludedFromSearch(@NotNull VirtualFile dir) {
+        return readAction(() -> {
+            try {
+                if (project.isDisposed()) {
+                    return false;
+                }
+                ProjectFileIndex index = ProjectFileIndex.getInstance(project);
+                return index != null && index.isExcluded(dir);
+            } catch (RuntimeException e) {
+                // Best effort: if the index can't answer, search the folder as before.
+                log.debug("Could not check whether {} is excluded: {}", dir.getPath(), e.toString());
+                return false;
+            }
+        });
     }
 
     VirtualFile getProjectBaseDir() {
@@ -82,7 +112,7 @@ public class SearchFilesToolExecutor implements ToolExecutor {
             return "Error: Project base directory not found.";
         }
 
-        VirtualFile searchDir = resolveSearchDir(path, projectBase);
+        VirtualFile searchDir = readAction(() -> resolveSearchDir(path, projectBase));
         if (searchDir == null) {
             return "Error: Directory not found: " + (path != null ? path : ".");
         }
@@ -113,14 +143,14 @@ public class SearchFilesToolExecutor implements ToolExecutor {
     void searchInDirectory(VirtualFile dir, VirtualFile projectBase,
                            Pattern regex, PathMatcher fileMatcher,
                            StringBuilder result, int[] count) {
-        VirtualFile[] children = dir.getChildren();
+        VirtualFile[] children = readAction(dir::getChildren);
         if (children == null) return;
 
         for (VirtualFile child : children) {
             if (count[0] >= MAX_RESULTS) return;
 
             if (child.isDirectory()) {
-                if (SKIP_DIRS.contains(child.getName())) continue;
+                if (SKIP_DIRS.contains(child.getName()) || isExcludedFromSearch(child)) continue;
                 searchInDirectory(child, projectBase, regex, fileMatcher, result, count);
             } else {
                 if (isBinaryFile(child)) continue;
@@ -134,7 +164,7 @@ public class SearchFilesToolExecutor implements ToolExecutor {
     void searchInFile(VirtualFile file, VirtualFile projectBase,
                       Pattern regex, StringBuilder result, int[] count) {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+                new InputStreamReader(openContent(file), StandardCharsets.UTF_8))) {
             String relativePath = getRelativePath(file, projectBase);
             if (relativePath == null) return;
 
@@ -157,6 +187,14 @@ public class SearchFilesToolExecutor implements ToolExecutor {
         } catch (Exception e) {
             // Skip files that can't be read
         }
+    }
+
+    /** The file's content, read from disk for local files so no VFS read access is needed. */
+    static java.io.InputStream openContent(@NotNull VirtualFile file) throws java.io.IOException {
+        if (file.isInLocalFileSystem()) {
+            return java.nio.file.Files.newInputStream(file.toNioPath());
+        }
+        return file.getInputStream();
     }
 
     boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {

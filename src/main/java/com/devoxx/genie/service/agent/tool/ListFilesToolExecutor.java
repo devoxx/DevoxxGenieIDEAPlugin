@@ -1,6 +1,8 @@
 package com.devoxx.genie.service.agent.tool;
 
 import com.devoxx.genie.util.ReadAccess;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -16,7 +18,9 @@ public class ListFilesToolExecutor implements ToolExecutor {
 
     static final int MAX_ENTRIES = 500;
     static final Set<String> SKIP_DIRS = Set.of(
-            ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle"
+            ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle",
+            // IntelliJ Platform Gradle plugin: downloaded IDEs and plugin sandboxes (TASK-285)
+            ".intellijPlatform"
     );
 
     private final Project project;
@@ -31,14 +35,38 @@ public class ListFilesToolExecutor implements ToolExecutor {
             String path = ToolArgumentParser.getString(request.arguments(), "path");
             boolean recursive = ToolArgumentParser.getBoolean(request.arguments(), "recursive", false);
 
-            return ReadAccess.compute(() -> {
-                VirtualFile projectBase = getProjectBaseDir();
-                return listFiles(path, recursive, projectBase);
-            });
+            // No read action around the whole walk (TASK-285): each VFS lookup takes its own short one,
+            // so write actions (and the EDT waiting for them) aren't blocked for the whole listing.
+            VirtualFile projectBase = readAction(this::getProjectBaseDir);
+            return listFiles(path, recursive, projectBase);
         } catch (Exception e) {
             log.error("Error listing files", e);
             return "Error: Failed to list files - " + e.getMessage();
         }
+    }
+
+    /**
+     * Runs {@code computation} in a short read action. A seam so tests can observe the locking;
+     * without an IntelliJ application (plain unit tests) it just runs the computation.
+     */
+    <T> T readAction(@NotNull com.intellij.openapi.util.Computable<T> computation) {
+        return ApplicationManager.getApplication() == null ? computation.compute() : ReadAccess.compute(computation);
+    }
+
+    /** Whether the IDE excludes or ignores {@code dir} in this project (e.g. excluded build output). */
+    boolean isExcludedFromListing(@NotNull VirtualFile dir) {
+        return readAction(() -> {
+            try {
+                if (project.isDisposed()) {
+                    return false;
+                }
+                ProjectFileIndex index = ProjectFileIndex.getInstance(project);
+                return index != null && index.isExcluded(dir);
+            } catch (RuntimeException e) {
+                log.debug("Could not check whether {} is excluded: {}", dir.getPath(), e.toString());
+                return false;
+            }
+        });
     }
 
     VirtualFile getProjectBaseDir() {
@@ -50,7 +78,7 @@ public class ListFilesToolExecutor implements ToolExecutor {
             return "Error: Project base directory not found.";
         }
 
-        VirtualFile targetDir = resolveTargetDir(path, projectBase);
+        VirtualFile targetDir = readAction(() -> resolveTargetDir(path, projectBase));
         if (targetDir == null) {
             return "Error: Directory not found: " + path;
         }
@@ -81,7 +109,7 @@ public class ListFilesToolExecutor implements ToolExecutor {
 
     void listDirectory(VirtualFile dir, VirtualFile projectBase, boolean recursive,
                        StringBuilder result, int[] count) {
-        VirtualFile[] children = dir.getChildren();
+        VirtualFile[] children = readAction(dir::getChildren);
         if (children == null) return;
 
         for (VirtualFile child : children) {
@@ -101,7 +129,7 @@ public class ListFilesToolExecutor implements ToolExecutor {
 
     void appendDirectory(VirtualFile child, String relativePath, VirtualFile projectBase,
                          boolean recursive, StringBuilder result, int[] count) {
-        if (SKIP_DIRS.contains(child.getName())) return;
+        if (SKIP_DIRS.contains(child.getName()) || isExcludedFromListing(child)) return;
 
         result.append("[DIR]  ").append(relativePath).append("\n");
         count[0]++;
