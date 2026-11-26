@@ -33,7 +33,7 @@ public class AgentSettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        agentSettingsComponent = new AgentSettingsComponent();
+        agentSettingsComponent = new AgentSettingsComponent(project);
         return agentSettingsComponent.createPanelWithHelp();
     }
 

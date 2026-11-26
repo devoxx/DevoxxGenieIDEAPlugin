@@ -10,7 +10,6 @@ import com.devoxx.genie.service.agent.tool.BuiltInToolDescriptions;
 import com.devoxx.genie.service.agent.tool.psi.PsiToolCatalog;
 import com.devoxx.genie.service.chromadb.ChromaDBManager;
 import com.devoxx.genie.service.chromadb.ChromaCollectionNames;
-import com.devoxx.genie.service.chromadb.model.ChromaCollection;
 import com.devoxx.genie.ui.renderer.ModelInfoRenderer;
 import com.devoxx.genie.ui.settings.AbstractSettingsComponent;
 import com.devoxx.genie.ui.settings.DevoxxGenieStateService;
@@ -18,6 +17,8 @@ import com.devoxx.genie.ui.settings.ProviderEnabledResolver;
 import com.devoxx.genie.ui.util.DevoxxGenieFontsUtil;
 import com.devoxx.genie.ui.util.SettingsDialogUtil;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.ComboBox;
@@ -37,6 +38,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 import static com.devoxx.genie.model.Constant.*;
 
@@ -150,7 +152,9 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     private final List<AgentConfigRow> agentConfigRows = new ArrayList<>();
     private final JButton addAgentButton = new JButton("+ Add");
 
-    public AgentSettingsComponent() {
+    private boolean disposed; // Accessed only on the EDT.
+
+    public AgentSettingsComponent(@NotNull Project project) {
         loadPendingDescriptionOverrides();
         setupSubAgentComboBoxes();
         blacklistActionComboBox.setSelectedIndex(
@@ -204,8 +208,8 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
             }
 
             // Warning for semantic_search when RAG is not enabled or the project is not indexed.
-            if ("semantic_search".equals(toolName) && !isRagReadyForAgent()) {
-                addFullWidthRow(contentPanel, gbc, buildSemanticSearchWarningPanel());
+            if ("semantic_search".equals(toolName)) {
+                addFullWidthRow(contentPanel, gbc, buildSemanticSearchWarningPanel(project));
             }
         }
 
@@ -804,28 +808,21 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         return panel;
     }
 
-    /** Mirrors the exact condition used by {@link com.devoxx.genie.service.agent.tool.BuiltInToolProvider}
-     *  to register the semantic_search tool: ragEnabled is the single source of truth (ragActivated
-     *  was collapsed in task-222). Also checks that ChromaDB actually has a collection for this
-     *  project, using the same name-sanitisation logic as ChromaEmbeddingService. */
-    private static boolean isRagReadyForAgent() {
-        if (!Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled())) {
-            return false;
-        }
-        Project[] projects = ProjectManager.getInstance().getOpenProjects();
-        if (projects.length == 0) return false;
-        Project project = projects[0];
+    private static boolean hasProjectCollection(@NotNull Project project) {
         String expectedCollection = ChromaCollectionNames.forProject(project.getName());
         try {
-            List<ChromaCollection> collections = ChromaDBManager.getInstance(project).listCollections();
-            return collections.stream().anyMatch(c -> expectedCollection.equals(c.name()));
+            return ChromaDBManager.getInstance(project).listCollections().stream()
+                    .anyMatch(c -> expectedCollection.equals(c.name()));
+        } catch (CancellationException e) {
+            throw e;
         } catch (Exception e) {
+            // An unreachable or incompatible ChromaDB cannot confirm an index.
             return false;
         }
     }
 
-    private static JPanel buildSemanticSearchWarningPanel() {
-        boolean ragEnabled = Boolean.TRUE.equals(DevoxxGenieStateService.getInstance().getRagEnabled());
+    private JPanel buildSemanticSearchWarningPanel(@NotNull Project project) {
+        boolean ragEnabled = Boolean.TRUE.equals(stateService.getRagEnabled());
         String message = ragEnabled
                 ? "Project has not been indexed yet in RAG."
                 : "RAG is not enabled in settings.";
@@ -834,12 +831,23 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
         warning.setForeground(JBColor.RED);
         panel.add(warning);
         HyperlinkLabel link = new HyperlinkLabel("Open RAG settings");
-        link.addHyperlinkListener(e -> {
-            Project[] projects = ProjectManager.getInstance().getOpenProjects();
-            Project p = projects.length > 0 ? projects[0] : null;
-            SettingsDialogUtil.showSettingsDialog(p, "RAG");
-        });
+        link.addHyperlinkListener(e -> SettingsDialogUtil.showSettingsDialog(project, "RAG"));
         panel.add(link);
+
+        if (ragEnabled && !project.isDefault()) {
+            panel.setVisible(false); // Unknown until ChromaDB replies.
+            var app = ApplicationManager.getApplication();
+            ModalityState modality = ModalityState.current();
+            app.executeOnPooledThread(() -> {
+                if (!project.isDisposed() && !hasProjectCollection(project)) {
+                    app.invokeLater(() -> {
+                        if (!disposed && !project.isDisposed()) {
+                            panel.setVisible(true);
+                        }
+                    }, modality);
+                }
+            });
+        }
         return panel;
     }
 
@@ -1103,6 +1111,7 @@ public class AgentSettingsComponent extends AbstractSettingsComponent {
     }
 
     public void dispose() {
+        disposed = true;
         subAgentModelLoader.dispose();
         agentConfigRows.forEach(row -> row.modelLoader.dispose());
     }
