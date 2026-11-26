@@ -46,6 +46,7 @@ public class ConversationPanel
     private final ConversationManager conversationManager;
     private final ConversationUIController uiController;
     private final MessageBusConnection messageBusConnection;
+    private volatile boolean disposed;
     private final ChatService chatService;
     private final JComponent displayComponent;
     private final ActivityMessageDispatcher activityMessageDispatcher = new ActivityMessageDispatcher();
@@ -315,6 +316,11 @@ public class ConversationPanel
      * This should be called when the panel is being removed or when the project closes.
      */
     public void dispose() {
+        // Idempotent: the tab's disposable and the tab-close cleanup can both reach this.
+        if (disposed) {
+            return;
+        }
+        disposed = true;
         if (messageBusConnection != null) {
             messageBusConnection.disconnect();
         }

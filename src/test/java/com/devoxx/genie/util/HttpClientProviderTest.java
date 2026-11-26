@@ -120,6 +120,26 @@ class HttpClientProviderTest {
     }
 
     @Test
+    void retryInterceptor_whenEveryAttemptFails_returnsTheLastResponseOpen() throws IOException {
+        // Reproduces "IllegalStateException: closed" from ChromaDBManager.listCollections: after the last
+        // failed attempt the interceptor returned a response it had already closed, so reading its body threw.
+        try (okhttp3.mockwebserver.MockWebServer server = new okhttp3.mockwebserver.MockWebServer()) {
+            server.enqueue(new okhttp3.mockwebserver.MockResponse().setResponseCode(503).setBody("first"));
+            server.enqueue(new okhttp3.mockwebserver.MockResponse().setResponseCode(503).setBody("still down"));
+            server.start();
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .addInterceptor(new HttpClientProvider.RetryInterceptor(2))
+                    .build();
+
+            try (Response response = client.newCall(new Request.Builder().url(server.url("/x")).build()).execute()) {
+                assertEquals(503, response.code(), "The caller should see the real HTTP status");
+                assertEquals("still down", response.body().string(), "The last response body should be readable");
+            }
+            assertEquals(2, server.getRequestCount());
+        }
+    }
+
+    @Test
     void testRetryInterceptor_HandlesExceptions() throws IOException {
         // Create test instance of RetryInterceptor
         Interceptor retryInterceptor = new HttpClientProvider.RetryInterceptor(2);

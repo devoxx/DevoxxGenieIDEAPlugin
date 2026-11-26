@@ -345,15 +345,12 @@ public final class DevoxxGenieToolWindowFactory implements ToolWindowFactory, Du
             // Clean up file lists for this tab
             FileListManager.getInstance().clear(project, tabId);
 
-            // Dispose the per-tab disposable (disconnects all message bus listeners)
+            // Dispose the per-tab disposable: disconnects the tab's message bus listeners and disposes
+            // the chat panel (PromptOutputPanel.dispose → ConversationPanel.dispose).
             if (toolWindowContent.getTabDisposable() != null) {
                 Disposer.dispose(toolWindowContent.getTabDisposable());
-            }
-
-            // Dispose conversation panel resources
-            if (toolWindowContent.getPromptOutputPanel() != null
-                    && toolWindowContent.getPromptOutputPanel().getConversationPanel() != null) {
-                toolWindowContent.getPromptOutputPanel().getConversationPanel().dispose();
+            } else if (toolWindowContent.getPromptOutputPanel() != null) {
+                toolWindowContent.getPromptOutputPanel().dispose();
             }
 
             // Unregister from registry (also disconnects per-tab settings connection)

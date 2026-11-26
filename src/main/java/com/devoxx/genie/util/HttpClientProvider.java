@@ -27,41 +27,30 @@ public class HttpClientProvider {
         @Override
         public @NotNull Response intercept(@NotNull Chain chain) throws IOException {
             Request request = chain.request();
-            Response response = null;
-            IOException exception = null;
-
-            int tryCount = 0;
-            while (tryCount < maxRetries) {
+            for (int attempt = 1; ; attempt++) {
+                boolean lastAttempt = attempt >= maxRetries;
                 try {
-                    response = chain.proceed(request);
-                    if (response.isSuccessful()) {
+                    Response response = chain.proceed(request);
+                    // Return the last attempt's response open, so the caller sees the real HTTP status and body.
+                    // Closing it first made callers that read the body (Retrofit) fail with "IllegalStateException: closed".
+                    if (response.isSuccessful() || lastAttempt) {
                         return response;
                     }
-
                     response.close();
-
-                    tryCount++;
-                    // Exponential backoff
-                    try {
-                        Thread.sleep((long) Math.pow(2, tryCount) * 1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new IOException("Retry interrupted", e);
-                    }
                 } catch (IOException e) {
-                    exception = e;
-                    tryCount++;
-                    if (tryCount >= maxRetries) {
-                        throw exception;
+                    if (lastAttempt) {
+                        throw e;
                     }
                 }
+                // Exponential backoff, outside the try so an interruption stops the retries instead of being
+                // caught as one more failed attempt.
+                try {
+                    Thread.sleep((long) Math.pow(2, attempt) * 1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Retry interrupted", e);
+                }
             }
-
-            if (response != null) {
-                return response;
-            }
-
-            throw new IOException("Request failed after " + maxRetries + " attempts");
         }
     }
 }

@@ -156,18 +156,19 @@ public class PromptOutputPanel extends JBPanel<PromptOutputPanel> implements Cus
     }
 
     /**
-     * Called when panel is removed/disposed.
-     * Unregisters from the panel registry.
+     * Disposes this chat tab's panel: unregisters it and cascades to the conversation panel (its
+     * ChatService, message bus connections and upload button). Called when the tab is closed or the
+     * tool window is disposed, through the tab's disposable.
+     * <p>
+     * Deliberately not done in {@code removeNotify()}: Swing calls that on every detach (hiding the tool
+     * window, re-docking, re-layout), after which the tab stays usable. Disposing there disconnected the
+     * tab's ChatService, so later turns were neither saved to the history nor traced.
      */
-    @Override
-    public void removeNotify() {
-        // Unregister from the registry when removed from the UI
+    public void dispose() {
         PromptPanelRegistry.getInstance().unregisterPanel(project, this);
-        // Cascade disposal to the conversation panel to clean up browser, timers, and bus connections
         if (conversationPanel != null) {
             conversationPanel.dispose();
         }
-        super.removeNotify();
     }
     
     /**
