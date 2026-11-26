@@ -108,4 +108,6 @@ Opt-in agent trace recording. When turned on in Settings → DevoxxGenie → Deb
 - Tests: SecretRedactorTraceTest, ConversationTraceStorageTest, AgentTraceRecorderTest, TruffleHogScannerTest, AgentTraceServiceTest. Full suite passes.
 
 AC #8 is only partly verified: a reasoning model with built-in tools was checked in a running IDE. A provider without reasoning and an MCP tool call are still to be checked. Export and Hugging Face upload follow in TASK-280.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1448
 <!-- SECTION:FINAL_SUMMARY:END -->
