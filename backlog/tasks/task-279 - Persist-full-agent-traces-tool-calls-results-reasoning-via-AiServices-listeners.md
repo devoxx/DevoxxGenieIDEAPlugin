@@ -1,7 +1,7 @@
 ---
 id: TASK-279
 title: 'Persist full agent traces (tool calls, results, reasoning) via AiServices listeners'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-25T10:00:00Z'
 labels:
@@ -93,5 +93,19 @@ Implementation (2026-11-25, branch feature/task-279-persist-agent-traces):
 - Tests: SecretRedactorTraceTest, ConversationTraceStorageTest, AgentTraceRecorderTest, TruffleHogScannerTest (fake trufflehog shell script; POSIX only), AgentTraceServiceTest.
 - Test run (JDK 21): full `./gradlew test` ran 4522 tests; 7 failed, all live-API tests (AnthropicChatModelTest, BedrockServiceIT) that need provider keys in a `.env` file. The 159 tests in the trace, storage, redactor, ChatService, sub-agent and prompt-strategy classes all pass.
 - Test fixtures for provider keys are split into concatenated strings so GitHub push protection doesn't flag them as real secrets.
-- Not done: AC #8 (manual check with real providers and an MCP tool call) needs a running IDE.
+- Test run 2026-11-26 (JDK 21, `--rerun`): full `./gradlew test` passed.
+- Manual check 2026-11-26 (AC #8, partly done): an agent prompt with Ollama `qwen3.8:27b-mlx` (returns reasoning) recorded one turn of 5 rows in the IDE's `conversations.db`: user, assistant with reasoning and 2 tool calls (`run_command`, `web_search`), both tool results linked by tool-call id, and the final assistant step. Home directory redacted to `~`, rows marked `CLEAN` by TruffleHog. A second prompt that used an MCP tool did not produce rows in that database (it was probably run in another IDE or sandbox), so the MCP tool call and the provider without reasoning are still unverified.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Opt-in agent trace recording. When turned on in Settings → DevoxxGenie → Debug → Agent Trace Recording (off by default), each agent/MCP turn is stored in a new `trace_events` table in `conversations.db`: the user message, every assistant step (text, reasoning, tool calls with id/name/arguments, model) and every tool result (linked by tool-call id, with an error flag), plus `parallel_explore` sub-agent steps tagged with their sub-agent id.
+
+- Recording uses AiServices listeners (`AgentTraceRecorder`) in the streaming, non-streaming tool and sub-agent paths. Turns are buffered per tab and persisted off the EDT when the conversation is saved.
+- Every string is redacted before it is written: `SecretRedactor` gains the copilot-traces-hf patterns, home-directory and username replacement, and custom regexes. An optional TruffleHog scan (`auto`/`required`, skip or redact on findings) runs in the background.
+- Tool results are truncated at a configurable limit. Trace rows are removed with their conversation, by clear-all and by the 50 MB cleanup.
+- Tests: SecretRedactorTraceTest, ConversationTraceStorageTest, AgentTraceRecorderTest, TruffleHogScannerTest, AgentTraceServiceTest. Full suite passes.
+
+AC #8 is only partly verified: a reasoning model with built-in tools was checked in a running IDE. A provider without reasoning and an MCP tool call are still to be checked. Export and Hugging Face upload follow in TASK-280.
+<!-- SECTION:FINAL_SUMMARY:END -->
