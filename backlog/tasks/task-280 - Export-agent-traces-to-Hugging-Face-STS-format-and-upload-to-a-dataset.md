@@ -4,7 +4,7 @@ title: Export agent traces to Hugging Face STS format and upload to a dataset
 status: Done
 assignee: []
 created_date: '2026-11-25T10:30:00Z'
-updated_date: '2026-11-26T13:13:00Z'
+updated_date: '2026-11-26T13:14:00Z'
 labels:
   - agent
   - conversations
@@ -133,4 +133,6 @@ One-click export of recorded agent traces (TASK-279) to Hugging Face. Conversati
 - Verified on the real Hub: a conversation uploaded to a private dataset opens in the trace viewer.
 
 Out of scope / follow-ups: storage bucket targets (need the Xet protocol), auto-upload, registering `devoxxgenie` as a recognised harness on the Hub.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1449
 <!-- SECTION:FINAL_SUMMARY:END -->
