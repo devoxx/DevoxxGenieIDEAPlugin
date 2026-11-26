@@ -46,6 +46,10 @@ class OpenAiCompatibleChatModelFactoryTest {
         return LocalProviderRegistry.find(ModelProvider.RapidMLX).orElseThrow();
     }
 
+    private static LocalProviderDefinition magnitude() {
+        return LocalProviderRegistry.find(ModelProvider.Magnitude).orElseThrow();
+    }
+
     private static LocalProviderDefinition jan() {
         return LocalProviderRegistry.find(ModelProvider.Jan).orElseThrow();
     }
@@ -125,6 +129,28 @@ class OpenAiCompatibleChatModelFactoryTest {
         assertThat(models.get(0).getModelName()).isEqualTo("qwen3.5-4b-4bit");
         assertThat(models.get(0).getInputMaxTokens()).isEqualTo(65536);
         assertThat(models.get(0).getProvider()).isEqualTo(ModelProvider.RapidMLX);
+    }
+
+    @Test
+    void magnitude_listsModelsUnderInferencePrefix_withFallbackContext() {
+        // Magnitude serves its OpenAI-compatible API under /inference/v1 and documents only the model id.
+        AtomicReference<String> seen = new AtomicReference<>();
+        String body = "{\"data\":[{\"id\":\"qwen3-8b\",\"object\":\"model\"}]}";
+        RecordingFactory f = factory(magnitude(), true, magnitude().defaultUrl(), null, url -> {
+            seen.set(url);
+            return body;
+        });
+
+        List<LanguageModel> models = f.getModels();
+
+        assertThat(seen.get()).isEqualTo("http://localhost:10100/inference/v1/models");
+        assertThat(models).hasSize(1);
+        assertThat(models.get(0).getModelName()).isEqualTo("qwen3-8b");
+        assertThat(models.get(0).getInputMaxTokens()).isEqualTo(8000);
+        assertThat(models.get(0).getProvider()).isEqualTo(ModelProvider.Magnitude);
+
+        List<LanguageModel> withFallback = factory(magnitude(), true, magnitude().defaultUrl(), 32768, url -> body).getModels();
+        assertThat(withFallback.get(0).getInputMaxTokens()).isEqualTo(32768);
     }
 
     @Test

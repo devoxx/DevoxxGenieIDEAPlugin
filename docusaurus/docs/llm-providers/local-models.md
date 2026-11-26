@@ -27,7 +27,8 @@ DevoxxGenie integrates with these local LLM providers:
 6. [Nativ](#nativ) (MLX on Apple Silicon)
 7. [Exo](/docs/llm-providers/exo) (Distributed AI cluster, **Sharding** tab)
 8. [Rapid-MLX](#rapid-mlx) (MLX on Apple Silicon)
-9. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
+9. [Magnitude](#magnitude) (Apple Silicon, NVIDIA, AMD, Intel or CPU)
+10. [Custom OpenAI-compatible Providers](#custom-openai-compatible-providers)
 
 ## Ollama
 
@@ -285,6 +286,30 @@ No API key is required by default. Optional server authentication is not configu
 
 :::note Testing status
 Rapid-MLX support was added for request #1342. It hasn't been tested against a live server.
+:::
+
+## Magnitude
+
+[Magnitude](https://github.com/magnitudedev/magnitude) is an open-source (Apache 2.0) inference engine that tunes its kernels to your hardware. It runs on Apple Silicon, NVIDIA, AMD, Intel or a plain CPU, and it ships as a desktop app and a CLI. Both expose an OpenAI-compatible API.
+
+### Setup
+
+1. Install Magnitude from the [project's README](https://github.com/magnitudedev/magnitude) and download a model, for example with `magnitude models pull "MODEL_ID"`
+2. Start Magnitude: open the desktop app, or run `magnitude serve`
+3. In DevoxxGenie settings, open the **Local** tab and tick the **Magnitude URL** checkbox
+4. Select "Magnitude" as the provider in the DevoxxGenie panel, then select a model
+
+### Configuration
+
+- **Magnitude URL**: the server's base URL, `http://localhost:10100/inference/v1/` by default. Magnitude serves its OpenAI-compatible routes under `/inference/v1`, not `/v1`, so keep that path when you change the host or port
+- **Context window**: Magnitude's `/inference/v1/models` doesn't report one, so DevoxxGenie assumes 8,000 tokens. Set the real value in the fallback field. The Magnitude app shows each model's context under **Details**
+
+Magnitude loads a model on its first request, so the first reply takes longer. To load a model ahead of time, run `magnitude models load "MODEL_ID"`. Magnitude is disabled by default, so DevoxxGenie sends nothing to port 10100 until you tick its checkbox.
+
+No API key is needed for a local server. If you turn on Magnitude's network access to reach it from another machine, it requires its API key, which this integration doesn't send. Use [Custom OpenAI](#custom-openai-compatible-providers) with base URL `http://HOST:10100/inference/v1/` and that key instead.
+
+:::note Testing status
+Magnitude support follows its API documentation. It hasn't been tested against a live server, and tool calling (needed for agent mode) depends on the model.
 :::
 
 ## Custom OpenAI-compatible Providers

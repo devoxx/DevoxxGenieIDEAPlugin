@@ -15,6 +15,7 @@ public enum ModelProvider {
     LMStudio("LMStudio", Type.LOCAL),
     Nativ("Nativ", Type.LOCAL),
     RapidMLX("Rapid-MLX", Type.LOCAL),
+    Magnitude("Magnitude", Type.LOCAL),
     Exo("Exo", Type.LOCAL),
     Ollama("Ollama", Type.LOCAL),
     CLIRunners("CLI Runners", Type.LOCAL),

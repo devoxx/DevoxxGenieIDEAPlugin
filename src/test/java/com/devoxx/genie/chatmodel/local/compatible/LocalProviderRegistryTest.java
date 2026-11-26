@@ -34,19 +34,20 @@ class LocalProviderRegistryTest {
     void registry_hasExpectedProviders() {
         assertThat(LocalProviderRegistry.definitions()).extracting(LocalProviderDefinition::provider)
                 .containsExactly(ModelProvider.Jan, ModelProvider.LLaMA, ModelProvider.GPT4All, ModelProvider.Nativ,
-                        ModelProvider.RapidMLX);
+                        ModelProvider.RapidMLX, ModelProvider.Magnitude);
     }
 
     @Test
     void enabledByDefault_matchesWhatEachProviderShippedWith() {
         // Jan, llama.cpp and GPT4All shipped enabled before they moved here; Nativ shares llama.cpp's port and
-        // Rapid-MLX is opt-in.
+        // Rapid-MLX and Magnitude are opt-in.
         DevoxxGenieStateService state = new DevoxxGenieStateService();
         assertThat(state.isLocalProviderEnabled(ModelProvider.Jan)).isTrue();
         assertThat(state.isLocalProviderEnabled(ModelProvider.LLaMA)).isTrue();
         assertThat(state.isLocalProviderEnabled(ModelProvider.GPT4All)).isTrue();
         assertThat(state.isLocalProviderEnabled(ModelProvider.Nativ)).isFalse();
         assertThat(state.isLocalProviderEnabled(ModelProvider.RapidMLX)).isFalse();
+        assertThat(state.isLocalProviderEnabled(ModelProvider.Magnitude)).isFalse();
     }
 
     @Test

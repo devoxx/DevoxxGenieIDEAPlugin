@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 DevoxxGenie is a Java-based LLM Code Assistant plugin for IntelliJ IDEA that integrates with both local LLM providers (
-Ollama, LMStudio, GPT4All, Llama.cpp, Rapid-MLX, Exo) and cloud-based LLMs (OpenAI, Anthropic, Mistral, Groq, Gemini, DeepInfra,
+Ollama, LMStudio, GPT4All, Llama.cpp, Rapid-MLX, Magnitude, Exo) and cloud-based LLMs (OpenAI, Anthropic, Mistral, Groq, Gemini, DeepInfra,
 DeepSeek, OpenRouter, Azure OpenAI, Amazon Bedrock). The plugin supports advanced features like RAG (Retrieval-Augmented
 Generation), MCP (Model Context Protocol) servers, web search, and agentic programming capabilities.
 
@@ -67,7 +67,7 @@ Compiler errors don't match this filter. When the build fails before the tests r
 `RouterRegistry.isGeneric(provider)` rather than `Type.ROUTER` in shared code (Cloudflare is `Type.ROUTER` but not
 generic). `RouterRegistryTest.everyDefinition_isFullyWired` enforces the wiring.
 
-**OpenAI-compatible local servers** (Jan, llama.cpp, GPT4All, Nativ, Rapid-MLX) skip the factory too: add a `Type.LOCAL` entry to the
+**OpenAI-compatible local servers** (Jan, llama.cpp, GPT4All, Nativ, Rapid-MLX, Magnitude) skip the factory too: add a `Type.LOCAL` entry to the
 `ModelProvider` enum and one `LocalProviderDefinition` in `LocalProviderRegistry`. Use
 `LocalProviderRegistry.isGeneric(provider)` in shared code. `LocalProviderRegistryTest.everyDefinition_isFullyWired`
 enforces the wiring.

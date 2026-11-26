@@ -27,6 +27,7 @@ DevoxxGenie supports several local LLM providers:
 - [Jan](https://jan.ai/)
 - [Nativ](https://github.com/Blaizzy/nativ) (MLX on Apple Silicon)
 - [Rapid-MLX](https://github.com/raullenchai/Rapid-MLX) (MLX on Apple Silicon)
+- [Magnitude](https://github.com/magnitudedev/magnitude) (Apple Silicon, NVIDIA, AMD, Intel or CPU)
 - Custom OpenAI-compatible providers
 
 ## Setting Up with Ollama (Recommended)
