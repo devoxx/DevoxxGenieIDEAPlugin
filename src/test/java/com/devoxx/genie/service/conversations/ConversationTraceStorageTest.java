@@ -145,6 +145,15 @@ class ConversationTraceStorageTest {
     }
 
     @Test
+    void hasTraceEvents_reflectsStoredRows() {
+        storage.addConversation(project, conversation("1"));
+        assertThat(storage.hasTraceEvents("1")).isFalse();
+        storage.addTraceTurn("1", "turn-a", agentTurn(), TraceScanStatus.CLEAN);
+        assertThat(storage.hasTraceEvents("1")).isTrue();
+        assertThat(storage.hasTraceEvents("2")).isFalse();
+    }
+
+    @Test
     void emptyTurn_writesNothing() {
         storage.addTraceTurn("1", "turn-a", List.of(), TraceScanStatus.CLEAN);
         assertThat(storage.getTraceEvents("1")).isEmpty();

@@ -16,6 +16,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.devoxx.genie.ui.util.ThemeChangeNotifier;
 import com.devoxx.genie.ui.compose.ComposeConversationViewController;
 import com.devoxx.genie.ui.compose.ConversationViewController;
+import com.devoxx.genie.ui.trace.TraceUploadButtonController;
 import com.intellij.ide.ui.UISettingsListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -44,6 +45,8 @@ public class ConversationPanel
 
     private final MessageRenderer messageRenderer;
     private final ConversationManager conversationManager;
+    /** task-280: the chat toolbar's "Upload to Hugging Face" button. */
+    private final TraceUploadButtonController traceUploadButton;
     private final ConversationUIController uiController;
     private final MessageBusConnection messageBusConnection;
     private volatile boolean disposed;
@@ -119,6 +122,10 @@ public class ConversationPanel
         } catch (Exception e) {
             log.error("Could not set conversationManager in UIController", e);
         }
+
+        traceUploadButton = viewController instanceof ComposeConversationViewController compose
+                ? new TraceUploadButtonController(project, compose, conversationManager::getCurrentConversation)
+                : null;
 
         // Setup UI
         add(uiController.createButtonPanel(), BorderLayout.NORTH);
@@ -238,6 +245,7 @@ public class ConversationPanel
             return;
         }
         conversationManager.onNewConversation(chatMessageContext);
+        refreshTraceUploadButton();
     }
 
     /**
@@ -246,6 +254,7 @@ public class ConversationPanel
     @Override
     public void startNewConversation() {
         conversationManager.startNewConversation();
+        refreshTraceUploadButton();
     }
 
     /**
@@ -254,6 +263,13 @@ public class ConversationPanel
     @Override
     public void onConversationSelected(@NotNull Conversation conversation) {
         conversationManager.onConversationSelected(conversation);
+        refreshTraceUploadButton();
+    }
+
+    private void refreshTraceUploadButton() {
+        if (traceUploadButton != null) {
+            traceUploadButton.refresh();
+        }
     }
     
     /**
@@ -326,6 +342,9 @@ public class ConversationPanel
         }
         if (chatService != null) {
             chatService.dispose();
+        }
+        if (traceUploadButton != null) {
+            traceUploadButton.dispose();
         }
         if (viewController != null) {
             viewController.dispose();

@@ -6,6 +6,7 @@ import com.devoxx.genie.model.request.ChatMessageContext
 import com.devoxx.genie.service.agent.AgentFileChangeTracker
 import com.devoxx.genie.ui.compose.model.ChangedFileUiModel
 import com.devoxx.genie.ui.compose.model.TerminalState
+import com.devoxx.genie.ui.compose.model.TraceUploadUiState
 import com.devoxx.genie.ui.compose.screen.ConversationScreen
 import com.devoxx.genie.ui.compose.viewmodel.ConversationViewModel
 import com.intellij.openapi.diagnostic.Logger
@@ -243,6 +244,16 @@ class ComposeConversationViewController(
 
     override fun refreshForNewConversation() {
         viewModel.refreshForNewConversation()
+    }
+
+    /** Updates the "Upload to Hugging Face" toolbar button (task-280). Call on the EDT. */
+    fun setTraceUploadState(state: TraceUploadUiState) {
+        viewModel.traceUpload = state
+    }
+
+    /** Sets what the "Upload to Hugging Face" toolbar button does (task-280). */
+    fun setOnTraceUploadClick(action: Runnable) {
+        viewModel.onTraceUploadClick = { action.run() }
     }
 
     override fun setRestoringConversation(restoring: Boolean) {

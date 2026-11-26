@@ -36,7 +36,9 @@ public enum CredentialKey {
     TAVILY_SEARCH_KEY    ("tavilySearchKey"),
     // Added after the plaintext-to-PasswordSafe migration: no legacy XML field exists for it (TASK-277.3).
     KEENABLE_SEARCH_KEY  ("keenableSearchKey"),
-    PARALLEL_SEARCH_KEY  ("parallelSearchKey");
+    PARALLEL_SEARCH_KEY  ("parallelSearchKey"),
+    // Agent trace upload to Hugging Face (TASK-280); added after the migration, no legacy XML field.
+    HUGGING_FACE_TOKEN   ("huggingFaceToken");
 
     /** PasswordSafe service-name prefix. Entries appear as "DevoxxGenie — &lt;subKey&gt;". */
     public static final String SERVICE_NAME = "DevoxxGenie";

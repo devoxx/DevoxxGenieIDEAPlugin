@@ -48,6 +48,9 @@ public class DebugSettingsConfigurable implements Configurable {
         }
         boolean nowEnabled = component.isAnyLoggingSelected();
         component.apply();
+        // task-280: chat tabs show/hide their Hugging Face upload button.
+        com.intellij.openapi.application.ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(com.devoxx.genie.service.trace.AgentTraceListener.TOPIC).settingsChanged();
 
         // Auto-open the Activity Log panel when any debug logging is turned on, so users see it start filling.
         if (nowEnabled) {

@@ -103,6 +103,14 @@ class ConversationViewModel(
     var ideScale: Float by mutableStateOf(readIdeScale())
         private set
 
+    /** The chat toolbar's "Upload to Hugging Face" button (task-280); set by the Swing host. */
+    var traceUpload: com.devoxx.genie.ui.compose.model.TraceUploadUiState by mutableStateOf(
+        com.devoxx.genie.ui.compose.model.TraceUploadUiState.HIDDEN
+    )
+
+    /** Invoked when the upload button is clicked; set by the Swing host. */
+    var onTraceUploadClick: () -> Unit = {}
+
     fun onThemeChanged(dark: Boolean) {
         isDarkTheme = dark
     }
