@@ -76,4 +76,6 @@ Implementation 2026-11-26:
 Review fix 2026-11-26: indexFile now embeds first and replaces after (embedSegments + addAll). Old chunks are only removed once the new embeddings exist. If nothing could be embedded (e.g. the embedding server is down), the file keeps its chunks and manifest entry (FAILED), so the watcher still retries it later. A file that became blank loses its chunks and is untracked. Pruning is also skipped when the scan was cancelled through the IDE progress indicator. Two more tests (8 in ProjectIndexerIncrementalTest); RAG test groups: 332 pass. Full suite not run yet.
 
 Full ./gradlew test --rerun (JDK 21) passes on the branch rebased onto master (2026-11-26). AC #7 (manual rebuild + duplicate check) still open.
+
+PR: https://github.com/devoxx/DevoxxGenieIDEAPlugin/pull/1451
 <!-- SECTION:NOTES:END -->
