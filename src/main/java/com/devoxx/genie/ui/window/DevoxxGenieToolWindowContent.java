@@ -202,6 +202,13 @@ public class DevoxxGenieToolWindowContent implements SettingsChangeListener, Glo
         // Create a per-tab disposable so we can clean up listeners when the tab closes
         tabDisposable = Disposer.newDisposable("DevoxxGenieTab-" + tabId);
         Disposer.register(toolWindow.getDisposable(), tabDisposable);
+        // The chat panel is torn down with the tab (tab close or tool window disposal), never on a mere
+        // Swing detach: that disconnected the tab's ChatService, so later turns were not saved or traced.
+        Disposer.register(tabDisposable, () -> {
+            if (promptOutputPanel != null) {
+                promptOutputPanel.dispose();
+            }
+        });
 
         MessageBusUtil.connect(project, connection -> {
             MessageBusUtil.subscribe(connection, AppTopics.LLM_SETTINGS_CHANGED_TOPIC, llmProviderPanel);
