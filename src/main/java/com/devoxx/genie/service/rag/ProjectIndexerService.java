@@ -103,10 +103,31 @@ public final class ProjectIndexerService {
         this.manifest = manifest;
     }
 
-    public void indexFiles(Project project,
-                           boolean forceReindex,
-                           JProgressBar progressBar,
-                           JLabel progressLabel) {
+    /** What one full indexing run did: files embedded, skipped as unchanged, and removed from the index. */
+    public record IndexRunSummary(int indexed, int unchanged, int removed, int failed) {
+        public static final IndexRunSummary NOTHING = new IndexRunSummary(0, 0, 0, 0);
+
+        public @NotNull String describe() {
+            String text = indexed + (indexed == 1 ? " file indexed" : " files indexed")
+                    + ", " + unchanged + " unchanged"
+                    + ", " + removed + " removed";
+            return failed == 0 ? text : text + ", " + failed + " failed (see idea.log)";
+        }
+    }
+
+    /**
+     * Indexes the project's files for RAG.
+     *
+     * @param rebuild {@code false} for an incremental run (TASK-282): files whose content hash and
+     *                embedding setup match the manifest are skipped, changed and new files are
+     *                (re-)embedded, and files that are gone or now excluded are removed from the index.
+     *                {@code true} empties the index first and embeds every file again.
+     * @return what the run did; {@link IndexRunSummary#NOTHING} when it stopped before indexing
+     */
+    public @NotNull IndexRunSummary indexFiles(Project project,
+                                               boolean rebuild,
+                                               JProgressBar progressBar,
+                                               JLabel progressLabel) {
         resetCancellationFlag();
 
         // When running under a progress context (e.g. Task.Backgroundable from the RAG
@@ -141,13 +162,13 @@ public final class ProjectIndexerService {
         String basePath = project.getBasePath();
         if (basePath == null) {
             log.warn("Project base path is null");
-            return;
+            return IndexRunSummary.NOTHING;
         }
 
         VirtualFile baseDir = LocalFileSystem.getInstance().findFileByPath(basePath);
         if (baseDir == null) {
             log.debug("Could not find base directory: {}", basePath);
-            return;
+            return IndexRunSummary.NOTHING;
         }
 
         // A full index always uses the configured embedding setup. If the existing index was
@@ -158,7 +179,11 @@ public final class ProjectIndexerService {
         if (!prepareIndexFor(fingerprint)) {
             SwingUtilities.invokeLater(() -> progressLabel.setText(
                     "Could not clear the index built with the previous embedding model; see idea.log"));
-            return;
+            return IndexRunSummary.NOTHING;
+        }
+        if (rebuild && !clearIndex()) {
+            SwingUtilities.invokeLater(() -> progressLabel.setText("Could not clear the RAG index; see idea.log"));
+            return IndexRunSummary.NOTHING;
         }
 
         // Phase 1 (scan): run under a scaled sub-indicator so the determinate progress the
@@ -192,24 +217,15 @@ public final class ProjectIndexerService {
                         "First 3 scanned files: {}", exclusions,
                         filesToProcess.stream().limit(3).map(Path::toString).toList());
             }
+        }
 
-            // Sweep previously-indexed files that now match the exclusion list and drop their
-            // chunks from the vector store (task-220). Without this, "Indexed Segments" stays
-            // unchanged after a user adds an exclusion — the old chunks linger because the
-            // indexer only ever adds chunks for files it re-walks, never removes for files it
-            // chose to skip.
-            int swept = 0;
-            for (Path tracked : manifest.trackedPaths()) {
-                if (isRagExcluded(tracked, exclusions, projectBasePath)) {
-                    removeChunksFromStore(tracked);
-                    manifest.markRemoved(tracked);
-                    swept++;
-                }
-            }
-            if (swept > 0) {
-                log.info("RAG indexing: removed chunks for {} previously-indexed file(s) now " +
-                        "covered by exclusions", swept);
-            }
+        // Drop files that are no longer part of the index: deleted since the last run, or now
+        // excluded (task-220) or ignored by the scanner. Covers deletions the file watcher missed.
+        // Never after a cancelled scan: a partial file list would delete most of the index.
+        boolean scanCancelled = isIndexingCancelled() || (indicator != null && indicator.isCanceled());
+        int removed = scanCancelled ? 0 : pruneFilesNotIn(filesToProcess);
+        if (removed > 0) {
+            log.info("RAG indexing: removed {} file(s) that are no longer part of the index", removed);
         }
 
         int totalFiles = filesToProcess.size();
@@ -234,6 +250,9 @@ public final class ProjectIndexerService {
                 });
         java.util.concurrent.atomic.AtomicInteger processedCount = new java.util.concurrent.atomic.AtomicInteger();
         java.util.concurrent.atomic.AtomicInteger maxReported = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger indexedCount = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger unchangedCount = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger failedCount = new java.util.concurrent.atomic.AtomicInteger();
         try {
             java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>(totalFiles);
             for (Path path : filesToProcess) {
@@ -245,7 +264,14 @@ public final class ProjectIndexerService {
                         cancelIndexing.set(true);
                     }
                     if (isIndexingCancelled()) return;
-                    indexFile(path, forceReindex, fingerprint);
+                    // Never forced: a rebuild has already emptied the manifest, so every file is
+                    // embedded; an incremental run skips files whose content hash is unchanged.
+                    switch (indexFile(path, false, fingerprint)) {
+                        case INDEXED -> indexedCount.incrementAndGet();
+                        case UNCHANGED -> unchangedCount.incrementAndGet();
+                        case FAILED -> failedCount.incrementAndGet();
+                        case SKIPPED -> { }
+                    }
                     int done = processedCount.incrementAndGet();
                     int progress = (int) (((double) done / totalFiles) * 100);
                     String fileName = path.getFileName().toString();
@@ -290,8 +316,12 @@ public final class ProjectIndexerService {
         } finally {
             pool.shutdownNow();
             manifest.flush();
-            resetCancellationFlag();
         }
+        IndexRunSummary summary = new IndexRunSummary(indexedCount.get(), unchangedCount.get(), removed, failedCount.get());
+        log.info("RAG indexing {}: {}", isIndexingCancelled() ? "cancelled" : "finished", summary.describe());
+        // The cancellation flag is left set so the caller can tell a cancelled run apart; the next
+        // run resets it on entry.
+        return summary;
     }
 
     /**
@@ -380,9 +410,8 @@ public final class ProjectIndexerService {
                     manifest.markRemoved(file);
                     continue;
                 }
-                // Drop any existing chunks for this file before re-embedding, otherwise edits
+                // indexFile replaces the file's existing chunks (it is tracked), so edits never
                 // accumulate stale chunks alongside fresh ones.
-                removeChunksFromStore(file);
                 indexFile(file, true, fingerprint);
             }
         } finally {
@@ -485,21 +514,100 @@ public final class ProjectIndexerService {
         }
     }
 
-    private void indexFile(Path filePath, boolean forceReindex, @NotNull EmbeddingFingerprint fingerprint) {
+    /** What {@link #indexFile(Path, boolean, EmbeddingFingerprint)} did with one file. */
+    enum FileOutcome {
+        /** Embedded and stored (new or changed file, or forced). */
+        INDEXED,
+        /** Skipped: the content hash and embedding setup match the manifest. */
+        UNCHANGED,
+        /** Nothing stored: blank, unreadable, or every segment failed to embed. */
+        SKIPPED,
+        /** An error was logged. */
+        FAILED
+    }
+
+    FileOutcome indexFile(Path filePath, boolean forceReindex, @NotNull EmbeddingFingerprint fingerprint) {
         log.debug("Indexing file: {}", filePath);
         try {
             if (!forceReindex && manifest.isCurrent(filePath, fingerprint.id())) {
                 log.debug("File already indexed (content hash matches): {}", filePath);
-                return;
+                return FileOutcome.UNCHANGED;
             }
-            int segmentCount = processPath(filePath, fingerprint);
-            if (segmentCount > 0) {
-                manifest.markIndexed(filePath, segmentCount, fingerprint.id(), queryPrefixFor(fingerprint));
-                log.debug("File successfully indexed ({} segments): {}", segmentCount, filePath);
+            List<TextSegment> segments = prepareSegments(filePath, fingerprint);
+            if (segments == null) {
+                return FileOutcome.FAILED; // Unreadable: keep whatever was indexed before.
             }
+            boolean tracked = manifest.isTracked(filePath);
+            if (segments.isEmpty()) {
+                if (tracked) { // Now blank: its old chunks no longer describe the file.
+                    removeChunksFromStore(filePath);
+                    manifest.markRemoved(filePath);
+                }
+                return FileOutcome.SKIPPED;
+            }
+            EmbeddedSegments embedded = embedSegments(segments, fingerprint);
+            if (embedded.segments().isEmpty()) {
+                // Nothing could be embedded (e.g. the embedding server is down). Keep the old chunks
+                // and manifest entry, so search still finds the file and a later run retries it.
+                log.warn("Could not embed {}; its existing index entries were kept", filePath);
+                return FileOutcome.FAILED;
+            }
+            // Replace, never append (TASK-282): chunks are stored under random ids, so a file that was
+            // indexed before loses its old chunks, but only now that the new ones are ready.
+            if (tracked) {
+                removeChunksFromStore(filePath);
+            }
+            chromaEmbeddingService.getEmbeddingStore().addAll(embedded.embeddings(), embedded.segments());
+            int segmentCount = embedded.segments().size();
+            manifest.markIndexed(filePath, segmentCount, fingerprint.id(), queryPrefixFor(fingerprint));
+            log.debug("File successfully indexed ({} segments): {}", segmentCount, filePath);
+            return FileOutcome.INDEXED;
         } catch (Exception e) {
             log.warn("Error indexing file: {} - {}", filePath, e.getMessage());
+            return FileOutcome.FAILED;
         }
+    }
+
+    /**
+     * Removes the chunks and manifest entries of every indexed file that is not in
+     * {@code indexedSet}, the files a full run covers after scanning and exclusions: files that
+     * were deleted, or are now excluded or ignored. Returns how many files were removed. An empty
+     * set prunes nothing, since it more likely means the scan failed than that every file is gone.
+     */
+    int pruneFilesNotIn(@NotNull Collection<Path> indexedSet) {
+        if (indexedSet.isEmpty()) {
+            return 0;
+        }
+        java.util.Set<Path> keep = new java.util.HashSet<>();
+        for (Path p : indexedSet) {
+            keep.add(p.toAbsolutePath().normalize());
+        }
+        int removed = 0;
+        for (Path tracked : List.copyOf(manifest.trackedPaths())) {
+            if (!keep.contains(tracked.toAbsolutePath().normalize())) {
+                removeChunksFromStore(tracked);
+                manifest.markRemoved(tracked);
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    /**
+     * Empties the index for a rebuild: deletes every stored chunk (Chroma drops and recreates the
+     * collection) and every manifest entry. Returns {@code false} when the chunks could not be
+     * deleted, in which case the manifest is left as it was.
+     */
+    boolean clearIndex() {
+        try {
+            chromaEmbeddingService.getEmbeddingStore().removeAll();
+        } catch (Exception e) {
+            log.error("Could not clear the RAG index: {}", e.getMessage());
+            return false;
+        }
+        manifest.clear();
+        manifest.flush();
+        return true;
     }
 
     /** The query prefix to record with a file: the settings' for a current index, else the index's. */
@@ -519,45 +627,49 @@ public final class ProjectIndexerService {
      *
      * @return how many segments were actually stored, so failures can't be counted as indexed
      */
-    private int storeSegments(@NotNull List<TextSegment> segments, @NotNull EmbeddingFingerprint fingerprint) {
-        if (segments.isEmpty()) return 0;
+    /** Segments that were embedded, with their embeddings in the same order. */
+    private record EmbeddedSegments(@NotNull List<Embedding> embeddings, @NotNull List<TextSegment> segments) {}
+
+    /**
+     * Embeds {@code segments} in batches without storing them. A batch the backend rejects is retried
+     * per segment, so one malformed chunk doesn't lose the rest of the file; segments that still fail
+     * are left out.
+     */
+    private @NotNull EmbeddedSegments embedSegments(@NotNull List<TextSegment> segments,
+                                                    @NotNull EmbeddingFingerprint fingerprint) {
         ProfiledEmbedder embedder = new ProfiledEmbedder(
                 chromaEmbeddingService.getEmbeddingModel(fingerprint), fingerprint.documentProfile());
-        int stored = 0;
+        List<Embedding> embeddings = new ArrayList<>(segments.size());
+        List<TextSegment> embedded = new ArrayList<>(segments.size());
         for (int from = 0; from < segments.size(); from += EMBEDDING_BATCH_SIZE) {
             int to = Math.min(from + EMBEDDING_BATCH_SIZE, segments.size());
             List<TextSegment> batch = segments.subList(from, to);
             try {
-                List<Embedding> embeddings = embedder.embedDocuments(batch);
-                chromaEmbeddingService.getEmbeddingStore().addAll(embeddings, batch);
-                stored += batch.size();
+                embeddings.addAll(embedder.embedDocuments(batch));
+                embedded.addAll(batch);
             } catch (Exception batchEx) {
-                // Some embedding backends choke on a single bad segment and reject the whole
-                // batch. Fall back to per-segment so one malformed chunk doesn't poison the
-                // rest of the file.
                 log.warn("Batch embed failed ({}); falling back to per-segment for this batch", batchEx.getMessage());
                 for (TextSegment segment : batch) {
                     try {
-                        Embedding embedding = embedder.embedDocument(segment.text());
-                        chromaEmbeddingService.getEmbeddingStore().add(embedding, segment);
-                        stored++;
+                        embeddings.add(embedder.embedDocument(segment.text()));
+                        embedded.add(segment);
                     } catch (Exception singleEx) {
                         log.warn("Skipping segment that failed to embed: {}", singleEx.getMessage());
                     }
                 }
             }
         }
-        return stored;
+        return new EmbeddedSegments(embeddings, embedded);
     }
 
-    /** Returns the number of segments stored for this file (0 if blank / unreadable). */
-    private int processPath(Path path, @NotNull EmbeddingFingerprint fingerprint) {
+    /** The file's chunks with their metadata; empty for a blank file, {@code null} when it can't be read. */
+    private @Nullable List<TextSegment> prepareSegments(Path path, @NotNull EmbeddingFingerprint fingerprint) {
         try {
             log.debug("Processing file: {}", path);
 
             String content = Files.readString(path);
             if (content.isBlank()) {
-                return 0;
+                return List.of();
             }
 
             List<TextSegment> chunks = chunker.chunk(path, content);
@@ -576,10 +688,10 @@ public final class ProjectIndexerService {
                 segments.add(new TextSegment(chunk.text(), metadata));
             }
 
-            return storeSegments(segments, fingerprint);
+            return segments;
         } catch (IOException e) {
             log.warn("Error processing file: {}", path);
-            return 0;
+            return null;
         }
     }
 

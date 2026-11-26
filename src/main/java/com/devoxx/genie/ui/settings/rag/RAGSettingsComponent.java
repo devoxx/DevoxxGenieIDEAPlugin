@@ -48,6 +48,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.intellij.openapi.ui.Messages;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.text.JTextComponent;
@@ -114,6 +115,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     private final Project project;
     private JButton startIndexButton;
+    private JButton rebuildIndexButton;
     private JBTable collectionsTable;
     private DefaultTableModel tableModel;
     private final JPanel validationPanel;
@@ -139,7 +141,11 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     private void initializeComponents() {
         startIndexButton = new JButton("Start Indexing");
+        startIndexButton.setToolTipText("Index new and changed files; unchanged files are skipped and removed files are dropped from the index");
         startIndexButton.setVisible(false);
+        rebuildIndexButton = new JButton("Rebuild Index");
+        rebuildIndexButton.setToolTipText("Delete the whole index and embed every file again");
+        rebuildIndexButton.setVisible(false);
         String[] columnNames = {"Collection", "Indexed Segments", "Actions"};
         tableModel = new DefaultTableModel(columnNames, 0);
         collectionsTable = new JBTable(tableModel);
@@ -152,13 +158,23 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     @Override
     public void addListeners() {
-        startIndexButton.addActionListener(e -> startIndexing());
+        startIndexButton.addActionListener(e -> startIndexing(false));
+        rebuildIndexButton.addActionListener(e -> {
+            int answer = Messages.showYesNoDialog(project,
+                    "Delete the whole RAG index for this project and embed every file again?\n" +
+                    "This takes as long as the first indexing run. \"Start Indexing\" only processes new and changed files.",
+                    "Rebuild RAG Index", "Rebuild", "Cancel", Messages.getQuestionIcon());
+            if (answer == Messages.YES) {
+                startIndexing(true);
+            }
+        });
         enableIndexerCheckBox.addActionListener(e -> {
             updateComponentsEnabled();
             if (enableIndexerCheckBox.isSelected()) {
                 validationHandler.performValidation();
             } else {
                 startIndexButton.setVisible(false);
+                rebuildIndexButton.setVisible(false);
             }
         });
         // Variants spinner is only meaningful when query expansion is on.
@@ -386,14 +402,19 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.LINE_START;
         startIndexButton.setVisible(false);
-        panel.add(startIndexButton, gbc);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        buttons.setOpaque(false);
+        buttons.add(startIndexButton);
+        buttons.add(Box.createHorizontalStrut(8));
+        buttons.add(rebuildIndexButton);
+        panel.add(buttons, gbc);
         gbc.gridy++;
     }
 
     // Flag to track if indexing is currently running
     private boolean isIndexing = false;
     
-    private void startIndexing() {
+    private void startIndexing(boolean rebuild) {
         if (!enableIndexerCheckBox.isSelected()) {
             return;
         }
@@ -415,6 +436,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         // before the indexing task, off the EDT, with ModalityState.any() so it isn't held back
         // by the modal Settings dialog.
         startIndexButton.setEnabled(false);
+        rebuildIndexButton.setEnabled(false);
         progressLabel.setText("Checking embedding model...");
         progressLabel.setVisible(true);
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
@@ -423,12 +445,13 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                             () -> progressLabel.setText(status), ModalityState.any()));
             ApplicationManager.getApplication().invokeLater(() -> {
                 startIndexButton.setEnabled(true);
+                rebuildIndexButton.setEnabled(true);
                 if (project.isDisposed()) {
                     return;
                 }
                 if (model.ready()) {
                     refreshValidation();
-                    runIndexingTask();
+                    runIndexingTask(rebuild);
                 } else {
                     progressLabel.setText(model.problem());
                     NotificationUtil.sendNotification(project, model.problem());
@@ -437,7 +460,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         });
     }
 
-    private void runIndexingTask() {
+    private void runIndexingTask(boolean rebuild) {
         // Set indexing flag
         isIndexing = true;
 
@@ -447,13 +470,15 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         // Run the indexing process as a cancellable background task so the IDE shows
         // determinate progress (n/total files, current file name) via the ProgressIndicator
         // that ProjectIndexerService.indexFiles() picks up from the progress context.
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "Indexing project for RAG", true) {
+        ProgressManager.getInstance().run(new Task.Backgroundable(project,
+                rebuild ? "Rebuilding the RAG index" : "Indexing project for RAG", true) {
             private Exception failure;
+            private ProjectIndexerService.IndexRunSummary summary = ProjectIndexerService.IndexRunSummary.NOTHING;
 
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try {
-                    ProjectIndexerService.getInstance().indexFiles(project, true, progressBar, progressLabel);
+                    summary = ProjectIndexerService.getInstance().indexFiles(project, rebuild, progressBar, progressLabel);
                 } catch (ProcessCanceledException pce) {
                     throw pce;
                 } catch (Exception e) {
@@ -495,7 +520,7 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
                     if (ProjectIndexerService.getInstance().isIndexingCancelled()) {
                         NotificationUtil.sendNotification(project, "Project indexing was cancelled");
                     } else {
-                        NotificationUtil.sendNotification(project, "Project indexing completed successfully");
+                        NotificationUtil.sendNotification(project, "Project indexing completed: " + summary.describe());
                     }
                 });
                 timer.setRepeats(false);
@@ -519,10 +544,12 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
         if (state) {
             // If state is true, we're either not indexing or ready to start
             startIndexButton.setText("Start Indexing");
+            rebuildIndexButton.setEnabled(true);
             isIndexing = false;
         } else {
             // If state is false, we're currently indexing
             startIndexButton.setText("Stop Indexing");
+            rebuildIndexButton.setEnabled(false);
             isIndexing = true;
         }
         
@@ -532,7 +559,9 @@ public class RAGSettingsComponent extends AbstractSettingsComponent {
 
     /** Called on the EDT with the result of one validation run. */
     void applyValidationResult(@NotNull ValidationResult result) {
-        startIndexButton.setVisible(enableIndexerCheckBox.isSelected() && canStartIndexing(result.statuses()));
+        boolean canIndex = enableIndexerCheckBox.isSelected() && canStartIndexing(result.statuses());
+        startIndexButton.setVisible(canIndex);
+        rebuildIndexButton.setVisible(canIndex);
         panel.revalidate();
         panel.repaint();
         buttonEditor.safeLoadCollections();

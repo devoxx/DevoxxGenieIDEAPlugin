@@ -150,9 +150,13 @@ The benchmark, and how to write questions for your own code base, is described i
 
 Before RAG can search your code, you need to index your project:
 
-1. Use the **Index Files** action in the DevoxxGenie panel
-2. DevoxxGenie will scan your project, generate embeddings, and store them in ChromaDB
-3. Indexing runs in the background — you can continue working
+1. Click **Start Indexing** under **Settings → DevoxxGenie → RAG**.
+2. DevoxxGenie scans your project, generates embeddings and stores them in ChromaDB.
+3. Indexing runs in the background, so you can keep working.
+
+Indexing again only does the work that's needed. **Start Indexing** skips files whose content hasn't changed since the last run. It embeds new and changed files, replacing their old chunks, and removes files that were deleted or are now excluded. When it finishes, a notification says how many files were indexed, unchanged and removed. While RAG is enabled, files you edit are also re-indexed automatically.
+
+**Rebuild Index** deletes the project's whole index and embeds every file again. It takes as long as the first run. Use it if search results look wrong, and once after updating from an earlier version, where each **Start Indexing** added another copy of every chunk.
 
 ### Searching with RAG
 
@@ -200,7 +204,7 @@ These types of queries benefit most from RAG (in either mode):
 ### RAG Not Returning Relevant Context
 
 - Ensure your project has been indexed
-- Try rebuilding the index
+- Try **Rebuild Index** in the RAG settings, especially if the same chunk shows up several times in the results
 - Check that your search query is specific enough
 
 ### Docker or ChromaDB Issues
