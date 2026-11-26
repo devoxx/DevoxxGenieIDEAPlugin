@@ -1,9 +1,10 @@
 ---
 id: TASK-280
-title: 'Export agent traces to Hugging Face STS format and upload to a dataset'
-status: In Progress
+title: Export agent traces to Hugging Face STS format and upload to a dataset
+status: Done
 assignee: []
 created_date: '2026-11-25T10:30:00Z'
+updated_date: '2026-11-26T13:13:00Z'
 labels:
   - agent
   - conversations
@@ -11,18 +12,27 @@ labels:
 dependencies:
   - TASK-279
 references:
-  - src/main/java/com/devoxx/genie/service/conversations/ConversationStorageService.java
-  - src/main/kotlin/com/devoxx/genie/ui/compose/components/ConversationToolbar.kt
+  - >-
+    src/main/java/com/devoxx/genie/service/conversations/ConversationStorageService.java
+  - >-
+    src/main/kotlin/com/devoxx/genie/ui/compose/components/ConversationToolbar.kt
   - src/main/kotlin/com/devoxx/genie/ui/compose/screen/ChatScreen.kt
-  - src/main/java/com/devoxx/genie/ui/panel/conversationhistory/ConversationHistoryPanel.java
+  - >-
+    src/main/java/com/devoxx/genie/ui/panel/conversationhistory/ConversationHistoryPanel.java
   - src/main/java/com/devoxx/genie/service/debug/SecretRedactor.java
-  - src/main/java/com/devoxx/genie/startup/CredentialMigrationStartupActivity.java
+  - >-
+    src/main/java/com/devoxx/genie/startup/CredentialMigrationStartupActivity.java
   - https://huggingface.co/docs/hub/en/session-traces-format
   - https://huggingface.co/docs/hub/en/agent-traces
   - https://github.com/NielsRogge/copilot-traces-hf/blob/main/src/converter.ts
   - https://github.com/NielsRogge/copilot-traces-hf/blob/main/src/hub.ts
   - https://github.com/NielsRogge/copilot-traces-hf/blob/main/src/extension.ts
-  - https://github.com/huggingface/huggingface.js/blob/main/packages/hub/src/lib/commit.ts
+  - >-
+    https://github.com/huggingface/huggingface.js/blob/main/packages/hub/src/lib/commit.ts
+modified_files:
+  - src/main/java/com/devoxx/genie/service/trace/hf/HuggingFaceHubClient.java
+  - >-
+    src/test/java/com/devoxx/genie/service/trace/hf/HuggingFaceHubClientTest.java
 priority: low
 type: task
 ordinal: 35000
@@ -73,14 +83,14 @@ TASK-279 records full agent traces, already redacted and TruffleHog-scanned, in 
 - [x] #2 Conversations without trace events (older ones, or recorded with tracing off) export as plain user/assistant messages instead of failing
 - [x] #3 Tool results above a configurable limit (default 50,000 characters, 0 = no limit) are truncated, with a marker saying so
 - [x] #4 "Preview as trace" and "Export to folder…" work from the conversation history panel for one or several selected conversations
-- [x] #11 With "Record agent traces" enabled, the chat window toolbar shows an "Upload to Hugging Face" button next to "Copy chat". It is hidden when recording is off and disabled, with a tooltip, while the conversation has no trace rows or a response is streaming
-- [x] #12 Clicking the button uploads the current conversation as STS JSONL in one step. The first click opens a setup dialog for the token and target (prefilled `<hf-user>/devoxxgenie-traces`, private), and later clicks reuse the saved choices. A notification links to the uploaded trace on the Hub
-- [x] #5 "Upload to Hugging Face…" creates the dataset as private when it doesn't exist (visibility can be set in Settings), uploads `<folder>/<conversationId>.jsonl` files in a single commit, and shows a link to the target when it finishes
-- [x] #6 Settings include: the target, the visibility used when creating it, the folder inside the repo, whether to include the project name in the header, the tool-result limit, and the confirm-before-upload toggle. A Hugging Face token can be set or removed through `PasswordSafe`, with fallback to `HF_TOKEN` or the `hf auth login` token
-- [x] #7 Redaction runs again on export and upload, and the TruffleHog `required` mode holds back conversations that weren't scanned successfully. The upload summary lists how many conversations were uploaded and how many were held back, and why
-- [x] #8 All network and file work runs off the EDT with a progress indicator and cancellation. Hub errors (401/403 bad token, 404, 409 conflict, rate limits) are shown as readable notifications, and the token never appears in logs
-- [x] #9 Unit tests cover the converter (agent turn with tool calls, reasoning, a tool error, a plain chat conversation, truncation), target parsing, and the upload client against a mock HTTP server
-- [ ] #10 Verified manually: an uploaded conversation opens correctly in the Hugging Face trace viewer
+- [x] #5 With "Record agent traces" enabled, the chat window toolbar shows an "Upload to Hugging Face" button next to "Copy chat". It is hidden when recording is off and disabled, with a tooltip, while the conversation has no trace rows or a response is streaming
+- [x] #6 Clicking the button uploads the current conversation as STS JSONL in one step. The first click opens a setup dialog for the token and target (prefilled `<hf-user>/devoxxgenie-traces`, private), and later clicks reuse the saved choices. A notification links to the uploaded trace on the Hub
+- [x] #7 "Upload to Hugging Face…" creates the dataset as private when it doesn't exist (visibility can be set in Settings), uploads `<folder>/<conversationId>.jsonl` files in a single commit, and shows a link to the target when it finishes
+- [x] #8 Settings include: the target, the visibility used when creating it, the folder inside the repo, whether to include the project name in the header, the tool-result limit, and the confirm-before-upload toggle. A Hugging Face token can be set or removed through `PasswordSafe`, with fallback to `HF_TOKEN` or the `hf auth login` token
+- [x] #9 Redaction runs again on export and upload, and the TruffleHog `required` mode holds back conversations that weren't scanned successfully. The upload summary lists how many conversations were uploaded and how many were held back, and why
+- [x] #10 All network and file work runs off the EDT with a progress indicator and cancellation. Hub errors (401/403 bad token, 404, 409 conflict, rate limits) are shown as readable notifications, and the token never appears in logs
+- [x] #11 Unit tests cover the converter (agent turn with tool calls, reasoning, a tool error, a plain chat conversation, truncation), target parsing, and the upload client against a mock HTTP server
+- [x] #12 Verified manually: an uploaded conversation opens correctly in the Hugging Face trace viewer
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -102,6 +112,25 @@ Implementation (2026-11-25, branch feature/task-280-hf-trace-upload, stacked on 
 - History panel: right-click menu (Preview / Export / Upload) and Export All / Upload All buttons, shown while recording is on. Left-click still opens the conversation.
 - Tests: StsConverterTest, HuggingFaceHubClientTest (MockWebServer; regular, LFS basic, LFS already stored, multipart, error mapping), HfDatasetTargetTest, HfTokenResolverTest, TraceUploadServiceTest, ConversationToolbarTraceUploadTest, and ConversationTraceStorageTest.hasTraceEvents.
 - Bug found by the tests: Jackson's generic `ObjectNode.set()` inside `StringBuilder.append()` was inferred as CharSequence and threw a ClassCastException at runtime; fixed by building the node first.
-- Not done: AC #10 (manual upload to the real Hub and opening it in the trace viewer) needs a token and a running IDE.
+- AC #10 (now #12 after renumbering) was verified manually on 2026-11-26, see below.
 - Follow-ups: storage bucket targets; optional auto-upload.
+
+Fix 2026-11-26: the first real upload failed with HTTP 400 "expected string, received undefined → at value.summary". The NDJSON commit body ended with a newline, so the Hub validated an empty last line. Lines are now joined without a trailing newline and sent as exactly application/x-ndjson, like @huggingface/hub. Regression test: HuggingFaceHubClientTest.commit_ndjsonBody_matchesTheHubClient_noTrailingEmptyLine_noCharset.
+
+Manual check 2026-11-26 (AC #10): a Brugge weather agent conversation uploaded to a private dataset and opens in the Hub trace viewer: https://huggingface.co/datasets/stef007/devoxxgenie-traces/blob/main/devoxxgenie/1795697874129.jsonl
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+One-click export of recorded agent traces (TASK-279) to Hugging Face. Conversations are converted to the Session Trace Simple (STS) JSONL format and uploaded to a Hugging Face dataset, where they open in the Hub's agent trace viewer.
+
+- `StsConverter` builds the JSONL: a session header, then user/assistant/tool messages with reasoning, tool calls linked to their results by id, and truncated large tool results. Conversations without trace rows export as plain user/assistant pairs.
+- `HuggingFaceHubClient` follows the @huggingface/hub protocol: whoami, dataset exists/create (private by default), preupload, LFS batch (basic or multipart), then the NDJSON commit. `HfTokenResolver` uses the IDE password store, then HF_TOKEN / HUGGING_FACE_HUB_TOKEN, then the `hf auth login` token file.
+- An **Upload to Hugging Face** button in the chat toolbar while trace recording is on, with a first-use setup dialog, optional confirmation and a notification linking to the file on the Hub. The conversation history adds Preview, Export to folder and Upload, and Settings → Debug gains a Hugging Face upload section.
+- Redaction runs again on upload, and TruffleHog `required` mode holds back unscanned conversations.
+- Fixed while verifying: the commit body ended with a newline, which the Hub rejected with HTTP 400 ("received undefined → at value.summary").
+- Verified on the real Hub: a conversation uploaded to a private dataset opens in the trace viewer.
+
+Out of scope / follow-ups: storage bucket targets (need the Xet protocol), auto-upload, registering `devoxxgenie` as a recognised harness on the Hub.
+<!-- SECTION:FINAL_SUMMARY:END -->
