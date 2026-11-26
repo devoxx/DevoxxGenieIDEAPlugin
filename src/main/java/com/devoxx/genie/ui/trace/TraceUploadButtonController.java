@@ -6,6 +6,7 @@ import com.devoxx.genie.service.trace.AgentTraceListener;
 import com.devoxx.genie.service.trace.TraceSettings;
 import com.devoxx.genie.ui.compose.ComposeConversationViewController;
 import com.devoxx.genie.ui.compose.model.TraceUploadUiState;
+import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
@@ -79,8 +80,15 @@ public final class TraceUploadButtonController {
     }
 
     private void onClick() {
+        if (uploading) {
+            return;
+        }
         Conversation conversation = currentConversation.get();
-        if (conversation == null || uploading) {
+        if (conversation == null) {
+            // Never fail silently: say why there is nothing to upload yet.
+            NotificationUtil.sendNotification(project,
+                    "Nothing to upload yet: this conversation hasn't been saved. Its trace is uploaded once a response has completed.");
+            refresh();
             return;
         }
         HfTraceUploader.upload(project, List.of(conversation),
