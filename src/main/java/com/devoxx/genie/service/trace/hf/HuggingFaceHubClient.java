@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 
 /**
  * Minimal Hugging Face Hub client for uploading trace files to a dataset (task-280).
@@ -140,8 +141,10 @@ public class HuggingFaceHubClient {
         // which StringBuilder.append() would infer as CharSequence and fail with a ClassCastException.
         ObjectNode headerLine = JSON.createObjectNode().put("key", "header");
         headerLine.set("value", JSON.createObjectNode().put("summary", title));
-        StringBuilder ndjson = new StringBuilder();
-        ndjson.append(headerLine.toString()).append('\n');
+        // Lines are joined with '\n' and no trailing newline, like @huggingface/hub: the Hub validates every
+        // line, and an empty last line is rejected (HTTP 400 "received undefined → at value.summary").
+        StringJoiner ndjson = new StringJoiner("\n");
+        ndjson.add(headerLine.toString());
         for (UploadFile f : files) {
             ObjectNode line = JSON.createObjectNode();
             if (lfsPaths.contains(f.path())) {
@@ -153,9 +156,11 @@ public class HuggingFaceHubClient {
                         .put("content", Base64.getEncoder().encodeToString(f.content()))
                         .put("path", f.path()).put("encoding", "base64"));
             }
-            ndjson.append(line.toString()).append('\n');
+            ndjson.add(line.toString());
         }
-        JsonNode json = callJson(post(api(target, "commit"), token, RequestBody.create(ndjson.toString(), NDJSON_TYPE)),
+        // A byte[] body keeps the content type exactly application/x-ndjson (a String body adds "; charset=utf-8").
+        byte[] body = ndjson.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        JsonNode json = callJson(post(api(target, "commit"), token, RequestBody.create(body, NDJSON_TYPE)),
                 "commit to " + target.repoId());
         return new CommitResult(textOrNull(json, "commitUrl"), textOrNull(json, "commitOid"));
     }

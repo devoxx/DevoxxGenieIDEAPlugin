@@ -121,6 +121,24 @@ class HuggingFaceHubClientTest {
     }
 
     @Test
+    void commit_ndjsonBody_matchesTheHubClient_noTrailingEmptyLine_noCharset() throws Exception {
+        // The Hub validates every line of the NDJSON body; a trailing newline leaves an empty last line
+        // that fails with "expected string, received undefined → at value.summary" (HTTP 400).
+        server.enqueue(json(200, "{\"files\":[{\"path\":\"a.jsonl\",\"uploadMode\":\"regular\"}]}"));
+        server.enqueue(json(200, "{\"commitOid\":\"abc\"}"));
+
+        client.commit(TARGET, TOKEN, List.of(new UploadFile("a.jsonl", "x".getBytes(StandardCharsets.UTF_8))),
+                "Upload trace");
+
+        take(); // preupload
+        RecordedRequest commit = take();
+        String body = commit.getBody().readUtf8();
+        assertThat(body).doesNotEndWith("\n");
+        assertThat(body.split("\n", -1)).hasSize(2).allSatisfy(line -> assertThat(line).isNotBlank());
+        assertThat(commit.getHeader("Content-Type")).isEqualTo("application/x-ndjson");
+    }
+
+    @Test
     void commit_lfsFile_goesThroughBatchAndPut_thenCommitsAPointer() throws Exception {
         byte[] content = "x".repeat(2000).getBytes(StandardCharsets.UTF_8);
         String oid = HuggingFaceHubClient.sha256(content);
