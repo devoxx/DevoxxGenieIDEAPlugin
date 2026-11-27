@@ -281,7 +281,7 @@ dependencies {
     // persisted configurations still load. SSE-only servers (issue #1151) are not supported.
     val lg4j_version = "1.24.0"
     val lg4j_beta_version = "1.24.0-beta34"
-    val awsSdkVersion = "2.59.7"
+    val awsSdkVersion = "2.59.8"
     val retrofitVersion = "3.0.0"
     val sqliteVersion = "3.54.1.0"
     val dockerJavaVersion = "3.7.1"
