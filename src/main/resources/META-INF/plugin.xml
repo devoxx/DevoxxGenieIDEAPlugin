@@ -800,6 +800,9 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
 
+        <!-- TASK-283: readable view of a conversation's recorded agent trace -->
+        <fileEditorProvider implementation="com.devoxx.genie.ui.trace.view.AgentRunEditorProvider"/>
+
         <projectConfigurable parentId="tools"
                              id="com.devoxx.genie.DevoxxGenie"
                              instance="com.devoxx.genie.ui.settings.llm.LLMProvidersConfigurable"
