@@ -57,6 +57,15 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
 
     /** Row currently under the mouse pointer, or -1; drives the hover highlight. */
     private int hoveredRow = -1;
+
+    // Table columns (model indices). The three trace icons sit next to the delete icon (TASK-283).
+    static final int COL_DELETE = 0;
+    static final int COL_VIEW_RUN = 1;
+    static final int COL_EXPORT = 2;
+    static final int COL_UPLOAD = 3;
+    static final int COL_TITLE = 4;
+    static final int COL_TIME = 5;
+    private static final int ICON_COLUMN_WIDTH = 28;
     /** Conversations with a recorded agent trace, loaded with the list so the menu never queries on the EDT. */
     private Set<String> tracedConversationIds = Set.of();
 
@@ -98,25 +107,21 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Left click only: the right button opens the trace context menu (task-280).
-                if (!SwingUtilities.isLeftMouseButton(e)) {
+                // Left click only. Trace actions are row icons (TASK-283), not a right-click menu: on
+                // macOS a secondary click also opened the conversation and hid the menu.
+                if (!SwingUtilities.isLeftMouseButton(e) || e.isPopupTrigger() || e.isControlDown()) {
                     return;
                 }
                 int row = table.rowAtPoint(e.getPoint());
-                int column = table.columnAtPoint(e.getPoint());
-                if (row >= 0 && column != 0) {
-                    openConversationAt(row);
+                int column = table.convertColumnIndexToModel(table.columnAtPoint(e.getPoint()));
+                if (row < 0) {
+                    return;
                 }
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                maybeShowTraceMenu(e);
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                maybeShowTraceMenu(e);
+                switch (column) {
+                    case COL_DELETE -> { /* handled by the delete button's cell editor */ }
+                    case COL_VIEW_RUN, COL_EXPORT, COL_UPLOAD -> runRowTraceAction(column, row);
+                    default -> openConversationAt(row);
+                }
             }
 
             @Override
@@ -158,8 +163,18 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         TableColumnModel columnModel = table.getColumnModel();
         IntSupplier hoveredRowSupplier = () -> hoveredRow;
 
+        // Trace action icons next to the delete icon (TASK-283), while trace recording is on.
+        boolean traceActions = TraceSettings.current().enabled();
+        configureIconColumn(columnModel.getColumn(COL_VIEW_RUN), traceActions, new IconRenderer(
+                AllIcons.Actions.Show, "View agent run", hoveredRowSupplier,
+                row -> tracedConversationIds.contains(tableModel.getConversationAt(row).getId())));
+        configureIconColumn(columnModel.getColumn(COL_EXPORT), traceActions, new IconRenderer(
+                AllIcons.Actions.Download, "Export as trace…", hoveredRowSupplier, row -> true));
+        configureIconColumn(columnModel.getColumn(COL_UPLOAD), traceActions, new IconRenderer(
+                AllIcons.Actions.Upload, "Upload to Hugging Face…", hoveredRowSupplier, row -> true));
+
         // Title column
-        TableColumn titleColumn = columnModel.getColumn(1);
+        TableColumn titleColumn = columnModel.getColumn(COL_TITLE);
         titleColumn.setCellRenderer(new TitleRenderer(hoveredRowSupplier));
 
         // Set a very large preferred width to encourage expansion
@@ -167,10 +182,10 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         titleColumn.setWidth(Integer.MAX_VALUE);
 
         // Ensure this column gets any extra space
-        table.getColumnModel().getColumn(2).setResizable(false);
+        table.getColumnModel().getColumn(COL_TIME).setResizable(false);
 
         // Delete button column 0
-        TableColumn deleteColumn = columnModel.getColumn(0);
+        TableColumn deleteColumn = columnModel.getColumn(COL_DELETE);
         deleteColumn.setMinWidth(40);
         deleteColumn.setMaxWidth(40);
         deleteColumn.setCellRenderer(new ButtonRenderer(AllIcons.Actions.GC, hoveredRowSupplier));
@@ -188,7 +203,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         deleteColumn.setCellEditor(buttonEditor);
 
         // Time column 2
-        TableColumn timeColumn = columnModel.getColumn(2);
+        TableColumn timeColumn = columnModel.getColumn(COL_TIME);
         timeColumn.setMinWidth(100);
         timeColumn.setMaxWidth(100);
         timeColumn.setCellRenderer(new TimeRenderer(hoveredRowSupplier));
@@ -251,33 +266,31 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         }
     }
 
-    /** Right-click menu on a conversation: view its agent run (TASK-283), export or upload its trace (task-280). */
-    private void maybeShowTraceMenu(MouseEvent e) {
-        if (!e.isPopupTrigger()) {
+    /** Runs the trace action of an icon column on {@code row} (TASK-283). */
+    private void runRowTraceAction(int column, int row) {
+        if (row >= tableModel.getRowCount()) {
             return;
         }
-        int row = table.rowAtPoint(e.getPoint());
-        if (row < 0 || row >= tableModel.getRowCount()) {
-            return;
-        }
-        table.setRowSelectionInterval(row, row);
         Conversation conversation = tableModel.getConversationAt(row);
-        JPopupMenu menu = new JPopupMenu();
-        // The raw JSONL preview is a button inside the run view.
-        JMenuItem viewRun = new JMenuItem("View Agent Run");
-        viewRun.addActionListener(a -> runTraceAction(() -> AgentRunViewer.open(project, conversation)));
-        JMenuItem export = new JMenuItem("Export as Trace…");
-        export.addActionListener(a -> runTraceAction(() -> TraceExportActions.export(project, List.of(conversation))));
-        JMenuItem upload = new JMenuItem("Upload to Hugging Face…");
-        upload.addActionListener(a -> runTraceAction(() -> TraceExportActions.upload(project, List.of(conversation))));
-        if (tracedConversationIds.contains(conversation.getId())) {
-            menu.add(viewRun);
-            menu.addSeparator();
+        switch (column) {
+            case COL_VIEW_RUN -> {
+                if (tracedConversationIds.contains(conversation.getId())) {
+                    runTraceAction(() -> AgentRunViewer.open(project, conversation));
+                }
+            }
+            case COL_EXPORT -> runTraceAction(() -> TraceExportActions.export(project, List.of(conversation)));
+            case COL_UPLOAD -> runTraceAction(() -> TraceExportActions.upload(project, List.of(conversation)));
+            default -> { }
         }
-        menu.add(export);
-        menu.addSeparator();
-        menu.add(upload);
-        menu.show(table, e.getX(), e.getY());
+    }
+
+    private static void configureIconColumn(TableColumn column, boolean visible, TableCellRenderer renderer) {
+        int width = visible ? ICON_COLUMN_WIDTH : 0;
+        column.setMinWidth(width);
+        column.setMaxWidth(width);
+        column.setPreferredWidth(width);
+        column.setResizable(false);
+        column.setCellRenderer(renderer);
     }
 
     /** Closes the history popup first: the actions open dialogs or editor tabs that would otherwise hide behind it. */
@@ -321,7 +334,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
     // Table model class
     private static class ConversationTableModel extends AbstractTableModel {
         private transient List<Conversation> conversations = new ArrayList<>();
-        private final String[] columnNames = {"Delete", "Title", "Time"};
+        private final String[] columnNames = {"Delete", "Run", "Export", "Upload", "Title", "Time"};
 
         /** Snapshot of the listed conversations (task-280: "Export/Upload All"). */
         public List<Conversation> getConversations() {
@@ -357,7 +370,7 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         public Object getValueAt(int row, int column) {
             Conversation conversation = conversations.get(row);
 
-            if (column == 0) {
+            if (column == COL_DELETE) {
                 // For button columns, create a defensive copy to ensure ID consistency
                 Conversation copy = new Conversation();
                 copy.setId(conversation.getId());
@@ -367,15 +380,15 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
             }
 
             return switch (column) {
-                case 1 -> conversation.getTitle();
-                case 2 -> formatTimeSince(conversation.getTimestamp());
+                case COL_TITLE -> conversation.getTitle();
+                case COL_TIME -> formatTimeSince(conversation.getTimestamp());
                 default -> null;
             };
         }
 
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == 0; // Only delete buttons are editable
+            return column == COL_DELETE; // Only delete buttons are editable
         }
 
         private static @NotNull String formatTimeSince(String timestamp) {
@@ -419,6 +432,32 @@ public class ConversationHistoryPanel extends JPanel implements ConversationSele
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
+            applyHoverBackground(this, table, isSelected, row, hoveredRowSupplier.getAsInt());
+            return this;
+        }
+    }
+
+    /** A trace action icon (TASK-283); blank on rows where the action doesn't apply. */
+    private static class IconRenderer extends JLabel implements TableCellRenderer {
+        private final transient Icon icon;
+        private final String tooltip;
+        private final transient IntSupplier hoveredRowSupplier;
+        private final transient java.util.function.IntPredicate applies;
+
+        IconRenderer(Icon icon, String tooltip, IntSupplier hoveredRowSupplier, java.util.function.IntPredicate applies) {
+            this.icon = icon;
+            this.tooltip = tooltip;
+            this.hoveredRowSupplier = hoveredRowSupplier;
+            this.applies = applies;
+            setHorizontalAlignment(SwingConstants.CENTER);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            boolean shown = row < table.getRowCount() && applies.test(row);
+            setIcon(shown ? icon : null);
+            setToolTipText(shown ? tooltip : null);
             applyHoverBackground(this, table, isSelected, row, hoveredRowSupplier.getAsInt());
             return this;
         }

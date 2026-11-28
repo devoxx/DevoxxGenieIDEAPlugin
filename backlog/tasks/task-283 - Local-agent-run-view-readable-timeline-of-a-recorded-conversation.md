@@ -4,7 +4,7 @@ title: 'Local agent run view: readable timeline of a recorded conversation'
 status: In Progress
 assignee: []
 created_date: '2026-11-26T14:54:00Z'
-updated_date: '2026-11-26T15:23:00Z'
+updated_date: '2026-11-28T09:10:00Z'
 labels:
   - agent
   - traces
@@ -101,4 +101,6 @@ Implementation 2026-11-26:
 - Durations are approximate: a call's duration runs from its step to its result, so calls from the same step whose results are recorded together show the same time.
 - Verified by an offscreen render (light theme) of the real 32-row trace (conversation 1795703237209): 1 turn, 13 steps, 18 calls; layout and text as intended. Not yet verified: icons and the dark theme in the IDE (AC #8), and a real parallel_explore run (AC #4, covered by unit tests only).
 - Tests: AgentRunModelBuilderTest (16), AgentRunViewTest (10), ConversationTraceStorageTest.conversationIdsWithTraces. Full ./gradlew test --rerun passes (JDK 21).
+
+2026-11-28: the right-click menu in the conversation history was hard to use: on macOS a secondary click also opened the conversation and the menu barely showed. Replaced by icon columns next to the delete icon, with tooltips: View agent run (eye icon, only on rows with a recorded trace), Export as trace (download) and Upload to Hugging Face (upload). They're shown while trace recording is on, like the bottom buttons. Column indices are named constants (COL_*).
 <!-- SECTION:NOTES:END -->
