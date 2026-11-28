@@ -10,11 +10,15 @@ import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.fileChooser.FileChooserFactory;
+import com.intellij.openapi.fileChooser.FileSaverDescriptor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.testFramework.LightVirtualFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,9 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * "Preview as trace" and "Export as trace…" for the conversation history panel (task-280).
- * Both use the same conversion, second redaction pass and TruffleHog {@code required} hold-back
- * as the Hugging Face upload, so what you preview or export is exactly what would be uploaded.
+ * Preview, save, export and upload of agent traces, used by the conversation history panel
+ * (task-280) and the agent run view's Export menu (TASK-284). All of them use the same
+ * conversion, second redaction pass and TruffleHog {@code required} hold-back as the Hugging
+ * Face upload, so what you preview or save is exactly what would be uploaded.
  */
 public final class TraceExportActions {
 
@@ -99,6 +104,52 @@ public final class TraceExportActions {
                         + heldBack.get(0).reason() + (heldBack.size() > 1 ? ", …" : "") + ").";
                 NotificationUtil.sendNotification(project, "Exported " + written + " trace file(s) to " + dir + "." + held);
                 folder.refresh(true, false);
+            }
+        }.queue();
+    }
+
+    /**
+     * Asks where to save one conversation's trace (proposing {@code <conversationId>.jsonl}) and
+     * writes it there. Call on the EDT.
+     */
+    public static void saveAs(@NotNull Project project, @NotNull Conversation conversation) {
+        FileSaverDescriptor descriptor = new FileSaverDescriptor("Save Agent Trace",
+                "Save this conversation's agent trace as Session Trace JSONL", "jsonl");
+        VirtualFileWrapper target = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
+                .save((Path) null, HfUploadSettings.fileName(conversation.getId()));
+        if (target == null) {
+            return;
+        }
+        Path file = target.getFile().toPath();
+        new Task.Backgroundable(project, "Saving agent trace", true) {
+            private final List<TraceUploadService.HeldBack> heldBack = new ArrayList<>();
+            private boolean saved;
+            private String error;
+
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                try {
+                    List<TraceUploadService.Prepared> prepared = prepare(project, List.of(conversation), heldBack);
+                    if (!prepared.isEmpty()) {
+                        Files.writeString(file, prepared.get(0).sts().jsonl(), StandardCharsets.UTF_8);
+                        saved = true;
+                    }
+                } catch (IOException e) {
+                    error = e.getMessage();
+                }
+            }
+
+            @Override
+            public void onFinished() {
+                if (error != null) {
+                    NotificationUtil.sendErrorNotification(project, "Saving the trace failed: " + error);
+                } else if (!saved) {
+                    NotificationUtil.sendWarningNotification(project, "Trace not saved: "
+                            + (heldBack.isEmpty() ? "nothing recorded" : heldBack.get(0).reason()) + ".");
+                } else {
+                    NotificationUtil.sendNotification(project, "Saved the agent trace to " + file + ".");
+                    VfsUtil.markDirtyAndRefresh(true, false, false, file.toFile());
+                }
             }
         }.queue();
     }

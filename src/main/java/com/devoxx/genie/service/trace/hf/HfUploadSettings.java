@@ -32,8 +32,12 @@ public record HfUploadSettings(@Nullable HfDatasetTarget target, boolean isPriva
 
     /** Path of a conversation's file inside the dataset. */
     public @NotNull String filePath(@NotNull String conversationId) {
-        String safeId = conversationId.replaceAll("[^A-Za-z0-9._-]", "_");
-        return (pathInRepo.isEmpty() ? "" : pathInRepo + "/") + safeId + ".jsonl";
+        return (pathInRepo.isEmpty() ? "" : pathInRepo + "/") + fileName(conversationId);
+    }
+
+    /** A conversation's trace file name, {@code <id>.jsonl} with unsafe characters replaced; also used for local saves. */
+    public static @NotNull String fileName(@NotNull String conversationId) {
+        return conversationId.replaceAll("[^A-Za-z0-9._-]", "_") + ".jsonl";
     }
 
     static @NotNull String normalisePath(@Nullable String path) {

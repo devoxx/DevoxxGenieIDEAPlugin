@@ -107,8 +107,10 @@ public class AgentTraceSettingsPanel {
         hfHeader.setFont(hfHeader.getFont().deriveFont(Font.BOLD));
         add(hfHeader);
         add(Box.createVerticalStrut(6));
-        add(help("The chat window shows an <b>Upload to Hugging Face</b> button while trace recording is on. "
-                + "It converts the conversation to the Hub's Session Trace format and uploads it to the "
+        add(help("While trace recording is on, the chat toolbar's <b>View agent run</b> button opens the "
+                + "conversation's run view; its <b>Export</b> menu has <b>Upload to Hugging Face…</b>, as does "
+                + "the conversation history. The upload converts the conversation to the Hub's Session Trace "
+                + "format and sends it to the "
                 + "dataset below, where it opens in the agent trace viewer. Uploading again overwrites the "
                 + "conversation's file."));
         add(Box.createVerticalStrut(6));

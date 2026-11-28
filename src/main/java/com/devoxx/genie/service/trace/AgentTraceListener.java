@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Application-wide notifications about agent traces (task-280), so chat tabs can show or enable
- * their "Upload to Hugging Face" button without polling the database.
+ * their "View agent run" button (TASK-284) without polling the database.
  */
 public interface AgentTraceListener {
 

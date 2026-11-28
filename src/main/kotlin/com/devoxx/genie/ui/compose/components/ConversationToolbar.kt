@@ -21,14 +21,15 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.model.MessageUiModel
-import com.devoxx.genie.ui.compose.model.TraceUploadUiState
+import com.devoxx.genie.ui.compose.model.AgentRunUiState
 import com.devoxx.genie.ui.compose.theme.DevoxxGenieThemeAccessor
 import com.devoxx.genie.ui.compose.util.ChatTranscriptFormatter
 
 /**
  * A thin toolbar rendered above the chat's [LazyColumn] containing a "Copy chat"
  * button that copies the full Markdown transcript of the conversation, and — while agent
- * trace recording is on — an "Upload to Hugging Face" button (task-280).
+ * trace recording is on — a "View agent run" button that opens the conversation's run view
+ * (TASK-284). Saving and uploading a trace live in that view's Export menu.
  *
  * Hidden whenever there is no message with a non-blank user prompt.
  */
@@ -36,8 +37,8 @@ import com.devoxx.genie.ui.compose.util.ChatTranscriptFormatter
 fun ConversationToolbar(
     messages: List<MessageUiModel>,
     modifier: Modifier = Modifier,
-    traceUpload: TraceUploadUiState = TraceUploadUiState.HIDDEN,
-    onTraceUploadClick: () -> Unit = {},
+    agentRun: AgentRunUiState = AgentRunUiState.HIDDEN,
+    onViewAgentRunClick: () -> Unit = {},
 ) {
     if (messages.none { it.userPrompt.isNotBlank() }) return
 
@@ -48,13 +49,13 @@ fun ConversationToolbar(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (traceUpload.visible) {
-            val streaming = messages.lastOrNull()?.isStreaming == true
-            TraceUploadButton(
-                label = traceUploadLabel(traceUpload),
-                enabled = traceUploadEnabled(traceUpload, streaming),
-                tooltip = traceUploadTooltip(traceUpload, streaming),
-                onClick = onTraceUploadClick,
+        if (agentRun.visible) {
+            val inFlight = responseInFlight(messages)
+            ToolbarTextButton(
+                label = "◎ View agent run",
+                enabled = viewAgentRunEnabled(agentRun, inFlight),
+                tooltip = viewAgentRunTooltip(agentRun, inFlight),
+                onClick = onViewAgentRunClick,
             )
         }
         CopyButton(
@@ -65,22 +66,27 @@ fun ConversationToolbar(
     }
 }
 
-internal fun traceUploadEnabled(state: TraceUploadUiState, streaming: Boolean): Boolean =
-    state.visible && state.hasTrace && !state.uploading && !streaming
+/**
+ * Whether a response is still being produced, judged by the latest real turn: queued and
+ * steering bubbles are appended after the running response, so they are skipped. Both flags
+ * count, since a non-streaming run never sets `isStreaming`. Earlier turns are ignored on
+ * purpose: web search, /find, CLI and ACP turns finish without clearing their flags.
+ */
+internal fun responseInFlight(messages: List<MessageUiModel>): Boolean =
+    messages.lastOrNull { !it.isSteeringOnly }?.let { it.isStreaming || it.isLoadingIndicatorVisible } == true
 
-internal fun traceUploadLabel(state: TraceUploadUiState): String =
-    if (state.uploading) "↻ Uploading…" else "⇪ Upload to Hugging Face"
+internal fun viewAgentRunEnabled(state: AgentRunUiState, inFlight: Boolean): Boolean =
+    state.visible && state.hasTrace && !inFlight
 
-internal fun traceUploadTooltip(state: TraceUploadUiState, streaming: Boolean): String = when {
-    state.uploading -> "Uploading this conversation's trace to Hugging Face…"
-    streaming -> "Wait for the response to finish before uploading"
+internal fun viewAgentRunTooltip(state: AgentRunUiState, inFlight: Boolean): String = when {
+    inFlight -> "Wait for the response to finish to view its agent run"
     !state.hasTrace -> "No agent trace recorded for this conversation yet (only turns that use tools are recorded)"
-    else -> "Upload this conversation as an agent trace to your Hugging Face dataset"
+    else -> "Open this conversation's agent run: every step, tool call and result, with export and upload"
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TraceUploadButton(label: String, enabled: Boolean, tooltip: String, onClick: () -> Unit) {
+private fun ToolbarTextButton(label: String, enabled: Boolean, tooltip: String, onClick: () -> Unit) {
     val colors = DevoxxGenieThemeAccessor.colors
     val typography = DevoxxGenieThemeAccessor.typography
     val tooltipShape = RoundedCornerShape(4.dp)

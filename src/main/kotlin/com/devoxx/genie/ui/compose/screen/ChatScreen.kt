@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.devoxx.genie.ui.compose.components.ConversationToolbar
-import com.devoxx.genie.ui.compose.model.TraceUploadUiState
+import com.devoxx.genie.ui.compose.model.AgentRunUiState
 import com.devoxx.genie.ui.compose.components.MessagePair
 import com.devoxx.genie.ui.compose.model.ChangedFileUiModel
 import com.devoxx.genie.ui.compose.model.MessageUiModel
@@ -53,8 +53,8 @@ fun ChatScreen(
     onOpenLogs: () -> Unit = {},
     isRestoring: Boolean = false,
     scrollMemory: ChatScrollMemory = remember { ChatScrollMemory() },
-    traceUpload: TraceUploadUiState = TraceUploadUiState.HIDDEN,
-    onTraceUploadClick: () -> Unit = {},
+    agentRun: AgentRunUiState = AgentRunUiState.HIDDEN,
+    onViewAgentRunClick: () -> Unit = {},
 ) {
     // Held by the view model (see ChatScrollMemory) so a tab switch, which disposes this
     // composition, comes back at the same scroll position instead of rebuilding from the top.
@@ -147,8 +147,8 @@ fun ChatScreen(
     Column(modifier = modifier.fillMaxSize()) {
         ConversationToolbar(
             messages = messages,
-            traceUpload = traceUpload,
-            onTraceUploadClick = onTraceUploadClick,
+            agentRun = agentRun,
+            onViewAgentRunClick = onViewAgentRunClick,
         )
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(

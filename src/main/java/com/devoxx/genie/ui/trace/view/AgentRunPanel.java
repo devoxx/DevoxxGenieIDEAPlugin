@@ -5,6 +5,7 @@ import com.devoxx.genie.service.trace.view.AgentRun;
 import com.devoxx.genie.ui.trace.TraceExportActions;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.OnePixelSplitter;
@@ -26,6 +27,7 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.Enumeration;
+import java.util.List;
 
 /**
  * The agent run view (TASK-283): a summary header, a tree of turns, steps, tool calls and
@@ -36,6 +38,10 @@ final class AgentRunPanel extends JPanel {
 
     private static final SimpleTextAttributes WARNING_ATTRIBUTES = new SimpleTextAttributes(
             SimpleTextAttributes.STYLE_PLAIN, new JBColor(new Color(0xB2, 0x6A, 0x00), new Color(0xFF, 0xB4, 0x50)));
+
+    /** The run view's Export menu (TASK-284). */
+    static final String SAVE_AS = "Save as .jsonl…";
+    static final String UPLOAD = "Upload to Hugging Face…";
 
     private final Tree tree;
     private final JBTextArea detail = new JBTextArea();
@@ -48,11 +54,19 @@ final class AgentRunPanel extends JPanel {
         ActionLink rawJsonl = new ActionLink("Raw JSONL",
                 (ActionListener) e -> TraceExportActions.preview(project, conversation));
         rawJsonl.setToolTipText("Open this trace as Session Trace JSONL, exactly as it would be exported");
+        ActionLink export = new ActionLink("Export",
+                (ActionListener) e -> showExportMenu(project, conversation, (JComponent) e.getSource()));
+        export.setDropDownLinkIcon();
+        export.setToolTipText("Save this trace as a .jsonl file or upload it to your Hugging Face dataset");
+        JPanel links = new JPanel(new FlowLayout(FlowLayout.RIGHT, JBUI.scale(12), 0));
+        links.setOpaque(false);
+        links.add(rawJsonl);
+        links.add(export);
         JPanel header = new JPanel(new BorderLayout(JBUI.scale(12), 0));
         header.setBorder(JBUI.Borders.compound(JBUI.Borders.customLineBottom(JBColor.border()),
                 JBUI.Borders.empty(6, 10)));
         header.add(summary, BorderLayout.CENTER);
-        header.add(rawJsonl, BorderLayout.EAST);
+        header.add(links, BorderLayout.EAST);
 
         DefaultMutableTreeNode root = AgentRunTreeBuilder.build(run);
         tree = new Tree(new DefaultTreeModel(root));
@@ -84,6 +98,25 @@ final class AgentRunPanel extends JPanel {
 
     @NotNull JComponent focusComponent() {
         return tree;
+    }
+
+    /**
+     * Save and upload reuse the export code, so they apply the same redaction and TruffleHog
+     * rules as every other export (TASK-284).
+     */
+    private static void showExportMenu(@NotNull Project project, @NotNull Conversation conversation,
+                                       @NotNull JComponent anchor) {
+        JBPopupFactory.getInstance()
+                .createPopupChooserBuilder(List.of(SAVE_AS, UPLOAD))
+                .setItemChosenCallback(choice -> {
+                    if (SAVE_AS.equals(choice)) {
+                        TraceExportActions.saveAs(project, conversation);
+                    } else {
+                        TraceExportActions.upload(project, List.of(conversation));
+                    }
+                })
+                .createPopup()
+                .showUnderneathOf(anchor);
     }
 
     private void showDetail(TreePath path) {

@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Uploads conversations to Hugging Face from the UI (task-280): the chat window's upload button
- * and the conversation history panel both go through here. Runs the first-use setup dialog
+ * Uploads conversations to Hugging Face from the UI (task-280): the agent run view's Export menu
+ * (TASK-284) and the conversation history panel both go through here. Runs the first-use setup dialog
  * when the token or dataset is missing, asks for confirmation (unless turned off), uploads in a
  * cancellable background task and reports the result as a notification with a link to the Hub.
  * Must be called on the EDT.
