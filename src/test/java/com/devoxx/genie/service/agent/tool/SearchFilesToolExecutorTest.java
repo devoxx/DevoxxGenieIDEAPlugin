@@ -400,6 +400,108 @@ class SearchFilesToolExecutorTest {
         assertThat(result).isEmpty();
     }
 
+    // --- TASK-285: the search must not hold the read lock while it reads files ---
+
+    /**
+     * A search over a large tree used to run entirely inside one read action, so a write action
+     * (and the EDT waiting for it) was blocked for the whole search: an 18 s IDE freeze.
+     * File contents must be read with no read action held; only VFS listings need one.
+     */
+    @Test
+    void execute_readsFileContentsOutsideAnyReadAction_andListsDirectoriesInsideOne() throws IOException {
+        java.util.concurrent.atomic.AtomicInteger readDepth = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.List<Integer> depthWhileReadingContent = new java.util.ArrayList<>();
+        java.util.List<Integer> depthWhileListing = new java.util.ArrayList<>();
+
+        VirtualFile projectBase = mock(VirtualFile.class);
+        VirtualFile src = mock(VirtualFile.class);
+        VirtualFile file = mock(VirtualFile.class);
+        when(src.isDirectory()).thenReturn(true);
+        when(src.getName()).thenReturn("src");
+        when(file.getName()).thenReturn("Hub.java");
+        when(file.getExtension()).thenReturn("java");
+        when(projectBase.getChildren()).thenAnswer(i -> {
+            depthWhileListing.add(readDepth.get());
+            return new VirtualFile[]{src};
+        });
+        when(src.getChildren()).thenAnswer(i -> {
+            depthWhileListing.add(readDepth.get());
+            return new VirtualFile[]{file};
+        });
+        when(file.getInputStream()).thenAnswer(i -> {
+            depthWhileReadingContent.add(readDepth.get());
+            return new ByteArrayInputStream("class HuggingFaceHubClient {}".getBytes(StandardCharsets.UTF_8));
+        });
+
+        SearchFilesToolExecutor tracking = new SearchFilesToolExecutor(project) {
+            @Override
+            <T> T readAction(@org.jetbrains.annotations.NotNull com.intellij.openapi.util.Computable<T> computation) {
+                readDepth.incrementAndGet();
+                try {
+                    return computation.compute();
+                } finally {
+                    readDepth.decrementAndGet();
+                }
+            }
+
+            @Override
+            VirtualFile getProjectBaseDir() {
+                return projectBase;
+            }
+
+            @Override
+            boolean isAncestor(VirtualFile ancestor, VirtualFile descendant) {
+                return true;
+            }
+
+            @Override
+            String getRelativePath(VirtualFile f, VirtualFile ancestor) {
+                return "src/" + f.getName();
+            }
+        };
+
+        String result = tracking.execute(ToolExecutionRequest.builder()
+                .name("search_files").arguments("{\"pattern\":\"HuggingFace\"}").build(), null);
+
+        assertThat(result).contains("src/Hub.java:1:");
+        assertThat(depthWhileReadingContent).as("file contents are read with no read action held").containsOnly(0);
+        assertThat(depthWhileListing).as("VFS listings still run in a read action").containsOnly(1);
+    }
+
+    @Test
+    void searchInDirectory_skipsFoldersExcludedInTheIde() {
+        VirtualFile dir = mock(VirtualFile.class);
+        VirtualFile generated = mock(VirtualFile.class);
+        when(generated.isDirectory()).thenReturn(true);
+        when(generated.getName()).thenReturn("generated-sources");
+        when(dir.getChildren()).thenReturn(new VirtualFile[]{generated});
+
+        SearchFilesToolExecutor withExclusions = new SearchFilesToolExecutor(project) {
+            @Override
+            boolean isExcludedFromSearch(@org.jetbrains.annotations.NotNull VirtualFile d) {
+                return d == generated;
+            }
+        };
+        withExclusions.searchInDirectory(dir, mock(VirtualFile.class), Pattern.compile("x"), null,
+                new StringBuilder(), new int[]{0});
+
+        verify(generated, never()).getChildren();
+    }
+
+    @Test
+    void searchInDirectory_skipsTheIntellijPlatformSandbox() {
+        VirtualFile dir = mock(VirtualFile.class);
+        VirtualFile sandbox = mock(VirtualFile.class);
+        when(sandbox.isDirectory()).thenReturn(true);
+        when(sandbox.getName()).thenReturn(".intellijPlatform");
+        when(dir.getChildren()).thenReturn(new VirtualFile[]{sandbox});
+
+        executor.searchInDirectory(dir, mock(VirtualFile.class), Pattern.compile("x"), null,
+                new StringBuilder(), new int[]{0});
+
+        verify(sandbox, never()).getChildren();
+    }
+
     @Test
     void searchInDirectory_skipsNodeModules() {
         VirtualFile dir = mock(VirtualFile.class);
@@ -749,7 +851,7 @@ class SearchFilesToolExecutorTest {
     @Test
     void skipDirs_containsExpectedDirectories() {
         assertThat(SearchFilesToolExecutor.SKIP_DIRS).containsExactlyInAnyOrder(
-                ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle"
+                ".git", "node_modules", "build", "out", "target", ".idea", "bin", ".gradle", ".intellijPlatform"
         );
     }
 
