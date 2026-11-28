@@ -391,19 +391,6 @@ fun AiBubble(
             ThinkingIndicator()
         }
 
-        // Always-on live agent status: while the run is in flight, surface the most
-        // recent open tool call ("Running search_files… (step 4/25)") regardless of the
-        // "Show tool activity in chat output" setting — without this, a multi-minute
-        // agent run with that setting off is completely silent.
-        if (message.isLoadingIndicatorVisible || message.isStreaming) {
-            val openEntry = message.activityEntries.lastOrNull {
-                it.status == ActivityStatus.RUNNING || it.status == ActivityStatus.PENDING_APPROVAL
-            }
-            if (openEntry != null) {
-                LiveStatusLine(openEntry)
-            }
-        }
-
         // AI Response content — rendered as Markdown
         if (message.aiResponseMarkdown.isNotBlank()) {
             MarkdownContent(content = message.aiResponseMarkdown)
@@ -430,45 +417,28 @@ fun AiBubble(
             TerminalState.COMPLETED -> { /* normal completion — no marker */ }
         }
 
-        // Copy button
-        if (message.aiResponseMarkdown.isNotBlank()) {
+        // Footer: the live progress line on the left, Copy on the right.
+        // The progress line shows while the run is in flight (TASK-288): the running tool and
+        // step, or "Waiting for the model" between tool calls, with the elapsed time, regardless
+        // of the "Show tool activity in chat output" setting. A slow local model spends most of a
+        // run between tool calls; without this the run looked stuck.
+        val showProgress = message.isLoadingIndicatorVisible || message.isStreaming
+        val showCopy = message.aiResponseMarkdown.isNotBlank()
+        if (showProgress || showCopy) {
             Spacer(Modifier.height(4.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                CopyButton(textToCopy = message.aiResponseMarkdown)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                // The Box always takes the free width, so Copy stays right-aligned even when
+                // the progress line renders nothing.
+                Box(modifier = Modifier.weight(1f)) {
+                    if (showProgress) {
+                        AgentProgressLine(message)
+                    }
+                }
+                if (showCopy) {
+                    CopyButton(textToCopy = message.aiResponseMarkdown)
+                }
             }
         }
-    }
-}
-
-/**
- * One-line live agent status shown only while the run is active. RUNNING gets a
- * pulsing dot and "Running <tool>… (step n/max)"; PENDING_APPROVAL explains why
- * everything is frozen while the approval dialog (120s timeout) is up.
- */
-@Composable
-private fun LiveStatusLine(entry: ActivityEntryUiModel) {
-    val colors = DevoxxGenieThemeAccessor.colors
-    val typography = DevoxxGenieThemeAccessor.typography
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-    ) {
-        RunningSpinner()
-        Spacer(Modifier.width(6.dp))
-        val text = if (entry.status == ActivityStatus.PENDING_APPROVAL) {
-            "Waiting for your approval… (${entry.toolName ?: "tool"})"
-        } else {
-            val step = if (entry.callNumber > 0 && entry.maxCalls > 0) {
-                " (step ${entry.callNumber}/${entry.maxCalls})"
-            } else {
-                ""
-            }
-            "Running ${entry.toolName ?: "tool"}…$step"
-        }
-        BasicText(
-            text = text,
-            style = typography.caption.copy(color = colors.textSecondary),
-        )
     }
 }
 
