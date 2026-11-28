@@ -669,4 +669,101 @@ class SpecFrontmatterParserTest {
         assertThat(spec.getReferences()).containsExactly("single line");
         assertThat(spec.getLabels()).containsExactly("bug");
     }
+
+    @Test
+    void shouldParseFoldedScalarTitle() {
+        // Backlog.md writes long titles as "title: >-" with the text on indented lines; the
+        // Task List showed ">-" as the title. A ": " inside the text must not start a new key.
+        String content = """
+                ---
+                id: TASK-207
+                title: >-
+                  GenieBuilder: surface DevoxxGenie prompt_executed events in analytics
+                  dashboard
+                status: Done
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getTitle())
+                .isEqualTo("GenieBuilder: surface DevoxxGenie prompt_executed events in analytics dashboard");
+        assertThat(spec.getStatus()).isEqualTo("Done");
+    }
+
+    @Test
+    void shouldKeepQuotesThatArePartOfAFoldedScalarTitle() {
+        String content = """
+                ---
+                id: TASK-270
+                title: >-
+                  "Start Indexing" duplicates every chunk when re-indexing a project with the
+                  same embedding model
+                status: To Do
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getTitle()).isEqualTo(
+                "\"Start Indexing\" duplicates every chunk when re-indexing a project with the same embedding model");
+        assertThat(spec.getStatus()).isEqualTo("To Do");
+    }
+
+    @Test
+    void shouldKeepLineBreaksOfALiteralScalarValue() {
+        String content = """
+                ---
+                id: TASK-X2
+                title: |-
+                  First line
+                  Second line
+                status: To Do
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getTitle()).isEqualTo("First line\nSecond line");
+        assertThat(spec.getStatus()).isEqualTo("To Do");
+    }
+
+    @Test
+    void shouldJoinAPlainTitleThatContinuesOnTheNextLine() {
+        // A plain (unquoted) value may continue on more-indented lines; it was cut after the first line.
+        String content = """
+                ---
+                id: TASK-289.1
+                title: Sub-agents keep their assignment and complete tool exchanges when chat memory
+                  fills up
+                status: To Do
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getTitle())
+                .isEqualTo("Sub-agents keep their assignment and complete tool exchanges when chat memory fills up");
+        assertThat(spec.getStatus()).isEqualTo("To Do");
+    }
+
+    @Test
+    void shouldUnescapeDoubledQuotesInASingleQuotedTitle() {
+        String content = """
+                ---
+                id: TASK-X3
+                title: 'Fix: don''t lose the title'
+                status: To Do
+                ---
+                """;
+
+        TaskSpec spec = SpecFrontmatterParser.parse(content, "/test.md");
+
+        assertThat(spec).isNotNull();
+        assertThat(spec.getTitle()).isEqualTo("Fix: don't lose the title");
+    }
 }

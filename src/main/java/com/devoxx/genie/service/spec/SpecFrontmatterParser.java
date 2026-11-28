@@ -35,7 +35,7 @@ public final class SpecFrontmatterParser {
             Pattern.MULTILINE
     );
 
-    /** YAML block scalar header (">", "|", ">-", "|-") used as a list item value. */
+    /** YAML block scalar header (">", "|", ">-", "|-") used as a field or list item value. */
     private static final Pattern BLOCK_SCALAR_PATTERN = Pattern.compile("^[>|][+-]?$");
 
     private SpecFrontmatterParser() {
@@ -102,6 +102,25 @@ public final class SpecFrontmatterParser {
 
                 currentKey = trimmed.substring(0, colonIndex).trim();
                 String value = trimmed.substring(colonIndex + 1).trim();
+                int keyIndent = indentOf(lines[i]);
+                if (BLOCK_SCALAR_PATTERN.matcher(value).matches()) {
+                    // Backlog.md writes long titles as "title: >-" with the text on indented lines.
+                    List<String> block = new ArrayList<>();
+                    i = collectBlockScalar(lines, i, keyIndent, value.startsWith("|"), block);
+                    applyScalarField(currentKey, block.isEmpty() ? "" : block.get(0), builder);
+                    currentList = null;
+                    continue;
+                }
+                if (!value.isEmpty()) {
+                    // A scalar may continue on more-indented lines; YAML folds them with a space.
+                    StringBuilder joined = new StringBuilder(value);
+                    while (i + 1 < lines.length && !lines[i + 1].isBlank()
+                            && indentOf(lines[i + 1]) > keyIndent && !lines[i + 1].trim().startsWith("- ")) {
+                        i++;
+                        joined.append(' ').append(lines[i].trim());
+                    }
+                    value = joined.toString();
+                }
                 currentList = parseFieldValue(currentKey, value, builder);
             }
         }
@@ -316,9 +335,13 @@ public final class SpecFrontmatterParser {
 
     static @NotNull String stripQuotes(@NotNull String value) {
         if (value.length() >= 2) {
-            if ((value.startsWith("\"") && value.endsWith("\""))
-                    || (value.startsWith("'") && value.endsWith("'"))) {
-                return value.substring(1, value.length() - 1);
+            String inner = value.substring(1, value.length() - 1);
+            if (value.startsWith("\"") && value.endsWith("\"")) {
+                return inner.replace("\\\"", "\"").replace("\\\\", "\\");
+            }
+            if (value.startsWith("'") && value.endsWith("'")) {
+                // In a single-quoted YAML string a quote is written twice: 'don''t'.
+                return inner.replace("''", "'");
             }
         }
         return value;
