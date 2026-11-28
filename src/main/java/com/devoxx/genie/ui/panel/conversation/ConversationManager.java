@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.util.ResourceBundle;
@@ -44,6 +45,13 @@ public class ConversationManager implements ConversationEventListener, Conversat
     @Setter
     @Getter
     private Conversation currentConversation;
+
+    /**
+     * Told when this tab switches to another conversation: a new one ("+") or one restored from
+     * history. Runs on the calling thread (TASK-284: keeps the "View agent run" button current).
+     */
+    @Setter
+    private @Nullable Runnable currentConversationListener;
 
     // Reference to this tab's own output panel (set externally)
     @Setter
@@ -99,6 +107,7 @@ public class ConversationManager implements ConversationEventListener, Conversat
 
         // Clear the current conversation state
         currentConversation = null;
+        notifyCurrentConversationChanged();
 
         // Reset the persistent conversation context indicator for this tab.
         resetConversationContextIndicator();
@@ -145,6 +154,7 @@ public class ConversationManager implements ConversationEventListener, Conversat
     public void onConversationSelected(@NotNull Conversation conversation) {
         // Set this as the current active conversation
         currentConversation = conversation;
+        notifyCurrentConversationChanged();
 
         String displayTitle = conversation.getTitle().length() > MAX_TITLE_LENGTH ?
                 conversation.getTitle().substring(0, MAX_TITLE_LENGTH) + "..." :
@@ -170,6 +180,13 @@ public class ConversationManager implements ConversationEventListener, Conversat
 
         // Restore all messages for this conversation
         historyManager.restoreConversation(conversation);
+    }
+
+    private void notifyCurrentConversationChanged() {
+        Runnable listener = currentConversationListener;
+        if (listener != null) {
+            listener.run();
+        }
     }
 
     /**

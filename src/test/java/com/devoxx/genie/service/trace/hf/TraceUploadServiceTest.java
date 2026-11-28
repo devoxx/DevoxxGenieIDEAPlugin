@@ -149,4 +149,11 @@ class TraceUploadServiceTest {
         assertThat(s.filePath("17 64/x")).isEqualTo("a/_/b/17_64_x.jsonl");
         assertThat(new HfUploadSettings(null, true, "", true, true, "").filePath("1")).isEqualTo("1.jsonl");
     }
+
+    @Test
+    void fileName_isTheSanitisedIdWithAJsonlExtension() {
+        // TASK-284: the run view's "Save as .jsonl…" proposes this name, matching the folder export.
+        assertThat(HfUploadSettings.fileName("1764321600000")).isEqualTo("1764321600000.jsonl");
+        assertThat(HfUploadSettings.fileName("17 64/x")).isEqualTo("17_64_x.jsonl");
+    }
 }

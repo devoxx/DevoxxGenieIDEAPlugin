@@ -5,7 +5,8 @@ import com.devoxx.genie.service.conversations.ConversationStorageService;
 import com.devoxx.genie.service.trace.AgentTraceListener;
 import com.devoxx.genie.service.trace.TraceSettings;
 import com.devoxx.genie.ui.compose.ComposeConversationViewController;
-import com.devoxx.genie.ui.compose.model.TraceUploadUiState;
+import com.devoxx.genie.ui.compose.model.AgentRunUiState;
+import com.devoxx.genie.ui.trace.view.AgentRunViewer;
 import com.devoxx.genie.ui.util.NotificationUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -14,26 +15,27 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Drives one chat tab's "Upload to Hugging Face" toolbar button (task-280): shows it while
- * agent trace recording is on, enables it once the tab's conversation has a recorded trace,
- * and runs the upload on click. State is recomputed off the EDT when a trace turn is written,
- * the settings change, or the tab switches conversation ({@link #refresh()}).
+ * Drives one chat tab's "View agent run" toolbar button (TASK-284): shows it while agent trace
+ * recording is on, enables it once the tab's conversation has a recorded trace, and opens the
+ * run view on click. Saving and uploading the trace happen from that view's Export menu. State
+ * is recomputed off the EDT when a trace turn is written, the settings change, or the tab
+ * switches conversation ({@link #refresh()}); the toolbar itself disables the button while a
+ * response is in flight.
  */
 @Slf4j
-public final class TraceUploadButtonController {
+public final class AgentRunButtonController {
 
     private final Project project;
     private final ComposeConversationViewController view;
     private final Supplier<@Nullable Conversation> currentConversation;
     private final MessageBusConnection connection;
-    private volatile boolean uploading;
 
-    public TraceUploadButtonController(@NotNull Project project, @NotNull ComposeConversationViewController view,
-                                       @NotNull Supplier<@Nullable Conversation> currentConversation) {
+    public AgentRunButtonController(@NotNull Project project, @NotNull ComposeConversationViewController view,
+                                    @NotNull Supplier<@Nullable Conversation> currentConversation) {
         this.project = project;
         this.view = view;
         this.currentConversation = currentConversation;
@@ -52,54 +54,55 @@ public final class TraceUploadButtonController {
                 refresh();
             }
         });
-        view.setOnTraceUploadClick(this::onClick);
+        view.setOnViewAgentRunClick(this::onClick);
         refresh();
+    }
+
+    /**
+     * The button state: hidden while recording is off; otherwise enabled only when the
+     * conversation has been saved and has trace rows. {@code hasTraceEvents} is only asked
+     * when it matters.
+     */
+    static @NotNull AgentRunUiState stateFor(boolean recordingOn, @Nullable Conversation conversation,
+                                             @NotNull Predicate<String> hasTraceEvents) {
+        if (!recordingOn) {
+            return AgentRunUiState.HIDDEN;
+        }
+        boolean hasTrace = conversation != null && conversation.getId() != null
+                && hasTraceEvents.test(conversation.getId());
+        return new AgentRunUiState(true, hasTrace);
     }
 
     /** Recomputes the button state in the background and pushes it to the view on the EDT. */
     public void refresh() {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            TraceUploadUiState state;
+            AgentRunUiState state;
             try {
-                boolean visible = TraceSettings.current().enabled();
-                Conversation conversation = currentConversation.get();
-                boolean hasTrace = visible && conversation != null && conversation.getId() != null
-                        && ConversationStorageService.getInstance().hasTraceEvents(conversation.getId());
-                state = new TraceUploadUiState(visible, hasTrace, uploading);
+                state = stateFor(TraceSettings.current().enabled(), currentConversation.get(),
+                        id -> ConversationStorageService.getInstance().hasTraceEvents(id));
             } catch (RuntimeException e) {
-                log.debug("Could not refresh the trace upload button: {}", e.toString());
-                state = TraceUploadUiState.HIDDEN;
+                log.debug("Could not refresh the agent run button: {}", e.toString());
+                state = AgentRunUiState.HIDDEN;
             }
-            TraceUploadUiState finalState = state;
+            AgentRunUiState finalState = state;
             ApplicationManager.getApplication().invokeLater(() -> {
                 if (!project.isDisposed()) {
-                    view.setTraceUploadState(finalState);
+                    view.setAgentRunState(finalState);
                 }
             });
         });
     }
 
     private void onClick() {
-        if (uploading) {
-            return;
-        }
         Conversation conversation = currentConversation.get();
         if (conversation == null) {
-            // Never fail silently: say why there is nothing to upload yet.
+            // Never fail silently: say why there is nothing to show yet.
             NotificationUtil.sendNotification(project,
-                    "Nothing to upload yet: this conversation hasn't been saved. Its trace is uploaded once a response has completed.");
+                    "No agent run yet: this conversation hasn't been saved. Its run can be viewed once a response has completed.");
             refresh();
             return;
         }
-        HfTraceUploader.upload(project, List.of(conversation),
-                () -> {
-                    uploading = true;
-                    refresh();
-                },
-                () -> {
-                    uploading = false;
-                    refresh();
-                });
+        AgentRunViewer.open(project, conversation);
     }
 
     public void dispose() {
