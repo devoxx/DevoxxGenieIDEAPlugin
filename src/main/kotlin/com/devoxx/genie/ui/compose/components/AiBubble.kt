@@ -78,6 +78,25 @@ private fun scaled(tokens: Long, unit: Double): String {
 }
 
 /**
+ * Formats an execution time for the metadata row. Under a minute it keeps one decimal of
+ * seconds ("7.7s"); from a minute on, long agent runs read as "34m 15s" (and "1h 2m 5s")
+ * instead of an unreadable "2054.6s".
+ */
+internal fun formatElapsedTime(millis: Long): String {
+    // Compare in tenths so 59.96s, which "%.1f" would print as "60.0s", moves to minutes.
+    if ((millis + 50) / 100 < 600) {
+        // Locale.US keeps the decimal separator a period so the row reads consistently
+        // with the period-formatted token counts (a comma locale gave "7,7s").
+        return String.format(java.util.Locale.US, "%.1fs", millis / 1000.0)
+    }
+    val totalSeconds = (millis + 500) / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return if (hours > 0) "${hours}h ${minutes}m ${seconds}s" else "${minutes}m ${seconds}s"
+}
+
+/**
  * Builds the right-aligned metadata summary shown next to the model name: elapsed time,
  * token usage (clearly labelled input/output) and cost. The model's overall context-window
  * usage is intentionally omitted here — it is already surfaced as a persistent indicator
@@ -88,10 +107,7 @@ private fun scaled(tokens: Long, unit: Double): String {
 internal fun formatMetadataSummary(message: MessageUiModel): String {
     val parts = mutableListOf<String>()
     if (message.executionTimeMs > 0) {
-        val seconds = message.executionTimeMs / 1000.0
-        // Locale.US keeps the decimal separator a period so the row reads consistently
-        // with the period-formatted token counts (a comma locale gave "7,7s").
-        parts.add(String.format(java.util.Locale.US, "%.1fs", seconds))
+        parts.add(formatElapsedTime(message.executionTimeMs))
     }
     val usage = message.tokenUsage
     if (usage.inputTokens > 0 || usage.outputTokens > 0) {
