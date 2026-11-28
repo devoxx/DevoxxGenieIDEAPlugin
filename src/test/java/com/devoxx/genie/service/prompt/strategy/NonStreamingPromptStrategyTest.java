@@ -257,6 +257,33 @@ class NonStreamingPromptStrategyTest {
     }
 
     @Test
+    void stoppedQuery_isStillSavedToTheHistory_withAnEmptyAnswer() {
+        // TASK-286: stopping a running prompt must not drop it from the conversation history.
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArgument(0)).run();
+            return null;
+        }).when(mockExecutor).execute(any(Runnable.class));
+        when(mockChatMessageContext.getUserPrompt()).thenReturn("test question");
+        when(mockChatMessageContext.getUserMessage()).thenReturn(
+            dev.langchain4j.data.message.UserMessage.from("test question"));
+        CompletableFuture<ChatResponse> stopped = new CompletableFuture<>();
+        stopped.cancel(true);
+        when(mockPromptExecutionService.executeQuery(any())).thenReturn(stopped);
+        when(mockPanel.getConversationPanel()).thenReturn(null);
+        var mockMessageBus = mock(com.intellij.util.messages.MessageBus.class);
+        when(mockProject.getMessageBus()).thenReturn(mockMessageBus);
+        var mockPublisher = mock(ConversationEventListener.class);
+        when(mockMessageBus.syncPublisher(com.devoxx.genie.ui.topic.AppTopics.CONVERSATION_TOPIC))
+            .thenReturn(mockPublisher);
+
+        strategy.executeStrategySpecific(mockChatMessageContext, mockPanel, mockResultTask);
+
+        verify(mockResultTask).cancel(true);
+        verify(mockPublisher, times(1)).onNewConversation(mockChatMessageContext);
+        verify(mockChatMessageContext).setAiMessage(argThat(message -> message.text().isEmpty()));
+    }
+
+    @Test
     void executeStrategySpecific_withNullResponse_completesWithFailure() {
         doAnswer(invocation -> {
             ((Runnable) invocation.getArgument(0)).run();

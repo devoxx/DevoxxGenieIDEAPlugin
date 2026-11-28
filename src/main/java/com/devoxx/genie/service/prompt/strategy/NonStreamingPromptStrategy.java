@@ -15,6 +15,7 @@ import com.devoxx.genie.ui.topic.AppTopics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import lombok.extern.slf4j.Slf4j;
+import dev.langchain4j.data.message.AiMessage;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CancellationException;
@@ -131,6 +132,7 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                     e.getCause() instanceof CancellationException || 
                     Thread.currentThread().isInterrupted()) {
                     log.info("Prompt execution cancelled for context {}", context.getId());
+                    saveStoppedPrompt(context);
                     resultTask.cancel(true);
                 } else {
                     handleExecutionError(e, context, resultTask, panel);
@@ -145,6 +147,25 @@ public class NonStreamingPromptStrategy extends AbstractPromptExecutionStrategy 
                 promptExecutionService.cancelExecutingQueryForTab(currentTabKey.get());
             }
         });
+    }
+
+    /**
+     * Saves a stopped prompt to the conversation history (TASK-286). A non-streaming run has no
+     * partial answer, so the prompt is saved with an empty one; publishing the event also persists
+     * any agent trace buffered for the turn. Called on the prompt pool thread, exactly once per run
+     * (the cancellation branch excludes the success path, which saves the full answer).
+     */
+    private void saveStoppedPrompt(@NotNull ChatMessageContext context) {
+        try {
+            if (context.getAiMessage() == null) {
+                context.setAiMessage(AiMessage.from(""));
+            }
+            project.getMessageBus()
+                    .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                    .onNewConversation(context);
+        } catch (Exception e) {
+            log.warn("Failed to save stopped prompt to history for context {}", context.getId(), e);
+        }
     }
 
     /**
