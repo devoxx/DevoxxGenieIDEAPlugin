@@ -375,14 +375,6 @@ fun AiBubble(
             ThinkingIndicator()
         }
 
-        // Always-on live progress while the run is in flight (TASK-288): the running tool and
-        // step, or "Waiting for the model" between tool calls, with the elapsed time, regardless
-        // of the "Show tool activity in chat output" setting. A slow local model spends most of a
-        // run between tool calls; without this the run looked stuck.
-        if (message.isLoadingIndicatorVisible || message.isStreaming) {
-            AgentProgressLine(message)
-        }
-
         // AI Response content — rendered as Markdown
         if (message.aiResponseMarkdown.isNotBlank()) {
             MarkdownContent(content = message.aiResponseMarkdown)
@@ -409,11 +401,26 @@ fun AiBubble(
             TerminalState.COMPLETED -> { /* normal completion — no marker */ }
         }
 
-        // Copy button
-        if (message.aiResponseMarkdown.isNotBlank()) {
+        // Footer: the live progress line on the left, Copy on the right.
+        // The progress line shows while the run is in flight (TASK-288): the running tool and
+        // step, or "Waiting for the model" between tool calls, with the elapsed time, regardless
+        // of the "Show tool activity in chat output" setting. A slow local model spends most of a
+        // run between tool calls; without this the run looked stuck.
+        val showProgress = message.isLoadingIndicatorVisible || message.isStreaming
+        val showCopy = message.aiResponseMarkdown.isNotBlank()
+        if (showProgress || showCopy) {
             Spacer(Modifier.height(4.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                CopyButton(textToCopy = message.aiResponseMarkdown)
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                // The Box always takes the free width, so Copy stays right-aligned even when
+                // the progress line renders nothing.
+                Box(modifier = Modifier.weight(1f)) {
+                    if (showProgress) {
+                        AgentProgressLine(message)
+                    }
+                }
+                if (showCopy) {
+                    CopyButton(textToCopy = message.aiResponseMarkdown)
+                }
             }
         }
     }
