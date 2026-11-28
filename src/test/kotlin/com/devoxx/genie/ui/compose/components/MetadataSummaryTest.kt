@@ -112,6 +112,41 @@ class MetadataSummaryTest {
         assertEquals("1.8s ~ 100 in / 50 out ~ \$0.0023", summary)
     }
 
+    // --- formatElapsedTime ---
+
+    @Test
+    fun `under a minute keeps one decimal of seconds`() {
+        assertEquals("0.1s", formatElapsedTime(100))
+        assertEquals("7.7s", formatElapsedTime(7_700))
+        assertEquals("59.9s", formatElapsedTime(59_900))
+    }
+
+    @Test
+    fun `a minute or more is shown in minutes and seconds`() {
+        assertEquals("1m 0s", formatElapsedTime(60_000))
+        assertEquals("1m 5s", formatElapsedTime(65_000))
+        assertEquals("34m 15s", formatElapsedTime(2_054_600))
+    }
+
+    @Test
+    fun `just under a minute that rounds up is shown in minutes not 60 seconds`() {
+        assertEquals("1m 0s", formatElapsedTime(59_960))
+    }
+
+    @Test
+    fun `an hour or more includes hours`() {
+        assertEquals("1h 0m 0s", formatElapsedTime(3_600_000))
+        assertEquals("1h 2m 5s", formatElapsedTime(3_725_000))
+    }
+
+    @Test
+    fun `long runs show minutes in the summary`() {
+        val summary = formatMetadataSummary(
+            message(executionTimeMs = 2_054_600, inputTokens = 2_200_000, outputTokens = 17_800),
+        )
+        assertEquals("34m 15s ~ 2.2M in / 17.8K out", summary)
+    }
+
     @Test
     fun `empty when nothing is known`() {
         assertEquals("", formatMetadataSummary(message()))
