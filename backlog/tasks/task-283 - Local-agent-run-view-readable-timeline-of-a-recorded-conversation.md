@@ -4,7 +4,7 @@ title: 'Local agent run view: readable timeline of a recorded conversation'
 status: In Progress
 assignee: []
 created_date: '2026-11-26T14:54:00Z'
-updated_date: '2026-11-28T09:10:00Z'
+updated_date: '2026-11-28T10:12:00Z'
 labels:
   - agent
   - traces
@@ -39,6 +39,8 @@ modified_files:
     src/main/java/com/devoxx/genie/ui/panel/conversationhistory/ConversationHistoryPanel.java
   - >-
     src/test/java/com/devoxx/genie/service/conversations/ConversationTraceStorageTest.java
+  - >-
+    src/test/java/com/devoxx/genie/ui/panel/conversationhistory/ConversationHistoryPanelTest.java
 priority: medium
 ordinal: 37000
 ---
