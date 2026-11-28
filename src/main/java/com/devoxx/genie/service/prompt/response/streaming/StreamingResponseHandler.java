@@ -413,6 +413,37 @@ public class StreamingResponseHandler implements StreamingChatResponseHandler {
                 ApplicationManager.getApplication().invokeLater(() ->
                     conversationViewController.setTerminalState(context.getId(), TerminalState.STOPPED, null));
             }
+
+            // Last, after the memory cleanup above (which only runs while no AI message is set).
+            persistStoppedRun();
         }
+    }
+
+    /**
+     * Saves a stopped run to the conversation history (TASK-286): the prompt and the answer text
+     * streamed so far, which may be empty. Publishing {@link AppTopics#CONVERSATION_TOPIC} also
+     * persists the agent trace buffered for this turn ({@code ChatService.saveConversation}).
+     * Runs on a pooled thread: stop() is triggered from the EDT and saving writes to SQLite.
+     * Exactly once: {@link #onCompleteResponse} and {@link #persistPartialResponseOnError} skip a
+     * stopped run, and a run that already completed was saved by its completion.
+     */
+    private void persistStoppedRun() {
+        if (isCompleted) {
+            return;
+        }
+        String partial = getVisibleAccumulatedText();
+        long executionTimeMs = System.currentTimeMillis() - startTime;
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                context.setExecutionTimeMs(executionTimeMs);
+                context.setAiMessage(dev.langchain4j.data.message.AiMessage.from(partial));
+                project.getMessageBus()
+                        .syncPublisher(AppTopics.CONVERSATION_TOPIC)
+                        .onNewConversation(context);
+                log.debug("Saved stopped run to history for context {}", context.getId());
+            } catch (Exception e) {
+                log.warn("Failed to save stopped run to history for context {}", context.getId(), e);
+            }
+        });
     }
 }

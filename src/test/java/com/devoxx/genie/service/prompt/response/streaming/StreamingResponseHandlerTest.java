@@ -65,6 +65,10 @@ class StreamingResponseHandlerTest {
     /** Flush tasks captured from the handler instead of being run on a timer thread. */
     private final List<Runnable> pendingFlushes = new ArrayList<>();
 
+    /** Tasks the handler submitted with executeOnPooledThread. */
+    private final List<Runnable> pooledTasks = new ArrayList<>();
+    private Application mockApplication;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
@@ -75,8 +79,13 @@ class StreamingResponseHandlerTest {
         fileListManagerMock = mockStatic(FileListManager.class);
         promptErrorHandlerMock = mockStatic(PromptErrorHandler.class);
 
-        Application mockApplication = mock(Application.class);
+        mockApplication = mock(Application.class);
         applicationManagerMock.when(ApplicationManager::getApplication).thenReturn(mockApplication);
+        // Pooled-thread work (e.g. saving a stopped run) is captured and run explicitly by tests.
+        doAnswer(invocation -> {
+            pooledTasks.add(invocation.getArgument(0));
+            return null;
+        }).when(mockApplication).executeOnPooledThread(any(Runnable.class));
         // Execute invokeLater inline
         doAnswer(invocation -> {
             ((Runnable) invocation.getArgument(0)).run();
@@ -103,6 +112,13 @@ class StreamingResponseHandlerTest {
         onCompleteCalled.set(false);
         onErrorCalled.set(false);
         pendingFlushes.clear();
+        pooledTasks.clear();
+    }
+
+    private void runPooledTasks() {
+        List<Runnable> tasks = new ArrayList<>(pooledTasks);
+        pooledTasks.clear();
+        tasks.forEach(Runnable::run);
     }
 
     /** Runs all captured batched-flush tasks synchronously, as the timer would. */
@@ -756,5 +772,68 @@ class StreamingResponseHandlerTest {
         handler.onError(new RuntimeException("late error after stop"));
 
         verify(mockMessageBus, never()).syncPublisher(AppTopics.CONVERSATION_TOPIC);
+    }
+
+    // --- TASK-286: a stopped run must still be saved to the conversation history ---
+
+    @Test
+    void stop_afterStreamedText_savesTheRunOnce_withThePartialText() {
+        StreamingResponseHandler handler = createHandler();
+        handler.onPartialResponse("Half an ");
+        handler.onPartialResponse("answer");
+
+        handler.stop();
+        runPooledTasks();
+
+        verify(mockProject.getMessageBus().syncPublisher(AppTopics.CONVERSATION_TOPIC), times(1))
+                .onNewConversation(mockContext);
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEqualTo("Half an answer");
+    }
+
+    @Test
+    void stop_beforeAnyText_stillSavesThePrompt() {
+        StreamingResponseHandler handler = createHandler();
+
+        handler.stop();
+        runPooledTasks();
+
+        verify(mockProject.getMessageBus().syncPublisher(AppTopics.CONVERSATION_TOPIC), times(1))
+                .onNewConversation(mockContext);
+        ArgumentCaptor<AiMessage> captor = ArgumentCaptor.forClass(AiMessage.class);
+        verify(mockContext, atLeastOnce()).setAiMessage(captor.capture());
+        assertThat(captor.getValue().text()).isEmpty();
+    }
+
+    @Test
+    void stop_thenLateCompletionAndError_saveOnlyOnce() {
+        StreamingResponseHandler handler = createHandler();
+        handler.onPartialResponse("Some text");
+
+        handler.stop();
+        handler.stop();
+        handler.onCompleteResponse(ChatResponse.builder().aiMessage(AiMessage.from("late")).build());
+        handler.onError(new RuntimeException("late error"));
+        runPooledTasks();
+
+        verify(mockProject.getMessageBus().syncPublisher(AppTopics.CONVERSATION_TOPIC), times(1))
+                .onNewConversation(mockContext);
+    }
+
+    @Test
+    void stop_savesOffTheCallingThread() {
+        // stop() is triggered by a click on the EDT; saving writes to SQLite, so it must run on a pooled thread.
+        StreamingResponseHandler handler = createHandler();
+        handler.onPartialResponse("text");
+
+        handler.stop();
+
+        verify(mockProject.getMessageBus().syncPublisher(AppTopics.CONVERSATION_TOPIC), never())
+                .onNewConversation(any());
+        assertThat(pooledTasks).hasSize(1);
+        runPooledTasks();
+        verify(mockProject.getMessageBus().syncPublisher(AppTopics.CONVERSATION_TOPIC))
+                .onNewConversation(mockContext);
     }
 }
